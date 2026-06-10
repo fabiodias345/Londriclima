@@ -6,7 +6,9 @@
   "scripts": {
     "backend:dev": "npm run start:dev -w apps/backend",
     "backend:build": "npm run build -w apps/backend",
+    "backend:test": "npm run test -w apps/backend",
     "backend:lint": "npm run lint -w apps/backend",
+    "frontend:test": "node --test tests/frontend-contracts.test.js",
     "backend:prisma:generate": "npm run prisma:generate -w apps/backend",
     "backend:prisma:migrate": "npm run prisma:migrate -w apps/backend",
     "backend:prisma:seed": "npm run prisma:seed -w apps/backend",

@@ -240,6 +240,13 @@ async function main() {
       }
     }
   });
+  await prisma.veiculoAbastecimento.deleteMany({
+    where: {
+      veiculoId: {
+        in: [VEICULO_1_ID, VEICULO_2_ID]
+      }
+    }
+  });
 
   const veiculo1 = await prisma.veiculo.upsert({
     where: {
@@ -288,8 +295,8 @@ async function main() {
       {
         empresaId: empresa.id,
         veiculoId: veiculo1.id,
-        latitude: -23.3045,
-        longitude: -51.1696,
+        latitude: -23.2865,
+        longitude: -51.1698,
         velocidadeKmh: 32,
         ignicao: true,
         registradoEm: new Date()
@@ -297,11 +304,60 @@ async function main() {
       {
         empresaId: empresa.id,
         veiculoId: veiculo2.id,
-        latitude: -23.3278,
-        longitude: -51.1469,
+        latitude: -23.3385,
+        longitude: -51.1865,
         velocidadeKmh: 0,
         ignicao: false,
         registradoEm: new Date(Date.now() - 7 * 60 * 1000)
+      }
+    ]
+  });
+
+  await prisma.veiculoAbastecimento.createMany({
+    data: [
+      {
+        empresaId: empresa.id,
+        veiculoId: veiculo1.id,
+        usuarioId: tecnico.id,
+        odometroKm: 51200,
+        litros: 42,
+        valorTotal: 247.8,
+        precoPorLitro: 5.9,
+        abastecidoEm: new Date("2026-06-01T11:00:00.000Z"),
+        posto: "Posto Centro"
+      },
+      {
+        empresaId: empresa.id,
+        veiculoId: veiculo1.id,
+        usuarioId: tecnico.id,
+        odometroKm: 51635,
+        litros: 40.5,
+        valorTotal: 238.95,
+        precoPorLitro: 5.9,
+        abastecidoEm: new Date("2026-06-08T11:20:00.000Z"),
+        posto: "Posto Centro"
+      },
+      {
+        empresaId: empresa.id,
+        veiculoId: veiculo2.id,
+        usuarioId: tecnico.id,
+        odometroKm: 38440,
+        litros: 38,
+        valorTotal: 224.2,
+        precoPorLitro: 5.9,
+        abastecidoEm: new Date("2026-06-02T10:30:00.000Z"),
+        posto: "Posto Gleba"
+      },
+      {
+        empresaId: empresa.id,
+        veiculoId: veiculo2.id,
+        usuarioId: tecnico.id,
+        odometroKm: 38778,
+        litros: 36,
+        valorTotal: 212.4,
+        precoPorLitro: 5.9,
+        abastecidoEm: new Date("2026-06-09T10:10:00.000Z"),
+        posto: "Posto Gleba"
       }
     ]
   });

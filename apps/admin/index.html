@@ -21,9 +21,9 @@
       <nav>
         <button class="nav-link active" type="button" data-view="preChamados">Pre-chamados</button>
         <button class="nav-link" type="button" data-view="frota">Frota</button>
-        <a href="#">Agenda</a>
-        <a href="#">Clientes</a>
-        <a href="#">Relatorios</a>
+        <button class="nav-link" type="button" data-view="agenda">Agenda</button>
+        <button class="nav-link" type="button" data-view="clientes">Clientes</button>
+        <button class="nav-link" type="button" data-view="relatorios">Relatorios</button>
       </nav>
       <div class="sidebar-footer">
         <small>Ambiente MVP</small>
@@ -91,6 +91,51 @@
           </article>
         </section>
 
+        <section class="summary-grid hidden" id="agendaSummary" aria-label="Resumo da agenda">
+          <article>
+            <span>OS abertas</span>
+            <strong id="agendaCount">0</strong>
+          </article>
+          <article>
+            <span>Em atendimento</span>
+            <strong id="attendanceCount">0</strong>
+          </article>
+          <article>
+            <span>Hoje</span>
+            <strong id="todayCount">0</strong>
+          </article>
+        </section>
+
+        <section class="summary-grid hidden" id="clientesSummary" aria-label="Resumo de clientes">
+          <article>
+            <span>Clientes</span>
+            <strong id="clientCount">0</strong>
+          </article>
+          <article>
+            <span>Com OS aberta</span>
+            <strong id="clientOpenCount">0</strong>
+          </article>
+          <article>
+            <span>Equipamentos</span>
+            <strong id="equipmentCount">0</strong>
+          </article>
+        </section>
+
+        <section class="summary-grid hidden" id="relatoriosSummary" aria-label="Resumo de relatorios">
+          <article>
+            <span>OS totais</span>
+            <strong id="reportOsCount">0</strong>
+          </article>
+          <article>
+            <span>Receita prevista</span>
+            <strong id="reportRevenue">R$ 0</strong>
+          </article>
+          <article>
+            <span>Automações</span>
+            <strong id="automationCount">0</strong>
+          </article>
+        </section>
+
         <section class="worklist" id="preChamadosView">
           <div class="worklist-header">
             <h2>Solicitacoes recebidas</h2>
@@ -101,17 +146,81 @@
 
         <section class="fleet-view hidden" id="frotaView">
           <div class="fleet-map" id="fleetMap" aria-label="Mapa operacional da frota">
-            <div class="map-grid"></div>
-            <div class="map-label north">Centro</div>
-            <div class="map-label south">Gleba Palhano</div>
+            <iframe
+              class="osm-map"
+              title="Mapa real da frota em Londrina"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              src="https://www.openstreetmap.org/export/embed.html?bbox=-51.2400%2C-23.3800%2C-51.0800%2C-23.2500&amp;layer=mapnik"
+            ></iframe>
+            <div class="map-grid map-fallback" aria-hidden="true"></div>
+            <div class="map-district district-north">Centro</div>
+            <div class="map-district district-west">Cambé / BR-369</div>
+            <div class="map-district district-south">Gleba Palhano</div>
+            <div class="map-road road-br">BR-369</div>
+            <div class="map-road road-av">Av. Higienópolis</div>
+            <div class="map-road road-leste">Av. Dez de Dezembro</div>
           </div>
           <div class="fleet-list">
             <div class="worklist-header">
               <h2>Veiculos monitorados</h2>
               <p id="fleetStatus" role="status">Carregando...</p>
             </div>
+            <form class="fuel-form" id="fuelForm">
+              <label>
+                Veiculo
+                <select name="veiculo_id" id="fuelVehicleSelect" required></select>
+              </label>
+              <label>
+                Odometro
+                <input name="odometro_km" type="number" min="0" step="0.1" placeholder="51635" required />
+              </label>
+              <label>
+                Litros
+                <input name="litros" type="number" min="0.001" step="0.001" placeholder="40.5" required />
+              </label>
+              <label>
+                Valor total
+                <input name="valor_total" type="number" min="0.01" step="0.01" placeholder="238.95" required />
+              </label>
+              <label>
+                Posto
+                <input name="posto" type="text" placeholder="Posto Centro" />
+              </label>
+              <button type="submit">Registrar abastecimento</button>
+              <p class="status" id="fuelStatus" role="status"></p>
+            </form>
             <div id="fleetList"></div>
           </div>
+        </section>
+
+        <section class="worklist hidden" id="agendaView">
+          <div class="worklist-header">
+            <h2>Agenda operacional</h2>
+            <p id="agendaStatus" role="status">Carregando...</p>
+          </div>
+          <div class="data-list" id="agendaList"></div>
+        </section>
+
+        <section class="worklist hidden" id="clientesView">
+          <div class="worklist-header">
+            <h2>Base de clientes</h2>
+            <p id="clientesStatus" role="status">Carregando...</p>
+          </div>
+          <div class="data-list" id="clientesList"></div>
+        </section>
+
+        <section class="worklist hidden" id="relatoriosView">
+          <div class="worklist-header">
+            <h2>Indicadores do MVP</h2>
+            <p id="relatoriosStatus" role="status">Carregando...</p>
+          </div>
+          <div class="report-grid" id="reportGrid"></div>
+          <div class="worklist-header split-header">
+            <h2>Consumo da frota</h2>
+            <p id="fleetReportStatus" role="status">Carregando...</p>
+          </div>
+          <div class="data-list" id="fleetReportList"></div>
         </section>
       </section>
     </main>

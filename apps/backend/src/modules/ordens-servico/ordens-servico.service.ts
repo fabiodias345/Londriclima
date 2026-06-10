@@ -541,7 +541,7 @@ export class OrdensServicoService {
   async finalizarOs(osId: string, dto: FinalizarOsDto, usuario: AuthenticatedUser) {
     const finalizadoEm = new Date(dto.finalizado_em);
     const assinaturaBuffer = this.criarBufferAssinatura(dto.assinatura_cliente_base64);
-    const assinaturaUrl = await this.salvarAssinatura(osId, assinaturaBuffer);
+    let assinaturaUrl = "";
 
     await this.prisma.$transaction(async (tx) => {
       const ordemServico = await tx.ordemServico.findUnique({
@@ -614,6 +614,8 @@ export class OrdensServicoService {
       if (ordemServico.assinatura) {
         throw new ConflictException("Assinatura já registrada para esta OS.");
       }
+
+      assinaturaUrl = await this.salvarAssinatura(osId, assinaturaBuffer);
 
       await tx.ordemServicoAssinatura.create({
         data: {

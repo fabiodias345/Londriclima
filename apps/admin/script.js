@@ -13,21 +13,48 @@ const viewKicker = document.querySelector("#viewKicker");
 const viewTitle = document.querySelector("#viewTitle");
 const preChamadosSummary = document.querySelector("#preChamadosSummary");
 const frotaSummary = document.querySelector("#frotaSummary");
+const agendaSummary = document.querySelector("#agendaSummary");
+const clientesSummary = document.querySelector("#clientesSummary");
+const relatoriosSummary = document.querySelector("#relatoriosSummary");
 const preChamadosView = document.querySelector("#preChamadosView");
 const frotaView = document.querySelector("#frotaView");
+const agendaView = document.querySelector("#agendaView");
+const clientesView = document.querySelector("#clientesView");
+const relatoriosView = document.querySelector("#relatoriosView");
 const fleetMap = document.querySelector("#fleetMap");
 const fleetList = document.querySelector("#fleetList");
 const fleetStatus = document.querySelector("#fleetStatus");
 const vehicleCount = document.querySelector("#vehicleCount");
 const movingCount = document.querySelector("#movingCount");
+const fuelForm = document.querySelector("#fuelForm");
+const fuelVehicleSelect = document.querySelector("#fuelVehicleSelect");
+const fuelStatus = document.querySelector("#fuelStatus");
+const agendaStatus = document.querySelector("#agendaStatus");
+const agendaList = document.querySelector("#agendaList");
+const agendaCount = document.querySelector("#agendaCount");
+const attendanceCount = document.querySelector("#attendanceCount");
+const todayCount = document.querySelector("#todayCount");
+const clientesStatus = document.querySelector("#clientesStatus");
+const clientesList = document.querySelector("#clientesList");
+const clientCount = document.querySelector("#clientCount");
+const clientOpenCount = document.querySelector("#clientOpenCount");
+const equipmentCount = document.querySelector("#equipmentCount");
+const relatoriosStatus = document.querySelector("#relatoriosStatus");
+const reportGrid = document.querySelector("#reportGrid");
+const reportOsCount = document.querySelector("#reportOsCount");
+const reportRevenue = document.querySelector("#reportRevenue");
+const automationCount = document.querySelector("#automationCount");
+const fleetReportStatus = document.querySelector("#fleetReportStatus");
+const fleetReportList = document.querySelector("#fleetReportList");
 
 let activeView = "preChamados";
+let latestFleetItems = [];
 
 const mapBounds = {
-  minLat: -23.36,
-  maxLat: -23.27,
-  minLng: -51.22,
-  maxLng: -51.10
+  minLat: -23.38,
+  maxLat: -23.25,
+  minLng: -51.24,
+  maxLng: -51.08
 };
 
 function getToken() {
@@ -61,33 +88,59 @@ function showLogin() {
 async function login(event) {
   event.preventDefault();
   loginStatus.textContent = "";
+  const submitButton = loginForm.querySelector("button[type='submit']");
+  submitButton.disabled = true;
+  submitButton.textContent = "Entrando...";
 
   const data = new FormData(loginForm);
-  const response = await fetch(`${apiBaseUrl}/auth/login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      email: String(data.get("email") || ""),
-      senha: String(data.get("senha") || "")
-    })
-  });
 
-  if (!response.ok) {
-    loginStatus.textContent = "Login invalido ou API indisponivel.";
-    return;
+  try {
+    const response = await fetch(`${apiBaseUrl}/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email: String(data.get("email") || ""),
+        senha: String(data.get("senha") || "")
+      })
+    });
+
+    if (!response.ok) {
+      loginStatus.textContent = "Login invalido ou API indisponivel.";
+      return;
+    }
+
+    const result = await response.json();
+    setToken(result.access_token);
+    showDashboard();
+    await loadActiveView();
+  } catch {
+    loginStatus.textContent = "Nao foi possivel conectar na API em localhost:3000.";
+  } finally {
+    submitButton.disabled = false;
+    submitButton.textContent = "Entrar";
   }
-
-  const result = await response.json();
-  setToken(result.access_token);
-  showDashboard();
-  await loadActiveView();
 }
 
 async function loadActiveView() {
   if (activeView === "frota") {
     await loadFrota();
+    return;
+  }
+
+  if (activeView === "agenda") {
+    await loadAgenda();
+    return;
+  }
+
+  if (activeView === "clientes") {
+    await loadClientes();
+    return;
+  }
+
+  if (activeView === "relatorios") {
+    await loadRelatorios();
     return;
   }
 
@@ -101,21 +154,41 @@ function setActiveView(view) {
     link.classList.toggle("active", link.dataset.view === view);
   }
 
-  const isFrota = view === "frota";
-  viewKicker.textContent = isFrota ? "Monitoramento operacional" : "Operacao comercial";
-  viewTitle.textContent = isFrota ? "Localizacao da frota" : "Pre-chamados do site";
-  preChamadosSummary.classList.toggle("hidden", isFrota);
-  preChamadosView.classList.toggle("hidden", isFrota);
-  frotaSummary.classList.toggle("hidden", !isFrota);
-  frotaView.classList.toggle("hidden", !isFrota);
+  const meta = {
+    preChamados: ["Operacao comercial", "Pre-chamados do site"],
+    frota: ["Monitoramento operacional", "Localizacao da frota"],
+    agenda: ["Despacho de servicos", "Agenda operacional"],
+    clientes: ["Relacionamento", "Clientes e equipamentos"],
+    relatorios: ["Gestao", "Relatorios do MVP"]
+  }[view] ?? ["Operacao comercial", "Pre-chamados do site"];
+
+  viewKicker.textContent = meta[0];
+  viewTitle.textContent = meta[1];
+  preChamadosSummary.classList.toggle("hidden", view !== "preChamados");
+  frotaSummary.classList.toggle("hidden", view !== "frota");
+  agendaSummary.classList.toggle("hidden", view !== "agenda");
+  clientesSummary.classList.toggle("hidden", view !== "clientes");
+  relatoriosSummary.classList.toggle("hidden", view !== "relatorios");
+  preChamadosView.classList.toggle("hidden", view !== "preChamados");
+  frotaView.classList.toggle("hidden", view !== "frota");
+  agendaView.classList.toggle("hidden", view !== "agenda");
+  clientesView.classList.toggle("hidden", view !== "clientes");
+  relatoriosView.classList.toggle("hidden", view !== "relatorios");
 }
 
 async function loadPreChamados() {
   listStatus.textContent = "Carregando...";
 
-  const response = await fetch(`${apiBaseUrl}/admin/pre-chamados`, {
-    headers: authHeaders()
-  });
+  let response;
+
+  try {
+    response = await fetch(`${apiBaseUrl}/admin/pre-chamados`, {
+      headers: authHeaders()
+    });
+  } catch {
+    listStatus.textContent = "API local indisponivel em localhost:3000.";
+    return;
+  }
 
   if (await handleUnauthorized(response)) {
     return;
@@ -135,9 +208,16 @@ async function loadPreChamados() {
 async function loadFrota() {
   fleetStatus.textContent = "Carregando...";
 
-  const response = await fetch(`${apiBaseUrl}/admin/frota/localizacoes`, {
-    headers: authHeaders()
-  });
+  let response;
+
+  try {
+    response = await fetch(`${apiBaseUrl}/admin/frota/localizacoes`, {
+      headers: authHeaders()
+    });
+  } catch {
+    fleetStatus.textContent = "API local indisponivel em localhost:3000.";
+    return;
+  }
 
   if (await handleUnauthorized(response)) {
     return;
@@ -151,10 +231,103 @@ async function loadFrota() {
   const result = await response.json();
   const moving = result.items.filter((item) => (item.localizacao?.velocidade_kmh || 0) > 0).length;
 
+  latestFleetItems = result.items;
   vehicleCount.textContent = result.total;
   movingCount.textContent = moving;
   fleetStatus.textContent = result.total === 1 ? "1 veiculo" : `${result.total} veiculos`;
   renderFrota(result.items);
+  renderFuelVehicleOptions(result.items);
+}
+
+async function loadAgenda() {
+  agendaStatus.textContent = "Carregando...";
+
+  const result = await fetchAdminJson("/admin/agenda", agendaStatus);
+
+  if (!result) {
+    return;
+  }
+
+  const items = result.items || [];
+  const today = new Date().toISOString().slice(0, 10);
+
+  agendaCount.textContent = result.total;
+  attendanceCount.textContent = items.filter((item) => item.status === "em_atendimento").length;
+  todayCount.textContent = items.filter((item) => (item.agendada_para || item.criada_em || "").startsWith(today)).length;
+  agendaStatus.textContent = result.total === 1 ? "1 OS aberta" : `${result.total} OS abertas`;
+  renderAgenda(items);
+}
+
+async function loadClientes() {
+  clientesStatus.textContent = "Carregando...";
+
+  const result = await fetchAdminJson("/admin/clientes", clientesStatus);
+
+  if (!result) {
+    return;
+  }
+
+  const items = result.items || [];
+
+  clientCount.textContent = result.total;
+  clientOpenCount.textContent = items.filter((item) => item.os_abertas > 0).length;
+  equipmentCount.textContent = items.reduce((total, item) => total + (item.total_equipamentos || 0), 0);
+  clientesStatus.textContent = result.total === 1 ? "1 cliente" : `${result.total} clientes`;
+  renderClientes(items);
+}
+
+async function loadRelatorios() {
+  relatoriosStatus.textContent = "Carregando...";
+
+  const result = await fetchAdminJson("/admin/relatorios", relatoriosStatus);
+
+  if (!result) {
+    return;
+  }
+
+  reportOsCount.textContent = result.total_os;
+  reportRevenue.textContent = formatCurrency(result.receita_prevista || 0);
+  automationCount.textContent = result.automacoes_pendentes;
+  relatoriosStatus.textContent = "Atualizado agora";
+  renderRelatorios(result);
+  await loadRelatorioFrota();
+}
+
+async function loadRelatorioFrota() {
+  fleetReportStatus.textContent = "Carregando...";
+
+  const result = await fetchAdminJson("/admin/relatorios/frota", fleetReportStatus);
+
+  if (!result) {
+    return;
+  }
+
+  fleetReportStatus.textContent = `${result.total_veiculos} veiculos · ${formatNumber(result.km_rodados)} km`;
+  renderRelatorioFrota(result.items || []);
+}
+
+async function fetchAdminJson(path, statusElement) {
+  let response;
+
+  try {
+    response = await fetch(`${apiBaseUrl}${path}`, {
+      headers: authHeaders()
+    });
+  } catch {
+    statusElement.textContent = "API local indisponivel em localhost:3000.";
+    return null;
+  }
+
+  if (await handleUnauthorized(response)) {
+    return null;
+  }
+
+  if (!response.ok) {
+    statusElement.textContent = "Nao foi possivel carregar os dados.";
+    return null;
+  }
+
+  return response.json();
 }
 
 async function handleUnauthorized(response) {
@@ -219,14 +392,189 @@ function renderFrota(items) {
       continue;
     }
 
-    const marker = document.createElement("div");
     const position = toMapPosition(location.latitude, location.longitude);
-
+    const marker = document.createElement("button");
+    marker.type = "button";
     marker.className = `vehicle-marker ${moving ? "" : "idle"}`;
     marker.style.left = `${position.x}%`;
     marker.style.top = `${position.y}%`;
     marker.innerHTML = `<strong>${escapeHtml(item.nome)}</strong><span>${speed} km/h</span>`;
+    marker.title = `${item.nome} - ${speed} km/h - ${formatDate(location.registrado_em)}`;
     fleetMap.appendChild(marker);
+  }
+}
+
+function renderFuelVehicleOptions(items) {
+  fuelVehicleSelect.innerHTML = "";
+
+  for (const item of items) {
+    const option = document.createElement("option");
+    option.value = item.id;
+    option.textContent = `${item.nome}${item.placa ? ` - ${item.placa}` : ""}`;
+    fuelVehicleSelect.appendChild(option);
+  }
+}
+
+function renderAgenda(items) {
+  agendaList.innerHTML = "";
+
+  if (!items.length) {
+    agendaList.innerHTML = '<article class="data-row"><strong>Nenhuma OS aberta.</strong><span>A agenda fica pronta quando um pre-chamado for aprovado.</span></article>';
+    return;
+  }
+
+  for (const item of items) {
+    const row = document.createElement("article");
+    row.className = "data-row";
+    row.innerHTML = `
+      <div>
+        <strong>${escapeHtml(item.titulo)}</strong>
+        <span>${escapeHtml(item.cliente?.nome || "Cliente nao informado")} · ${formatAddress(item.endereco)}</span>
+      </div>
+      <div>
+        <span class="status-pill">${formatStatus(item.status)}</span>
+        <span>${item.agendada_para ? formatDateTime(item.agendada_para) : "Sem horario definido"}</span>
+      </div>
+      <div>
+        <span>${escapeHtml(item.equipe?.nome || item.tecnico?.nome || "Equipe nao atribuida")}</span>
+      </div>
+    `;
+    agendaList.appendChild(row);
+  }
+}
+
+function renderClientes(items) {
+  clientesList.innerHTML = "";
+
+  if (!items.length) {
+    clientesList.innerHTML = '<article class="data-row"><strong>Nenhum cliente cadastrado.</strong><span>Novos clientes entram pelo site ou pelo painel.</span></article>';
+    return;
+  }
+
+  for (const item of items) {
+    const row = document.createElement("article");
+    row.className = "data-row";
+    row.innerHTML = `
+      <div>
+        <strong>${escapeHtml(item.nome)}</strong>
+        <span>${formatPhone(item.telefone)} · ${escapeHtml(item.email || "sem email")}</span>
+      </div>
+      <div>
+        <span>${escapeHtml(formatAddress(item.endereco))}</span>
+        <span>${item.total_equipamentos} equipamentos · ${item.total_os} OS</span>
+      </div>
+      <div>
+        <span class="status-pill">${item.os_abertas} abertas</span>
+      </div>
+    `;
+    clientesList.appendChild(row);
+  }
+}
+
+function renderRelatorios(result) {
+  const statuses = result.por_status || {};
+
+  reportGrid.innerHTML = `
+    <article>
+      <span>Clientes cadastrados</span>
+      <strong>${result.clientes}</strong>
+    </article>
+    <article>
+      <span>Veiculos ativos</span>
+      <strong>${result.veiculos_ativos}</strong>
+    </article>
+    <article>
+      <span>Pre-chamados</span>
+      <strong>${statuses.pre_chamado || 0}</strong>
+    </article>
+    <article>
+      <span>OS abertas</span>
+      <strong>${statuses.aberta || 0}</strong>
+    </article>
+    <article>
+      <span>Em atendimento</span>
+      <strong>${statuses.em_atendimento || 0}</strong>
+    </article>
+    <article>
+      <span>Concluidas</span>
+      <strong>${statuses.concluida || 0}</strong>
+    </article>
+  `;
+}
+
+function renderRelatorioFrota(items) {
+  fleetReportList.innerHTML = "";
+
+  if (!items.length) {
+    fleetReportList.innerHTML = '<article class="data-row"><strong>Sem abastecimentos.</strong><span>Registre pelo menos dois abastecimentos por carro para calcular km/l.</span></article>';
+    return;
+  }
+
+  for (const item of items) {
+    const row = document.createElement("article");
+    row.className = "data-row fuel-row";
+    row.innerHTML = `
+      <div>
+        <strong>${escapeHtml(item.nome)}</strong>
+        <span>${escapeHtml(item.placa || "Sem placa")} · ${item.abastecimentos} abastecimentos</span>
+      </div>
+      <div>
+        <span>${formatNumber(item.km_rodados)} km · ${formatNumber(item.litros)} L</span>
+        <span>${item.km_por_litro ? `${formatNumber(item.km_por_litro)} km/L` : "km/L pendente"}</span>
+      </div>
+      <div>
+        <span>${formatCurrency(item.valor_total)}</span>
+        <span>${item.custo_por_km ? `${formatCurrency(item.custo_por_km)} / km` : "custo/km pendente"}</span>
+      </div>
+    `;
+    fleetReportList.appendChild(row);
+  }
+}
+
+async function submitFuel(event) {
+  event.preventDefault();
+  fuelStatus.textContent = "";
+  const button = fuelForm.querySelector("button[type='submit']");
+  const data = new FormData(fuelForm);
+
+  button.disabled = true;
+  button.textContent = "Registrando...";
+
+  try {
+    const response = await fetch(`${apiBaseUrl}/admin/frota/abastecimentos`, {
+      method: "POST",
+      headers: {
+        ...authHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        veiculo_id: String(data.get("veiculo_id") || ""),
+        odometro_km: Number(data.get("odometro_km") || 0),
+        litros: Number(data.get("litros") || 0),
+        valor_total: Number(data.get("valor_total") || 0),
+        abastecido_em: new Date().toISOString(),
+        posto: String(data.get("posto") || "")
+      })
+    });
+
+    if (await handleUnauthorized(response)) {
+      return;
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      fuelStatus.textContent = error.message || "Nao foi possivel registrar abastecimento.";
+      return;
+    }
+
+    fuelForm.reset();
+    renderFuelVehicleOptions(latestFleetItems);
+    fuelStatus.textContent = "Abastecimento registrado.";
+  } catch {
+    fuelStatus.textContent = "API local indisponivel em localhost:3000.";
+  } finally {
+    button.disabled = false;
+    button.textContent = "Registrar abastecimento";
   }
 }
 
@@ -244,6 +592,14 @@ async function updatePreChamado(osId, action) {
   await loadPreChamados();
 }
 
+function formatAddress(address) {
+  if (!address) {
+    return "Endereco nao informado";
+  }
+
+  return [address.bairro, address.cidade, address.uf].filter(Boolean).join(", ");
+}
+
 function toMapPosition(latitude, longitude) {
   const x = ((longitude - mapBounds.minLng) / (mapBounds.maxLng - mapBounds.minLng)) * 100;
   const y = 100 - ((latitude - mapBounds.minLat) / (mapBounds.maxLat - mapBounds.minLat)) * 100;
@@ -252,14 +608,6 @@ function toMapPosition(latitude, longitude) {
     x: Math.min(92, Math.max(8, x)),
     y: Math.min(92, Math.max(8, y))
   };
-}
-
-function formatAddress(address) {
-  if (!address) {
-    return "Endereco nao informado";
-  }
-
-  return [address.bairro, address.cidade, address.uf].filter(Boolean).join(", ");
 }
 
 function formatPhone(phone) {
@@ -277,6 +625,43 @@ function formatDate(value) {
   }).format(new Date(value));
 }
 
+function formatDateTime(value) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(new Date(value));
+}
+
+function formatCurrency(value) {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits: 0
+  }).format(value);
+}
+
+function formatNumber(value) {
+  return new Intl.NumberFormat("pt-BR", {
+    maximumFractionDigits: 1
+  }).format(value || 0);
+}
+
+function formatStatus(status) {
+  const labels = {
+    pre_chamado: "pre-chamado",
+    aberta: "aberta",
+    em_deslocamento: "em deslocamento",
+    em_atendimento: "em atendimento",
+    concluida: "concluida",
+    cancelada: "cancelada",
+    rejeitada: "rejeitada"
+  };
+
+  return labels[status] || status;
+}
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -287,6 +672,7 @@ function escapeHtml(value) {
 }
 
 loginForm?.addEventListener("submit", login);
+fuelForm?.addEventListener("submit", submitFuel);
 refreshButton?.addEventListener("click", loadActiveView);
 logoutButton?.addEventListener("click", () => {
   clearToken();

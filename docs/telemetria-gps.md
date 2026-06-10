@@ -29,6 +29,9 @@ Rastreador no carro
 - Identificar cada veiculo pelo IMEI do rastreador.
 - Persistir localizacao no PostgreSQL nas tabelas `veiculos` e `veiculo_localizacoes`.
 - Exibir a ultima posicao no painel administrativo com mapa da frota.
+- Registrar abastecimentos em `veiculo_abastecimentos` com odometro, litros, valor total e usuario responsavel.
+- Calcular consumo por carro a partir do odometro informado no abastecimento, nao apenas por GPS.
+- Usar dois abastecimentos do mesmo veiculo para calcular km rodados, km/L e custo por km.
 - Rodar no mesmo servidor da API no MVP, desde que a VPS permita porta TCP/UDP exposta.
 - Evitar hospedagens HTTP/serverless comuns para o receptor GPS, pois rastreadores dependem de conexao TCP/UDP e porta configuravel.
 - Custo recorrente principal previsto: chip de dados/M2M por carro.
@@ -51,8 +54,11 @@ O receptor deve ser isolado como modulo/servico proprio para permitir troca futu
 Implementado agora:
 
 - tabelas `veiculos` e `veiculo_localizacoes`;
+- tabela `veiculo_abastecimentos`;
 - seed local com dois veiculos de teste;
 - endpoint admin para ultima localizacao da frota;
+- endpoints admin para registrar/listar abastecimentos;
+- relatorio de frota com km rodados, litros, km/L, custo por km e gasto total;
 - tela inicial de frota no painel administrativo.
 
 Implementar mais a frente:
@@ -62,3 +68,23 @@ Implementar mais a frente:
 - configuracao de IP/porta no rastreador fisico;
 - mapa com tiles reais do OpenStreetMap/Leaflet;
 - historico de percurso e alertas.
+
+## Abastecimento e Consumo
+
+O tecnico deve informar cada abastecimento com:
+
+- veiculo;
+- odometro atual;
+- litros abastecidos;
+- valor total;
+- posto e observacao, quando houver.
+
+O backend calcula automaticamente:
+
+- preco por litro;
+- km rodados entre abastecimentos;
+- media km/L;
+- custo por km;
+- gasto total por veiculo.
+
+Essa regra e importante porque GPS pode estimar deslocamento, mas o consumo financeiro confiavel depende do odometro e do abastecimento real.

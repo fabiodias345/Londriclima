@@ -76,6 +76,7 @@ model Empresa {
   automacoes       AutomacaoAgendada[]
   veiculos          Veiculo[]
   veiculoLocalizacoes VeiculoLocalizacao[]
+  veiculoAbastecimentos VeiculoAbastecimento[]
 
   @@map("empresas")
 }
@@ -96,6 +97,7 @@ model Usuario {
   equipesTecnico Equipe[] @relation("EquipeTecnico")
   ordensComoTecnico OrdemServico[] @relation("OrdemTecnico")
   eventos OrdemServicoEvento[]
+  veiculoAbastecimentos VeiculoAbastecimento[]
 
   @@unique([empresaId, email])
   @@index([empresaId])
@@ -376,9 +378,34 @@ model Veiculo {
 
   empresa Empresa @relation(fields: [empresaId], references: [id])
   localizacoes VeiculoLocalizacao[]
+  abastecimentos VeiculoAbastecimento[]
 
   @@index([empresaId])
   @@map("veiculos")
+}
+
+model VeiculoAbastecimento {
+  id        String   @id @default(uuid()) @db.Uuid
+  empresaId String  @map("empresa_id") @db.Uuid
+  veiculoId String  @map("veiculo_id") @db.Uuid
+  usuarioId String? @map("usuario_id") @db.Uuid
+  odometroKm Decimal @map("odometro_km") @db.Decimal(12, 1)
+  litros Decimal @db.Decimal(10, 3)
+  valorTotal Decimal @map("valor_total") @db.Decimal(12, 2)
+  precoPorLitro Decimal @map("preco_por_litro") @db.Decimal(12, 3)
+  abastecidoEm DateTime @map("abastecido_em")
+  posto String?
+  observacao String?
+  criadoEm DateTime @default(now()) @map("criado_em")
+
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+  veiculo Veiculo @relation(fields: [veiculoId], references: [id])
+  usuario Usuario? @relation(fields: [usuarioId], references: [id])
+
+  @@index([empresaId, abastecidoEm])
+  @@index([veiculoId, abastecidoEm])
+  @@index([veiculoId, odometroKm])
+  @@map("veiculo_abastecimentos")
 }
 
 model VeiculoLocalizacao {
