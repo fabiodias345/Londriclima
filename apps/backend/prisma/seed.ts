@@ -4,6 +4,8 @@ import { promisify } from "node:util";
 
 const prisma = new PrismaClient();
 const ORDEM_SERVICO_TESTE_ID = "55555555-5555-4555-8555-555555555555";
+const VEICULO_1_ID = "66666666-6666-4666-8666-666666666666";
+const VEICULO_2_ID = "77777777-7777-4777-8777-777777777777";
 const scryptAsync = promisify(scrypt);
 
 async function hashPassword(password: string) {
@@ -231,9 +233,83 @@ async function main() {
     }
   });
 
+  await prisma.veiculoLocalizacao.deleteMany({
+    where: {
+      veiculoId: {
+        in: [VEICULO_1_ID, VEICULO_2_ID]
+      }
+    }
+  });
+
+  const veiculo1 = await prisma.veiculo.upsert({
+    where: {
+      id: VEICULO_1_ID
+    },
+    update: {
+      empresaId: empresa.id,
+      nome: "Carro 01 - Manutencao",
+      placa: "LDC1A23",
+      rastreadorImei: "860000000000001",
+      ativo: true
+    },
+    create: {
+      id: VEICULO_1_ID,
+      empresaId: empresa.id,
+      nome: "Carro 01 - Manutencao",
+      placa: "LDC1A23",
+      rastreadorImei: "860000000000001",
+      ativo: true
+    }
+  });
+
+  const veiculo2 = await prisma.veiculo.upsert({
+    where: {
+      id: VEICULO_2_ID
+    },
+    update: {
+      empresaId: empresa.id,
+      nome: "Carro 02 - Instalacao",
+      placa: "LDC2B34",
+      rastreadorImei: "860000000000002",
+      ativo: true
+    },
+    create: {
+      id: VEICULO_2_ID,
+      empresaId: empresa.id,
+      nome: "Carro 02 - Instalacao",
+      placa: "LDC2B34",
+      rastreadorImei: "860000000000002",
+      ativo: true
+    }
+  });
+
+  await prisma.veiculoLocalizacao.createMany({
+    data: [
+      {
+        empresaId: empresa.id,
+        veiculoId: veiculo1.id,
+        latitude: -23.3045,
+        longitude: -51.1696,
+        velocidadeKmh: 32,
+        ignicao: true,
+        registradoEm: new Date()
+      },
+      {
+        empresaId: empresa.id,
+        veiculoId: veiculo2.id,
+        latitude: -23.3278,
+        longitude: -51.1469,
+        velocidadeKmh: 0,
+        ignicao: false,
+        registradoEm: new Date(Date.now() - 7 * 60 * 1000)
+      }
+    ]
+  });
+
   console.log(`Empresa piloto pronta: ${empresa.nome} (${empresa.id})`);
   console.log(`Técnico de teste: ${tecnico.email} / senha ${senhaTecnico} (${tecnico.id})`);
   console.log(`OS de teste aberta: ${ordemServico.id}`);
+  console.log(`Frota de teste pronta: ${veiculo1.nome}, ${veiculo2.nome}`);
 }
 
 main()

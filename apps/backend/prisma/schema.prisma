@@ -74,6 +74,8 @@ model Empresa {
   equipamentos     Equipamento[]
   ordensServico    OrdemServico[]
   automacoes       AutomacaoAgendada[]
+  veiculos          Veiculo[]
+  veiculoLocalizacoes VeiculoLocalizacao[]
 
   @@map("empresas")
 }
@@ -360,4 +362,40 @@ model AutomacaoAgendada {
 
   @@index([empresaId, status, executarEm])
   @@map("automacoes_agendadas")
+}
+
+model Veiculo {
+  id        String   @id @default(uuid()) @db.Uuid
+  empresaId String  @map("empresa_id") @db.Uuid
+  nome      String
+  placa     String?
+  rastreadorImei String? @unique @map("rastreador_imei")
+  ativo     Boolean @default(true)
+  criadoEm  DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+  localizacoes VeiculoLocalizacao[]
+
+  @@index([empresaId])
+  @@map("veiculos")
+}
+
+model VeiculoLocalizacao {
+  id        String   @id @default(uuid()) @db.Uuid
+  empresaId String  @map("empresa_id") @db.Uuid
+  veiculoId String  @map("veiculo_id") @db.Uuid
+  latitude  Decimal  @db.Decimal(10, 7)
+  longitude Decimal  @db.Decimal(10, 7)
+  velocidadeKmh Decimal? @map("velocidade_kmh") @db.Decimal(8, 2)
+  ignicao   Boolean? @map("ignicao")
+  registradoEm DateTime @map("registrado_em")
+  criadoEm DateTime @default(now()) @map("criado_em")
+
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+  veiculo Veiculo @relation(fields: [veiculoId], references: [id])
+
+  @@index([empresaId, registradoEm])
+  @@index([veiculoId, registradoEm])
+  @@map("veiculo_localizacoes")
 }
