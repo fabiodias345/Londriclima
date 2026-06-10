@@ -9,6 +9,7 @@
     "backend:lint": "npm run lint -w apps/backend",
     "backend:prisma:generate": "npm run prisma:generate -w apps/backend",
     "backend:prisma:migrate": "npm run prisma:migrate -w apps/backend",
+    "backend:prisma:seed": "npm run prisma:seed -w apps/backend",
     "docker:up": "docker compose -f infra/docker-compose.yml up -d",
     "docker:down": "docker compose -f infra/docker-compose.yml down",
     "docker:logs": "docker compose -f infra/docker-compose.yml logs -f"

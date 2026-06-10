@@ -8,6 +8,7 @@ O backend usa PostgreSQL com Prisma. O schema inicial já nasce preparado para m
 npm run docker:up
 npm run backend:prisma:generate
 npm run backend:prisma:migrate
+npm run backend:prisma:seed
 ```
 
 ## Decisões
@@ -17,3 +18,4 @@ npm run backend:prisma:migrate
 - Eventos de status guardam horário e GPS por ação do técnico.
 - Evidências antes/depois são únicas por OS.
 - Auxiliar técnico é vínculo operacional da equipe na Fase 1, sem usuário de login.
+- O seed inicial cria a empresa piloto `LondriClima`.
