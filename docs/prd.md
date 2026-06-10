@@ -23,18 +23,14 @@ do setor (refrigeração, solar, construtoras) a partir da Fase 2.
 ```text
 📁 plataforma-londriclima/
 │
-├── README.md                    ← Visão geral do projeto
-├── memoria.md                   ← Contexto, decisões e convenções do projeto
-├── prd.md                       ← Documento de Requisitos do Produto (v1.4.0)
-├── api-spec.md                  ← Especificação parcial da API REST
-└── schema.sql                   ← Pendente: schema do banco de dados PostgreSQL
-
-Módulos planejados para implementação:
-
-├── londriclima-landing/         ← Website institucional público
-├── londriclima-backend/         ← API REST, automações e banco de dados
-├── londriclima-admin/           ← Painel web administrativo
-└── londriclima-mobile/          ← Aplicativo Flutter (Android)
+├── docs/                        ← Documentação do projeto
+├── apps/
+│   ├── backend/                 ← API REST, automações e banco de dados
+│   ├── admin/                   ← Painel web administrativo
+│   ├── landing/                 ← Website institucional público
+│   └── mobile/                  ← Aplicativo Flutter (Android)
+├── infra/                       ← Docker e infraestrutura local
+└── storage/                     ← Arquivos locais de desenvolvimento
 ```
 
 ---
@@ -88,7 +84,7 @@ e motor de recorrência para lembretes preventivos de manutenção.
 | [`memoria.md`](./memoria.md) | Contexto, decisões arquiteturais, convenções e modelo de monetização. |
 | [`prd.md`](./prd.md) | Visão consolidada do produto, escopo do MVP, decisões técnicas e diagrama de estados. |
 | [`api-spec.md`](./api-spec.md) | Especificação parcial dos endpoints REST do fluxo mobile de OS. |
-| `schema.sql` | Pendente: schema completo do PostgreSQL com ENUMs e empresa_id. |
+| [`schema.prisma`](../apps/backend/prisma/schema.prisma) | Schema inicial PostgreSQL/Prisma com ENUMs e `empresa_id`. |
 
 ---
 
@@ -194,8 +190,9 @@ git clone https://github.com/fabiodias345/Londriclima.git
 # 2. Acesse o repositório
 cd plataforma-londriclima
 
-# 3. Inicialize o banco de dados quando schema.sql estiver disponível
-psql -U postgres -f schema.sql
+# 3. Inicialize o banco de dados
+npm run docker:up
+npm run backend:prisma:migrate
 
 # 4. Configure as variáveis de ambiente
 cp .env.example .env
@@ -217,10 +214,10 @@ de inicialização.
 O banco de dados é a dependência raiz de todos os módulos. A sequência
 recomendada é:
 
-1. `londriclima-backend` — Schema, autenticação e endpoints base.
-2. `londriclima-mobile` — Estrutura Flutter + Drift espelhando as tabelas locais.
-3. `londriclima-admin` — Painel conectado à API do backend.
-4. `londriclima-landing` — Website com formulário integrado ao backend.
+1. `apps/backend` — Schema, autenticação e endpoints base.
+2. `apps/mobile` — Estrutura Flutter + Drift espelhando as tabelas locais.
+3. `apps/admin` — Painel conectado à API do backend.
+4. `apps/landing` — Website com formulário integrado ao backend.
 
 ---
 

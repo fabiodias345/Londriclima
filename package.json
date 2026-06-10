@@ -1,0 +1,23 @@
+{
+  "name": "londriclima",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Monorepo da plataforma LondriClima Digital.",
+  "scripts": {
+    "backend:dev": "npm run start:dev -w apps/backend",
+    "backend:build": "npm run build -w apps/backend",
+    "backend:lint": "npm run lint -w apps/backend",
+    "backend:prisma:generate": "npm run prisma:generate -w apps/backend",
+    "backend:prisma:migrate": "npm run prisma:migrate -w apps/backend",
+    "docker:up": "docker compose -f infra/docker-compose.yml up -d",
+    "docker:down": "docker compose -f infra/docker-compose.yml down",
+    "docker:logs": "docker compose -f infra/docker-compose.yml logs -f"
+  },
+  "workspaces": [
+    "apps/backend"
+  ],
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}

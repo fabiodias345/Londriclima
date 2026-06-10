@@ -181,20 +181,16 @@ Gerado automaticamente pelo backend assim que o técnico conclui e sincroniza a 
 
 Para manter o projeto modularizado, centralizado e facilitar o trabalho com agentes de IA, as subpastas locais serão vinculadas como submódulos ou organizadas dentro do repositório principal no GitHub (**https://github.com/fabiodias345/Londriclima.git**).
 
-**Este arquivo `memoria.md` reside atualmente na raiz do repositório, junto com `README.md`, `prd.md` e `api-spec.md`.**
+**Este arquivo `memoria.md` reside em `docs/`, junto com `README.md`, `prd.md` e `api-spec.md`.**
 
 ```text
 📁 plataforma-londriclima/  (Repositório: fabiodias345/Londriclima.git)
 │
-├── README.md                    # Visão geral do projeto
-├── memoria.md                   # Contexto, decisões e convenções
-├── prd.md                       # Requisitos do Produto (v1.4.0)
-├── api-spec.md                  # Especificação parcial da API REST
-└── schema.sql                   # Pendente: schema PostgreSQL
-
-Módulos planejados:
-
-├── londriclima-landing/         # Website institucional público (HTML/Tailwind ou React)
-├── londriclima-backend/         # API centralizada (NestJS ou FastAPI) e banco de dados
-├── londriclima-admin/           # Painel Web Administrativo (React + Tailwind + Recharts)
-└── londriclima-mobile/          # Aplicativo do Técnico em Campo (Flutter + Drift)
+├── docs/                        # Documentação do projeto
+├── apps/
+│   ├── backend/                 # API centralizada NestJS e banco de dados
+│   ├── admin/                   # Painel Web Administrativo (React + Tailwind + Recharts)
+│   ├── landing/                 # Website institucional público
+│   └── mobile/                  # Aplicativo do Técnico em Campo (Flutter + Drift)
+├── infra/                       # Docker e infraestrutura local
+└── storage/                     # Arquivos locais de desenvolvimento

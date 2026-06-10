@@ -1,0 +1,363 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UsuarioRole {
+  admin
+  supervisor
+  tecnico
+}
+
+enum PessoaTipo {
+  pf
+  pj
+}
+
+enum OrdemServicoStatus {
+  pre_chamado
+  rejeitada
+  aberta
+  em_deslocamento
+  em_atendimento
+  cancelada
+  concluida
+}
+
+enum OrdemServicoEventoAcao {
+  criar_pre_chamado
+  aprovar
+  rejeitar
+  iniciar_rota
+  cheguei_cliente
+  cancelar
+  finalizar
+}
+
+enum EvidenciaTipo {
+  antes
+  depois
+}
+
+enum AutomacaoTipo {
+  gerar_pdf
+  enviar_email
+  enviar_whatsapp
+  recorrencia_180_dias
+}
+
+enum AutomacaoStatus {
+  pendente
+  processando
+  concluida
+  falhou
+  cancelada
+}
+
+model Empresa {
+  id        String   @id @default(uuid()) @db.Uuid
+  nome      String
+  cnpj      String?  @unique
+  telefone  String?
+  email     String?
+  ativa     Boolean  @default(true)
+  criadoEm  DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  usuarios         Usuario[]
+  equipes          Equipe[]
+  clientes         Cliente[]
+  equipamentos     Equipamento[]
+  ordensServico    OrdemServico[]
+  automacoes       AutomacaoAgendada[]
+
+  @@map("empresas")
+}
+
+model Usuario {
+  id        String      @id @default(uuid()) @db.Uuid
+  empresaId String     @map("empresa_id") @db.Uuid
+  nome      String
+  email     String
+  senhaHash String     @map("senha_hash")
+  role      UsuarioRole
+  ativo     Boolean    @default(true)
+  ultimoLoginEm DateTime? @map("ultimo_login_em")
+  criadoEm  DateTime   @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+  equipesTecnico Equipe[] @relation("EquipeTecnico")
+  ordensComoTecnico OrdemServico[] @relation("OrdemTecnico")
+  eventos OrdemServicoEvento[]
+
+  @@unique([empresaId, email])
+  @@index([empresaId])
+  @@map("usuarios")
+}
+
+model Equipe {
+  id        String   @id @default(uuid()) @db.Uuid
+  empresaId String  @map("empresa_id") @db.Uuid
+  nome      String
+  tecnicoId String? @map("tecnico_id") @db.Uuid
+  ativa     Boolean @default(true)
+  criadoEm  DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+  tecnico Usuario? @relation("EquipeTecnico", fields: [tecnicoId], references: [id])
+  auxiliares EquipeAuxiliar[]
+  ordensServico OrdemServico[]
+
+  @@index([empresaId])
+  @@map("equipes")
+}
+
+model EquipeAuxiliar {
+  id        String   @id @default(uuid()) @db.Uuid
+  empresaId String  @map("empresa_id") @db.Uuid
+  equipeId  String  @map("equipe_id") @db.Uuid
+  nome      String
+  telefone  String?
+  ativo     Boolean @default(true)
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  equipe Equipe @relation(fields: [equipeId], references: [id])
+
+  @@index([empresaId])
+  @@index([equipeId])
+  @@map("equipe_auxiliares")
+}
+
+model Cliente {
+  id        String     @id @default(uuid()) @db.Uuid
+  empresaId String    @map("empresa_id") @db.Uuid
+  tipo      PessoaTipo
+  nome      String
+  documento String?
+  email     String?
+  telefone  String?
+  criadoEm  DateTime  @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+  enderecos ClienteEndereco[]
+  equipamentos Equipamento[]
+  ordensServico OrdemServico[]
+
+  @@index([empresaId])
+  @@index([empresaId, documento])
+  @@map("clientes")
+}
+
+model ClienteEndereco {
+  id        String   @id @default(uuid()) @db.Uuid
+  empresaId String  @map("empresa_id") @db.Uuid
+  clienteId String  @map("cliente_id") @db.Uuid
+  nome      String?
+  logradouro String
+  numero    String?
+  complemento String?
+  bairro    String?
+  cidade    String
+  uf        String
+  cep       String?
+  latitude  Decimal? @db.Decimal(10, 7)
+  longitude Decimal? @db.Decimal(10, 7)
+  principal Boolean  @default(false)
+  criadoEm  DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  cliente Cliente @relation(fields: [clienteId], references: [id])
+  ordensServico OrdemServico[]
+
+  @@index([empresaId])
+  @@index([clienteId])
+  @@map("cliente_enderecos")
+}
+
+model Equipamento {
+  id        String   @id @default(uuid()) @db.Uuid
+  empresaId String  @map("empresa_id") @db.Uuid
+  clienteId String  @map("cliente_id") @db.Uuid
+  marca     String
+  modelo    String
+  capacidadeBtu Int? @map("capacidade_btu")
+  numeroSerie String? @map("numero_serie")
+  localInstalacao String? @map("local_instalacao")
+  criadoEm  DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+  cliente Cliente @relation(fields: [clienteId], references: [id])
+  ordensServico OrdemServico[]
+
+  @@index([empresaId])
+  @@index([clienteId])
+  @@map("equipamentos")
+}
+
+model OrdemServico {
+  id        String   @id @default(uuid()) @db.Uuid
+  empresaId String  @map("empresa_id") @db.Uuid
+  clienteId String  @map("cliente_id") @db.Uuid
+  enderecoId String? @map("endereco_id") @db.Uuid
+  equipamentoId String? @map("equipamento_id") @db.Uuid
+  equipeId  String? @map("equipe_id") @db.Uuid
+  tecnicoId String? @map("tecnico_id") @db.Uuid
+  status    OrdemServicoStatus @default(pre_chamado)
+  titulo    String
+  problemaRelatado String? @map("problema_relatado")
+  agendadaPara DateTime? @map("agendada_para")
+  valorCobrado Decimal? @map("valor_cobrado") @db.Decimal(12, 2)
+  criadaEm  DateTime @default(now()) @map("criada_em")
+  atualizadaEm DateTime @updatedAt @map("atualizada_em")
+  concluidaEm DateTime? @map("concluida_em")
+
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+  cliente Cliente @relation(fields: [clienteId], references: [id])
+  endereco ClienteEndereco? @relation(fields: [enderecoId], references: [id])
+  equipamento Equipamento? @relation(fields: [equipamentoId], references: [id])
+  equipe Equipe? @relation(fields: [equipeId], references: [id])
+  tecnico Usuario? @relation("OrdemTecnico", fields: [tecnicoId], references: [id])
+  eventos OrdemServicoEvento[]
+  evidencias OrdemServicoEvidencia[]
+  checklist OrdemServicoChecklist?
+  assinatura OrdemServicoAssinatura?
+  observacoes OrdemServicoObservacao[]
+  automacoes AutomacaoAgendada[]
+
+  @@index([empresaId, status])
+  @@index([empresaId, agendadaPara])
+  @@index([clienteId])
+  @@map("ordens_servico")
+}
+
+model OrdemServicoEvento {
+  id        String   @id @default(uuid()) @db.Uuid
+  empresaId String  @map("empresa_id") @db.Uuid
+  ordemServicoId String @map("ordem_servico_id") @db.Uuid
+  usuarioId String? @map("usuario_id") @db.Uuid
+  acao      OrdemServicoEventoAcao
+  statusAnterior OrdemServicoStatus? @map("status_anterior")
+  statusNovo OrdemServicoStatus @map("status_novo")
+  latitude  Decimal? @db.Decimal(10, 7)
+  longitude Decimal? @db.Decimal(10, 7)
+  registradoEm DateTime @map("registrado_em")
+  criadoEm DateTime @default(now()) @map("criado_em")
+
+  ordemServico OrdemServico @relation(fields: [ordemServicoId], references: [id])
+  usuario Usuario? @relation(fields: [usuarioId], references: [id])
+
+  @@index([empresaId])
+  @@index([ordemServicoId])
+  @@map("ordem_servico_eventos")
+}
+
+model OrdemServicoEvidencia {
+  id        String   @id @default(uuid()) @db.Uuid
+  empresaId String  @map("empresa_id") @db.Uuid
+  ordemServicoId String @map("ordem_servico_id") @db.Uuid
+  tipo      EvidenciaTipo
+  descricao String
+  storageUrl String @map("storage_url")
+  mimeType String? @map("mime_type")
+  tamanhoBytes Int? @map("tamanho_bytes")
+  criadoEm DateTime @default(now()) @map("criado_em")
+
+  ordemServico OrdemServico @relation(fields: [ordemServicoId], references: [id])
+
+  @@unique([ordemServicoId, tipo])
+  @@index([empresaId])
+  @@map("ordem_servico_evidencias")
+}
+
+model OrdemServicoChecklist {
+  id        String   @id @default(uuid()) @db.Uuid
+  empresaId String  @map("empresa_id") @db.Uuid
+  ordemServicoId String @unique @map("ordem_servico_id") @db.Uuid
+  servicoRealizado String @map("servico_realizado")
+  procedimentos String[]
+  custoTotalPecas Decimal @default(0) @map("custo_total_pecas") @db.Decimal(12, 2)
+  criadoEm DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  ordemServico OrdemServico @relation(fields: [ordemServicoId], references: [id])
+  pecas OrdemServicoPeca[]
+
+  @@index([empresaId])
+  @@map("ordem_servico_checklists")
+}
+
+model OrdemServicoPeca {
+  id        String   @id @default(uuid()) @db.Uuid
+  empresaId String  @map("empresa_id") @db.Uuid
+  checklistId String @map("checklist_id") @db.Uuid
+  descricaoPeca String @map("descricao_peca")
+  quantidade Int
+  custoUnitario Decimal @map("custo_unitario") @db.Decimal(12, 2)
+  criadoEm DateTime @default(now()) @map("criado_em")
+
+  checklist OrdemServicoChecklist @relation(fields: [checklistId], references: [id])
+
+  @@index([empresaId])
+  @@index([checklistId])
+  @@map("ordem_servico_pecas")
+}
+
+model OrdemServicoAssinatura {
+  id        String   @id @default(uuid()) @db.Uuid
+  empresaId String  @map("empresa_id") @db.Uuid
+  ordemServicoId String @unique @map("ordem_servico_id") @db.Uuid
+  nomeResponsavel String @map("nome_responsavel")
+  storageUrl String @map("storage_url")
+  latitude Decimal @db.Decimal(10, 7)
+  longitude Decimal @db.Decimal(10, 7)
+  assinadoEm DateTime @map("assinado_em")
+  criadoEm DateTime @default(now()) @map("criado_em")
+
+  ordemServico OrdemServico @relation(fields: [ordemServicoId], references: [id])
+
+  @@index([empresaId])
+  @@map("ordem_servico_assinaturas")
+}
+
+model OrdemServicoObservacao {
+  id        String   @id @default(uuid()) @db.Uuid
+  empresaId String  @map("empresa_id") @db.Uuid
+  ordemServicoId String @map("ordem_servico_id") @db.Uuid
+  texto     String
+  visivelNoRelatorio Boolean @default(false) @map("visivel_no_relatorio")
+  criadoEm DateTime @default(now()) @map("criado_em")
+
+  ordemServico OrdemServico @relation(fields: [ordemServicoId], references: [id])
+
+  @@index([empresaId])
+  @@index([ordemServicoId])
+  @@map("ordem_servico_observacoes")
+}
+
+model AutomacaoAgendada {
+  id        String   @id @default(uuid()) @db.Uuid
+  empresaId String  @map("empresa_id") @db.Uuid
+  ordemServicoId String? @map("ordem_servico_id") @db.Uuid
+  tipo      AutomacaoTipo
+  status    AutomacaoStatus @default(pendente)
+  executarEm DateTime @map("executar_em")
+  payload   Json?
+  tentativas Int @default(0)
+  erroUltimaTentativa String? @map("erro_ultima_tentativa")
+  criadoEm DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+  ordemServico OrdemServico? @relation(fields: [ordemServicoId], references: [id])
+
+  @@index([empresaId, status, executarEm])
+  @@map("automacoes_agendadas")
+}
