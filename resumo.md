@@ -14,9 +14,15 @@ site -> pre-chamado -> painel admin -> OS -> tecnico -> evidencias/checklist/GPS
 
 - Dominio oficial: `airmovebr.com.br`.
 - VM Locaweb Cloud criada: Ubuntu 24.04.3 LTS, IP `191.252.226.11`.
+- Deploy na VM em `/opt/airmovebr/repo`.
 - Acesso SSH por chave com comentario `fabiodias@uel.br`.
 - Usuario operacional criado: `airmovebr`.
 - Firewall UFW ativo: 22, 80 e 443 liberadas na VM.
+- Firewall/rede Locaweb ativo com entrada publica TCP 22, 80 e 443.
+- Encaminhamento Locaweb:
+  - `22 -> airmovebr-prod (10.1.1.37)`
+  - `80 -> airmovebr-prod (10.1.1.37)`
+  - `443 -> airmovebr-prod (10.1.1.37)`
 - Docker e Docker Compose instalados e testados.
 - PostgreSQL rodando em Docker e `healthy`.
 - Backend NestJS rodando em Docker.
@@ -86,11 +92,11 @@ Backend health interno OK
 d586740 feat: prepare airmovebr production deploy
 ```
 
-`dev` e `main` estao sincronizadas no GitHub ate `0b9af81`.
+`dev` e `main` estao sincronizadas no GitHub ate `a267580`.
 
 ## Bloqueio Atual
 
-O codigo e a VM estao prontos para publicar, mas o DNS/porta publica ainda nao estao finalizados.
+O codigo, a VM e a rede publica estao prontos para publicar. O bloqueio restante e DNS.
 
 Estado visto:
 
@@ -100,7 +106,12 @@ api.airmovebr.com.br -> nao existe
 admin.airmovebr.com.br -> nao existe
 ```
 
-Teste externo no IP `191.252.226.11` em HTTP deu timeout. Provavel pendencia: firewall/rede da Locaweb alem do UFW da VM.
+Teste externo no IP `191.252.226.11`:
+
+```text
+80  -> True
+443 -> True
+```
 
 Caddy foi parado temporariamente para evitar tentativas repetidas de certificado antes do DNS correto.
 
@@ -114,15 +125,7 @@ admin.airmovebr.com.br -> 191.252.226.11
 api.airmovebr.com.br   -> 191.252.226.11
 ```
 
-2. No painel/rede da Locaweb, liberar entrada publica TCP:
-
-```text
-22
-80
-443
-```
-
-3. Testar propagacao:
+2. Testar propagacao:
 
 ```text
 Resolve-DnsName airmovebr.com.br
@@ -130,13 +133,14 @@ Resolve-DnsName admin.airmovebr.com.br
 Resolve-DnsName api.airmovebr.com.br
 ```
 
-4. Subir Caddy:
+3. Subir Caddy:
 
 ```text
+cd /opt/airmovebr/repo
 docker compose --env-file .env.production -f infra/docker-compose.prod.example.yml up -d caddy
 ```
 
-5. Validar HTTPS:
+4. Validar HTTPS:
 
 ```text
 https://airmovebr.com.br
@@ -144,7 +148,7 @@ https://admin.airmovebr.com.br
 https://api.airmovebr.com.br/api/v1/health
 ```
 
-6. Depois do HTTPS OK:
+5. Depois do HTTPS OK:
    - testar login admin;
    - criar pre-chamado pela landing;
    - aprovar/rejeitar pre-chamado;
