@@ -1,0 +1,20 @@
+{
+	email admin@airmovebr.com.br
+}
+
+airmovebr.com.br {
+	root * /srv/landing
+	file_server
+	encode gzip
+}
+
+admin.airmovebr.com.br {
+	root * /srv/admin
+	file_server
+	encode gzip
+}
+
+api.airmovebr.com.br {
+	reverse_proxy backend:3000
+	encode gzip
+}

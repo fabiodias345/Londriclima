@@ -1,8 +1,8 @@
-# 📑 memoria.md — Plataforma LondriClima (v1.4.0)
+# 📑 memoria.md — Plataforma AIRMOVEBR (v1.4.0)
 
 ## Contexto do Projeto
 
-Cliente piloto: LondriClima (londriclima.com.br)
+Cliente piloto: AIRMOVEBR (airmovebr.com.br)
 Segmento: Refrigeração, climatização, ar-condicionado — Londrina, PR.
 Objetivo: Substituir o site atual (desatualizado) por uma plataforma integrada que profissionalize a operação e sirva de produto (SaaS Multi-Tenant) para vender a outras empresas do setor (refrigeração, solar, construtoras) no futuro.
 
@@ -14,13 +14,13 @@ Restrição principal da fase 1: Uma única empresa pagando, custo mínimo de in
 
 Para que o sistema seja sustentável e escalável desde o cliente piloto, o modelo de monetização foi estruturado da seguinte forma:
 
-- **Fase 1 (LondriClima - Piloto):** Modelo de **Mensalidade Fixa de Infraestrutura + Suporte** (Valor enxuto para cobrir custos de servidores, banco de dados e APIs, servindo como laboratório de validação).
+- **Fase 1 (AIRMOVEBR - Piloto):** Modelo de **Mensalidade Fixa de Infraestrutura + Suporte** (Valor enxuto para cobrir custos de servidores, banco de dados e APIs, servindo como laboratório de validação).
 - **Fase 2 (Escalabilidade SaaS para Mercado):** Modelo baseado em **Mensalidade por Licença de Usuário/Técnico Ativo** ou **Pacotes por Volume de Ordens de Serviço (OS) geradas**. 
 *Nota de Arquitetura:* O sistema deve registrar e contabilizar o volume de OS e usuários ativos por `empresa_id` para permitir faturamento automatizado no futuro.
 
 ---
 
-## Problema Atual da LondriClima
+## Problema Atual da AIRMOVEBR
 
 - Site sem conversão e sem identidade profissional.
 - Sem controle centralizado da equipe em campo.
@@ -127,7 +127,7 @@ Gerado automaticamente pelo backend assim que o técnico conclui e sincroniza a 
 - **Envio Automático:**
   - E-mail transacional ao cliente com o PDF anexado (com cópia oculta para a empresa).
   - Mensagem automática via WhatsApp ao cliente:
-    *"Olá! Obrigado por escolher a LondriClima. O relatório completo do serviço realizado hoje foi enviado para o seu e-mail. Qualquer dúvida, estamos à disposição. Até logo!"*
+    *"Olá! Obrigado por escolher a AIRMOVEBR. O relatório completo do serviço realizado hoje foi enviado para o seu e-mail. Qualquer dúvida, estamos à disposição. Até logo!"*
 
 ### 5. Automação de WhatsApp
 
@@ -158,7 +158,7 @@ Gerado automaticamente pelo backend assim que o técnico conclui e sincroniza a 
 | **Geração de PDF** | Puppeteer (Node) ou WeasyPrint (Python) | Renderização precisa de relatórios HTML para PDF no servidor. |
 | **E-mail** | Resend ou SendGrid | Entrega de e-mails transacionais direta na caixa de entrada (Free Tier). |
 | **WhatsApp API** | Evolution API ou Z-API | **Nota de Risco de Escalar:** Soluções baseadas em WhatsApp Web espelhado reduzem custos drasticamente no MVP, mas possuem risco de banimento caso o volume de disparos cresça agressivamente. A arquitetura deve isolar o módulo de mensageria para facilitar a migração futura para a API Oficial Cloud da Meta quando o sistema virar SaaS. |
-| **Infraestrutura** | Google Cloud (Cloud Run + Cloud SQL) | Hospedagem moderna, escalável e de baixo custo. |
+| **Infraestrutura** | VM Locaweb Cloud Medium + dominio `airmovebr.com.br` | Decisao atual para o MVP, com Ubuntu 24.04, Docker, PostgreSQL e manutencao limpa. |
 | **Repositório Central** | GitHub Privado | https://github.com/fabiodias345/Londriclima.git |
 | **Editor** | VS Code | Ambiente de desenvolvimento unificado. |
 
@@ -168,7 +168,7 @@ Gerado automaticamente pelo backend assim que o técnico conclui e sincroniza a 
 
 | Item | Estimativa | Observação |
 | :--- | :--- | :--- |
-| **Servidor & Banco de Dados** | R$ 0 a R$ 100 | Cloud Run / Supabase / Render (Aproveitando Free Tiers) |
+| **Servidor & Banco de Dados** | R$ 85+ no MVP | VM Locaweb Cloud Medium com IP publico; snapshot/backup pode gerar custo adicional |
 | **Storage de Fotos** | R$ 0 a R$ 30 | Cobrado por GB armazenado (Compressão agressiva de imagens) |
 | **Instância API WhatsApp** | R$ 50 a R$ 90 | Hospedagem VPS própria para rodar a Evolution API |
 | **E-mail Transacional** | R$ 0 | Limite gratuito do Resend/SendGrid atende o MVP |
@@ -184,7 +184,7 @@ Para manter o projeto modularizado, centralizado e facilitar o trabalho com agen
 **Este arquivo `memoria.md` reside em `docs/`, junto com `README.md`, `prd.md` e `api-spec.md`.**
 
 ```text
-📁 plataforma-londriclima/  (Repositório: fabiodias345/Londriclima.git)
+📁 plataforma-airmovebr/  (Repositório: fabiodias345/Londriclima.git)
 │
 ├── docs/                        # Documentação do projeto
 ├── apps/

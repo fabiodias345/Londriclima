@@ -1,14 +1,14 @@
-# LondriClima Digital — Plataforma FSM
+# AIRMOVEBR Digital — Plataforma FSM
 
 > Plataforma integrada de gestão de serviços em campo (Field Service Management)
 > desenvolvida para empresas de refrigeração e climatização.
-> Cliente piloto: **LondriClima** — Londrina, PR.
+> Cliente piloto: **AIRMOVEBR** — Londrina, PR.
 
 ---
 
 ## Visão Geral
 
-O **LondriClima Digital** substitui processos manuais por uma operação
+O **AIRMOVEBR Digital** substitui processos manuais por uma operação
 digitalizada de ponta a ponta: do agendamento pelo site até o relatório
 técnico enviado automaticamente ao cliente após o serviço.
 
@@ -21,7 +21,7 @@ do setor (refrigeração, solar, construtoras) a partir da Fase 2.
 ## Estrutura do Repositório
 
 ```text
-📁 plataforma-londriclima/
+📁 plataforma-airmovebr/
 │
 ├── docs/                        ← Documentação do projeto
 ├── apps/
@@ -73,7 +73,7 @@ e motor de recorrência para lembretes preventivos de manutenção.
 | Geração de PDF | Puppeteer (Node) ou WeasyPrint (Python) |
 | E-mail | Resend ou SendGrid |
 | WhatsApp | Evolution API (isolada via padrão Strategy) |
-| Infra | Google Cloud (Cloud Run + Cloud SQL) |
+| Infra | VM Locaweb Cloud Medium com Ubuntu 24.04, usando `airmovebr.com.br` |
 
 ---
 
@@ -177,6 +177,8 @@ completo do servidor. Nenhum dado parcial é marcado como sincronizado.
 | Chips M2M dos rastreadores | R$ 15 por veículo |
 | **Total estimado** | **< R$ 250 / mês** |
 
+Observacao atual: Turbo Cloud/cPanel foi descartado para o sistema completo. Para o MVP, a decisao e usar VM Locaweb Cloud Medium com Ubuntu 24.04 e o dominio `airmovebr.com.br`. Ver `docs/implantacao-producao.md`.
+
 ---
 
 ## Como Começar (Ambiente Local)
@@ -185,10 +187,10 @@ Pré-requisitos: Docker, PostgreSQL e Node.js ou Python instalados.
 
 ```bash
 # 1. Clone o repositório principal
-git clone https://github.com/fabiodias345/Londriclima.git
+git clone https://github.com/fabiodias345/Londriclima.git plataforma-airmovebr
 
 # 2. Acesse o repositório
-cd plataforma-londriclima
+cd plataforma-airmovebr
 
 # 3. Inicialize o banco de dados
 npm run docker:up

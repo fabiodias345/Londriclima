@@ -1,8 +1,17 @@
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
-import { AutomacaoStatus, OrdemServicoEventoAcao, OrdemServicoStatus, Prisma } from "@prisma/client";
+import {
+  AutomacaoStatus,
+  OrdemServicoEventoAcao,
+  OrdemServicoStatus,
+  PessoaTipo,
+  Prisma,
+  UsuarioRole
+} from "@prisma/client";
 import { PrismaService } from "../../database/prisma.service";
 import { AuthenticatedUser } from "../auth/auth-user";
+import { AprovarPreChamadoDto } from "./dto/aprovar-pre-chamado.dto";
 import { CriarAbastecimentoDto } from "./dto/criar-abastecimento.dto";
+import { SalvarClienteDto } from "./dto/salvar-cliente.dto";
 
 const STATUS_OS_OPERACIONAIS: OrdemServicoStatus[] = [
   OrdemServicoStatus.aberta,
@@ -58,6 +67,56 @@ export class AdminService {
         cliente: ordem.cliente,
         endereco: ordem.endereco
       }))
+    };
+  }
+
+  async listarOpcoesDespacho(usuario: AuthenticatedUser) {
+    const [equipes, tecnicos] = await Promise.all([
+      this.prisma.equipe.findMany({
+        where: {
+          empresaId: usuario.empresa_id,
+          ativa: true
+        },
+        orderBy: {
+          nome: "asc"
+        },
+        select: {
+          id: true,
+          nome: true,
+          tecnico: {
+            select: {
+              id: true,
+              nome: true
+            }
+          }
+        }
+      }),
+      this.prisma.usuario.findMany({
+        where: {
+          empresaId: usuario.empresa_id,
+          ativo: true,
+          role: {
+            in: [UsuarioRole.admin, UsuarioRole.supervisor, UsuarioRole.tecnico]
+          }
+        },
+        orderBy: {
+          nome: "asc"
+        },
+        select: {
+          id: true,
+          nome: true,
+          role: true
+        }
+      })
+    ]);
+
+    return {
+      equipes: equipes.map((equipe) => ({
+        id: equipe.id,
+        nome: equipe.nome,
+        tecnico: equipe.tecnico
+      })),
+      tecnicos
     };
   }
 
@@ -387,9 +446,14 @@ export class AdminService {
           },
           take: 1,
           select: {
+            id: true,
+            logradouro: true,
+            numero: true,
+            complemento: true,
             bairro: true,
             cidade: true,
-            uf: true
+            uf: true,
+            cep: true
           }
         },
         equipamentos: {
@@ -424,6 +488,80 @@ export class AdminService {
         ).length
       }))
     };
+  }
+
+  async criarCliente(dto: SalvarClienteDto, usuario: AuthenticatedUser) {
+    const cliente = await this.prisma.$transaction(async (tx) => {
+      const criado = await tx.cliente.create({
+        data: this.montarClienteData(dto, usuario.empresa_id),
+        select: {
+          id: true
+        }
+      });
+
+      if (dto.logradouro && dto.cidade && dto.uf) {
+        await tx.clienteEndereco.create({
+          data: this.montarEnderecoData(dto, usuario.empresa_id, criado.id)
+        });
+      }
+
+      return criado;
+    });
+
+    return this.obterClientePorId(cliente.id, usuario);
+  }
+
+  async atualizarCliente(clienteId: string, dto: SalvarClienteDto, usuario: AuthenticatedUser) {
+    const clienteExiste = await this.prisma.cliente.findFirst({
+      where: {
+        id: clienteId,
+        empresaId: usuario.empresa_id
+      },
+      select: {
+        id: true
+      }
+    });
+
+    if (!clienteExiste) {
+      throw new NotFoundException("Cliente nao encontrado.");
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.cliente.update({
+        where: {
+          id: clienteId
+        },
+        data: this.montarClienteData(dto, usuario.empresa_id)
+      });
+
+      if (dto.logradouro && dto.cidade && dto.uf) {
+        const enderecoPrincipal = await tx.clienteEndereco.findFirst({
+          where: {
+            clienteId,
+            empresaId: usuario.empresa_id,
+            principal: true
+          },
+          select: {
+            id: true
+          }
+        });
+
+        if (enderecoPrincipal) {
+          await tx.clienteEndereco.update({
+            where: {
+              id: enderecoPrincipal.id
+            },
+            data: this.montarEnderecoData(dto, usuario.empresa_id, clienteId, false)
+          });
+        } else {
+          await tx.clienteEndereco.create({
+            data: this.montarEnderecoData(dto, usuario.empresa_id, clienteId)
+          });
+        }
+      }
+    });
+
+    return this.obterClientePorId(clienteId, usuario);
   }
 
   async obterRelatorios(usuario: AuthenticatedUser) {
@@ -481,12 +619,13 @@ export class AdminService {
     };
   }
 
-  async aprovarPreChamado(osId: string, usuario: AuthenticatedUser) {
+  async aprovarPreChamado(osId: string, usuario: AuthenticatedUser, dto: AprovarPreChamadoDto = {}) {
     return this.atualizarStatusPreChamado({
       osId,
       usuario,
       acao: OrdemServicoEventoAcao.aprovar,
-      statusNovo: OrdemServicoStatus.aberta
+      statusNovo: OrdemServicoStatus.aberta,
+      dto
     });
   }
 
@@ -504,6 +643,7 @@ export class AdminService {
     usuario: AuthenticatedUser;
     acao: OrdemServicoEventoAcao;
     statusNovo: OrdemServicoStatus;
+    dto?: AprovarPreChamadoDto;
   }) {
     const resultado = await this.prisma.$transaction(async (tx) => {
       const ordem = await tx.ordemServico.findUnique({
@@ -525,13 +665,65 @@ export class AdminService {
         throw new ConflictException("Somente pré-chamados pendentes podem ser atualizados.");
       }
 
+      if (input.dto?.equipe_id) {
+        const equipe = await tx.equipe.findFirst({
+          where: {
+            id: input.dto.equipe_id,
+            empresaId: input.usuario.empresa_id,
+            ativa: true
+          },
+          select: {
+            id: true
+          }
+        });
+
+        if (!equipe) {
+          throw new NotFoundException("Equipe nao encontrada.");
+        }
+      }
+
+      if (input.dto?.tecnico_id) {
+        const tecnico = await tx.usuario.findFirst({
+          where: {
+            id: input.dto.tecnico_id,
+            empresaId: input.usuario.empresa_id,
+            ativo: true
+          },
+          select: {
+            id: true
+          }
+        });
+
+        if (!tecnico) {
+          throw new NotFoundException("Tecnico nao encontrado.");
+        }
+      }
+
+      const updateData: Prisma.OrdemServicoUncheckedUpdateInput = {
+        status: input.statusNovo
+      };
+
+      if (input.dto?.agendada_para) {
+        updateData.agendadaPara = new Date(input.dto.agendada_para);
+      }
+
+      if (input.dto?.equipe_id) {
+        updateData.equipeId = input.dto.equipe_id;
+      }
+
+      if (input.dto?.tecnico_id) {
+        updateData.tecnicoId = input.dto.tecnico_id;
+      }
+
+      if (input.dto?.valor_cobrado !== undefined) {
+        updateData.valorCobrado = new Prisma.Decimal(input.dto.valor_cobrado);
+      }
+
       const ordemAtualizada = await tx.ordemServico.update({
         where: {
           id: input.osId
         },
-        data: {
-          status: input.statusNovo
-        },
+        data: updateData,
         select: {
           id: true,
           status: true,
@@ -558,6 +750,87 @@ export class AdminService {
       os_id: resultado.id,
       status: resultado.status,
       atualizado_em: resultado.atualizadaEm.toISOString()
+    };
+  }
+
+  private montarClienteData(dto: SalvarClienteDto, empresaId: string): Prisma.ClienteUncheckedCreateInput {
+    return {
+      empresaId,
+      tipo: dto.tipo === "pj" ? PessoaTipo.pj : PessoaTipo.pf,
+      nome: dto.nome.trim(),
+      documento: dto.documento?.trim() || null,
+      email: dto.email?.trim() || null,
+      telefone: dto.telefone?.trim() || null
+    };
+  }
+
+  private montarEnderecoData(
+    dto: SalvarClienteDto,
+    empresaId: string,
+    clienteId: string,
+    incluirPrincipal = true
+  ): Prisma.ClienteEnderecoUncheckedCreateInput {
+    return {
+      empresaId,
+      clienteId,
+      nome: "Principal",
+      logradouro: dto.logradouro?.trim() || "",
+      numero: dto.numero?.trim() || null,
+      complemento: dto.complemento?.trim() || null,
+      bairro: dto.bairro?.trim() || null,
+      cidade: dto.cidade?.trim() || "",
+      uf: dto.uf?.trim().toUpperCase() || "PR",
+      cep: dto.cep?.trim() || null,
+      principal: incluirPrincipal
+    };
+  }
+
+  private async obterClientePorId(clienteId: string, usuario: AuthenticatedUser) {
+    const cliente = await this.prisma.cliente.findFirst({
+      where: {
+        id: clienteId,
+        empresaId: usuario.empresa_id
+      },
+      select: {
+        id: true,
+        nome: true,
+        tipo: true,
+        documento: true,
+        telefone: true,
+        email: true,
+        atualizadoEm: true,
+        enderecos: {
+          orderBy: {
+            principal: "desc"
+          },
+          take: 1,
+          select: {
+            id: true,
+            logradouro: true,
+            numero: true,
+            complemento: true,
+            bairro: true,
+            cidade: true,
+            uf: true,
+            cep: true
+          }
+        }
+      }
+    });
+
+    if (!cliente) {
+      throw new NotFoundException("Cliente nao encontrado.");
+    }
+
+    return {
+      id: cliente.id,
+      nome: cliente.nome,
+      tipo: cliente.tipo,
+      documento: cliente.documento,
+      telefone: cliente.telefone,
+      email: cliente.email,
+      atualizado_em: cliente.atualizadoEm.toISOString(),
+      endereco: cliente.enderecos[0] ?? null
     };
   }
 }

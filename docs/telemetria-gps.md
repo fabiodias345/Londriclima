@@ -2,9 +2,11 @@
 
 ## Decisao
 
-Decisao registrada em 10/06/2026: para a frota inicial da LondriClima, estimada em 5 a 6 carros, a plataforma devera evitar mensalidade de rastreamento por veiculo em plataformas externas.
+Decisao registrada em 10/06/2026: para a frota inicial da AIRMOVEBR, estimada em 5 a 6 carros, a plataforma devera evitar mensalidade de rastreamento por veiculo em plataformas externas.
 
 A direcao aprovada e implementar, em fase futura, um receptor proprio de GPS/telemetria em VPS Linux, capaz de receber pacotes TCP/UDP dos rastreadores fisicos dos carros.
+
+Atualizacao de infraestrutura: o MVP sera implantado em VM propria na Locaweb Cloud. A preferencia e usar essa maquina tambem para o receptor GPS futuro, desde que a rede/firewall permita expor portas TCP/UDP customizadas com controle adequado.
 
 Exemplos de rastreadores-alvo:
 

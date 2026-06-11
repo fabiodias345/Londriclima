@@ -1,11 +1,11 @@
-# LondriClima Digital
+# AIRMOVEBR Digital
 
-Monorepo da plataforma LondriClima Digital, uma solução FSM para gestão de serviços de refrigeração e climatização em campo.
+Monorepo da plataforma AIRMOVEBR Digital, uma solução FSM para gestão de serviços de refrigeração e climatização em campo.
 
 ## Estrutura
 
 ```text
-Londriclima/
+AIRMOVEBR/
 ├── docs/                 # Documentação de produto, memória e API
 ├── apps/
 │   ├── backend/          # API REST, automações e banco de dados
@@ -24,6 +24,7 @@ Londriclima/
 - [Memória do projeto](./docs/memoria.md)
 - [PRD](./docs/prd.md)
 - [API Spec parcial](./docs/api-spec.md)
+- [Implantacao em producao](./docs/implantacao-producao.md)
 
 ## Começo do Desenvolvimento
 

@@ -1,10 +1,10 @@
-# Resumo do Projeto LondriClima
+# Resumo do Projeto AIRMOVEBR
 
-Atualizado em: 10/06/2026
+Atualizado em: 11/06/2026
 
 ## Objetivo
 
-Construir a plataforma digital da LondriClima como cliente piloto, mas com arquitetura preparada para virar SaaS multi-tenant para empresas com operacao em campo.
+Construir a plataforma digital da AIRMOVEBR como cliente piloto, mas com arquitetura preparada para virar SaaS multi-tenant para empresas com operacao em campo.
 
 O produto nao e apenas um site. E um sistema de gestao de servicos externos:
 
@@ -201,6 +201,24 @@ Decisao importante documentada em `docs/telemetria-gps.md`:
 - custo principal previsto: chip de dados/M2M por carro;
 - rastreadores alvo: SinoTrack, Coban, Concox ou similares.
 
+### Implantacao / Producao
+
+Decisao registrada em `docs/implantacao-producao.md`:
+
+- Turbo Cloud/cPanel foi descartado para o sistema completo;
+- o MVP sera implantado em VM propria na Locaweb Cloud;
+- plano contratado: Medium, 2 vCPU, 4 GB RAM, 80 GB SSD;
+- sistema: Ubuntu 24.04.3 LTS;
+- IP publico: `191.252.226.11`;
+- usuario inicial: `root`;
+- acesso SSH por chave ja configurado;
+- dominio aprovado: `airmovebr.com.br`;
+- sugestao de URLs:
+  - `airmovebr.com.br` para landing/site publico;
+  - `admin.airmovebr.com.br` para painel administrativo;
+  - `api.airmovebr.com.br` para backend;
+- producao deve subir com HTTPS, firewall, secrets fortes, banco sem acesso publico direto e backup automatico.
+
 ## Como rodar localmente
 
 ### Banco
@@ -336,14 +354,17 @@ Atualizado `docs/telemetria-gps.md` com:
 
 Prioridade sugerida:
 
-1. Aplicar a migration `20260610110000_add_vehicle_fuelings` no banco local/producao.
-2. Rodar o seed atualizado para demonstracao com carros separados e abastecimentos.
-3. Melhorar aprovacao de pre-chamado para definir agenda, equipe e tecnico.
-4. Criar cadastro/edicao real de clientes, enderecos e equipamentos.
-5. Criar historico de abastecimentos com filtro por veiculo e periodo.
-6. Criar alertas de frota: odometro menor que o anterior, consumo muito baixo/alto, custo por km alto e veiculo sem abastecimento recente.
-7. Criar relatorio PDF real da OS.
-8. Depois disso, iniciar app Flutter com o fluxo do tecnico em campo.
+1. Fazer bootstrap seguro da VM Locaweb: update, firewall, Docker, usuario operacional e backups.
+2. Confirmar DNS de `airmovebr.com.br` e apontar para `191.252.226.11`.
+3. Criar deploy Docker de producao com HTTPS e variaveis reais fora do Git.
+4. Aplicar a migration `20260610110000_add_vehicle_fuelings` no banco local/producao.
+5. Rodar o seed atualizado apenas em ambiente de demonstracao, nao em producao com dados reais.
+6. Melhorar aprovacao de pre-chamado para definir agenda, equipe e tecnico.
+7. Criar cadastro/edicao real de clientes, enderecos e equipamentos.
+8. Criar historico de abastecimentos com filtro por veiculo e periodo.
+9. Criar alertas de frota: odometro menor que o anterior, consumo muito baixo/alto, custo por km alto e veiculo sem abastecimento recente.
+10. Criar relatorio PDF real da OS.
+11. Depois disso, iniciar app Flutter com o fluxo do tecnico em campo.
 
 ### Telemetria GPS real fica para depois
 
@@ -358,7 +379,7 @@ Nao implementar receptor TCP/UDP agora. Ja deixamos a base de banco, seed, endpo
 
 ## Ideia de produto
 
-A LondriClima e o cliente piloto, mas o sistema pode ser vendido para outros segmentos com operacao em campo:
+A AIRMOVEBR e o cliente piloto, mas o sistema pode ser vendido para outros segmentos com operacao em campo:
 
 - assistencia tecnica;
 - solar;

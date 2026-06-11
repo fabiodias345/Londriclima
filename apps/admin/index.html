@@ -191,6 +191,11 @@
               <p class="status" id="fuelStatus" role="status"></p>
             </form>
             <div id="fleetList"></div>
+            <div class="worklist-header split-header compact-header">
+              <h2>Historico de abastecimentos</h2>
+              <p id="fuelHistoryStatus" role="status">Carregando...</p>
+            </div>
+            <div class="data-list compact-list" id="fuelHistoryList"></div>
           </div>
         </section>
 
@@ -207,6 +212,57 @@
             <h2>Base de clientes</h2>
             <p id="clientesStatus" role="status">Carregando...</p>
           </div>
+          <form class="client-form" id="clientForm">
+            <input name="id" type="hidden" />
+            <label>
+              Tipo
+              <select name="tipo">
+                <option value="pf">Pessoa fisica</option>
+                <option value="pj">Pessoa juridica</option>
+              </select>
+            </label>
+            <label>
+              Nome
+              <input name="nome" type="text" required />
+            </label>
+            <label>
+              Telefone
+              <input name="telefone" type="tel" />
+            </label>
+            <label>
+              Email
+              <input name="email" type="email" />
+            </label>
+            <label>
+              Documento
+              <input name="documento" type="text" />
+            </label>
+            <label>
+              Logradouro
+              <input name="logradouro" type="text" />
+            </label>
+            <label>
+              Numero
+              <input name="numero" type="text" />
+            </label>
+            <label>
+              Bairro
+              <input name="bairro" type="text" />
+            </label>
+            <label>
+              Cidade
+              <input name="cidade" type="text" value="Londrina" />
+            </label>
+            <label>
+              UF
+              <input name="uf" type="text" value="PR" maxlength="2" />
+            </label>
+            <div class="form-actions">
+              <button type="submit">Salvar cliente</button>
+              <button class="secondary-button" id="resetClientFormButton" type="button">Novo</button>
+            </div>
+            <p class="status" id="clientFormStatus" role="status"></p>
+          </form>
           <div class="data-list" id="clientesList"></div>
         </section>
 

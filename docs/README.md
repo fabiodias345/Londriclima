@@ -1,14 +1,14 @@
-# LondriClima Digital — Plataforma FSM
+# AIRMOVEBR Digital — Plataforma FSM
 
 > Plataforma integrada de gestão de serviços em campo (Field Service Management)
 > desenvolvida para empresas de refrigeração e climatização.
-> Cliente piloto: **LondriClima** — Londrina, PR.
+> Cliente piloto: **AIRMOVEBR** — Londrina, PR.
 
 ---
 
 ## Visão Geral
 
-O **LondriClima Digital** substitui processos manuais por uma operação
+O **AIRMOVEBR Digital** substitui processos manuais por uma operação
 digitalizada de ponta a ponta: do agendamento pelo site até o relatório
 técnico enviado automaticamente ao cliente após o serviço.
 
@@ -21,7 +21,7 @@ do setor (refrigeração, solar, construtoras) a partir da Fase 2.
 ## Estrutura do Repositório
 
 ```text
-📁 plataforma-londriclima/
+📁 plataforma-airmovebr/
 │
 ├── docs/                        ← Documentação do projeto
 ├── apps/
@@ -76,7 +76,7 @@ e motor de recorrência para lembretes preventivos de manutenção a cada
 | E-mail | Resend ou SendGrid |
 | WhatsApp | Evolution API (isolada via padrão Strategy) |
 | Mapas | Leaflet + OpenStreetMap (sem custo de API) |
-| Infra | Google Cloud (Cloud Run + Cloud SQL) |
+| Infra | VM Locaweb Cloud Medium com Ubuntu 24.04, usando `airmovebr.com.br` |
 
 ---
 
@@ -88,6 +88,7 @@ e motor de recorrência para lembretes preventivos de manutenção a cada
 | [`prd.md`](./prd.md) | Visão consolidada do produto, escopo do MVP, decisões técnicas e diagrama de estados da OS. |
 | [`api-spec.md`](./api-spec.md) | Especificação parcial dos endpoints REST do fluxo mobile de OS. |
 | [`telemetria-gps.md`](./telemetria-gps.md) | Decisão e arquitetura futura para receptor próprio de GPS da frota em VPS. |
+| [`implantacao-producao.md`](./implantacao-producao.md) | Decisao de deploy na VM Locaweb Cloud usando o dominio `airmovebr.com.br`. |
 | [`schema.prisma`](../apps/backend/prisma/schema.prisma) | Schema inicial PostgreSQL/Prisma com multi-tenant por `empresa_id`. |
 
 ---
@@ -223,8 +224,8 @@ Flutter 3.19+ e Git instalados.
 
 ```bash
 # 1. Clone o repositório principal
-git clone https://github.com/fabiodias345/Londriclima.git
-cd Londriclima
+git clone https://github.com/fabiodias345/Londriclima.git AIRMOVEBR
+cd AIRMOVEBR
 
 # 2. Instale dependências e suba o banco local
 npm install

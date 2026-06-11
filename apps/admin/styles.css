@@ -191,7 +191,8 @@ select {
 
 form button,
 .refresh-button,
-.request-actions button {
+.request-actions button,
+.secondary-button {
   border: 0;
   border-radius: var(--radius);
   min-height: 44px;
@@ -216,6 +217,17 @@ form button,
 .reject-button {
   color: var(--white);
   background: var(--danger);
+}
+
+.secondary-button {
+  border: 1px solid var(--line);
+  color: var(--navy);
+  background: var(--white);
+}
+
+.compact-button {
+  min-height: 34px;
+  width: fit-content;
 }
 
 .status {
@@ -298,7 +310,7 @@ form button,
 
 .request-card {
   display: grid;
-  grid-template-columns: minmax(240px, 1fr) minmax(220px, 0.8fr) auto;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(220px, 0.8fr) minmax(360px, 1.4fr);
   gap: 20px;
   align-items: center;
   padding: 20px 22px;
@@ -362,6 +374,16 @@ form button,
 .request-actions {
   display: flex;
   gap: 8px;
+}
+
+.dispatch-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dispatch-form .request-actions {
+  grid-column: 1 / -1;
 }
 
 .fleet-view {
@@ -553,6 +575,26 @@ form button,
   grid-column: 1 / -1;
 }
 
+.client-form {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(238, 243, 241, 0.64);
+}
+
+.client-form .form-actions,
+.client-form .status {
+  grid-column: 1 / -1;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
 .fuel-form .status {
   min-height: 18px;
   font-size: 13px;
@@ -560,6 +602,19 @@ form button,
 
 .split-header {
   border-top: 1px solid var(--line);
+}
+
+.compact-header {
+  padding: 16px 20px;
+}
+
+.compact-header h2 {
+  font-size: 18px;
+}
+
+.compact-list .data-row {
+  grid-template-columns: minmax(180px, 1fr) minmax(170px, 0.8fr) minmax(130px, 0.6fr);
+  padding: 14px 20px;
 }
 
 .fuel-row strong {
@@ -611,6 +666,8 @@ form button,
   .summary-grid,
   .fleet-view,
   .fuel-form,
+  .client-form,
+  .dispatch-form,
   .request-card,
   .data-row,
   .report-grid {

@@ -129,7 +129,7 @@ Salva texto descritivo e foto obrigatória do estado do equipamento antes do ser
 
 **Exemplo curl:**
 ```bash
-curl -X POST https://api.londriclima.com.br/v1/os/uuid-da-os/evidencia-inicial \
+curl -X POST https://api.airmovebr.com.br/v1/os/uuid-da-os/evidencia-inicial \
   -H "Authorization: Bearer <token>" \
   -F "descricao_antes=Filtros com alto acúmulo de poeira e serpentina obstruída." \
   -F "foto_antes=@/caminho/para/foto_antes.webp"
@@ -249,7 +249,7 @@ Salva texto descritivo e foto obrigatória do estado do equipamento após o serv
 
 **Exemplo curl:**
 ```bash
-curl -X POST https://api.londriclima.com.br/v1/os/uuid-da-os/evidencia-final \
+curl -X POST https://api.airmovebr.com.br/v1/os/uuid-da-os/evidencia-final \
   -H "Authorization: Bearer <token>" \
   -F "descricao_depois=Equipamento limpo, operando normalmente. Serpentina desobstruída." \
   -F "foto_depois=@/caminho/para/foto_depois.webp"

@@ -29,6 +29,8 @@ const movingCount = document.querySelector("#movingCount");
 const fuelForm = document.querySelector("#fuelForm");
 const fuelVehicleSelect = document.querySelector("#fuelVehicleSelect");
 const fuelStatus = document.querySelector("#fuelStatus");
+const fuelHistoryStatus = document.querySelector("#fuelHistoryStatus");
+const fuelHistoryList = document.querySelector("#fuelHistoryList");
 const agendaStatus = document.querySelector("#agendaStatus");
 const agendaList = document.querySelector("#agendaList");
 const agendaCount = document.querySelector("#agendaCount");
@@ -36,6 +38,9 @@ const attendanceCount = document.querySelector("#attendanceCount");
 const todayCount = document.querySelector("#todayCount");
 const clientesStatus = document.querySelector("#clientesStatus");
 const clientesList = document.querySelector("#clientesList");
+const clientForm = document.querySelector("#clientForm");
+const clientFormStatus = document.querySelector("#clientFormStatus");
+const resetClientFormButton = document.querySelector("#resetClientFormButton");
 const clientCount = document.querySelector("#clientCount");
 const clientOpenCount = document.querySelector("#clientOpenCount");
 const equipmentCount = document.querySelector("#equipmentCount");
@@ -49,6 +54,11 @@ const fleetReportList = document.querySelector("#fleetReportList");
 
 let activeView = "preChamados";
 let latestFleetItems = [];
+let latestClients = [];
+let dispatchOptions = {
+  equipes: [],
+  tecnicos: []
+};
 
 const mapBounds = {
   minLat: -23.38,
@@ -200,6 +210,7 @@ async function loadPreChamados() {
   }
 
   const result = await response.json();
+  await loadDispatchOptions();
   pendingCount.textContent = result.total;
   listStatus.textContent = result.total === 1 ? "1 pendente" : `${result.total} pendentes`;
   renderPreChamados(result.items);
@@ -237,6 +248,24 @@ async function loadFrota() {
   fleetStatus.textContent = result.total === 1 ? "1 veiculo" : `${result.total} veiculos`;
   renderFrota(result.items);
   renderFuelVehicleOptions(result.items);
+  await loadFuelHistory();
+}
+
+async function loadDispatchOptions() {
+  const result = await fetchAdminJson("/admin/opcoes-despacho", listStatus);
+
+  if (!result) {
+    dispatchOptions = {
+      equipes: [],
+      tecnicos: []
+    };
+    return;
+  }
+
+  dispatchOptions = {
+    equipes: result.equipes || [],
+    tecnicos: result.tecnicos || []
+  };
 }
 
 async function loadAgenda() {
@@ -269,11 +298,23 @@ async function loadClientes() {
 
   const items = result.items || [];
 
+  latestClients = items;
   clientCount.textContent = result.total;
   clientOpenCount.textContent = items.filter((item) => item.os_abertas > 0).length;
   equipmentCount.textContent = items.reduce((total, item) => total + (item.total_equipamentos || 0), 0);
   clientesStatus.textContent = result.total === 1 ? "1 cliente" : `${result.total} clientes`;
   renderClientes(items);
+}
+
+async function loadFuelHistory() {
+  const result = await fetchAdminJson("/admin/frota/abastecimentos", fuelHistoryStatus);
+
+  if (!result) {
+    return;
+  }
+
+  fuelHistoryStatus.textContent = result.total === 1 ? "1 registro" : `${result.total} registros`;
+  renderFuelHistory(result.items || []);
 }
 
 async function loadRelatorios() {
@@ -361,10 +402,34 @@ function renderPreChamados(items) {
         <p class="request-details">${escapeHtml(item.detalhes || "Sem detalhes")}</p>
         <p class="request-meta">${escapeHtml(formatAddress(item.endereco))}</p>
       </div>
-      <div class="request-actions">
-        <button class="approve-button" type="button" data-action="aprovar" data-id="${item.id}">Aprovar</button>
-        <button class="reject-button" type="button" data-action="rejeitar" data-id="${item.id}">Rejeitar</button>
-      </div>
+      <form class="dispatch-form" data-id="${item.id}">
+        <label>
+          Agenda
+          <input name="agendada_para" type="datetime-local" />
+        </label>
+        <label>
+          Equipe
+          <select name="equipe_id">
+            <option value="">Sem equipe</option>
+            ${renderOptions(dispatchOptions.equipes)}
+          </select>
+        </label>
+        <label>
+          Tecnico
+          <select name="tecnico_id">
+            <option value="">Sem tecnico</option>
+            ${renderOptions(dispatchOptions.tecnicos)}
+          </select>
+        </label>
+        <label>
+          Valor previsto
+          <input name="valor_cobrado" type="number" min="0" step="0.01" placeholder="350,00" />
+        </label>
+        <div class="request-actions">
+          <button class="approve-button" type="submit">Aprovar e agendar</button>
+          <button class="reject-button" type="button" data-action="rejeitar" data-id="${item.id}">Rejeitar</button>
+        </div>
+      </form>
     `;
     requestList.appendChild(card);
   }
@@ -465,6 +530,7 @@ function renderClientes(items) {
       </div>
       <div>
         <span class="status-pill">${item.os_abertas} abertas</span>
+        <button class="secondary-button compact-button" type="button" data-action="editar-cliente" data-id="${item.id}">Editar</button>
       </div>
     `;
     clientesList.appendChild(row);
@@ -531,6 +597,35 @@ function renderRelatorioFrota(items) {
   }
 }
 
+function renderFuelHistory(items) {
+  fuelHistoryList.innerHTML = "";
+
+  if (!items.length) {
+    fuelHistoryList.innerHTML = '<article class="data-row"><strong>Nenhum abastecimento registrado.</strong><span>Use o formulario acima para iniciar o historico.</span></article>';
+    return;
+  }
+
+  for (const item of items) {
+    const row = document.createElement("article");
+    row.className = "data-row fuel-row";
+    row.innerHTML = `
+      <div>
+        <strong>${escapeHtml(item.veiculo?.nome || "Veiculo")}</strong>
+        <span>${escapeHtml(item.veiculo?.placa || "Sem placa")} · ${formatDateTime(item.abastecido_em)}</span>
+      </div>
+      <div>
+        <span>${formatNumber(item.odometro_km)} km · ${formatNumber(item.litros)} L</span>
+        <span>${formatCurrency(item.preco_por_litro)} / L</span>
+      </div>
+      <div>
+        <span>${formatCurrency(item.valor_total)}</span>
+        <span>${escapeHtml(item.posto || "posto nao informado")}</span>
+      </div>
+    `;
+    fuelHistoryList.appendChild(row);
+  }
+}
+
 async function submitFuel(event) {
   event.preventDefault();
   fuelStatus.textContent = "";
@@ -570,6 +665,10 @@ async function submitFuel(event) {
     fuelForm.reset();
     renderFuelVehicleOptions(latestFleetItems);
     fuelStatus.textContent = "Abastecimento registrado.";
+    await loadFuelHistory();
+    if (activeView === "relatorios") {
+      await loadRelatorioFrota();
+    }
   } catch {
     fuelStatus.textContent = "API local indisponivel em localhost:3000.";
   } finally {
@@ -578,11 +677,21 @@ async function submitFuel(event) {
   }
 }
 
-async function updatePreChamado(osId, action) {
-  const response = await fetch(`${apiBaseUrl}/admin/pre-chamados/${osId}/${action}`, {
+async function updatePreChamado(osId, action, payload = null) {
+  const options = {
     method: "PATCH",
     headers: authHeaders()
-  });
+  };
+
+  if (payload) {
+    options.headers = {
+      ...options.headers,
+      "Content-Type": "application/json"
+    };
+    options.body = JSON.stringify(payload);
+  }
+
+  const response = await fetch(`${apiBaseUrl}/admin/pre-chamados/${osId}/${action}`, options);
 
   if (!response.ok) {
     listStatus.textContent = "Nao foi possivel atualizar o pre-chamado.";
@@ -590,6 +699,101 @@ async function updatePreChamado(osId, action) {
   }
 
   await loadPreChamados();
+}
+
+async function submitClient(event) {
+  event.preventDefault();
+  const button = clientForm.querySelector("button[type='submit']");
+  const data = new FormData(clientForm);
+  const clientId = String(data.get("id") || "");
+  const payload = removeEmptyValues({
+    tipo: String(data.get("tipo") || "pf"),
+    nome: String(data.get("nome") || ""),
+    telefone: String(data.get("telefone") || ""),
+    email: String(data.get("email") || ""),
+    documento: String(data.get("documento") || ""),
+    logradouro: String(data.get("logradouro") || ""),
+    numero: String(data.get("numero") || ""),
+    bairro: String(data.get("bairro") || ""),
+    cidade: String(data.get("cidade") || ""),
+    uf: String(data.get("uf") || "").toUpperCase()
+  });
+
+  button.disabled = true;
+  button.textContent = "Salvando...";
+  clientFormStatus.textContent = "";
+
+  try {
+    const response = await fetch(`${apiBaseUrl}/admin/clientes${clientId ? `/${clientId}` : ""}`, {
+      method: clientId ? "PATCH" : "POST",
+      headers: {
+        ...authHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (await handleUnauthorized(response)) {
+      return;
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      clientFormStatus.textContent = error.message || "Nao foi possivel salvar o cliente.";
+      return;
+    }
+
+    resetClientForm();
+    clientFormStatus.textContent = "Cliente salvo.";
+    await loadClientes();
+  } catch {
+    clientFormStatus.textContent = "API local indisponivel em localhost:3000.";
+  } finally {
+    button.disabled = false;
+    button.textContent = "Salvar cliente";
+  }
+}
+
+function fillClientForm(clientId) {
+  const client = latestClients.find((item) => item.id === clientId);
+
+  if (!client) {
+    return;
+  }
+
+  const address = client.endereco || {};
+  clientForm.elements.id.value = client.id;
+  clientForm.elements.tipo.value = client.tipo || "pf";
+  clientForm.elements.nome.value = client.nome || "";
+  clientForm.elements.telefone.value = client.telefone || "";
+  clientForm.elements.email.value = client.email || "";
+  clientForm.elements.documento.value = client.documento || "";
+  clientForm.elements.logradouro.value = address.logradouro || "";
+  clientForm.elements.numero.value = address.numero || "";
+  clientForm.elements.bairro.value = address.bairro || "";
+  clientForm.elements.cidade.value = address.cidade || "Londrina";
+  clientForm.elements.uf.value = address.uf || "PR";
+  clientFormStatus.textContent = "Editando cliente selecionado.";
+}
+
+function resetClientForm() {
+  clientForm.reset();
+  clientForm.elements.id.value = "";
+  clientForm.elements.cidade.value = "Londrina";
+  clientForm.elements.uf.value = "PR";
+  clientFormStatus.textContent = "";
+}
+
+function renderOptions(items) {
+  return items
+    .map((item) => `<option value="${item.id}">${escapeHtml(item.nome)}</option>`)
+    .join("");
+}
+
+function removeEmptyValues(payload) {
+  return Object.fromEntries(
+    Object.entries(payload).filter(([, value]) => String(value ?? "").trim() !== "")
+  );
 }
 
 function formatAddress(address) {
@@ -673,6 +877,8 @@ function escapeHtml(value) {
 
 loginForm?.addEventListener("submit", login);
 fuelForm?.addEventListener("submit", submitFuel);
+clientForm?.addEventListener("submit", submitClient);
+resetClientFormButton?.addEventListener("click", resetClientForm);
 refreshButton?.addEventListener("click", loadActiveView);
 logoutButton?.addEventListener("click", () => {
   clearToken();
@@ -702,6 +908,47 @@ requestList?.addEventListener("click", async (event) => {
 
   target.disabled = true;
   await updatePreChamado(osId, action);
+});
+
+requestList?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const form = event.target;
+
+  if (!(form instanceof HTMLFormElement)) {
+    return;
+  }
+
+  const osId = form.dataset.id;
+
+  if (!osId) {
+    return;
+  }
+
+  const data = new FormData(form);
+  const payload = {
+    agendada_para: data.get("agendada_para")
+      ? new Date(String(data.get("agendada_para"))).toISOString()
+      : undefined,
+    equipe_id: String(data.get("equipe_id") || "") || undefined,
+    tecnico_id: String(data.get("tecnico_id") || "") || undefined,
+    valor_cobrado: data.get("valor_cobrado") ? Number(data.get("valor_cobrado")) : undefined
+  };
+  const button = form.querySelector("button[type='submit']");
+
+  button.disabled = true;
+  await updatePreChamado(osId, "aprovar", payload);
+});
+
+clientesList?.addEventListener("click", (event) => {
+  const target = event.target;
+
+  if (!(target instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  if (target.dataset.action === "editar-cliente" && target.dataset.id) {
+    fillClientForm(target.dataset.id);
+  }
 });
 
 if (getToken()) {
