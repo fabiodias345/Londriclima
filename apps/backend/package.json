@@ -5,7 +5,7 @@
   "description": "API REST e automações da plataforma LondriClima Digital.",
   "scripts": {
     "build": "nest build",
-    "start": "node dist/main.js",
+    "start": "node dist/src/main.js",
     "start:dev": "nest start --watch",
     "test": "node --test -r ts-node/register \"src/**/*.spec.ts\"",
     "lint": "eslint \"src/**/*.ts\"",
