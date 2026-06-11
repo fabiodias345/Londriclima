@@ -1,4 +1,7 @@
-const apiBaseUrl = "http://localhost:3000/api/v1";
+const localHosts = ["localhost", "127.0.0.1", ""];
+const apiBaseUrl = localHosts.includes(window.location.hostname)
+  ? "http://localhost:3000/api/v1"
+  : "https://api.airmovebr.com.br/api/v1";
 const loginPanel = document.querySelector("#loginPanel");
 const dashboard = document.querySelector("#dashboard");
 const loginForm = document.querySelector("#loginForm");
@@ -126,7 +129,7 @@ async function login(event) {
     showDashboard();
     await loadActiveView();
   } catch {
-    loginStatus.textContent = "Nao foi possivel conectar na API em localhost:3000.";
+    loginStatus.textContent = "Nao foi possivel conectar na API.";
   } finally {
     submitButton.disabled = false;
     submitButton.textContent = "Entrar";
@@ -196,7 +199,7 @@ async function loadPreChamados() {
       headers: authHeaders()
     });
   } catch {
-    listStatus.textContent = "API local indisponivel em localhost:3000.";
+    listStatus.textContent = "API indisponivel.";
     return;
   }
 
@@ -226,7 +229,7 @@ async function loadFrota() {
       headers: authHeaders()
     });
   } catch {
-    fleetStatus.textContent = "API local indisponivel em localhost:3000.";
+    fleetStatus.textContent = "API indisponivel.";
     return;
   }
 
@@ -355,7 +358,7 @@ async function fetchAdminJson(path, statusElement) {
       headers: authHeaders()
     });
   } catch {
-    statusElement.textContent = "API local indisponivel em localhost:3000.";
+    statusElement.textContent = "API indisponivel.";
     return null;
   }
 
@@ -670,7 +673,7 @@ async function submitFuel(event) {
       await loadRelatorioFrota();
     }
   } catch {
-    fuelStatus.textContent = "API local indisponivel em localhost:3000.";
+    fuelStatus.textContent = "API indisponivel.";
   } finally {
     button.disabled = false;
     button.textContent = "Registrar abastecimento";
@@ -747,7 +750,7 @@ async function submitClient(event) {
     clientFormStatus.textContent = "Cliente salvo.";
     await loadClientes();
   } catch {
-    clientFormStatus.textContent = "API local indisponivel em localhost:3000.";
+    clientFormStatus.textContent = "API indisponivel.";
   } finally {
     button.disabled = false;
     button.textContent = "Salvar cliente";

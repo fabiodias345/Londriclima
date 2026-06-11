@@ -1,6 +1,10 @@
 const form = document.querySelector("#bookingForm");
 const status = document.querySelector("#formStatus");
-const apiUrl = "http://localhost:3000/api/v1/site/pre-chamados";
+const localHosts = ["localhost", "127.0.0.1", ""];
+const apiBaseUrl = localHosts.includes(window.location.hostname)
+  ? "http://localhost:3000/api/v1"
+  : "https://api.airmovebr.com.br/api/v1";
+const apiUrl = `${apiBaseUrl}/site/pre-chamados`;
 
 form?.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -39,7 +43,7 @@ form?.addEventListener("submit", async (event) => {
     form.reset();
   } catch {
     status.classList.add("error");
-    status.textContent = "Nao foi possivel conectar na API local. Verifique se o backend esta rodando em localhost:3000.";
+    status.textContent = "Nao foi possivel conectar na API. Tente novamente em instantes.";
   } finally {
     submitButton.disabled = false;
     submitButton.textContent = "Enviar pre-chamado";

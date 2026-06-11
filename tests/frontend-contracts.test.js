@@ -12,7 +12,9 @@ function read(relativePath) {
 test("landing envia pre-chamado publico para a API com JSON", () => {
   const script = read("apps/landing/script.js");
 
-  assert.match(script, /http:\/\/localhost:3000\/api\/v1\/site\/pre-chamados/);
+  assert.match(script, /http:\/\/localhost:3000\/api\/v1/);
+  assert.match(script, /https:\/\/api\.airmovebr\.com\.br\/api\/v1/);
+  assert.match(script, /const apiUrl = `\$\{apiBaseUrl\}\/site\/pre-chamados`/);
   assert.match(script, /method:\s*"POST"/);
   assert.match(script, /"Content-Type":\s*"application\/json"/);
   assert.match(script, /nome:\s*String\(data\.get\("nome"\)/);
@@ -24,7 +26,8 @@ test("landing envia pre-chamado publico para a API com JSON", () => {
 test("admin autentica, guarda token e protege chamadas administrativas", () => {
   const script = read("apps/admin/script.js");
 
-  assert.match(script, /const apiBaseUrl = "http:\/\/localhost:3000\/api\/v1"/);
+  assert.match(script, /http:\/\/localhost:3000\/api\/v1/);
+  assert.match(script, /https:\/\/api\.airmovebr\.com\.br\/api\/v1/);
   assert.match(script, /\/auth\/login/);
   assert.match(script, /localStorage\.setItem\("londriclima_access_token"/);
   assert.match(script, /Authorization:\s*`Bearer \$\{getToken\(\)\}`/);
