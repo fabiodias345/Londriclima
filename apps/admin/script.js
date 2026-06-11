@@ -18,11 +18,13 @@ const preChamadosSummary = document.querySelector("#preChamadosSummary");
 const frotaSummary = document.querySelector("#frotaSummary");
 const agendaSummary = document.querySelector("#agendaSummary");
 const clientesSummary = document.querySelector("#clientesSummary");
+const pmocSummary = document.querySelector("#pmocSummary");
 const relatoriosSummary = document.querySelector("#relatoriosSummary");
 const preChamadosView = document.querySelector("#preChamadosView");
 const frotaView = document.querySelector("#frotaView");
 const agendaView = document.querySelector("#agendaView");
 const clientesView = document.querySelector("#clientesView");
+const pmocView = document.querySelector("#pmocView");
 const relatoriosView = document.querySelector("#relatoriosView");
 const fleetMap = document.querySelector("#fleetMap");
 const fleetList = document.querySelector("#fleetList");
@@ -47,6 +49,15 @@ const resetClientFormButton = document.querySelector("#resetClientFormButton");
 const clientCount = document.querySelector("#clientCount");
 const clientOpenCount = document.querySelector("#clientOpenCount");
 const equipmentCount = document.querySelector("#equipmentCount");
+const pmocStatus = document.querySelector("#pmocStatus");
+const pmocEquipmentCount = document.querySelector("#pmocEquipmentCount");
+const pmocMonthlyCount = document.querySelector("#pmocMonthlyCount");
+const pmocCriticalCount = document.querySelector("#pmocCriticalCount");
+const pmocEquipmentFields = document.querySelector("#pmocEquipmentFields");
+const pmocChecklist = document.querySelector("#pmocChecklist");
+const pmocAirQuality = document.querySelector("#pmocAirQuality");
+const pmocDocuments = document.querySelector("#pmocDocuments");
+const pmocHospital = document.querySelector("#pmocHospital");
 const relatoriosStatus = document.querySelector("#relatoriosStatus");
 const reportGrid = document.querySelector("#reportGrid");
 const reportOsCount = document.querySelector("#reportOsCount");
@@ -58,10 +69,177 @@ const fleetReportList = document.querySelector("#fleetReportList");
 let activeView = "preChamados";
 let latestFleetItems = [];
 let latestClients = [];
+let pmocRendered = false;
 let dispatchOptions = {
   equipes: [],
   tecnicos: []
 };
+
+const pmocEquipmentRegistry = [
+  "Codigo do equipamento",
+  "Localizacao",
+  "Marca",
+  "Modelo",
+  "Capacidade (BTU/h ou TR)",
+  "Numero de patrimonio",
+  "Tipo: Split, VRF, Chiller, Fan Coil, Cassete etc.",
+  "Data de instalacao"
+];
+
+const pmocChecklistGroups = [
+  {
+    title: "Mensal - Filtros",
+    cadence: "obrigatorio",
+    items: ["Limpeza realizada", "Substituicao necessaria", "Integridade verificada"]
+  },
+  {
+    title: "Mensal - Bandeja de condensado",
+    cadence: "obrigatorio",
+    items: ["Limpeza", "Ausencia de lodo", "Drenagem funcionando"]
+  },
+  {
+    title: "Mensal - Dreno",
+    cadence: "obrigatorio",
+    items: ["Sem obstrucao", "Sem vazamentos"]
+  },
+  {
+    title: "Mensal - Serpentinas",
+    cadence: "obrigatorio",
+    items: ["Limpeza", "Corrosao", "Aletas amassadas"]
+  },
+  {
+    title: "Mensal - Ventiladores",
+    cadence: "obrigatorio",
+    items: ["Limpeza", "Ruido anormal", "Vibracao"]
+  },
+  {
+    title: "Mensal - Gabinete",
+    cadence: "obrigatorio",
+    items: ["Limpeza interna", "Limpeza externa", "Vedacao adequada"]
+  },
+  {
+    title: "Mensal - Eletrica",
+    cadence: "obrigatorio",
+    items: ["Tensao", "Corrente", "Aperto de conexoes", "Disjuntores"]
+  },
+  {
+    title: "Mensal - Refrigeracao",
+    cadence: "obrigatorio",
+    items: ["Temperatura insuflamento", "Temperatura retorno", "Pressoes", "Vazamento de fluido"]
+  },
+  {
+    title: "Trimestral",
+    cadence: "a cada 3 meses",
+    items: [
+      "Limpeza profunda serpentinas",
+      "Higienizacao evaporador",
+      "Higienizacao condensador",
+      "Verificacao isolamento termico",
+      "Verificacao suportes",
+      "Verificacao vibracao"
+    ]
+  },
+  {
+    title: "Semestral",
+    cadence: "a cada 6 meses",
+    items: [
+      "Desencrustacao serpentinas",
+      "Limpeza ventiladores",
+      "Balanceamento ventiladores",
+      "Revisao eletrica geral",
+      "Verificacao motores"
+    ]
+  },
+  {
+    title: "Anual",
+    cadence: "1 vez ao ano",
+    items: [
+      "Teste completo de operacao",
+      "Avaliacao eficiencia energetica",
+      "Revisao geral sistema",
+      "Calibracao instrumentos",
+      "Atualizacao PMOC"
+    ]
+  }
+];
+
+const pmocAirQualityGroups = [
+  {
+    title: "Sistemas centrais - Casa de maquinas",
+    cadence: "Chiller / Fan Coil / UTA",
+    items: ["Limpeza", "Iluminacao", "Acesso restrito"]
+  },
+  {
+    title: "Sistemas centrais - Torres de resfriamento",
+    cadence: "quando aplicavel",
+    items: ["Limpeza", "Tratamento quimico", "Controle microbiologico"]
+  },
+  {
+    title: "Sistemas centrais - Casa de mistura",
+    cadence: "quando aplicavel",
+    items: ["Exclusiva do sistema", "Sem armazenamento de materiais"]
+  },
+  {
+    title: "Sistemas centrais - Captacao de ar externo",
+    cadence: "quando aplicavel",
+    items: ["Sem fontes contaminantes", "Filtros instalados"]
+  },
+  {
+    title: "Renovacao de ar",
+    cadence: "conforme projeto",
+    items: ["Vazao conforme projeto", "Minimo 27 m3/h/pessoa"]
+  },
+  {
+    title: "Controle da qualidade do ar - RE 09",
+    cadence: "monitoramento",
+    items: [
+      "Temperatura",
+      "Umidade relativa",
+      "Velocidade do ar",
+      "CO2",
+      "Fungos",
+      "Particulas",
+      "Taxa de renovacao de ar"
+    ]
+  }
+];
+
+const pmocDocumentGroups = [
+  {
+    title: "Documentos obrigatorios",
+    cadence: "dossie tecnico",
+    items: [
+      "ART ou TRT do responsavel tecnico",
+      "Relacao completa dos equipamentos",
+      "Cronograma de manutencao",
+      "Procedimentos de emergencia",
+      "Registros das manutencoes",
+      "Relatorios de execucao",
+      "Laudos de qualidade do ar quando aplicavel",
+      "Certificados de calibracao",
+      "Treinamentos da equipe"
+    ]
+  }
+];
+
+const pmocHospitalGroups = [
+  {
+    title: "Hospital / HU",
+    cadence: "ANVISA e ABNT NBR 7256",
+    items: [
+      "Pressao diferencial de areas criticas",
+      "Troca de filtros G4/F8/HEPA",
+      "Salas cirurgicas",
+      "UTIs",
+      "Isolamentos",
+      "CME",
+      "Hemodinamica",
+      "Banco de Leite",
+      "Laboratorios"
+    ],
+    note: "Esses ambientes seguem normas especificas da ANVISA e ABNT NBR 7256, alem da Lei do PMOC."
+  }
+];
 
 const mapBounds = {
   minLat: -23.38,
@@ -152,6 +330,11 @@ async function loadActiveView() {
     return;
   }
 
+  if (activeView === "pmoc") {
+    loadPmoc();
+    return;
+  }
+
   if (activeView === "relatorios") {
     await loadRelatorios();
     return;
@@ -172,6 +355,7 @@ function setActiveView(view) {
     frota: ["Monitoramento operacional", "Localizacao da frota"],
     agenda: ["Despacho de servicos", "Agenda operacional"],
     clientes: ["Relacionamento", "Clientes e equipamentos"],
+    pmoc: ["Conformidade tecnica", "PMOC"],
     relatorios: ["Gestao", "Relatorios do MVP"]
   }[view] ?? ["Operacao comercial", "Pre-chamados do site"];
 
@@ -181,11 +365,13 @@ function setActiveView(view) {
   frotaSummary.classList.toggle("hidden", view !== "frota");
   agendaSummary.classList.toggle("hidden", view !== "agenda");
   clientesSummary.classList.toggle("hidden", view !== "clientes");
+  pmocSummary.classList.toggle("hidden", view !== "pmoc");
   relatoriosSummary.classList.toggle("hidden", view !== "relatorios");
   preChamadosView.classList.toggle("hidden", view !== "preChamados");
   frotaView.classList.toggle("hidden", view !== "frota");
   agendaView.classList.toggle("hidden", view !== "agenda");
   clientesView.classList.toggle("hidden", view !== "clientes");
+  pmocView.classList.toggle("hidden", view !== "pmoc");
   relatoriosView.classList.toggle("hidden", view !== "relatorios");
 }
 
@@ -318,6 +504,28 @@ async function loadFuelHistory() {
 
   fuelHistoryStatus.textContent = result.total === 1 ? "1 registro" : `${result.total} registros`;
   renderFuelHistory(result.items || []);
+}
+
+function loadPmoc() {
+  const monthlyTotal = pmocChecklistGroups
+    .filter((group) => group.title.startsWith("Mensal"))
+    .reduce((total, group) => total + group.items.length, 0);
+
+  pmocEquipmentCount.textContent = pmocEquipmentRegistry.length;
+  pmocMonthlyCount.textContent = monthlyTotal;
+  pmocCriticalCount.textContent = pmocHospitalGroups.reduce((total, group) => total + group.items.length, 0);
+  pmocStatus.textContent = "Modelo PMOC pronto para conferencia e futura gravacao por cliente/equipamento.";
+
+  if (pmocRendered) {
+    return;
+  }
+
+  renderPmocEquipmentFields();
+  renderPmocGroups(pmocChecklist, pmocChecklistGroups, "pmoc-periodic");
+  renderPmocGroups(pmocAirQuality, pmocAirQualityGroups, "pmoc-air");
+  renderPmocGroups(pmocDocuments, pmocDocumentGroups, "pmoc-docs");
+  renderPmocGroups(pmocHospital, pmocHospitalGroups, "pmoc-hospital");
+  pmocRendered = true;
 }
 
 async function loadRelatorios() {
@@ -627,6 +835,48 @@ function renderFuelHistory(items) {
     `;
     fuelHistoryList.appendChild(row);
   }
+}
+
+function renderPmocEquipmentFields() {
+  pmocEquipmentFields.innerHTML = pmocEquipmentRegistry
+    .map(
+      (field, index) => `
+        <div class="pmoc-field">
+          <span>${String(index + 1).padStart(2, "0")}</span>
+          <strong>${escapeHtml(field)}</strong>
+        </div>
+      `
+    )
+    .join("");
+}
+
+function renderPmocGroups(container, groups, prefix) {
+  container.innerHTML = groups.map((group, groupIndex) => renderPmocGroup(group, `${prefix}-${groupIndex}`)).join("");
+}
+
+function renderPmocGroup(group, groupId) {
+  const items = group.items
+    .map(
+      (item, itemIndex) => `
+        <label class="pmoc-check">
+          <input type="checkbox" name="${groupId}-${itemIndex}" />
+          ${escapeHtml(item)}
+        </label>
+      `
+    )
+    .join("");
+  const note = group.note ? `<p class="pmoc-note">${escapeHtml(group.note)}</p>` : "";
+
+  return `
+    <section class="pmoc-group">
+      <div class="pmoc-group-title">
+        <strong>${escapeHtml(group.title)}</strong>
+        <span>${escapeHtml(group.cadence)}</span>
+      </div>
+      <div class="pmoc-items">${items}</div>
+      ${note}
+    </section>
+  `;
 }
 
 async function submitFuel(event) {

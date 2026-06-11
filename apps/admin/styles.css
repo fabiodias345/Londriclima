@@ -651,6 +651,135 @@ form button,
   font-size: 36px;
 }
 
+.pmoc-board {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.72fr) minmax(420px, 1fr);
+  gap: 0;
+}
+
+.pmoc-panel {
+  display: grid;
+  gap: 18px;
+  align-content: start;
+  padding: 22px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.pmoc-panel:nth-child(2n),
+.pmoc-hospital {
+  border-right: 0;
+}
+
+.pmoc-feature {
+  background:
+    linear-gradient(135deg, rgba(0, 140, 149, 0.11), transparent 44%),
+    var(--white);
+}
+
+.pmoc-hospital {
+  grid-column: 1 / -1;
+  background: rgba(255, 184, 77, 0.12);
+}
+
+.pmoc-panel h3 {
+  margin: 0;
+  font-family: "Archivo", sans-serif;
+  font-size: 22px;
+}
+
+.pmoc-panel-title {
+  display: grid;
+  gap: 8px;
+}
+
+.pmoc-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.pmoc-field {
+  display: grid;
+  gap: 6px;
+  min-height: 74px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.pmoc-field span,
+.pmoc-group-title span,
+.pmoc-note {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.pmoc-field strong {
+  font-family: "Archivo", sans-serif;
+  font-size: 15px;
+}
+
+.pmoc-checklist {
+  display: grid;
+  gap: 12px;
+}
+
+.pmoc-group {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(238, 243, 241, 0.62);
+}
+
+.pmoc-group-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pmoc-group-title strong {
+  font-family: "Archivo", sans-serif;
+  font-size: 17px;
+}
+
+.pmoc-items {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.pmoc-check {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid rgba(7, 21, 29, 0.08);
+  border-radius: var(--radius);
+  color: var(--ink);
+  background: var(--white);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.pmoc-check input {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  accent-color: var(--teal);
+}
+
+.pmoc-note {
+  margin: 0;
+  line-height: 1.5;
+}
+
 @media (max-width: 940px) {
   .sidebar {
     position: static;
@@ -670,8 +799,16 @@ form button,
   .dispatch-form,
   .request-card,
   .data-row,
-  .report-grid {
+  .report-grid,
+  .pmoc-board,
+  .pmoc-field-grid,
+  .pmoc-items {
     grid-template-columns: 1fr;
+  }
+
+  .pmoc-panel,
+  .pmoc-panel:nth-child(2n) {
+    border-right: 0;
   }
 
   .request-actions {

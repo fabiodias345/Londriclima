@@ -56,6 +56,30 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(script, /async function loadRelatorios/);
 });
 
+test("admin possui aba PMOC com cadastro, checklists e itens hospitalares", () => {
+  const html = read("apps/admin/index.html");
+  const script = read("apps/admin/script.js");
+  const styles = read("apps/admin/styles.css");
+
+  assert.match(html, /data-view="pmoc"/);
+  assert.match(html, /id="pmocView"/);
+  assert.match(html, /id="pmocEquipmentFields"/);
+  assert.match(html, /id="pmocChecklist"/);
+  assert.match(html, /id="pmocAirQuality"/);
+  assert.match(html, /id="pmocDocuments"/);
+  assert.match(html, /id="pmocHospital"/);
+  assert.match(script, /const pmocEquipmentRegistry/);
+  assert.match(script, /Codigo do equipamento/);
+  assert.match(script, /Temperatura insuflamento/);
+  assert.match(script, /ART ou TRT do responsavel tecnico/);
+  assert.match(script, /Pressao diferencial de areas criticas/);
+  assert.match(script, /ABNT NBR 7256/);
+  assert.match(script, /function loadPmoc/);
+  assert.match(script, /function renderPmocGroup/);
+  assert.match(styles, /\.pmoc-board/);
+  assert.match(styles, /\.pmoc-check/);
+});
+
 test("admin possui lancamento e relatorio de abastecimento da frota", () => {
   const html = read("apps/admin/index.html");
   const script = read("apps/admin/script.js");

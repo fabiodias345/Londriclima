@@ -23,6 +23,7 @@
         <button class="nav-link" type="button" data-view="frota">Frota</button>
         <button class="nav-link" type="button" data-view="agenda">Agenda</button>
         <button class="nav-link" type="button" data-view="clientes">Clientes</button>
+        <button class="nav-link" type="button" data-view="pmoc">PMOC</button>
         <button class="nav-link" type="button" data-view="relatorios">Relatorios</button>
       </nav>
       <div class="sidebar-footer">
@@ -118,6 +119,21 @@
           <article>
             <span>Equipamentos</span>
             <strong id="equipmentCount">0</strong>
+          </article>
+        </section>
+
+        <section class="summary-grid hidden" id="pmocSummary" aria-label="Resumo do PMOC">
+          <article>
+            <span>Cadastro</span>
+            <strong id="pmocEquipmentCount">8</strong>
+          </article>
+          <article>
+            <span>Checklist mensal</span>
+            <strong id="pmocMonthlyCount">25</strong>
+          </article>
+          <article>
+            <span>HU / areas criticas</span>
+            <strong id="pmocCriticalCount">8</strong>
           </article>
         </section>
 
@@ -264,6 +280,54 @@
             <p class="status" id="clientFormStatus" role="status"></p>
           </form>
           <div class="data-list" id="clientesList"></div>
+        </section>
+
+        <section class="worklist hidden" id="pmocView">
+          <div class="worklist-header">
+            <div>
+              <h2>Plano de Manutencao, Operacao e Controle</h2>
+              <p id="pmocStatus" role="status">Modelo operacional pronto para conferencia.</p>
+            </div>
+          </div>
+          <div class="pmoc-board">
+            <article class="pmoc-panel pmoc-feature">
+              <span class="kicker">Cadastro dos equipamentos</span>
+              <h3>Ficha tecnica minima</h3>
+              <div class="pmoc-field-grid" id="pmocEquipmentFields"></div>
+            </article>
+
+            <article class="pmoc-panel">
+              <div class="pmoc-panel-title">
+                <span class="kicker">Rotina obrigatoria</span>
+                <h3>Checklists por periodicidade</h3>
+              </div>
+              <div class="pmoc-checklist" id="pmocChecklist"></div>
+            </article>
+
+            <article class="pmoc-panel">
+              <div class="pmoc-panel-title">
+                <span class="kicker">Ar interior</span>
+                <h3>Qualidade do ar e sistemas centrais</h3>
+              </div>
+              <div class="pmoc-checklist" id="pmocAirQuality"></div>
+            </article>
+
+            <article class="pmoc-panel">
+              <div class="pmoc-panel-title">
+                <span class="kicker">Dossie PMOC</span>
+                <h3>Documentos obrigatorios</h3>
+              </div>
+              <div class="pmoc-checklist" id="pmocDocuments"></div>
+            </article>
+
+            <article class="pmoc-panel pmoc-hospital">
+              <div class="pmoc-panel-title">
+                <span class="kicker">Hospital / HU</span>
+                <h3>Ambientes criticos</h3>
+              </div>
+              <div class="pmoc-checklist" id="pmocHospital"></div>
+            </article>
+          </div>
         </section>
 
         <section class="worklist hidden" id="relatoriosView">
