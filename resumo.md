@@ -36,6 +36,12 @@ site -> pre-chamado -> painel admin -> OS -> tecnico -> evidencias/checklist/GPS
 GET /api/v1/health
 ```
 
+## Observacao Importante
+
+Nao mexer na publicacao do servidor nem subir o Caddy ate o cliente liberar/ajustar o DNS no Registro.br.
+
+Por enquanto o trabalho pode continuar localmente. Depois, quando o DNS estiver correto, enviar as mudancas para o servidor e finalizar HTTPS.
+
 ## Web/Admin
 
 - Landing em `apps/landing`.
@@ -92,11 +98,18 @@ Backend health interno OK
 d586740 feat: prepare airmovebr production deploy
 ```
 
-`dev` e `main` estao sincronizadas no GitHub ate `a267580`.
+`dev` e `main` estao sincronizadas no GitHub ate `d87d8e4`.
 
 ## Bloqueio Atual
 
 O codigo, a VM e a rede publica estao prontos para publicar. O bloqueio restante e DNS.
+
+O DNS esta no Registro.br, com nameservers:
+
+```text
+a.auto.dns.br
+b.auto.dns.br
+```
 
 Estado visto:
 
@@ -113,7 +126,7 @@ Teste externo no IP `191.252.226.11`:
 443 -> True
 ```
 
-Caddy foi parado temporariamente para evitar tentativas repetidas de certificado antes do DNS correto.
+Caddy foi parado temporariamente para evitar tentativas repetidas de certificado antes do DNS correto. Manter parado ate os tres registros resolverem para `191.252.226.11`.
 
 ## Proximos Passos
 
