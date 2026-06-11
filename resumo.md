@@ -1,420 +1,160 @@
-# Resumo do Projeto AIRMOVEBR
+# Resumo AIRMOVEBR
 
 Atualizado em: 11/06/2026
 
 ## Objetivo
 
-Construir a plataforma digital da AIRMOVEBR como cliente piloto, mas com arquitetura preparada para virar SaaS multi-tenant para empresas com operacao em campo.
-
-O produto nao e apenas um site. E um sistema de gestao de servicos externos:
+Plataforma web/admin/API para a AIRMOVEBR, preparada para virar SaaS de servicos em campo:
 
 ```text
-site / WhatsApp
--> pre-chamado
--> painel administrativo
--> ordem de servico
--> tecnico em campo
--> fotos, checklist, assinatura e GPS
--> relatorio e pos-venda
--> recorrencia
+site -> pre-chamado -> painel admin -> OS -> tecnico -> evidencias/checklist/GPS -> relatorios
 ```
 
-## O que ja foi feito
+## Estado Atual
 
-### Backend
-
-Backend NestJS em `apps/backend`.
-
-Ja existe:
-
-- `ConfigModule` com `.env`;
-- `PrismaService`;
-- health check em `GET /api/v1/health`;
-- CORS habilitado para frontend local;
-- PostgreSQL via Docker;
-- schema Prisma inicial;
-- migrations aplicadas;
-- seed de desenvolvimento.
-
-### Banco de Dados
-
-Banco PostgreSQL com Prisma.
-
-Principais entidades ja modeladas:
-
-- `Empresa`
-- `Usuario`
-- `Equipe`
-- `EquipeAuxiliar`
-- `Cliente`
-- `ClienteEndereco`
-- `Equipamento`
-- `OrdemServico`
-- `OrdemServicoEvento`
-- `OrdemServicoEvidencia`
-- `OrdemServicoChecklist`
-- `OrdemServicoPeca`
-- `OrdemServicoAssinatura`
-- `OrdemServicoObservacao`
-- `AutomacaoAgendada`
-- `Veiculo`
-- `VeiculoLocalizacao`
-- `VeiculoAbastecimento`
-
-O banco ja nasce com `empresa_id` nas tabelas transacionais para preparar o SaaS multi-tenant.
-
-### Autenticacao
-
-Modulo em `apps/backend/src/modules/auth`.
-
-Ja existe:
-
-- `POST /api/v1/auth/login`;
-- `POST /api/v1/auth/refresh`;
-- hash de senha com `scrypt`;
-- JWT access token;
-- refresh token;
-- guard `JwtAuthGuard`;
-- decorator `CurrentUser`.
-
-Usuario local de teste:
+- Dominio oficial: `airmovebr.com.br`.
+- VM Locaweb Cloud criada: Ubuntu 24.04.3 LTS, IP `191.252.226.11`.
+- Acesso SSH por chave com comentario `fabiodias@uel.br`.
+- Usuario operacional criado: `airmovebr`.
+- Firewall UFW ativo: 22, 80 e 443 liberadas na VM.
+- Docker e Docker Compose instalados e testados.
+- PostgreSQL rodando em Docker e `healthy`.
+- Backend NestJS rodando em Docker.
+- Migrations aplicadas com sucesso:
+  - `20260610000000_init`
+  - `20260610035303_add_vehicle_tracking`
+  - `20260610110000_add_vehicle_fuelings`
+- Health interno do backend OK:
 
 ```text
-email: tecnico@londriclima.local
-senha: 123456
+GET /api/v1/health
 ```
 
-### Fluxo de Ordem de Servico
+## Web/Admin
 
-Modulo em `apps/backend/src/modules/ordens-servico`.
+- Landing em `apps/landing`.
+- Admin em `apps/admin`.
+- Admin tem login, pre-chamados, frota, agenda, clientes e relatorios.
+- Frota tem mapa/fallback visual, veiculos separados para demonstracao e relatorio de consumo.
+- Abastecimento registra odometro, litros, valor total e posto.
+- Calculos: km rodados, km/L, custo por km e gasto total.
+- Em producao, web/admin chamam `https://api.airmovebr.com.br/api/v1`.
 
-Endpoints implementados:
+## Backend
 
-```text
-PATCH /api/v1/os/:osId/status
-PUT   /api/v1/os/:osId/identificacao-equipamento
-POST  /api/v1/os/:osId/evidencia-inicial
-POST  /api/v1/os/:osId/checklist
-POST  /api/v1/os/:osId/evidencia-final
-PATCH /api/v1/os/:osId/observacoes
-POST  /api/v1/os/:osId/finalizar
-```
-
-Regras ja implementadas:
-
-- OS concluida e imutavel;
-- transicoes de status validadas;
-- GPS por evento;
-- evidencia inicial obrigatoria antes do checklist;
-- checklist obrigatorio antes de finalizar;
-- evidencia final obrigatoria antes de finalizar;
-- assinatura obrigatoria na finalizacao;
-- ao finalizar, cria automacoes:
-  - `gerar_pdf`;
-  - `enviar_email`;
-  - `enviar_whatsapp`;
-  - `recorrencia_180_dias`.
-
-### Site / Landing
-
-Landing em `apps/landing`.
-
-Ja existe:
-
-- pagina institucional visual;
-- hero com imagem gerada;
-- secao de servicos;
-- explicacao do fluxo digital;
-- formulario de agendamento;
-- integracao com backend.
-
-Endpoint publico:
+- NestJS + Prisma + PostgreSQL.
+- Auth com JWT, refresh token e senha com `scrypt`.
+- Endpoints principais:
 
 ```text
+POST /api/v1/auth/login
+POST /api/v1/auth/refresh
 POST /api/v1/site/pre-chamados
+GET  /api/v1/admin/pre-chamados
+GET  /api/v1/admin/frota/localizacoes
+GET  /api/v1/admin/agenda
+GET  /api/v1/admin/clientes
+GET  /api/v1/admin/relatorios
+GET  /api/v1/admin/relatorios/frota
+POST /api/v1/admin/frota/abastecimentos
 ```
 
-O formulario cria um `pre_chamado` real no banco.
+## Testes
 
-### Painel Admin
-
-Painel estatico em `apps/admin`.
-
-Ja existe:
-
-- tela de login;
-- consumo do JWT;
-- listagem de pre-chamados;
-- aprovar pre-chamado;
-- rejeitar pre-chamado;
-- aba Frota;
-- mapa operacional da frota com OpenStreetMap e fallback local;
-- lista de veiculos com placa, velocidade e ultimo sinal;
-- aba Agenda;
-- aba Clientes;
-- aba Relatorios;
-- formulario de abastecimento;
-- relatorio de consumo por veiculo.
-
-Endpoints admin:
+Ultima validacao local:
 
 ```text
-GET   /api/v1/admin/pre-chamados
-PATCH /api/v1/admin/pre-chamados/:osId/aprovar
-PATCH /api/v1/admin/pre-chamados/:osId/rejeitar
-GET   /api/v1/admin/agenda
-GET   /api/v1/admin/clientes
-GET   /api/v1/admin/relatorios
-GET   /api/v1/admin/frota/localizacoes
-GET   /api/v1/admin/frota/abastecimentos
-POST  /api/v1/admin/frota/abastecimentos
-GET   /api/v1/admin/relatorios/frota
+npm.cmd run frontend:test -> 5/5 OK
+npm.cmd run backend:build -> OK
 ```
 
-### Frota / GPS
-
-Ja foi criada a base para monitoramento de frota.
-
-Implementado:
-
-- tabelas `veiculos` e `veiculo_localizacoes`;
-- tabela `veiculo_abastecimentos`;
-- migration `20260610035303_add_vehicle_tracking`;
-- migration `20260610110000_add_vehicle_fuelings`;
-- seed com dois veiculos;
-- endpoint de ultima localizacao;
-- registro de abastecimento por veiculo;
-- calculo de km rodados, litros, km/L, custo por km e gasto total;
-- aba Frota no admin.
-
-Decisao adicional:
-
-- consumo da frota deve usar odometro informado no abastecimento;
-- o tecnico informa litros, valor total, odometro e posto;
-- GPS ajuda no monitoramento, mas o calculo financeiro confiavel vem do odometro e abastecimentos reais.
-
-Decisao importante documentada em `docs/telemetria-gps.md`:
-
-- no futuro, criar receptor proprio TCP/UDP em VPS Linux;
-- evitar plataforma externa de rastreamento por veiculo;
-- pensado para frota inicial de 5 a 6 carros;
-- custo principal previsto: chip de dados/M2M por carro;
-- rastreadores alvo: SinoTrack, Coban, Concox ou similares.
-
-### Implantacao / Producao
-
-Decisao registrada em `docs/implantacao-producao.md`:
-
-- Turbo Cloud/cPanel foi descartado para o sistema completo;
-- o MVP sera implantado em VM propria na Locaweb Cloud;
-- plano contratado: Medium, 2 vCPU, 4 GB RAM, 80 GB SSD;
-- sistema: Ubuntu 24.04.3 LTS;
-- IP publico: `191.252.226.11`;
-- usuario inicial: `root`;
-- acesso SSH por chave ja configurado;
-- dominio aprovado: `airmovebr.com.br`;
-- sugestao de URLs:
-  - `airmovebr.com.br` para landing/site publico;
-  - `admin.airmovebr.com.br` para painel administrativo;
-  - `api.airmovebr.com.br` para backend;
-- producao deve subir com HTTPS, firewall, secrets fortes, banco sem acesso publico direto e backup automatico.
-
-## Como rodar localmente
-
-### Banco
-
-```bash
-npm.cmd run docker:up
-```
-
-### Backend
-
-```bash
-npm.cmd run backend:prisma:migrate
-npm.cmd run backend:prisma:seed
-npm.cmd run backend:dev
-```
-
-Backend:
+Validacao na VM:
 
 ```text
-http://localhost:3000/api/v1
+PostgreSQL healthy
+Prisma migrate deploy OK
+Backend health interno OK
 ```
 
-Health:
+## Commits Importantes
 
 ```text
-http://localhost:3000/api/v1/health
+0b9af81 fix: start compiled backend entrypoint
+7face29 fix: install openssl in backend image
+4c80fae fix: use production api host for web apps
+502ea86 chore: support production migrations
+d586740 feat: prepare airmovebr production deploy
 ```
 
-### Landing
+`dev` e `main` estao sincronizadas no GitHub ate `0b9af81`.
 
-```bash
-npm.cmd exec -- serve apps/landing -l 5173
-```
+## Bloqueio Atual
 
-URL:
+O codigo e a VM estao prontos para publicar, mas o DNS/porta publica ainda nao estao finalizados.
+
+Estado visto:
 
 ```text
-http://localhost:5173
+airmovebr.com.br -> 107.150.167.202
+api.airmovebr.com.br -> nao existe
+admin.airmovebr.com.br -> nao existe
 ```
 
-### Admin
+Teste externo no IP `191.252.226.11` em HTTP deu timeout. Provavel pendencia: firewall/rede da Locaweb alem do UFW da VM.
 
-```bash
-npm.cmd exec -- serve apps/admin -l 5174
-```
+Caddy foi parado temporariamente para evitar tentativas repetidas de certificado antes do DNS correto.
 
-URL:
+## Proximos Passos
+
+1. No DNS, criar/ajustar registros A:
 
 ```text
-http://localhost:5174
+airmovebr.com.br       -> 191.252.226.11
+admin.airmovebr.com.br -> 191.252.226.11
+api.airmovebr.com.br   -> 191.252.226.11
 ```
 
-Login:
+2. No painel/rede da Locaweb, liberar entrada publica TCP:
 
 ```text
-tecnico@londriclima.local
-123456
+22
+80
+443
 ```
 
-## Ultimos commits importantes
+3. Testar propagacao:
 
 ```text
-aa7cf5d feat: add admin fleet monitoring
-327d265 feat: add MVP backend flow and landing site
-8b00ade Add initial database migration and seed
+Resolve-DnsName airmovebr.com.br
+Resolve-DnsName admin.airmovebr.com.br
+Resolve-DnsName api.airmovebr.com.br
 ```
 
-## Onde paramos
-
-Paramos depois de:
-
-- colocar site/landing funcionando;
-- integrar formulario do site com pre-chamado real;
-- criar backend de OS completo para o fluxo tecnico;
-- criar autenticacao JWT;
-- criar painel admin minimo;
-- criar aprovacao/rejeicao de pre-chamados;
-- criar base de frota/GPS;
-- documentar a decisao de telemetria propria em VPS.
-
-O reposititorio foi enviado para o GitHub na branch `dev`.
-
-## Atualizacao desta rodada
-
-### Web/admin
-
-Foco colocado no web antes do Flutter.
-
-Foi feito:
-
-- login admin com melhor tratamento de erro e carregamento;
-- abas Pre-chamados, Frota, Agenda, Clientes e Relatorios funcionando;
-- Frota com carros separados visualmente para demonstracao ao cliente;
-- mapa com OpenStreetMap quando disponivel e fallback operacional quando nao carregar;
-- Agenda mostrando OS agendadas/pendentes;
-- Clientes mostrando base de clientes, equipamentos e enderecos;
-- Relatorios mostrando indicadores operacionais;
-- Relatorios de frota com km rodados, litros abastecidos, valor total, km/L e custo por km;
-- formulario no admin para registrar abastecimento com odometro, litros, valor e posto.
-
-### Backend e seguranca
-
-Foi reforcado:
-
-- endpoints admin usando `empresa_id` para isolamento multi-tenant;
-- testes de autenticacao, token, senha e guard JWT;
-- testes de servicos principais;
-- regra de finalizacao de OS para salvar assinatura somente depois de validar acesso, empresa e estado da OS;
-- cobertura inicial automatizada para reduzir risco antes de avancar em funcionalidades sensiveis.
-
-Testes criados:
+4. Subir Caddy:
 
 ```text
-npm.cmd run backend:test
-npm.cmd run frontend:test
+docker compose --env-file .env.production -f infra/docker-compose.prod.example.yml up -d caddy
 ```
 
-Na ultima validacao, o backend passou com 51 testes e o frontend passou com 5 testes.
-
-### Documentacao
-
-Atualizado `docs/telemetria-gps.md` com:
-
-- abastecimentos por veiculo;
-- odometro como fonte confiavel para calculo financeiro;
-- km/L;
-- custo por km;
-- diferenca entre GPS para monitoramento e odometro/abastecimento para consumo real.
-
-## Proximo passo recomendado
-
-### Fase seguinte: consolidar o MVP web/admin
-
-Prioridade sugerida:
-
-1. Fazer bootstrap seguro da VM Locaweb: update, firewall, Docker, usuario operacional e backups.
-2. Confirmar DNS de `airmovebr.com.br` e apontar para `191.252.226.11`.
-3. Criar deploy Docker de producao com HTTPS e variaveis reais fora do Git.
-4. Aplicar a migration `20260610110000_add_vehicle_fuelings` no banco local/producao.
-5. Rodar o seed atualizado apenas em ambiente de demonstracao, nao em producao com dados reais.
-6. Melhorar aprovacao de pre-chamado para definir agenda, equipe e tecnico.
-7. Criar cadastro/edicao real de clientes, enderecos e equipamentos.
-8. Criar historico de abastecimentos com filtro por veiculo e periodo.
-9. Criar alertas de frota: odometro menor que o anterior, consumo muito baixo/alto, custo por km alto e veiculo sem abastecimento recente.
-10. Criar relatorio PDF real da OS.
-11. Depois disso, iniciar app Flutter com o fluxo do tecnico em campo.
-
-### Telemetria GPS real fica para depois
-
-Nao implementar receptor TCP/UDP agora. Ja deixamos a base de banco, seed, endpoint e documento. Quando chegar a hora:
-
-1. escolher rastreador fisico;
-2. obter protocolo/documentacao;
-3. configurar chip e IP/porta;
-4. criar servico receptor;
-5. testar pacote real chegando na VPS;
-6. gravar em `veiculo_localizacoes`.
-
-## Ideia de produto
-
-A AIRMOVEBR e o cliente piloto, mas o sistema pode ser vendido para outros segmentos com operacao em campo:
-
-- assistencia tecnica;
-- solar;
-- construtoras;
-- lojas de material de construcao;
-- floriculturas com entrega;
-- dedetizadoras;
-- limpeza de estofados;
-- piscinas;
-- vidracarias;
-- marcenarias;
-- instaladores e manutencao predial.
-
-O nucleo e reutilizavel:
+5. Validar HTTPS:
 
 ```text
-chamado / pedido / entrega
--> equipe / motorista / tecnico
--> status
--> rota / frota
--> fotos / comprovante / assinatura
--> relatorio
--> pos-venda / recorrencia
+https://airmovebr.com.br
+https://admin.airmovebr.com.br
+https://api.airmovebr.com.br/api/v1/health
 ```
 
-Esse e o caminho para transformar o piloto em SaaS.
+6. Depois do HTTPS OK:
+   - testar login admin;
+   - criar pre-chamado pela landing;
+   - aprovar/rejeitar pre-chamado;
+   - testar frota, agenda, clientes e relatorios;
+   - revisar `npm audit` e dependencias antes de dados reais.
 
+## Atencao LGPD/Seguranca
 
-
-# O que precisa de atencao:
-- Testes iniciais ja foram criados, mas precisam crescer junto com aprovacao, agenda, clientes, relatorios e permissoes.
-- JWT customizado ao inves de @nestjs/jwt funciona, mas deve ser revisado antes de producao.
-- Motores de automacao (PDF, email, WhatsApp) estao sendo criados no banco, mas ainda nao existe worker processando.
-- App mobile Flutter tem so `.gitkeep`; o core do tecnico em campo ainda precisa ser construido.
-- Mapa da frota agora tem OpenStreetMap embed com fallback operacional, mas ainda nao e telemetria real.
-- Secrets placeholders (`change-me-access`) estao no `.env.example`; antes de producao, revisar politica de secrets.
-
-Resumo: Caminho certo. O backend agora esta mais protegido por testes, o admin web ficou mais apresentavel para demonstracao, e a frota ganhou consumo/custo por veiculo. O proximo passo logico e consolidar o MVP web/admin antes de abrir a frente do Flutter.
+- Nao commitar `.env.production`.
+- Banco sem porta publica.
+- Secrets fortes ja gerados no servidor.
+- Acesso por chave SSH, sem senha compartilhada no chat.
+- Antes de cliente real: backup automatico, logs sem dados sensiveis e revisao de permissoes/admin.
