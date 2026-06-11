@@ -14,7 +14,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 COPY package*.json ./
 COPY apps/backend/package*.json ./apps/backend/
-RUN npm ci --omit=dev
+RUN npm ci
 COPY --from=build /app/apps/backend/dist ./apps/backend/dist
 COPY --from=build /app/apps/backend/prisma ./apps/backend/prisma
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
