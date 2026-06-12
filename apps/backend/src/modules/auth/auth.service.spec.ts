@@ -1,4 +1,4 @@
-import { test } from "node:test";
+﻿import { test } from "node:test";
 import * as assert from "node:assert/strict";
 import { UnauthorizedException } from "@nestjs/common";
 import { UsuarioRole } from "@prisma/client";
@@ -7,8 +7,8 @@ import { AuthService } from "./auth.service";
 const usuarioAtivo = {
   id: "usuario-1",
   empresaId: "empresa-1",
-  nome: "Tecnico LondriClima",
-  email: "tecnico@londriclima.local",
+  nome: "Tecnico AIRMOVEBR",
+  email: "tecnico@airmovebr.local",
   senhaHash: "hash-seguro",
   role: UsuarioRole.tecnico
 };
@@ -49,7 +49,7 @@ function criarAuthService(options: {
         options.refreshPayload ?? {
           sub: "usuario-1",
           empresa_id: "empresa-1",
-          email: "tecnico@londriclima.local",
+          email: "tecnico@airmovebr.local",
           role: UsuarioRole.tecnico
         }
       );
@@ -73,12 +73,12 @@ test("login retorna tokens e atualiza ultimo login para usuario ativo de empresa
   const { chamadas, service } = criarAuthService({});
 
   const resposta = await service.login({
-    email: "tecnico@londriclima.local",
+    email: "tecnico@airmovebr.local",
     senha: "123456"
   });
 
   assert.deepEqual(chamadas.findFirstWhere, {
-    email: "tecnico@londriclima.local",
+    email: "tecnico@airmovebr.local",
     ativo: true,
     empresa: {
       ativa: true
@@ -96,8 +96,8 @@ test("login retorna tokens e atualiza ultimo login para usuario ativo de empresa
   assert.deepEqual(resposta.usuario, {
     id: "usuario-1",
     empresa_id: "empresa-1",
-    nome: "Tecnico LondriClima",
-    email: "tecnico@londriclima.local",
+    nome: "Tecnico AIRMOVEBR",
+    email: "tecnico@airmovebr.local",
     role: UsuarioRole.tecnico
   });
 });
@@ -108,7 +108,7 @@ test("login bloqueia usuario inexistente, inativo ou empresa inativa sem validar
   await assert.rejects(
     () =>
       service.login({
-        email: "bloqueado@londriclima.local",
+        email: "bloqueado@airmovebr.local",
         senha: "123456"
       }),
     UnauthorizedException
@@ -123,7 +123,7 @@ test("login bloqueia senha invalida sem atualizar ultimo login nem detalhar moti
   await assert.rejects(
     () =>
       service.login({
-        email: "tecnico@londriclima.local",
+        email: "tecnico@airmovebr.local",
         senha: "errada"
       }),
     (erro) => erro instanceof UnauthorizedException && erro.getStatus() === 401
@@ -159,3 +159,4 @@ test("refresh bloqueia token de usuario inativo ou empresa inativa", async () =>
     (erro) => erro instanceof UnauthorizedException && erro.getStatus() === 401
   );
 });
+

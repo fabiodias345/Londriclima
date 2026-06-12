@@ -23,13 +23,13 @@ async function main() {
       cnpj: "00000000000000"
     },
     update: {
-      nome: "LondriClima",
+      nome: "AIRMOVEBR",
       telefone: null,
       email: null,
       ativa: true
     },
     create: {
-      nome: "LondriClima",
+      nome: "AIRMOVEBR",
       cnpj: "00000000000000",
       ativa: true
     }
@@ -39,7 +39,7 @@ async function main() {
     where: {
       empresaId_email: {
         empresaId: empresa.id,
-        email: "tecnico@londriclima.local"
+        email: "tecnico@airmovebr.local"
       }
     },
     update: {
@@ -51,7 +51,7 @@ async function main() {
     create: {
       empresaId: empresa.id,
       nome: "João Técnico",
-      email: "tecnico@londriclima.local",
+      email: "tecnico@airmovebr.local",
       senhaHash,
       role: "tecnico",
       ativo: true

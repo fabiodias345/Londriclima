@@ -108,7 +108,7 @@ export class SiteService {
     return {
       pre_chamado_id: resultado.id,
       status: resultado.status,
-      mensagem: "Pré-chamado registrado. A equipe LondriClima retornará pelo WhatsApp.",
+      mensagem: "Pré-chamado registrado. A equipe AIRMOVEBR retornará pelo WhatsApp.",
       criado_em: resultado.criadaEm.toISOString()
     };
   }

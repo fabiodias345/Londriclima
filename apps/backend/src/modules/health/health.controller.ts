@@ -11,7 +11,7 @@ export class HealthController {
 
     return {
       status: "ok",
-      service: "londriclima-backend",
+      service: "airmovebr-backend",
       checked_at: new Date().toISOString()
     };
   }

@@ -29,7 +29,7 @@ test("admin autentica, guarda token e protege chamadas administrativas", () => {
   assert.match(script, /http:\/\/localhost:3000\/api\/v1/);
   assert.match(script, /https:\/\/api\.airmovebr\.com\.br\/api\/v1/);
   assert.match(script, /\/auth\/login/);
-  assert.match(script, /localStorage\.setItem\("londriclima_access_token"/);
+  assert.match(script, /localStorage\.setItem\("airmovebr_access_token"/);
   assert.match(script, /Authorization:\s*`Bearer \$\{getToken\(\)\}`/);
   assert.match(script, /\/admin\/pre-chamados/);
   assert.match(script, /\/admin\/frota\/localizacoes/);
@@ -49,9 +49,16 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(html, /data-view="clientes"/);
   assert.match(html, /data-view="relatorios"/);
   assert.match(html, /id="agendaView"/);
+  assert.match(html, /id="agendaCalendar"/);
+  assert.match(html, /id="agendaSelectedDateTitle"/);
+  assert.match(html, /id="agendaList"/);
   assert.match(html, /id="clientesView"/);
   assert.match(html, /id="relatoriosView"/);
   assert.match(script, /async function loadAgenda/);
+  assert.match(script, /function renderAgendaCalendar/);
+  assert.match(script, /function renderAgendaDay/);
+  assert.match(script, /function buildAgendaSlots/);
+  assert.match(script, /selectedAgendaDate = button\.dataset\.agendaDate/);
   assert.match(script, /async function loadClientes/);
   assert.match(script, /async function loadRelatorios/);
 });
@@ -80,29 +87,40 @@ test("admin possui aba PMOC com cadastro, checklists e itens hospitalares", () =
   assert.match(styles, /\.pmoc-check/);
 });
 
-test("admin possui lancamento e relatorio de abastecimento da frota", () => {
+test("admin separa frota em mapa consumo e abastecimentos", () => {
   const html = read("apps/admin/index.html");
   const script = read("apps/admin/script.js");
 
-  assert.match(html, /id="fuelForm"/);
-  assert.match(html, /name="odometro_km"/);
-  assert.match(html, /name="litros"/);
-  assert.match(html, /name="valor_total"/);
+  assert.match(html, /data-fleet-tab="mapa"/);
+  assert.match(html, /data-fleet-tab="consumo"/);
+  assert.match(html, /data-fleet-tab="abastecimentos"/);
+  assert.match(html, /id="fleetReportExportButton"/);
   assert.match(html, /id="fleetReportList"/);
-  assert.match(script, /async function submitFuel/);
+  assert.match(html, /id="fuelHistoryList"/);
+  assert.match(html, /id="fuelForm"/);
+  assert.match(html, /Registrar abastecimento manual/);
+  assert.match(script, /function setFleetTab/);
   assert.match(script, /async function loadRelatorioFrota/);
+  assert.match(script, /async function submitFuel/);
+  assert.match(script, /function openFleetReport/);
 });
 
-test("admin usa OpenStreetMap com fallback operacional local para a frota", () => {
+test("admin mostra todos os veiculos no Leaflet e permite zoom por carro", () => {
   const html = read("apps/admin/index.html");
   const script = read("apps/admin/script.js");
   const styles = read("apps/admin/styles.css");
 
-  assert.doesNotMatch(html, /leaflet/i);
-  assert.doesNotMatch(script, /tile\.openstreetmap\.org|L\.map|L\.marker/);
-  assert.match(html, /openstreetmap\.org\/export\/embed\.html/);
-  assert.match(script, /toMapPosition\(location\.latitude, location\.longitude\)/);
-  assert.match(styles, /\.osm-map/);
-  assert.match(styles, /\.map-grid/);
-  assert.match(styles, /\.vehicle-marker/);
+  assert.match(html, /\.\/vendor\/leaflet\/leaflet\.css/);
+  assert.match(html, /\.\/vendor\/leaflet\/leaflet\.js/);
+  assert.doesNotMatch(html, /openstreetmap\.org\/export\/embed\.html/);
+  assert.match(script, /L\.map\(fleetMap/);
+  assert.match(script, /L\.tileLayer\("https:\/\/\{s\}\.tile\.openstreetmap\.org/);
+  assert.match(script, /L\.marker\(\[latitude, longitude\]/);
+  assert.match(script, /leafletMap\.fitBounds\(fleetMarkerGroup\.getBounds\(\)/);
+  assert.match(script, /function focusVehicleOnMap/);
+  assert.match(script, /leafletMap\.setView\(marker\.getLatLng\(\), 17/);
+  assert.match(script, /selectFleetVehicle\(card\.dataset\.vehicleId\)/);
+  assert.match(styles, /\.leaflet-container/);
+  assert.doesNotMatch(html, /map-road|Av\. Higienópolis|Av\. Dez de Dezembro|BR-369/);
+  assert.doesNotMatch(styles, /\.map-road|\.vehicle-marker/);
 });

@@ -1,4 +1,4 @@
-import { test } from "node:test";
+﻿import { test } from "node:test";
 import * as assert from "node:assert/strict";
 import { UnauthorizedException } from "@nestjs/common";
 import { UsuarioRole } from "@prisma/client";
@@ -31,7 +31,7 @@ test("JwtAuthGuard aceita Bearer token valido e injeta usuario autenticado", () 
       return {
         sub: "usuario-1",
         empresa_id: "empresa-1",
-        email: "tecnico@londriclima.local",
+        email: "tecnico@airmovebr.local",
         role: UsuarioRole.tecnico
       };
     }
@@ -43,7 +43,7 @@ test("JwtAuthGuard aceita Bearer token valido e injeta usuario autenticado", () 
   assert.deepEqual(request.user, {
     id: "usuario-1",
     empresa_id: "empresa-1",
-    email: "tecnico@londriclima.local",
+    email: "tecnico@airmovebr.local",
     role: UsuarioRole.tecnico
   });
 });
@@ -61,3 +61,4 @@ test("JwtAuthGuard rejeita esquema diferente de Bearer", () => {
 
   assert.throws(() => guard.canActivate(context as never), UnauthorizedException);
 });
+

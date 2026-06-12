@@ -2,7 +2,7 @@
   "name": "londriclima",
   "version": "0.1.0",
   "private": true,
-  "description": "Monorepo da plataforma LondriClima Digital.",
+  "description": "Monorepo da plataforma AIRMOVEBR Digital.",
   "scripts": {
     "backend:dev": "npm run start:dev -w apps/backend",
     "backend:build": "npm run build -w apps/backend",
@@ -22,5 +22,8 @@
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=10.0.0"
+  },
+  "dependencies": {
+    "leaflet": "^1.9.4"
   }
 }

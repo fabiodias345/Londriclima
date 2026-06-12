@@ -1,4 +1,4 @@
-import { test } from "node:test";
+﻿import { test } from "node:test";
 import * as assert from "node:assert/strict";
 import { UnauthorizedException } from "@nestjs/common";
 import { UsuarioRole } from "@prisma/client";
@@ -7,7 +7,7 @@ import { TokenService } from "./token.service";
 const payload = {
   sub: "usuario-1",
   empresa_id: "empresa-1",
-  email: "tecnico@londriclima.local",
+  email: "tecnico@airmovebr.local",
   role: UsuarioRole.tecnico
 };
 
@@ -73,3 +73,4 @@ test("TokenService rejeita token expirado", () => {
     Date.now = realDateNow;
   }
 });
+

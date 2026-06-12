@@ -1,4 +1,4 @@
-import { test } from "node:test";
+﻿import { test } from "node:test";
 import * as assert from "node:assert/strict";
 import { ConflictException, NotFoundException } from "@nestjs/common";
 import { OrdemServicoEventoAcao, OrdemServicoStatus, Prisma, UsuarioRole } from "@prisma/client";
@@ -7,7 +7,7 @@ import { AdminService } from "./admin.service";
 const usuario = {
   id: "admin-1",
   empresa_id: "empresa-1",
-  email: "admin@londriclima.local",
+  email: "admin@airmovebr.local",
   role: UsuarioRole.admin
 };
 
@@ -178,3 +178,4 @@ test("aprovarPreChamado atualiza status e registra evento com empresa e usuario 
     atualizado_em: "2026-06-10T11:00:00.000Z"
   });
 });
+

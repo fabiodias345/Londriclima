@@ -8,6 +8,14 @@ Objetivo: Substituir o site atual (desatualizado) por uma plataforma integrada q
 
 Restrição principal da fase 1: Uma única empresa pagando, custo mínimo de infraestrutura, sem superdimensionamento.
 
+## Identidade Visual Atual
+
+Marca comercial: **AIRMOVEBR**.
+
+Logo de referência recebido no chat: wordmark em azul e grafite, com ícone de ar-condicionado, floco de neve/circuito e arco circular. Subtítulo: **MANUTENÇÃO E REPARO DE AR CONDICIONADO**.
+
+Aplicar essa identidade em interfaces públicas e administrativas. Nomes técnicos internos legados do repositório podem ser mantidos temporariamente quando a troca oferecer risco de quebrar ambiente local, Docker, Prisma ou histórico Git.
+
 ---
 
 ## Modelo de Negócios e Cobrança (Validação Comercial)

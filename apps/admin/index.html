@@ -3,20 +3,24 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LondriClima Admin</title>
+    <title>AIRMOVEBR Admin</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Manrope:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <link
+      rel="stylesheet"
+      href="./vendor/leaflet/leaflet.css"
+    />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <aside class="sidebar">
       <a class="brand" href="#">
-        <span>LC</span>
-        <strong>LondriClima</strong>
+        <span>AM</span>
+        <strong>AIRMOVEBR</strong>
       </a>
       <nav>
         <button class="nav-link active" type="button" data-view="preChamados">Pre-chamados</button>
@@ -42,7 +46,7 @@
         <form id="loginForm">
           <label>
             Email
-            <input name="email" type="email" value="tecnico@londriclima.local" required />
+            <input name="email" type="email" value="tecnico@airmovebr.local" required />
           </label>
           <label>
             Senha
@@ -160,67 +164,92 @@
           <div class="request-list" id="requestList"></div>
         </section>
 
-        <section class="fleet-view hidden" id="frotaView">
-          <div class="fleet-map" id="fleetMap" aria-label="Mapa operacional da frota">
-            <iframe
-              class="osm-map"
-              title="Mapa real da frota em Londrina"
-              loading="lazy"
-              referrerpolicy="no-referrer-when-downgrade"
-              src="https://www.openstreetmap.org/export/embed.html?bbox=-51.2400%2C-23.3800%2C-51.0800%2C-23.2500&amp;layer=mapnik"
-            ></iframe>
-            <div class="map-grid map-fallback" aria-hidden="true"></div>
-            <div class="map-district district-north">Centro</div>
-            <div class="map-district district-west">Cambé / BR-369</div>
-            <div class="map-district district-south">Gleba Palhano</div>
-            <div class="map-road road-br">BR-369</div>
-            <div class="map-road road-av">Av. Higienópolis</div>
-            <div class="map-road road-leste">Av. Dez de Dezembro</div>
+        <section class="fleet-panel hidden" id="frotaView">
+          <div class="subnav" role="tablist" aria-label="Secoes da frota">
+            <button class="subnav-button active" type="button" data-fleet-tab="mapa">Mapa</button>
+            <button class="subnav-button" type="button" data-fleet-tab="consumo">Consumo</button>
+            <button class="subnav-button" type="button" data-fleet-tab="abastecimentos">Abastecimentos</button>
           </div>
-          <div class="fleet-list">
-            <div class="worklist-header">
-              <h2>Veiculos monitorados</h2>
-              <p id="fleetStatus" role="status">Carregando...</p>
+
+          <div class="fleet-tab-panel fleet-map-panel" data-fleet-panel="mapa">
+            <div class="fleet-map" id="fleetMap" aria-label="Mapa operacional da frota"></div>
+            <div class="fleet-list">
+              <div class="worklist-header">
+                <h2>Veiculos monitorados</h2>
+                <p id="fleetStatus" role="status">Carregando...</p>
+              </div>
+              <div id="fleetList"></div>
             </div>
-            <form class="fuel-form" id="fuelForm">
-              <label>
-                Veiculo
-                <select name="veiculo_id" id="fuelVehicleSelect" required></select>
-              </label>
-              <label>
-                Odometro
-                <input name="odometro_km" type="number" min="0" step="0.1" placeholder="51635" required />
-              </label>
-              <label>
-                Litros
-                <input name="litros" type="number" min="0.001" step="0.001" placeholder="40.5" required />
-              </label>
-              <label>
-                Valor total
-                <input name="valor_total" type="number" min="0.01" step="0.01" placeholder="238.95" required />
-              </label>
-              <label>
-                Posto
-                <input name="posto" type="text" placeholder="Posto Centro" />
-              </label>
-              <button type="submit">Registrar abastecimento</button>
-              <p class="status" id="fuelStatus" role="status"></p>
-            </form>
-            <div id="fleetList"></div>
-            <div class="worklist-header split-header compact-header">
-              <h2>Historico de abastecimentos</h2>
-              <p id="fuelHistoryStatus" role="status">Carregando...</p>
-            </div>
-            <div class="data-list compact-list" id="fuelHistoryList"></div>
+          </div>
+
+          <div class="fleet-tab-panel hidden" data-fleet-panel="consumo">
+            <section class="worklist">
+              <div class="worklist-header">
+                <div>
+                  <h2>Consumo da frota</h2>
+                  <p id="fleetReportStatus" role="status">Carregando...</p>
+                </div>
+                <button class="secondary-button compact-button" id="fleetReportExportButton" type="button">Gerar relatorio</button>
+              </div>
+              <div class="data-list" id="fleetReportList"></div>
+            </section>
+          </div>
+
+          <div class="fleet-tab-panel hidden" data-fleet-panel="abastecimentos">
+            <section class="worklist">
+              <div class="worklist-header">
+                <h2>Historico de abastecimentos</h2>
+                <p id="fuelHistoryStatus" role="status">Carregando...</p>
+              </div>
+              <form class="fuel-form" id="fuelForm">
+                <label>
+                  Veiculo
+                  <select name="veiculo_id" id="fuelVehicleSelect" required></select>
+                </label>
+                <label>
+                  Odometro
+                  <input name="odometro_km" type="number" min="0" step="0.1" placeholder="51635" required />
+                </label>
+                <label>
+                  Litros
+                  <input name="litros" type="number" min="0.001" step="0.001" placeholder="40.5" required />
+                </label>
+                <label>
+                  Valor total
+                  <input name="valor_total" type="number" min="0.01" step="0.01" placeholder="238.95" required />
+                </label>
+                <label>
+                  Posto
+                  <input name="posto" type="text" placeholder="Posto Centro" />
+                </label>
+                <button type="submit">Registrar abastecimento manual</button>
+                <p class="status" id="fuelStatus" role="status"></p>
+              </form>
+              <div class="data-list compact-list" id="fuelHistoryList"></div>
+            </section>
           </div>
         </section>
 
-        <section class="worklist hidden" id="agendaView">
+        <section class="worklist agenda-panel hidden" id="agendaView">
           <div class="worklist-header">
-            <h2>Agenda operacional</h2>
-            <p id="agendaStatus" role="status">Carregando...</p>
+            <div>
+              <h2>Agenda operacional</h2>
+              <p id="agendaStatus" role="status">Carregando...</p>
+            </div>
           </div>
-          <div class="data-list" id="agendaList"></div>
+          <div class="agenda-board">
+            <div class="agenda-calendar" id="agendaCalendar" aria-label="Calendario da agenda"></div>
+            <section class="agenda-day-panel" aria-label="Horarios do dia selecionado">
+              <div class="agenda-day-header">
+                <div>
+                  <span class="kicker">Dia selecionado</span>
+                  <h3 id="agendaSelectedDateTitle">Selecione uma data</h3>
+                </div>
+                <p id="agendaSelectedDateMeta">0 servicos</p>
+              </div>
+              <div class="agenda-slots" id="agendaList"></div>
+            </section>
+          </div>
         </section>
 
         <section class="worklist hidden" id="clientesView">
@@ -336,15 +365,13 @@
             <p id="relatoriosStatus" role="status">Carregando...</p>
           </div>
           <div class="report-grid" id="reportGrid"></div>
-          <div class="worklist-header split-header">
-            <h2>Consumo da frota</h2>
-            <p id="fleetReportStatus" role="status">Carregando...</p>
-          </div>
-          <div class="data-list" id="fleetReportList"></div>
         </section>
       </section>
     </main>
 
+    <script
+      src="./vendor/leaflet/leaflet.js"
+    ></script>
     <script src="./script.js"></script>
   </body>
 </html>

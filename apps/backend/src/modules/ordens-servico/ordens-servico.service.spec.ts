@@ -1,4 +1,4 @@
-import { test } from "node:test";
+﻿import { test } from "node:test";
 import * as assert from "node:assert/strict";
 import { ConflictException, NotFoundException, UnprocessableEntityException } from "@nestjs/common";
 import {
@@ -14,7 +14,7 @@ import { OrdensServicoService } from "./ordens-servico.service";
 const usuario = {
   id: "usuario-1",
   empresa_id: "empresa-1",
-  email: "tecnico@londriclima.local",
+  email: "tecnico@airmovebr.local",
   role: UsuarioRole.tecnico
 };
 
@@ -513,3 +513,4 @@ test("finalizarOs esconde OS de outra empresa e nao salva assinatura", async () 
   await assert.rejects(() => service.finalizarOs("os-1", finalizarDto, usuario), NotFoundException);
   assert.equal(salvouAssinatura, false);
 });
+

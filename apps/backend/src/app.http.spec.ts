@@ -1,4 +1,4 @@
-import { after, before, test } from "node:test";
+﻿import { after, before, test } from "node:test";
 import * as assert from "node:assert/strict";
 import { ValidationPipe } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
@@ -83,15 +83,15 @@ function criarPrismaMock() {
     },
     usuario: {
       findFirst: async ({ where }: { where: { email?: string; id?: string } }) => {
-        if (where.email && where.email !== "tecnico@londriclima.local") {
+        if (where.email && where.email !== "tecnico@airmovebr.local") {
           return null;
         }
 
         return {
           id: usuarioId,
           empresaId,
-          nome: "Tecnico LondriClima",
-          email: "tecnico@londriclima.local",
+          nome: "Tecnico AIRMOVEBR",
+          email: "tecnico@airmovebr.local",
           senhaHash,
           role: UsuarioRole.tecnico
         };
@@ -217,7 +217,7 @@ function criarPrismaMock() {
             placa: "ABC1D23"
           },
           usuario: {
-            nome: "Tecnico LondriClima"
+            nome: "Tecnico AIRMOVEBR"
           }
         }
       ],
@@ -298,7 +298,7 @@ test("POST /api/v1/auth/login autentica com credenciais validas", async () => {
     method: "POST",
     headers: jsonHeaders(),
     body: JSON.stringify({
-      email: "tecnico@londriclima.local",
+      email: "tecnico@airmovebr.local",
       senha: "123456"
     })
   });
@@ -316,7 +316,7 @@ test("POST /api/v1/auth/refresh renova tokens com refresh valido", async () => {
     method: "POST",
     headers: jsonHeaders(),
     body: JSON.stringify({
-      email: "tecnico@londriclima.local",
+      email: "tecnico@airmovebr.local",
       senha: "123456"
     })
   });
@@ -452,3 +452,4 @@ test("PATCH /api/v1/os/:osId/status executa fluxo autenticado do controller", as
   assert.equal(body.os_id, osId);
   assert.equal(body.status, OrdemServicoStatus.em_deslocamento);
 });
+
