@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import {
   AutomacaoStatus,
   OrdemServicoEventoAcao,
@@ -7,11 +7,15 @@ import {
   Prisma,
   UsuarioRole
 } from "@prisma/client";
+import { randomBytes, randomInt } from "node:crypto";
 import { PrismaService } from "../../database/prisma.service";
+import { PasswordHashService } from "../auth/password-hash.service";
 import { AuthenticatedUser } from "../auth/auth-user";
 import { AprovarPreChamadoDto } from "./dto/aprovar-pre-chamado.dto";
 import { CriarAbastecimentoDto } from "./dto/criar-abastecimento.dto";
+import { SalvarEquipamentoDto } from "./dto/salvar-equipamento.dto";
 import { SalvarClienteDto } from "./dto/salvar-cliente.dto";
+import { SalvarEngenheiroResponsavelDto } from "./dto/salvar-engenheiro-responsavel.dto";
 
 const STATUS_OS_OPERACIONAIS: OrdemServicoStatus[] = [
   OrdemServicoStatus.aberta,
@@ -21,6 +25,8 @@ const STATUS_OS_OPERACIONAIS: OrdemServicoStatus[] = [
 
 @Injectable()
 export class AdminService {
+  private readonly passwordHash = new PasswordHashService();
+
   constructor(private readonly prisma: PrismaService) {}
 
   async listarPreChamados(usuario: AuthenticatedUser) {
@@ -439,6 +445,15 @@ export class AdminService {
         documento: true,
         telefone: true,
         email: true,
+        pmocAtivo: true,
+        engenheiroResponsavel: {
+          select: {
+            id: true,
+            nome: true,
+            crea: true,
+            email: true
+          }
+        },
         atualizadoEm: true,
         enderecos: {
           orderBy: {
@@ -479,6 +494,8 @@ export class AdminService {
         documento: cliente.documento,
         telefone: cliente.telefone,
         email: cliente.email,
+        pmoc_ativo: cliente.pmocAtivo,
+        engenheiro_responsavel: cliente.engenheiroResponsavel,
         atualizado_em: cliente.atualizadoEm.toISOString(),
         endereco: cliente.enderecos[0] ?? null,
         total_equipamentos: cliente.equipamentos.length,
@@ -490,7 +507,55 @@ export class AdminService {
     };
   }
 
+  async listarEngenheirosResponsaveis(usuario: AuthenticatedUser) {
+    const engenheiros = await this.prisma.engenheiroResponsavel.findMany({
+      where: {
+        empresaId: usuario.empresa_id,
+        ativo: true
+      },
+      orderBy: {
+        nome: "asc"
+      },
+      select: this.engenheiroResponsavelSelect()
+    });
+
+    return {
+      total: engenheiros.length,
+      items: engenheiros.map((engenheiro) => this.mapearEngenheiroResponsavel(engenheiro))
+    };
+  }
+
+  async criarEngenheiroResponsavel(dto: SalvarEngenheiroResponsavelDto, usuario: AuthenticatedUser) {
+    const engenheiro = await this.prisma.engenheiroResponsavel.create({
+      data: this.montarEngenheiroResponsavelData(dto, usuario.empresa_id),
+      select: this.engenheiroResponsavelSelect()
+    });
+
+    return this.mapearEngenheiroResponsavel(engenheiro);
+  }
+
+  async atualizarEngenheiroResponsavel(
+    engenheiroId: string,
+    dto: SalvarEngenheiroResponsavelDto,
+    usuario: AuthenticatedUser
+  ) {
+    await this.garantirEngenheiroDaEmpresa(engenheiroId, usuario);
+
+    const engenheiro = await this.prisma.engenheiroResponsavel.update({
+      where: {
+        id: engenheiroId
+      },
+      data: this.montarEngenheiroResponsavelData(dto, usuario.empresa_id, false),
+      select: this.engenheiroResponsavelSelect()
+    });
+
+    return this.mapearEngenheiroResponsavel(engenheiro);
+  }
+
   async criarCliente(dto: SalvarClienteDto, usuario: AuthenticatedUser) {
+    this.validarCadastroCliente(dto);
+    await this.validarVinculoPmoc(dto, usuario);
+
     const cliente = await this.prisma.$transaction(async (tx) => {
       const criado = await tx.cliente.create({
         data: this.montarClienteData(dto, usuario.empresa_id),
@@ -512,6 +577,9 @@ export class AdminService {
   }
 
   async atualizarCliente(clienteId: string, dto: SalvarClienteDto, usuario: AuthenticatedUser) {
+    this.validarCadastroCliente(dto);
+    await this.validarVinculoPmoc(dto, usuario);
+
     const clienteExiste = await this.prisma.cliente.findFirst({
       where: {
         id: clienteId,
@@ -562,6 +630,149 @@ export class AdminService {
     });
 
     return this.obterClientePorId(clienteId, usuario);
+  }
+
+  async apagarCliente(clienteId: string, usuario: AuthenticatedUser) {
+    const cliente = await this.prisma.cliente.findFirst({
+      where: {
+        id: clienteId,
+        empresaId: usuario.empresa_id
+      },
+      select: {
+        id: true,
+        nome: true,
+        _count: {
+          select: {
+            ordensServico: true,
+            equipamentos: true
+          }
+        }
+      }
+    });
+
+    if (!cliente) {
+      throw new NotFoundException("Cliente nao encontrado.");
+    }
+
+    if (cliente._count.ordensServico > 0 || cliente._count.equipamentos > 0) {
+      throw new ConflictException("Cliente possui historico ou equipamentos vinculados e nao pode ser apagado.");
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.clienteEndereco.deleteMany({
+        where: {
+          clienteId,
+          empresaId: usuario.empresa_id
+        }
+      });
+
+      await tx.cliente.delete({
+        where: {
+          id: clienteId
+        }
+      });
+    });
+
+    return {
+      id: cliente.id,
+      apagado: true
+    };
+  }
+
+  async listarEquipamentosCliente(clienteId: string, usuario: AuthenticatedUser) {
+    await this.garantirClienteDaEmpresa(clienteId, usuario);
+
+    const equipamentos = await this.prisma.equipamento.findMany({
+      where: {
+        clienteId,
+        empresaId: usuario.empresa_id
+      },
+      orderBy: [
+        {
+          localInstalacao: "asc"
+        },
+        {
+          marca: "asc"
+        }
+      ],
+      select: this.equipamentoSelect()
+    });
+
+    return {
+      total: equipamentos.length,
+      items: equipamentos.map((equipamento) => this.mapearEquipamento(equipamento))
+    };
+  }
+
+  async criarEquipamentoCliente(
+    clienteId: string,
+    dto: SalvarEquipamentoDto,
+    usuario: AuthenticatedUser
+  ) {
+    await this.garantirClienteDaEmpresa(clienteId, usuario);
+
+    const codigoPublico = await this.gerarCodigoPublicoEquipamento();
+    const senhaPublica = this.gerarSenhaPublica();
+    const equipamento = await this.prisma.equipamento.create({
+      data: {
+        empresaId: usuario.empresa_id,
+        clienteId,
+        codigoPublico,
+        senhaPublicaHash: await this.passwordHash.hash(senhaPublica),
+        acessoPublicoAtivo: dto.acesso_publico_ativo ?? true,
+        tipo: dto.tipo?.trim() || null,
+        patrimonio: dto.patrimonio?.trim() || null,
+        codigoBarras: dto.codigo_barras?.trim() || null,
+        marca: dto.marca.trim(),
+        modelo: dto.modelo.trim(),
+        capacidadeBtu: dto.capacidade_btu,
+        gasRefrigerante: dto.gas_refrigerante?.trim() || null,
+        numeroSerie: dto.numero_serie?.trim() || null,
+        localInstalacao: dto.local_instalacao?.trim() || null
+      },
+      select: this.equipamentoSelect()
+    });
+
+    return {
+      ...this.mapearEquipamento(equipamento),
+      senha_publica: senhaPublica
+    };
+  }
+
+  async renovarAcessoPublicoEquipamento(equipamentoId: string, usuario: AuthenticatedUser) {
+    const equipamentoExiste = await this.prisma.equipamento.findFirst({
+      where: {
+        id: equipamentoId,
+        empresaId: usuario.empresa_id
+      },
+      select: {
+        id: true,
+        codigoPublico: true
+      }
+    });
+
+    if (!equipamentoExiste) {
+      throw new NotFoundException("Equipamento nao encontrado.");
+    }
+
+    const senhaPublica = this.gerarSenhaPublica();
+    const codigoPublico = equipamentoExiste.codigoPublico || (await this.gerarCodigoPublicoEquipamento());
+    const equipamento = await this.prisma.equipamento.update({
+      where: {
+        id: equipamentoId
+      },
+      data: {
+        codigoPublico,
+        senhaPublicaHash: await this.passwordHash.hash(senhaPublica),
+        acessoPublicoAtivo: true
+      },
+      select: this.equipamentoSelect()
+    });
+
+    return {
+      ...this.mapearEquipamento(equipamento),
+      senha_publica: senhaPublica
+    };
   }
 
   async obterRelatorios(usuario: AuthenticatedUser) {
@@ -754,14 +965,244 @@ export class AdminService {
   }
 
   private montarClienteData(dto: SalvarClienteDto, empresaId: string): Prisma.ClienteUncheckedCreateInput {
+    const telefone = this.normalizarTelefoneComDdd(dto.telefone);
+    const documento = this.normalizarDocumento(dto);
+
     return {
       empresaId,
       tipo: dto.tipo === "pj" ? PessoaTipo.pj : PessoaTipo.pf,
       nome: dto.nome.trim(),
-      documento: dto.documento?.trim() || null,
+      documento,
       email: dto.email?.trim() || null,
-      telefone: dto.telefone?.trim() || null
+      telefone,
+      pmocAtivo: dto.pmoc_ativo === true,
+      engenheiroResponsavelId: dto.pmoc_ativo === true ? dto.engenheiro_responsavel_id?.trim() || null : null
     };
+  }
+
+  private validarCadastroCliente(dto: SalvarClienteDto) {
+    this.normalizarTelefoneComDdd(dto.telefone);
+    this.normalizarDocumento(dto);
+  }
+
+  private normalizarTelefoneComDdd(telefone?: string) {
+    const digits = telefone?.replace(/\D/g, "") ?? "";
+
+    if (!digits) {
+      throw new BadRequestException("Telefone com DDD e obrigatorio.");
+    }
+
+    if (![10, 11].includes(digits.length)) {
+      throw new BadRequestException("Telefone deve incluir DDD com 10 ou 11 digitos.");
+    }
+
+    return digits;
+  }
+
+  private normalizarDocumento(dto: SalvarClienteDto) {
+    const tipo = dto.tipo === "pj" ? PessoaTipo.pj : PessoaTipo.pf;
+    const documento = dto.documento?.trim() ?? "";
+
+    if (!documento) {
+      throw new BadRequestException(tipo === PessoaTipo.pj ? "CNPJ e obrigatorio." : "CPF ou RG e obrigatorio.");
+    }
+
+    if (tipo === PessoaTipo.pj) {
+      const digits = documento.replace(/\D/g, "");
+
+      if (digits.length !== 14) {
+        throw new BadRequestException("CNPJ deve ter 14 digitos.");
+      }
+
+      return digits;
+    }
+
+    return documento;
+  }
+
+  private async garantirClienteDaEmpresa(clienteId: string, usuario: AuthenticatedUser) {
+    const cliente = await this.prisma.cliente.findFirst({
+      where: {
+        id: clienteId,
+        empresaId: usuario.empresa_id
+      },
+      select: {
+        id: true
+      }
+    });
+
+    if (!cliente) {
+      throw new NotFoundException("Cliente nao encontrado.");
+    }
+  }
+
+  private async garantirEngenheiroDaEmpresa(engenheiroId: string, usuario: AuthenticatedUser) {
+    const engenheiro = await this.prisma.engenheiroResponsavel.findFirst({
+      where: {
+        id: engenheiroId,
+        empresaId: usuario.empresa_id,
+        ativo: true
+      },
+      select: {
+        id: true
+      }
+    });
+
+    if (!engenheiro) {
+      throw new NotFoundException("Engenheiro responsavel nao encontrado.");
+    }
+  }
+
+  private async validarVinculoPmoc(dto: SalvarClienteDto, usuario: AuthenticatedUser) {
+    if (dto.pmoc_ativo !== true) {
+      return;
+    }
+
+    if (!dto.engenheiro_responsavel_id?.trim()) {
+      throw new BadRequestException("Cliente PMOC precisa de engenheiro responsavel.");
+    }
+
+    await this.garantirEngenheiroDaEmpresa(dto.engenheiro_responsavel_id, usuario);
+  }
+
+  private engenheiroResponsavelSelect() {
+    return {
+      id: true,
+      nome: true,
+      cpf: true,
+      crea: true,
+      email: true,
+      telefone: true,
+      atualizadoEm: true
+    } satisfies Prisma.EngenheiroResponsavelSelect;
+  }
+
+  private mapearEngenheiroResponsavel(engenheiro: {
+    id: string;
+    nome: string;
+    cpf: string;
+    crea: string;
+    email: string;
+    telefone: string | null;
+    atualizadoEm: Date;
+  }) {
+    return {
+      id: engenheiro.id,
+      nome: engenheiro.nome,
+      cpf: engenheiro.cpf,
+      crea: engenheiro.crea,
+      email: engenheiro.email,
+      telefone: engenheiro.telefone,
+      atualizado_em: engenheiro.atualizadoEm.toISOString()
+    };
+  }
+
+  private montarEngenheiroResponsavelData(
+    dto: SalvarEngenheiroResponsavelDto,
+    empresaId: string,
+    incluirEmpresa = true
+  ): Prisma.EngenheiroResponsavelUncheckedCreateInput | Prisma.EngenheiroResponsavelUncheckedUpdateInput {
+    const data: Prisma.EngenheiroResponsavelUncheckedCreateInput | Prisma.EngenheiroResponsavelUncheckedUpdateInput = {
+      nome: dto.nome.trim(),
+      cpf: dto.cpf.replace(/\D/g, ""),
+      crea: dto.crea.trim().toUpperCase(),
+      email: dto.email.trim().toLowerCase(),
+      telefone: dto.telefone?.replace(/\D/g, "") || null
+    };
+
+    if (incluirEmpresa) {
+      data.empresaId = empresaId;
+    }
+
+    return data;
+  }
+
+  private equipamentoSelect() {
+    return {
+      id: true,
+      codigoPublico: true,
+      acessoPublicoAtivo: true,
+      tipo: true,
+      patrimonio: true,
+      codigoBarras: true,
+      marca: true,
+      modelo: true,
+      capacidadeBtu: true,
+      gasRefrigerante: true,
+      numeroSerie: true,
+      localInstalacao: true,
+      atualizadoEm: true,
+      ordensServico: {
+        select: {
+          id: true,
+          status: true
+        }
+      }
+    } satisfies Prisma.EquipamentoSelect;
+  }
+
+  private mapearEquipamento(equipamento: {
+    id: string;
+    codigoPublico: string | null;
+    acessoPublicoAtivo: boolean;
+    tipo: string | null;
+    patrimonio: string | null;
+    codigoBarras: string | null;
+    marca: string;
+    modelo: string;
+    capacidadeBtu: number | null;
+    gasRefrigerante: string | null;
+    numeroSerie: string | null;
+    localInstalacao: string | null;
+    atualizadoEm: Date;
+    ordensServico: { id: string; status: OrdemServicoStatus }[];
+  }) {
+    return {
+      id: equipamento.id,
+      codigo_publico: equipamento.codigoPublico,
+      acesso_publico_ativo: equipamento.acessoPublicoAtivo,
+      link_publico: equipamento.codigoPublico
+        ? `/landing/equipamento.html?codigo=${equipamento.codigoPublico}`
+        : null,
+      tipo: equipamento.tipo,
+      patrimonio: equipamento.patrimonio,
+      codigo_barras: equipamento.codigoBarras,
+      marca: equipamento.marca,
+      modelo: equipamento.modelo,
+      capacidade_btu: equipamento.capacidadeBtu,
+      gas_refrigerante: equipamento.gasRefrigerante,
+      numero_serie: equipamento.numeroSerie,
+      local_instalacao: equipamento.localInstalacao,
+      atualizado_em: equipamento.atualizadoEm.toISOString(),
+      total_os: equipamento.ordensServico.length,
+      os_abertas: equipamento.ordensServico.filter((ordem) =>
+        STATUS_OS_OPERACIONAIS.includes(ordem.status)
+      ).length
+    };
+  }
+
+  private async gerarCodigoPublicoEquipamento() {
+    for (let tentativa = 0; tentativa < 5; tentativa += 1) {
+      const codigo = `EQ-${randomBytes(5).toString("hex").toUpperCase()}`;
+      const existente = await this.prisma.equipamento.findUnique({
+        where: {
+          codigoPublico: codigo
+        },
+        select: {
+          id: true
+        }
+      });
+
+      if (!existente) {
+        return codigo;
+      }
+    }
+
+    throw new ConflictException("Nao foi possivel gerar codigo publico unico para o equipamento.");
+  }
+
+  private gerarSenhaPublica() {
+    return String(randomInt(100000, 1000000));
   }
 
   private montarEnderecoData(
@@ -798,6 +1239,15 @@ export class AdminService {
         documento: true,
         telefone: true,
         email: true,
+        pmocAtivo: true,
+        engenheiroResponsavel: {
+          select: {
+            id: true,
+            nome: true,
+            crea: true,
+            email: true
+          }
+        },
         atualizadoEm: true,
         enderecos: {
           orderBy: {
@@ -829,6 +1279,8 @@ export class AdminService {
       documento: cliente.documento,
       telefone: cliente.telefone,
       email: cliente.email,
+      pmoc_ativo: cliente.pmocAtivo,
+      engenheiro_responsavel: cliente.engenheiroResponsavel,
       atualizado_em: cliente.atualizadoEm.toISOString(),
       endereco: cliente.enderecos[0] ?? null
     };

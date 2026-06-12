@@ -52,6 +52,7 @@ Londriclima/
 +-- infra/                # Docker Compose local/producao e scripts
 +-- storage/              # Arquivos locais de desenvolvimento
 +-- tests/                # Testes de contrato do frontend
++-- checklist.md          # Checklists PMOC para o futuro app tecnico
 +-- package.json          # Scripts do monorepo
 +-- resumo.md             # Estado operacional recente do projeto
 ```
@@ -185,9 +186,33 @@ POST  /os/:osId/finalizar
 - [Memoria do projeto](./docs/memoria.md)
 - [PRD](./docs/prd.md)
 - [API Spec](./docs/api-spec.md)
+- [PMOC](./docs/pmoc.md)
+- [Checklists PMOC](./checklist.md)
 - [Telemetria GPS](./docs/telemetria-gps.md)
 - [Implantacao em producao](./docs/implantacao-producao.md)
 - [Prisma README](./apps/backend/prisma/README.md)
+
+## Checklists PMOC
+
+O arquivo [`checklist.md`](./checklist.md) concentra a base operacional dos
+checklists de manutencao de ar-condicionado que sera usada no aplicativo do
+tecnico. A aba PMOC do painel administrativo nao deve repetir esses itens como
+checklist manual; ela deve organizar clientes, equipamentos, pendencias,
+relatorios e assinatura tecnica.
+
+Checklists definidos:
+
+| Periodicidade | Foco |
+| --- | --- |
+| Mensal | Limpeza de filtros, inspecao visual, bandeja de condensado e fotos antes/depois. |
+| Trimestral | Limpeza de filtros e serpentina, dreno, gabinete, vedacoes, ruido e fluxo de ar. |
+| Semestral | Manutencao completa com condensadora, ventilador, fluido refrigerante, pressao e inspecao eletrica. |
+| Anual | Relatorio consolidado, historico de manutencoes, fixacoes, isolamento, tubulacoes e parecer tecnico. |
+
+Esses checklists seguem como referencia inicial conforme Portaria MS 3.523/98
+e ABNT NBR 13971. Antes de virar fluxo gravavel no app, cada item deve ser
+convertido em campos estruturados, evidencias obrigatorias e validacoes por
+periodicidade.
 
 ## Fluxo de ordem de servico
 

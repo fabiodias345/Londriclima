@@ -1,7 +1,8 @@
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
-import { NotFoundException } from "@nestjs/common";
+import { NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { OrdemServicoEventoAcao, OrdemServicoStatus } from "@prisma/client";
+import { PasswordHashService } from "../auth/password-hash.service";
 import { SiteService } from "./site.service";
 
 const dto = {
@@ -168,4 +169,80 @@ test("criarPreChamado falha se empresa piloto nao existir", async () => {
   const service = criarService(prisma);
 
   await assert.rejects(() => service.criarPreChamado(dto), NotFoundException);
+});
+
+test("consultarEquipamentoPublico exige senha correta e retorna dados limitados", async () => {
+  const senhaPublicaHash = await new PasswordHashService().hash("123456");
+  const prisma = {
+    equipamento: {
+      findUnique: async () => ({
+        id: "equipamento-1",
+        codigoPublico: "EQ-ABC123",
+        senhaPublicaHash,
+        acessoPublicoAtivo: true,
+        tipo: "Split",
+        marca: "LG",
+        modelo: "Dual",
+        capacidadeBtu: 12000,
+        gasRefrigerante: "R-410A",
+        numeroSerie: "SN1",
+        localInstalacao: "Sala",
+        atualizadoEm: new Date("2026-06-12T10:00:00.000Z"),
+        cliente: {
+          nome: "Maria"
+        },
+        ordensServico: [
+          {
+            id: "os-1",
+            status: OrdemServicoStatus.concluida,
+            titulo: "Limpeza",
+            agendadaPara: null,
+            concluidaEm: new Date("2026-06-12T09:00:00.000Z"),
+            atualizadaEm: new Date("2026-06-12T09:10:00.000Z")
+          }
+        ]
+      })
+    }
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.consultarEquipamentoPublico("EQ-ABC123", { senha: "123456" });
+
+  assert.equal(resposta.cliente.nome, "Maria");
+  assert.equal(resposta.equipamento.marca, "LG");
+  assert.equal(resposta.equipamento.gas_refrigerante, "R-410A");
+  assert.equal(resposta.manutencao.status, OrdemServicoStatus.concluida);
+  assert.equal((resposta as { telefone?: string }).telefone, undefined);
+});
+
+test("consultarEquipamentoPublico rejeita senha incorreta", async () => {
+  const senhaPublicaHash = await new PasswordHashService().hash("123456");
+  const prisma = {
+    equipamento: {
+      findUnique: async () => ({
+        id: "equipamento-1",
+        codigoPublico: "EQ-ABC123",
+        senhaPublicaHash,
+        acessoPublicoAtivo: true,
+        tipo: "Split",
+        marca: "LG",
+        modelo: "Dual",
+        capacidadeBtu: 12000,
+        gasRefrigerante: "R-410A",
+        numeroSerie: "SN1",
+        localInstalacao: "Sala",
+        atualizadoEm: new Date("2026-06-12T10:00:00.000Z"),
+        cliente: {
+          nome: "Maria"
+        },
+        ordensServico: []
+      })
+    }
+  };
+  const service = criarService(prisma);
+
+  await assert.rejects(
+    () => service.consultarEquipamentoPublico("EQ-ABC123", { senha: "000000" }),
+    UnauthorizedException
+  );
 });

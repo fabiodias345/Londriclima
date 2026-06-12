@@ -1,4 +1,4 @@
-import { IsEmail, IsIn, IsNotEmpty, IsOptional, IsString, Length } from "class-validator";
+import { IsBoolean, IsEmail, IsIn, IsNotEmpty, IsOptional, IsString, IsUUID, Length } from "class-validator";
 
 export class SalvarClienteDto {
   @IsOptional()
@@ -20,6 +20,14 @@ export class SalvarClienteDto {
   @IsOptional()
   @IsString()
   telefone?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  pmoc_ativo?: boolean;
+
+  @IsOptional()
+  @IsUUID()
+  engenheiro_responsavel_id?: string;
 
   @IsOptional()
   @IsString()

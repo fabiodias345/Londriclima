@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AIRMOVEBR | Consulta de equipamento</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./equipamento.css" />
+  </head>
+  <body>
+    <main class="equipment-page">
+      <section class="access-panel">
+        <a class="brand" href="./index.html" aria-label="AIRMOVEBR inicio">
+          <span class="brand-mark">AM</span>
+          <span>
+            <strong>AIRMOVEBR</strong>
+            <small>Consulta de manutencao</small>
+          </span>
+        </a>
+
+        <div class="access-copy">
+          <span class="kicker">Equipamento identificado</span>
+          <h1>Acompanhe a manutencao da sua maquina</h1>
+          <p>Digite a senha enviada pela AIRMOVEBR para ver somente as informacoes liberadas deste equipamento.</p>
+        </div>
+
+        <form class="access-form" id="equipmentAccessForm">
+          <label>
+            Codigo do equipamento
+            <input name="codigo" id="equipmentCodeInput" type="text" required />
+          </label>
+          <label>
+            Senha de acesso
+            <input name="senha" type="password" inputmode="numeric" autocomplete="one-time-code" required />
+          </label>
+          <button type="submit">Consultar</button>
+          <p class="form-status" id="equipmentAccessStatus" role="status"></p>
+        </form>
+      </section>
+
+      <section class="result-panel hidden" id="equipmentResultPanel">
+        <div>
+          <span class="kicker">Status</span>
+          <h2 id="equipmentResultTitle">Equipamento</h2>
+          <p id="equipmentResultMeta"></p>
+        </div>
+        <div class="status-card">
+          <span>Situacao atual</span>
+          <strong id="equipmentMaintenanceStatus">-</strong>
+          <p id="equipmentMaintenanceDate"></p>
+        </div>
+        <div>
+          <h3>Historico liberado</h3>
+          <div class="history-list" id="equipmentHistoryList"></div>
+        </div>
+      </section>
+    </main>
+
+    <script src="./equipamento.js"></script>
+  </body>
+</html>

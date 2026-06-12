@@ -1,6 +1,6 @@
 ﻿import { test } from "node:test";
 import * as assert from "node:assert/strict";
-import { ConflictException, NotFoundException, UnprocessableEntityException } from "@nestjs/common";
+import { BadRequestException, ConflictException, NotFoundException, UnprocessableEntityException } from "@nestjs/common";
 import {
   AutomacaoTipo,
   EvidenciaTipo,
@@ -42,7 +42,8 @@ function criarOrdemProntaParaFinalizar(overrides: Record<string, unknown> = {}) 
     status: OrdemServicoStatus.em_atendimento,
     equipamento: {
       marca: "LG",
-      modelo: "Dual Inverter"
+      modelo: "Dual Inverter",
+      gasRefrigerante: "R-410A"
     },
     evidencias: [{ tipo: EvidenciaTipo.antes }, { tipo: EvidenciaTipo.depois }],
     checklist: {
@@ -304,6 +305,30 @@ test("finalizarOs exige equipamento identificado", async () => {
   );
 });
 
+test("finalizarOs exige gas refrigerante do equipamento", async () => {
+  const tx = {
+    ordemServico: {
+      findUnique: async () =>
+        criarOrdemProntaParaFinalizar({
+          equipamento: {
+            marca: "LG",
+            modelo: "Dual Inverter",
+            gasRefrigerante: null
+          }
+        })
+    }
+  };
+  const prisma = {
+    $transaction: async (callback: (tx: unknown) => unknown) => callback(tx)
+  };
+  const service = criarService(prisma);
+
+  await assert.rejects(
+    () => service.finalizarOs("os-1", finalizarDto, usuario),
+    UnprocessableEntityException
+  );
+});
+
 test("finalizarOs exige evidencia inicial", async () => {
   const tx = {
     ordemServico: {
@@ -376,6 +401,99 @@ test("finalizarOs rejeita OS ja concluida", async () => {
   const service = criarService(prisma);
 
   await assert.rejects(() => service.finalizarOs("os-1", finalizarDto, usuario), ConflictException);
+});
+
+test("identificarEquipamento exige gas refrigerante na primeira identificacao", async () => {
+  const tx = {
+    ordemServico: {
+      findUnique: async () => ({
+        id: "os-1",
+        empresaId: "empresa-1",
+        clienteId: "cliente-1",
+        equipamentoId: null,
+        status: OrdemServicoStatus.em_atendimento
+      })
+    },
+    equipamento: {
+      create: async () => ({})
+    }
+  };
+  const prisma = {
+    $transaction: async (callback: (tx: unknown) => unknown) => callback(tx)
+  };
+  const service = criarService(prisma);
+
+  await assert.rejects(
+    () =>
+      service.identificarEquipamento(
+        "os-1",
+        {
+          marca: "LG",
+          modelo: "Dual Inverter"
+        },
+        usuario
+      ),
+    BadRequestException
+  );
+});
+
+test("identificarEquipamento salva gas refrigerante no equipamento novo", async () => {
+  const chamadas = {
+    createData: undefined as unknown,
+    updateData: undefined as unknown
+  };
+  const tx = {
+    ordemServico: {
+      findUnique: async () => ({
+        id: "os-1",
+        empresaId: "empresa-1",
+        clienteId: "cliente-1",
+        equipamentoId: null,
+        status: OrdemServicoStatus.em_atendimento
+      }),
+      update: async ({ data }: { data: unknown }) => {
+        chamadas.updateData = data;
+      }
+    },
+    equipamento: {
+      create: async ({ data }: { data: unknown }) => {
+        chamadas.createData = data;
+        return {
+          id: "equipamento-1",
+          marca: "LG",
+          modelo: "Dual Inverter",
+          capacidadeBtu: 12000,
+          gasRefrigerante: (data as { gasRefrigerante: string }).gasRefrigerante,
+          numeroSerie: "SN1",
+          localInstalacao: "Sala",
+          atualizadoEm: new Date("2026-06-12T10:00:00.000Z")
+        };
+      }
+    }
+  };
+  const prisma = {
+    $transaction: async (callback: (tx: unknown) => unknown) => callback(tx)
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.identificarEquipamento(
+    "os-1",
+    {
+      marca: "LG",
+      modelo: "Dual Inverter",
+      capacidade_btu: 12000,
+      gas_refrigerante: "R-410A",
+      numero_serie: "SN1",
+      local_instalacao: "Sala"
+    },
+    usuario
+  );
+
+  assert.equal((chamadas.createData as { gasRefrigerante: string }).gasRefrigerante, "R-410A");
+  assert.deepEqual(chamadas.updateData, {
+    equipamentoId: "equipamento-1"
+  });
+  assert.equal(resposta.equipamento.gas_refrigerante, "R-410A");
 });
 
 test("identificarEquipamento esconde OS de outra empresa", async () => {

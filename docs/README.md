@@ -87,6 +87,7 @@ e motor de recorrência para lembretes preventivos de manutenção a cada
 | [`memoria.md`](./memoria.md) | Contexto do projeto, decisões arquiteturais, convenções de negócio e modelo de monetização. |
 | [`prd.md`](./prd.md) | Visão consolidada do produto, escopo do MVP, decisões técnicas e diagrama de estados da OS. |
 | [`api-spec.md`](./api-spec.md) | Especificação parcial dos endpoints REST do fluxo mobile de OS. |
+| [`pmoc.md`](./pmoc.md) | Regras de PMOC por cliente, engenheiro responsavel, relatorio separado por cliente e maquinas. |
 | [`telemetria-gps.md`](./telemetria-gps.md) | Decisão e arquitetura futura para receptor próprio de GPS da frota em VPS. |
 | [`implantacao-producao.md`](./implantacao-producao.md) | Decisao de deploy na VM Locaweb Cloud usando o dominio `airmovebr.com.br`. |
 | [`schema.prisma`](../apps/backend/prisma/schema.prisma) | Schema inicial PostgreSQL/Prisma com multi-tenant por `empresa_id`. |

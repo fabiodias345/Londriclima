@@ -27,6 +27,7 @@
         <button class="nav-link" type="button" data-view="frota">Frota</button>
         <button class="nav-link" type="button" data-view="agenda">Agenda</button>
         <button class="nav-link" type="button" data-view="clientes">Clientes</button>
+        <button class="nav-link" type="button" data-view="engenheiros">Engenheiros</button>
         <button class="nav-link" type="button" data-view="pmoc">PMOC</button>
         <button class="nav-link" type="button" data-view="relatorios">Relatorios</button>
       </nav>
@@ -272,23 +273,28 @@
             </label>
             <label>
               Telefone
-              <input name="telefone" type="tel" />
+              <input name="telefone" type="tel" inputmode="tel" placeholder="(43) 99999-9999" required />
             </label>
             <label>
               Email
               <input name="email" type="email" />
             </label>
             <label>
-              Documento
-              <input name="documento" type="text" />
+              <span id="clientDocumentLabel">CPF ou RG</span>
+              <input name="documento" type="text" aria-describedby="clientDocumentHelp" required />
+              <small id="clientDocumentHelp">PF: informe CPF ou RG. PJ: informe CNPJ.</small>
+            </label>
+            <label>
+              CEP
+              <input name="cep" type="text" inputmode="numeric" maxlength="9" autocomplete="postal-code" />
             </label>
             <label>
               Logradouro
-              <input name="logradouro" type="text" />
+              <input name="logradouro" type="text" autocomplete="address-line1" />
             </label>
             <label>
               Numero
-              <input name="numero" type="text" />
+              <input name="numero" type="text" autocomplete="address-line2" />
             </label>
             <label>
               Bairro
@@ -302,13 +308,132 @@
               UF
               <input name="uf" type="text" value="PR" maxlength="2" />
             </label>
+            <label class="toggle-field">
+              <input name="pmoc_ativo" type="checkbox" />
+              Cliente exige PMOC
+            </label>
+            <label>
+              Engenheiro responsavel
+              <select name="engenheiro_responsavel_id" id="clientEngineerSelect">
+                <option value="">Cadastre ou selecione um engenheiro</option>
+              </select>
+            </label>
             <div class="form-actions">
               <button type="submit">Salvar cliente</button>
               <button class="secondary-button" id="resetClientFormButton" type="button">Novo</button>
             </div>
             <p class="status" id="clientFormStatus" role="status"></p>
+            <p class="cep-status" id="clientCepStatus" role="status" aria-live="polite"></p>
           </form>
+          <section class="equipment-panel hidden" id="clientEquipmentPanel">
+            <div class="worklist-header compact-header">
+              <div>
+                <span class="kicker">Equipamentos</span>
+                <h2 id="clientEquipmentTitle">Selecione um cliente</h2>
+              </div>
+              <p id="clientEquipmentStatus" role="status">Escolha um cliente para ver as maquinas.</p>
+            </div>
+            <form class="equipment-form" id="equipmentForm">
+              <label>
+                Tipo
+                <input name="tipo" type="text" placeholder="Split, cassete, VRF, fancoil..." />
+              </label>
+              <label>
+                Patrimonio
+                <input name="patrimonio" type="text" />
+              </label>
+              <label>
+                Codigo de barras ou QR Code
+                <input name="codigo_barras" type="text" placeholder="Leia ou digite o codigo da etiqueta" />
+              </label>
+              <label>
+                Marca
+                <input name="marca" type="text" required />
+              </label>
+              <label>
+                Modelo
+                <input name="modelo" type="text" required />
+              </label>
+              <label>
+                Capacidade BTU
+                <input name="capacidade_btu" type="number" min="1" step="1" />
+              </label>
+              <label>
+                Gas refrigerante
+                <select name="gas_refrigerante">
+                  <option value="">Informar depois</option>
+                  <option value="R-22">R-22</option>
+                  <option value="R-410A">R-410A</option>
+                  <option value="R-32">R-32</option>
+                  <option value="R-134a">R-134a</option>
+                  <option value="R-407C">R-407C</option>
+                  <option value="R-404A">R-404A</option>
+                  <option value="Outro">Outro</option>
+                </select>
+              </label>
+              <label>
+                Numero de serie
+                <input name="numero_serie" type="text" />
+              </label>
+              <label>
+                Local de instalacao
+                <input name="local_instalacao" type="text" placeholder="Sala, setor, andar..." />
+              </label>
+              <label class="toggle-field">
+                <input name="acesso_publico_ativo" type="checkbox" checked />
+                Acesso publico com senha ativo
+              </label>
+              <div class="form-actions">
+                <button type="submit">Salvar equipamento</button>
+                <button class="secondary-button" id="scanEquipmentCodeButton" type="button">Ler codigo/QR</button>
+              </div>
+              <p class="status" id="equipmentFormStatus" role="status"></p>
+            </form>
+            <div class="scanner-panel hidden" id="equipmentScannerPanel">
+              <video id="equipmentScannerVideo" playsinline muted></video>
+              <div class="form-actions">
+                <button class="secondary-button" id="stopEquipmentScanButton" type="button">Fechar leitor</button>
+              </div>
+            </div>
+            <div class="data-list compact-list" id="clientEquipmentList"></div>
+          </section>
           <div class="data-list" id="clientesList"></div>
+        </section>
+
+        <section class="worklist hidden" id="engenheirosView">
+          <div class="worklist-header">
+            <h2>Engenheiros responsaveis</h2>
+            <p id="engenheirosStatus" role="status">Carregando...</p>
+          </div>
+          <form class="client-form" id="engineerForm">
+            <input name="id" type="hidden" />
+            <label>
+              Nome
+              <input name="nome" type="text" required />
+            </label>
+            <label>
+              CPF
+              <input name="cpf" type="text" inputmode="numeric" required />
+            </label>
+            <label>
+              CREA
+              <input name="crea" type="text" required />
+            </label>
+            <label>
+              Email
+              <input name="email" type="email" required />
+            </label>
+            <label>
+              Telefone
+              <input name="telefone" type="tel" inputmode="tel" />
+            </label>
+            <div class="form-actions">
+              <button type="submit">Salvar engenheiro</button>
+              <button class="secondary-button" id="resetEngineerFormButton" type="button">Novo</button>
+            </div>
+            <p class="status" id="engineerFormStatus" role="status"></p>
+          </form>
+          <div class="data-list" id="engenheirosList"></div>
         </section>
 
         <section class="worklist hidden" id="pmocView">
@@ -368,6 +493,18 @@
         </section>
       </section>
     </main>
+
+    <div class="modal-backdrop hidden" id="deleteClientModal" role="dialog" aria-modal="true" aria-labelledby="deleteClientTitle">
+      <section class="confirm-modal">
+        <span class="kicker">Confirmar exclusao</span>
+        <h2 id="deleteClientTitle">Apagar cliente?</h2>
+        <p id="deleteClientMessage">Esta acao remove o cadastro selecionado.</p>
+        <div class="modal-actions">
+          <button class="reject-button" id="confirmDeleteClientButton" type="button">Sim, apagar</button>
+          <button class="secondary-button" id="cancelDeleteClientButton" type="button">Nao</button>
+        </div>
+      </section>
+    </div>
 
     <script
       src="./vendor/leaflet/leaflet.js"

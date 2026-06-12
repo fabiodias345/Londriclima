@@ -1,11 +1,15 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { PrismaService } from "../../database/prisma.service";
+import { PasswordHashService } from "../auth/password-hash.service";
+import { ConsultarEquipamentoDto } from "./dto/consultar-equipamento.dto";
 import { CriarPreChamadoDto } from "./dto/criar-pre-chamado.dto";
 
 const EMPRESA_PILOTO_CNPJ = "00000000000000";
 
 @Injectable()
 export class SiteService {
+  private readonly passwordHash = new PasswordHashService();
+
   constructor(private readonly prisma: PrismaService) {}
 
   async criarPreChamado(dto: CriarPreChamadoDto) {
@@ -110,6 +114,94 @@ export class SiteService {
       status: resultado.status,
       mensagem: "Pré-chamado registrado. A equipe AIRMOVEBR retornará pelo WhatsApp.",
       criado_em: resultado.criadaEm.toISOString()
+    };
+  }
+
+  async consultarEquipamentoPublico(codigoPublico: string, dto: ConsultarEquipamentoDto) {
+    const equipamento = await this.prisma.equipamento.findUnique({
+      where: {
+        codigoPublico
+      },
+      select: {
+        id: true,
+        codigoPublico: true,
+        senhaPublicaHash: true,
+        acessoPublicoAtivo: true,
+        tipo: true,
+        marca: true,
+        modelo: true,
+        capacidadeBtu: true,
+        gasRefrigerante: true,
+        numeroSerie: true,
+        localInstalacao: true,
+        atualizadoEm: true,
+        cliente: {
+          select: {
+            nome: true
+          }
+        },
+        ordensServico: {
+          orderBy: {
+            atualizadaEm: "desc"
+          },
+          take: 5,
+          select: {
+            id: true,
+            status: true,
+            titulo: true,
+            agendadaPara: true,
+            concluidaEm: true,
+            atualizadaEm: true
+          }
+        }
+      }
+    });
+
+    if (!equipamento || !equipamento.acessoPublicoAtivo || !equipamento.senhaPublicaHash) {
+      throw new NotFoundException("Equipamento nao encontrado.");
+    }
+
+    const senhaValida = await this.passwordHash.verify(dto.senha, equipamento.senhaPublicaHash);
+
+    if (!senhaValida) {
+      throw new UnauthorizedException("Senha invalida.");
+    }
+
+    const ultimaOs = equipamento.ordensServico[0] ?? null;
+
+    return {
+      codigo_publico: equipamento.codigoPublico,
+      cliente: {
+        nome: equipamento.cliente.nome
+      },
+      equipamento: {
+        tipo: equipamento.tipo,
+        marca: equipamento.marca,
+        modelo: equipamento.modelo,
+        capacidade_btu: equipamento.capacidadeBtu,
+        gas_refrigerante: equipamento.gasRefrigerante,
+        numero_serie: equipamento.numeroSerie,
+        local_instalacao: equipamento.localInstalacao
+      },
+      manutencao: {
+        status: ultimaOs?.status ?? "sem_historico",
+        ultima_atualizacao: ultimaOs?.atualizadaEm.toISOString() ?? equipamento.atualizadoEm.toISOString(),
+        ultima_os: ultimaOs
+          ? {
+              titulo: ultimaOs.titulo,
+              status: ultimaOs.status,
+              agendada_para: ultimaOs.agendadaPara?.toISOString() ?? null,
+              concluida_em: ultimaOs.concluidaEm?.toISOString() ?? null
+            }
+          : null
+      },
+      historico: equipamento.ordensServico.map((ordem) => ({
+        titulo: ordem.titulo,
+        status: ordem.status,
+        agendada_para: ordem.agendadaPara?.toISOString() ?? null,
+        concluida_em: ordem.concluidaEm?.toISOString() ?? null,
+        atualizada_em: ordem.atualizadaEm.toISOString()
+      }))
     };
   }
 

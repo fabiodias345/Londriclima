@@ -1,4 +1,5 @@
-import { Body, Controller, Post } from "@nestjs/common";
+import { Body, Controller, Param, Post } from "@nestjs/common";
+import { ConsultarEquipamentoDto } from "./dto/consultar-equipamento.dto";
 import { CriarPreChamadoDto } from "./dto/criar-pre-chamado.dto";
 import { SiteService } from "./site.service";
 
@@ -9,5 +10,13 @@ export class SiteController {
   @Post("pre-chamados")
   criarPreChamado(@Body() dto: CriarPreChamadoDto) {
     return this.siteService.criarPreChamado(dto);
+  }
+
+  @Post("equipamentos/:codigoPublico/acessar")
+  consultarEquipamentoPublico(
+    @Param("codigoPublico") codigoPublico: string,
+    @Body() dto: ConsultarEquipamentoDto
+  ) {
+    return this.siteService.consultarEquipamentoPublico(codigoPublico, dto);
   }
 }

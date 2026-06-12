@@ -184,11 +184,23 @@ export class OrdensServicoService {
         marca: dto.marca,
         modelo: dto.modelo,
         capacidadeBtu: dto.capacidade_btu,
+        gasRefrigerante: dto.gas_refrigerante?.trim() || undefined,
         numeroSerie: dto.numero_serie,
         localInstalacao: dto.local_instalacao
       };
 
       if (ordemServico.equipamentoId) {
+        const equipamentoAtual = await tx.equipamento.findUnique({
+          where: { id: ordemServico.equipamentoId },
+          select: {
+            gasRefrigerante: true
+          }
+        });
+
+        if (!equipamentoAtual?.gasRefrigerante && !dto.gas_refrigerante?.trim()) {
+          throw new BadRequestException("Gas refrigerante e obrigatorio na primeira identificacao do equipamento.");
+        }
+
         return tx.equipamento.update({
           where: { id: ordemServico.equipamentoId },
           data,
@@ -196,6 +208,7 @@ export class OrdensServicoService {
             marca: true,
             modelo: true,
             capacidadeBtu: true,
+            gasRefrigerante: true,
             numeroSerie: true,
             localInstalacao: true,
             atualizadoEm: true
@@ -206,6 +219,7 @@ export class OrdensServicoService {
       const novoEquipamento = await tx.equipamento.create({
         data: {
           ...data,
+          gasRefrigerante: dto.gas_refrigerante?.trim() || this.exigirGasRefrigerante(),
           empresaId: ordemServico.empresaId,
           clienteId: ordemServico.clienteId
         },
@@ -214,6 +228,7 @@ export class OrdensServicoService {
           marca: true,
           modelo: true,
           capacidadeBtu: true,
+          gasRefrigerante: true,
           numeroSerie: true,
           localInstalacao: true,
           atualizadoEm: true
@@ -236,11 +251,16 @@ export class OrdensServicoService {
         marca: equipamento.marca,
         modelo: equipamento.modelo,
         capacidade_btu: equipamento.capacidadeBtu,
+        gas_refrigerante: equipamento.gasRefrigerante,
         numero_serie: equipamento.numeroSerie,
         local_instalacao: equipamento.localInstalacao
       },
       atualizado_em: equipamento.atualizadoEm.toISOString()
     };
+  }
+
+  private exigirGasRefrigerante(): never {
+    throw new BadRequestException("Gas refrigerante e obrigatorio na primeira identificacao do equipamento.");
   }
 
   async registrarEvidencia(osId: string, input: RegistrarEvidenciaInput) {
@@ -553,7 +573,8 @@ export class OrdensServicoService {
           equipamento: {
             select: {
               marca: true,
-              modelo: true
+              modelo: true,
+              gasRefrigerante: true
             }
           },
           evidencias: {
@@ -590,6 +611,10 @@ export class OrdensServicoService {
 
       if (!ordemServico.equipamento?.marca || !ordemServico.equipamento.modelo) {
         throw new UnprocessableEntityException("Identificação do equipamento ainda não registrada.");
+      }
+
+      if (ordemServico.equipamento && !ordemServico.equipamento.gasRefrigerante) {
+        throw new UnprocessableEntityException("Gas refrigerante do equipamento ainda nao registrado.");
       }
 
       const possuiEvidenciaInicial = ordemServico.evidencias.some(

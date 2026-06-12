@@ -18,6 +18,10 @@ export class IdentificarEquipamentoDto {
 
   @IsOptional()
   @IsString()
+  gas_refrigerante?: string;
+
+  @IsOptional()
+  @IsString()
   numero_serie?: string;
 
   @IsOptional()

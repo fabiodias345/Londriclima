@@ -24,6 +24,7 @@ const preChamadosView = document.querySelector("#preChamadosView");
 const frotaView = document.querySelector("#frotaView");
 const agendaView = document.querySelector("#agendaView");
 const clientesView = document.querySelector("#clientesView");
+const engenheirosView = document.querySelector("#engenheirosView");
 const pmocView = document.querySelector("#pmocView");
 const relatoriosView = document.querySelector("#relatoriosView");
 const fleetMap = document.querySelector("#fleetMap");
@@ -50,7 +51,30 @@ const clientesStatus = document.querySelector("#clientesStatus");
 const clientesList = document.querySelector("#clientesList");
 const clientForm = document.querySelector("#clientForm");
 const clientFormStatus = document.querySelector("#clientFormStatus");
+const clientCepStatus = document.querySelector("#clientCepStatus");
 const resetClientFormButton = document.querySelector("#resetClientFormButton");
+const clientDocumentLabel = document.querySelector("#clientDocumentLabel");
+const clientDocumentHelp = document.querySelector("#clientDocumentHelp");
+const clientEngineerSelect = document.querySelector("#clientEngineerSelect");
+const engenheirosStatus = document.querySelector("#engenheirosStatus");
+const engenheirosList = document.querySelector("#engenheirosList");
+const engineerForm = document.querySelector("#engineerForm");
+const engineerFormStatus = document.querySelector("#engineerFormStatus");
+const resetEngineerFormButton = document.querySelector("#resetEngineerFormButton");
+const deleteClientModal = document.querySelector("#deleteClientModal");
+const deleteClientMessage = document.querySelector("#deleteClientMessage");
+const confirmDeleteClientButton = document.querySelector("#confirmDeleteClientButton");
+const cancelDeleteClientButton = document.querySelector("#cancelDeleteClientButton");
+const clientEquipmentPanel = document.querySelector("#clientEquipmentPanel");
+const clientEquipmentTitle = document.querySelector("#clientEquipmentTitle");
+const clientEquipmentStatus = document.querySelector("#clientEquipmentStatus");
+const clientEquipmentList = document.querySelector("#clientEquipmentList");
+const equipmentForm = document.querySelector("#equipmentForm");
+const equipmentFormStatus = document.querySelector("#equipmentFormStatus");
+const scanEquipmentCodeButton = document.querySelector("#scanEquipmentCodeButton");
+const stopEquipmentScanButton = document.querySelector("#stopEquipmentScanButton");
+const equipmentScannerPanel = document.querySelector("#equipmentScannerPanel");
+const equipmentScannerVideo = document.querySelector("#equipmentScannerVideo");
 const clientCount = document.querySelector("#clientCount");
 const clientOpenCount = document.querySelector("#clientOpenCount");
 const equipmentCount = document.querySelector("#equipmentCount");
@@ -75,9 +99,15 @@ const fleetReportExportButton = document.querySelector("#fleetReportExportButton
 let activeView = "preChamados";
 let latestFleetItems = [];
 let latestClients = [];
+let latestEngineers = [];
 let latestAgendaItems = [];
 let selectedFleetVehicleId = "";
 let selectedAgendaDate = "";
+let lastCepLookup = "";
+let clientPendingDeleteId = "";
+let selectedEquipmentClientId = "";
+let equipmentScanStream = null;
+let equipmentScanTimer = 0;
 let activeFleetTab = "mapa";
 let leafletMap = null;
 let fleetMarkerGroup = null;
@@ -336,6 +366,11 @@ async function loadActiveView() {
     return;
   }
 
+  if (activeView === "engenheiros") {
+    await loadEngenheiros();
+    return;
+  }
+
   if (activeView === "pmoc") {
     loadPmoc();
     return;
@@ -361,6 +396,7 @@ function setActiveView(view) {
     frota: ["Monitoramento operacional", "Localizacao da frota"],
     agenda: ["Despacho de servicos", "Agenda operacional"],
     clientes: ["Relacionamento", "Clientes e equipamentos"],
+    engenheiros: ["Responsabilidade tecnica", "Engenheiros responsaveis"],
     pmoc: ["Conformidade tecnica", "PMOC"],
     relatorios: ["Gestao", "Relatorios do MVP"]
   }[view] ?? ["Operacao comercial", "Pre-chamados do site"];
@@ -377,6 +413,7 @@ function setActiveView(view) {
   frotaView.classList.toggle("hidden", view !== "frota");
   agendaView.classList.toggle("hidden", view !== "agenda");
   clientesView.classList.toggle("hidden", view !== "clientes");
+  engenheirosView.classList.toggle("hidden", view !== "engenheiros");
   pmocView.classList.toggle("hidden", view !== "pmoc");
   relatoriosView.classList.toggle("hidden", view !== "relatorios");
 }
@@ -486,6 +523,7 @@ async function loadAgenda() {
 
 async function loadClientes() {
   clientesStatus.textContent = "Carregando...";
+  await loadEngenheiros(false);
 
   const result = await fetchAdminJson("/admin/clientes", clientesStatus);
 
@@ -501,6 +539,64 @@ async function loadClientes() {
   equipmentCount.textContent = items.reduce((total, item) => total + (item.total_equipamentos || 0), 0);
   clientesStatus.textContent = result.total === 1 ? "1 cliente" : `${result.total} clientes`;
   renderClientes(items);
+}
+
+async function loadEngenheiros(renderList = true) {
+  if (renderList) {
+    engenheirosStatus.textContent = "Carregando...";
+  }
+
+  let response;
+
+  try {
+    response = await fetch(`${apiBaseUrl}/admin/engenheiros`, {
+      headers: authHeaders()
+    });
+  } catch {
+    if (renderList) {
+      engenheirosStatus.textContent = "API indisponivel.";
+    }
+    return [];
+  }
+
+  if (await handleUnauthorized(response)) {
+    return [];
+  }
+
+  if (!response.ok) {
+    if (renderList) {
+      engenheirosStatus.textContent = "Nao foi possivel carregar os engenheiros.";
+    }
+    return [];
+  }
+
+  const result = await response.json();
+  latestEngineers = result.items || [];
+  renderEngineerOptions();
+
+  if (renderList) {
+    engenheirosStatus.textContent = result.total === 1 ? "1 engenheiro" : `${result.total} engenheiros`;
+    renderEngenheiros(latestEngineers);
+  }
+
+  return latestEngineers;
+}
+
+async function loadClientEquipments(clientId) {
+  if (!clientId || !clientEquipmentStatus || !clientEquipmentList) {
+    return;
+  }
+
+  clientEquipmentStatus.textContent = "Carregando equipamentos...";
+  const result = await fetchAdminJson(`/admin/clientes/${clientId}/equipamentos`, clientEquipmentStatus);
+
+  if (!result) {
+    return;
+  }
+
+  clientEquipmentStatus.textContent =
+    result.total === 1 ? "1 equipamento vinculado" : `${result.total} equipamentos vinculados`;
+  renderClientEquipments(result.items || []);
 }
 
 async function loadFuelHistory() {
@@ -965,12 +1061,94 @@ function renderClientes(items) {
         <span>${escapeHtml(formatAddress(item.endereco))}</span>
         <span>${item.total_equipamentos} equipamentos · ${item.total_os} OS</span>
       </div>
-      <div>
+      <div class="data-row-actions">
         <span class="status-pill">${item.os_abertas} abertas</span>
         <button class="secondary-button compact-button" type="button" data-action="editar-cliente" data-id="${item.id}">Editar</button>
+        <button class="secondary-button compact-button danger-button" type="button" data-action="apagar-cliente" data-id="${item.id}">Apagar</button>
       </div>
     `;
     clientesList.appendChild(row);
+  }
+}
+
+function renderEngenheiros(items) {
+  engenheirosList.innerHTML = "";
+
+  if (!items.length) {
+    engenheirosList.innerHTML = '<article class="data-row"><strong>Nenhum engenheiro cadastrado.</strong><span>Cadastre o responsavel tecnico antes de vincular clientes PMOC.</span></article>';
+    return;
+  }
+
+  for (const item of items) {
+    const row = document.createElement("article");
+    row.className = "data-row";
+    row.innerHTML = `
+      <div>
+        <strong>${escapeHtml(item.nome)}</strong>
+        <span>CREA ${escapeHtml(item.crea)} - CPF ${escapeHtml(item.cpf)}</span>
+      </div>
+      <div>
+        <span>${escapeHtml(item.email)}</span>
+        <span>${formatPhone(item.telefone)}</span>
+      </div>
+      <div class="data-row-actions">
+        <button class="secondary-button compact-button" type="button" data-action="editar-engenheiro" data-id="${item.id}">Editar</button>
+      </div>
+    `;
+    engenheirosList.appendChild(row);
+  }
+}
+
+function renderEngineerOptions(selectedId = clientEngineerSelect?.value || "") {
+  if (!clientEngineerSelect) {
+    return;
+  }
+
+  clientEngineerSelect.innerHTML = '<option value="">Cadastre ou selecione um engenheiro</option>';
+
+  for (const item of latestEngineers) {
+    const option = document.createElement("option");
+    option.value = item.id;
+    option.textContent = `${item.nome} - CREA ${item.crea}`;
+    clientEngineerSelect.appendChild(option);
+  }
+
+  if (selectedId) {
+    clientEngineerSelect.value = selectedId;
+  }
+}
+
+function renderClientEquipments(items) {
+  clientEquipmentList.innerHTML = "";
+
+  if (!items.length) {
+    clientEquipmentList.innerHTML = '<article class="data-row"><strong>Nenhum equipamento vinculado.</strong><span>Cadastre a primeira maquina deste cliente.</span></article>';
+    return;
+  }
+
+  for (const item of items) {
+    const publicUrl = item.link_publico ? `${window.location.origin}${item.link_publico}` : "";
+    const row = document.createElement("article");
+    row.className = "data-row equipment-row";
+    row.innerHTML = `
+      <div>
+        <strong>${escapeHtml([item.tipo, item.marca, item.modelo].filter(Boolean).join(" ") || "Equipamento")}</strong>
+        <span>${escapeHtml(item.local_instalacao || "Local nao informado")}</span>
+      </div>
+      <div>
+        <span>Patrimonio: ${escapeHtml(item.patrimonio || "nao informado")}</span>
+        <span>Codigo/QR: ${escapeHtml(item.codigo_barras || "nao informado")}</span>
+        <span>Gas: ${escapeHtml(item.gas_refrigerante || "pendente da primeira visita")}</span>
+        <span>Serie: ${escapeHtml(item.numero_serie || "nao informada")}</span>
+      </div>
+      <div class="data-row-actions">
+        <span class="status-pill">${item.total_os} OS</span>
+        <span class="equipment-link">${escapeHtml(publicUrl || "link publico indisponivel")}</span>
+        <button class="secondary-button compact-button" type="button" data-action="copiar-link-equipamento" data-link="${escapeHtml(publicUrl)}">Copiar link</button>
+        <button class="secondary-button compact-button" type="button" data-action="renovar-acesso-equipamento" data-id="${item.id}">Nova senha</button>
+      </div>
+    `;
+    clientEquipmentList.appendChild(row);
   }
 }
 
@@ -1231,12 +1409,25 @@ async function submitClient(event) {
   const button = clientForm.querySelector("button[type='submit']");
   const data = new FormData(clientForm);
   const clientId = String(data.get("id") || "");
+  const tipo = String(data.get("tipo") || "pf");
+  const telefone = onlyDigits(String(data.get("telefone") || ""));
+  const documento = String(data.get("documento") || "").trim();
+  const validationMessage = validateClientIdentity(tipo, telefone, documento);
+
+  if (validationMessage) {
+    clientFormStatus.textContent = validationMessage;
+    return;
+  }
+
   const payload = removeEmptyValues({
-    tipo: String(data.get("tipo") || "pf"),
+    tipo,
     nome: String(data.get("nome") || ""),
-    telefone: String(data.get("telefone") || ""),
+    telefone,
     email: String(data.get("email") || ""),
-    documento: String(data.get("documento") || ""),
+    documento,
+    pmoc_ativo: data.get("pmoc_ativo") === "on",
+    engenheiro_responsavel_id: data.get("pmoc_ativo") === "on" ? String(data.get("engenheiro_responsavel_id") || "") : "",
+    cep: onlyDigits(String(data.get("cep") || "")),
     logradouro: String(data.get("logradouro") || ""),
     numero: String(data.get("numero") || ""),
     bairro: String(data.get("bairro") || ""),
@@ -1279,6 +1470,323 @@ async function submitClient(event) {
   }
 }
 
+async function submitEngineer(event) {
+  event.preventDefault();
+
+  const button = engineerForm.querySelector("button[type='submit']");
+  const data = new FormData(engineerForm);
+  const engineerId = String(data.get("id") || "");
+  const payload = removeEmptyValues({
+    nome: String(data.get("nome") || ""),
+    cpf: onlyDigits(String(data.get("cpf") || "")),
+    crea: String(data.get("crea") || ""),
+    email: String(data.get("email") || ""),
+    telefone: onlyDigits(String(data.get("telefone") || ""))
+  });
+
+  button.disabled = true;
+  button.textContent = "Salvando...";
+  engineerFormStatus.textContent = "";
+
+  try {
+    const response = await fetch(`${apiBaseUrl}/admin/engenheiros${engineerId ? `/${engineerId}` : ""}`, {
+      method: engineerId ? "PATCH" : "POST",
+      headers: {
+        ...authHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (await handleUnauthorized(response)) {
+      return;
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      engineerFormStatus.textContent = error.message || "Nao foi possivel salvar o engenheiro.";
+      return;
+    }
+
+    resetEngineerForm();
+    engineerFormStatus.textContent = "Engenheiro salvo.";
+    await loadEngenheiros();
+  } catch {
+    engineerFormStatus.textContent = "API indisponivel.";
+  } finally {
+    button.disabled = false;
+    button.textContent = "Salvar engenheiro";
+  }
+}
+
+async function submitEquipment(event) {
+  event.preventDefault();
+
+  if (!selectedEquipmentClientId) {
+    equipmentFormStatus.textContent = "Selecione um cliente antes de cadastrar equipamento.";
+    return;
+  }
+
+  const button = equipmentForm.querySelector("button[type='submit']");
+  const data = new FormData(equipmentForm);
+  const payload = removeEmptyValues({
+    tipo: String(data.get("tipo") || ""),
+    patrimonio: String(data.get("patrimonio") || ""),
+    codigo_barras: String(data.get("codigo_barras") || ""),
+    marca: String(data.get("marca") || ""),
+    modelo: String(data.get("modelo") || ""),
+    capacidade_btu: data.get("capacidade_btu") ? Number(data.get("capacidade_btu")) : "",
+    gas_refrigerante: String(data.get("gas_refrigerante") || ""),
+    numero_serie: String(data.get("numero_serie") || ""),
+    local_instalacao: String(data.get("local_instalacao") || ""),
+    acesso_publico_ativo: data.get("acesso_publico_ativo") === "on"
+  });
+
+  button.disabled = true;
+  button.textContent = "Salvando...";
+  equipmentFormStatus.textContent = "";
+
+  try {
+    const response = await fetch(`${apiBaseUrl}/admin/clientes/${selectedEquipmentClientId}/equipamentos`, {
+      method: "POST",
+      headers: {
+        ...authHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (await handleUnauthorized(response)) {
+      return;
+    }
+
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      equipmentFormStatus.textContent = result.message || "Nao foi possivel salvar o equipamento.";
+      return;
+    }
+
+    equipmentForm.reset();
+    equipmentForm.elements.acesso_publico_ativo.checked = true;
+    equipmentFormStatus.textContent = `Equipamento salvo. Senha do cliente: ${result.senha_publica}`;
+    await loadClientEquipments(selectedEquipmentClientId);
+    await loadClientes();
+  } catch {
+    equipmentFormStatus.textContent = "API indisponivel.";
+  } finally {
+    button.disabled = false;
+    button.textContent = "Salvar equipamento";
+  }
+}
+
+async function renewEquipmentAccess(equipmentId) {
+  if (!equipmentId) {
+    return;
+  }
+
+  equipmentFormStatus.textContent = "Gerando nova senha...";
+
+  try {
+    const response = await fetch(`${apiBaseUrl}/admin/equipamentos/${equipmentId}/renovar-acesso`, {
+      method: "POST",
+      headers: authHeaders()
+    });
+
+    if (await handleUnauthorized(response)) {
+      return;
+    }
+
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      equipmentFormStatus.textContent = result.message || "Nao foi possivel gerar nova senha.";
+      return;
+    }
+
+    equipmentFormStatus.textContent = `Nova senha do cliente: ${result.senha_publica}`;
+    await loadClientEquipments(selectedEquipmentClientId);
+  } catch {
+    equipmentFormStatus.textContent = "API indisponivel.";
+  }
+}
+
+async function startEquipmentScanner() {
+  if (!("BarcodeDetector" in window)) {
+    equipmentFormStatus.textContent = "Leitor de codigo/QR indisponivel neste navegador. Digite manualmente.";
+    return;
+  }
+
+  try {
+    equipmentScanStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: "environment"
+      }
+    });
+    equipmentScannerVideo.srcObject = equipmentScanStream;
+    await equipmentScannerVideo.play();
+    equipmentScannerPanel.classList.remove("hidden");
+
+    const detector = new window.BarcodeDetector({
+      formats: ["qr_code", "code_128", "ean_13", "ean_8", "upc_a", "upc_e"]
+    });
+
+    equipmentScanTimer = window.setInterval(async () => {
+      const codes = await detector.detect(equipmentScannerVideo).catch(() => []);
+      const code = codes[0]?.rawValue;
+
+      if (!code) {
+        return;
+      }
+
+      equipmentForm.elements.codigo_barras.value = code;
+      equipmentFormStatus.textContent = "Codigo/QR lido e aplicado ao equipamento.";
+      stopEquipmentScanner();
+    }, 700);
+  } catch {
+    equipmentFormStatus.textContent = "Nao foi possivel abrir a camera para leitura.";
+  }
+}
+
+function stopEquipmentScanner() {
+  if (equipmentScanTimer) {
+    window.clearInterval(equipmentScanTimer);
+    equipmentScanTimer = 0;
+  }
+
+  if (equipmentScanStream) {
+    for (const track of equipmentScanStream.getTracks()) {
+      track.stop();
+    }
+    equipmentScanStream = null;
+  }
+
+  if (equipmentScannerVideo) {
+    equipmentScannerVideo.srcObject = null;
+  }
+
+  equipmentScannerPanel?.classList.add("hidden");
+}
+
+function onlyDigits(value) {
+  return value.replace(/\D/g, "");
+}
+
+function validateClientIdentity(tipo, telefone, documento) {
+  if (![10, 11].includes(telefone.length)) {
+    return "Informe telefone com DDD. Exemplo: (43) 99999-9999.";
+  }
+
+  if (!documento) {
+    return tipo === "pj" ? "Informe o CNPJ da empresa." : "Informe CPF ou RG do cliente.";
+  }
+
+  if (tipo === "pj" && onlyDigits(documento).length !== 14) {
+    return "CNPJ deve ter 14 digitos.";
+  }
+
+  return "";
+}
+
+function updateClientDocumentCopy() {
+  const tipo = clientForm?.elements.tipo?.value || "pf";
+
+  if (clientDocumentLabel) {
+    clientDocumentLabel.textContent = tipo === "pj" ? "CNPJ" : "CPF ou RG";
+  }
+
+  if (clientDocumentHelp) {
+    clientDocumentHelp.textContent =
+      tipo === "pj"
+        ? "Informe o CNPJ com 14 digitos."
+        : "Informe CPF ou RG para identificar o cliente.";
+  }
+
+  if (clientForm?.elements.documento instanceof HTMLInputElement) {
+    clientForm.elements.documento.placeholder = tipo === "pj" ? "00.000.000/0000-00" : "CPF ou RG";
+  }
+}
+
+function formatCep(value) {
+  const digits = onlyDigits(value).slice(0, 8);
+
+  if (digits.length <= 5) {
+    return digits;
+  }
+
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+}
+
+function setClientCepStatus(message, state = "") {
+  if (!clientCepStatus) {
+    return;
+  }
+
+  clientCepStatus.textContent = message;
+  clientCepStatus.dataset.state = state;
+}
+
+function applyCepAddress(address) {
+  if (!clientForm) {
+    return;
+  }
+
+  clientForm.elements.logradouro.value = address.logradouro || "";
+  clientForm.elements.bairro.value = address.bairro || "";
+  clientForm.elements.cidade.value = address.localidade || "";
+  clientForm.elements.uf.value = address.uf || "";
+  clientForm.elements.numero.focus();
+}
+
+async function lookupClientCep() {
+  const cepInput = clientForm?.elements.cep;
+
+  if (!(cepInput instanceof HTMLInputElement)) {
+    return;
+  }
+
+  cepInput.value = formatCep(cepInput.value);
+  const cep = onlyDigits(cepInput.value);
+
+  if (!cep) {
+    lastCepLookup = "";
+    setClientCepStatus("");
+    return;
+  }
+
+  if (cep.length < 8) {
+    setClientCepStatus("Digite os 8 numeros do CEP.", "warning");
+    return;
+  }
+
+  if (cep === lastCepLookup) {
+    return;
+  }
+
+  lastCepLookup = cep;
+  setClientCepStatus("Buscando endereco pelo CEP...", "loading");
+
+  try {
+    const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+
+    if (!response.ok) {
+      throw new Error("cep_lookup_failed");
+    }
+
+    const address = await response.json();
+
+    if (address.erro) {
+      setClientCepStatus("CEP nao encontrado. Preencha o endereco manualmente.", "warning");
+      return;
+    }
+
+    applyCepAddress(address);
+    setClientCepStatus("Endereco preenchido. Informe apenas o numero.", "success");
+  } catch {
+    setClientCepStatus("Nao foi possivel buscar o CEP agora. Preencha manualmente.", "warning");
+  }
+}
+
 function fillClientForm(clientId) {
   const client = latestClients.find((item) => item.id === clientId);
 
@@ -1289,16 +1797,31 @@ function fillClientForm(clientId) {
   const address = client.endereco || {};
   clientForm.elements.id.value = client.id;
   clientForm.elements.tipo.value = client.tipo || "pf";
+  updateClientDocumentCopy();
   clientForm.elements.nome.value = client.nome || "";
   clientForm.elements.telefone.value = client.telefone || "";
   clientForm.elements.email.value = client.email || "";
   clientForm.elements.documento.value = client.documento || "";
+  clientForm.elements.cep.value = formatCep(address.cep || "");
   clientForm.elements.logradouro.value = address.logradouro || "";
   clientForm.elements.numero.value = address.numero || "";
   clientForm.elements.bairro.value = address.bairro || "";
   clientForm.elements.cidade.value = address.cidade || "Londrina";
   clientForm.elements.uf.value = address.uf || "PR";
+  clientForm.elements.pmoc_ativo.checked = Boolean(client.pmoc_ativo);
+  renderEngineerOptions(client.engenheiro_responsavel?.id || "");
+  lastCepLookup = onlyDigits(address.cep || "");
+  setClientCepStatus("");
   clientFormStatus.textContent = "Editando cliente selecionado.";
+  selectedEquipmentClientId = client.id;
+  clientEquipmentPanel?.classList.remove("hidden");
+
+  if (clientEquipmentTitle) {
+    clientEquipmentTitle.textContent = `Equipamentos de ${client.nome}`;
+  }
+
+  equipmentFormStatus.textContent = "";
+  void loadClientEquipments(client.id);
 }
 
 function resetClientForm() {
@@ -1306,7 +1829,101 @@ function resetClientForm() {
   clientForm.elements.id.value = "";
   clientForm.elements.cidade.value = "Londrina";
   clientForm.elements.uf.value = "PR";
+  clientForm.elements.pmoc_ativo.checked = false;
+  renderEngineerOptions("");
+  lastCepLookup = "";
+  updateClientDocumentCopy();
+  setClientCepStatus("");
+  selectedEquipmentClientId = "";
+  clientEquipmentPanel?.classList.add("hidden");
+  clientEquipmentList.innerHTML = "";
   clientFormStatus.textContent = "";
+}
+
+function fillEngineerForm(engineerId) {
+  const engineer = latestEngineers.find((item) => item.id === engineerId);
+
+  if (!engineer) {
+    return;
+  }
+
+  engineerForm.elements.id.value = engineer.id;
+  engineerForm.elements.nome.value = engineer.nome || "";
+  engineerForm.elements.cpf.value = engineer.cpf || "";
+  engineerForm.elements.crea.value = engineer.crea || "";
+  engineerForm.elements.email.value = engineer.email || "";
+  engineerForm.elements.telefone.value = engineer.telefone || "";
+  engineerFormStatus.textContent = "Editando engenheiro selecionado.";
+}
+
+function resetEngineerForm() {
+  engineerForm.reset();
+  engineerForm.elements.id.value = "";
+  engineerFormStatus.textContent = "";
+}
+
+function openDeleteClientModal(clientId) {
+  const client = latestClients.find((item) => item.id === clientId);
+
+  if (!client || !deleteClientModal) {
+    return;
+  }
+
+  clientPendingDeleteId = client.id;
+
+  if (deleteClientMessage) {
+    deleteClientMessage.textContent = `Tem certeza que deseja apagar ${client.nome}? Esta acao nao pode ser desfeita.`;
+  }
+
+  deleteClientModal.classList.remove("hidden");
+  confirmDeleteClientButton?.focus();
+}
+
+function closeDeleteClientModal() {
+  clientPendingDeleteId = "";
+  deleteClientModal?.classList.add("hidden");
+}
+
+async function confirmDeleteClient() {
+  if (!clientPendingDeleteId || !confirmDeleteClientButton) {
+    return;
+  }
+
+  const clientId = clientPendingDeleteId;
+  confirmDeleteClientButton.disabled = true;
+  confirmDeleteClientButton.textContent = "Apagando...";
+
+  try {
+    const response = await fetch(`${apiBaseUrl}/admin/clientes/${clientId}`, {
+      method: "DELETE",
+      headers: authHeaders()
+    });
+
+    if (await handleUnauthorized(response)) {
+      return;
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      closeDeleteClientModal();
+      clientFormStatus.textContent = error.message || "Nao foi possivel apagar o cliente.";
+      return;
+    }
+
+    if (clientForm.elements.id.value === clientId) {
+      resetClientForm();
+    }
+
+    closeDeleteClientModal();
+    clientFormStatus.textContent = "Cliente apagado.";
+    await loadClientes();
+  } catch {
+    closeDeleteClientModal();
+    clientFormStatus.textContent = "API indisponivel.";
+  } finally {
+    confirmDeleteClientButton.disabled = false;
+    confirmDeleteClientButton.textContent = "Sim, apagar";
+  }
 }
 
 function setFleetTab(tab) {
@@ -1477,7 +2094,10 @@ function escapeHtml(value) {
 loginForm?.addEventListener("submit", login);
 fuelForm?.addEventListener("submit", submitFuel);
 clientForm?.addEventListener("submit", submitClient);
+engineerForm?.addEventListener("submit", submitEngineer);
+equipmentForm?.addEventListener("submit", submitEquipment);
 resetClientFormButton?.addEventListener("click", resetClientForm);
+resetEngineerFormButton?.addEventListener("click", resetEngineerForm);
 fleetReportExportButton?.addEventListener("click", openFleetReport);
 refreshButton?.addEventListener("click", loadActiveView);
 logoutButton?.addEventListener("click", () => {
@@ -1567,6 +2187,89 @@ clientesList?.addEventListener("click", (event) => {
   if (target.dataset.action === "editar-cliente" && target.dataset.id) {
     fillClientForm(target.dataset.id);
   }
+
+  if (target.dataset.action === "apagar-cliente" && target.dataset.id) {
+    openDeleteClientModal(target.dataset.id);
+  }
+});
+
+engenheirosList?.addEventListener("click", (event) => {
+  const target = event.target;
+
+  if (!(target instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  if (target.dataset.action === "editar-engenheiro" && target.dataset.id) {
+    fillEngineerForm(target.dataset.id);
+  }
+});
+
+clientForm?.elements.tipo?.addEventListener("change", updateClientDocumentCopy);
+
+clientForm?.elements.cep?.addEventListener("input", (event) => {
+  const target = event.target;
+
+  if (!(target instanceof HTMLInputElement)) {
+    return;
+  }
+
+  target.value = formatCep(target.value);
+
+  if (onlyDigits(target.value).length === 8) {
+    void lookupClientCep();
+  } else {
+    lastCepLookup = "";
+    setClientCepStatus("");
+  }
+});
+
+clientForm?.elements.cep?.addEventListener("blur", () => {
+  void lookupClientCep();
+});
+
+cancelDeleteClientButton?.addEventListener("click", closeDeleteClientModal);
+confirmDeleteClientButton?.addEventListener("click", () => {
+  void confirmDeleteClient();
+});
+
+deleteClientModal?.addEventListener("click", (event) => {
+  if (event.target === deleteClientModal) {
+    closeDeleteClientModal();
+  }
+});
+
+clientEquipmentList?.addEventListener("click", async (event) => {
+  const target = event.target;
+
+  if (!(target instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  if (target.dataset.action === "renovar-acesso-equipamento" && target.dataset.id) {
+    await renewEquipmentAccess(target.dataset.id);
+  }
+
+  if (target.dataset.action === "copiar-link-equipamento" && target.dataset.link) {
+    await navigator.clipboard.writeText(target.dataset.link);
+    equipmentFormStatus.textContent = "Link publico copiado.";
+  }
+});
+
+scanEquipmentCodeButton?.addEventListener("click", () => {
+  void startEquipmentScanner();
+});
+
+stopEquipmentScanButton?.addEventListener("click", stopEquipmentScanner);
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !deleteClientModal?.classList.contains("hidden")) {
+    closeDeleteClientModal();
+  }
+
+  if (event.key === "Escape" && !equipmentScannerPanel?.classList.contains("hidden")) {
+    stopEquipmentScanner();
+  }
 });
 
 fleetList?.addEventListener("click", (event) => {
@@ -1579,6 +2282,8 @@ fleetList?.addEventListener("click", (event) => {
 
   selectFleetVehicle(card.dataset.vehicleId);
 });
+
+updateClientDocumentCopy();
 
 if (getToken()) {
   showDashboard();

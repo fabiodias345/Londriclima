@@ -53,6 +53,21 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(html, /id="agendaSelectedDateTitle"/);
   assert.match(html, /id="agendaList"/);
   assert.match(html, /id="clientesView"/);
+  assert.match(html, /name="telefone"[^>]+required/);
+  assert.match(html, /id="clientDocumentLabel"/);
+  assert.match(html, /id="deleteClientModal"/);
+  assert.match(html, /id="confirmDeleteClientButton"/);
+  assert.match(html, /id="clientEquipmentPanel"/);
+  assert.match(html, /id="equipmentForm"/);
+  assert.match(html, /name="codigo_barras"/);
+  assert.match(html, /Codigo de barras ou QR Code/);
+  assert.match(html, /Ler codigo\/QR/);
+  assert.match(html, /name="gas_refrigerante"/);
+  assert.match(html, /R-410A/);
+  assert.match(html, /id="scanEquipmentCodeButton"/);
+  assert.match(html, /name="cep"/);
+  assert.match(html, /id="clientCepStatus"/);
+  assert.doesNotMatch(html, /assinatura_digitalizada|Assinatura digitalizada/);
   assert.match(html, /id="relatoriosView"/);
   assert.match(script, /async function loadAgenda/);
   assert.match(script, /function renderAgendaCalendar/);
@@ -61,6 +76,36 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(script, /selectedAgendaDate = button\.dataset\.agendaDate/);
   assert.match(script, /async function loadClientes/);
   assert.match(script, /async function loadRelatorios/);
+  assert.match(script, /https:\/\/viacep\.com\.br\/ws\/\$\{cep\}\/json\//);
+  assert.match(script, /cep:\s*onlyDigits\(String\(data\.get\("cep"\)/);
+  assert.match(script, /clientForm\.elements\.logradouro\.value = address\.logradouro/);
+  assert.match(script, /clientForm\.elements\.cidade\.value = address\.localidade/);
+  assert.match(script, /clientForm\.elements\.uf\.value = address\.uf/);
+  assert.match(script, /function validateClientIdentity/);
+  assert.match(script, /Telefone com DDD|Informe telefone com DDD/);
+  assert.match(script, /tipo === "pj" \? "CNPJ" : "CPF ou RG"/);
+  assert.match(script, /data-action="apagar-cliente"/);
+  assert.match(script, /method:\s*"DELETE"/);
+  assert.match(script, /\/admin\/clientes\/\$\{selectedEquipmentClientId\}\/equipamentos/);
+  assert.match(script, /gas_refrigerante:\s*String\(data\.get\("gas_refrigerante"\)/);
+  assert.match(script, /Gas: \$\{escapeHtml\(item\.gas_refrigerante/);
+  assert.match(script, /\/admin\/equipamentos\/\$\{equipmentId\}\/renovar-acesso/);
+  assert.match(script, /BarcodeDetector/);
+  assert.match(script, /qr_code/);
+  assert.match(script, /data-action="renovar-acesso-equipamento"/);
+});
+
+test("landing possui consulta publica de equipamento protegida por senha", () => {
+  const html = read("apps/landing/equipamento.html");
+  const script = read("apps/landing/equipamento.js");
+
+  assert.match(html, /id="equipmentAccessForm"/);
+  assert.match(html, /name="senha"/);
+  assert.match(html, /id="equipmentResultPanel"/);
+  assert.match(script, /\/site\/equipamentos\/\$\{encodeURIComponent\(codigo\)\}\/acessar/);
+  assert.match(script, /method:\s*"POST"/);
+  assert.match(script, /senha/);
+  assert.doesNotMatch(script, /telefone|documento|valor/);
 });
 
 test("admin possui aba PMOC com cadastro, checklists e itens hospitalares", () => {
