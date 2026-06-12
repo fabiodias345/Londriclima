@@ -114,15 +114,39 @@ Mudancas feitas:
 
 ### PMOC
 
-Ja existe uma primeira tela de PMOC com:
+O PMOC foi redesenhado para nao ser um checklist solto.
 
-- cadastro minimo de equipamentos;
-- checklists por periodicidade;
-- itens de qualidade do ar;
-- documentos obrigatorios;
-- bloco especifico para hospital/HU.
+Regras atuais:
 
-Ainda precisa virar fluxo gravavel por cliente/equipamento.
+- cliente pode ter ou nao PMOC;
+- PMOC pertence a um cliente especifico;
+- cliente sem PMOC nao aparece na lista principal de PMOC;
+- cliente sem PMOC so aparece quando for pesquisado;
+- ao encontrar cliente sem PMOC, o sistema pergunta se deseja adicionar PMOC;
+- se aceitar, o sistema cadastra o PMOC e pede o engenheiro responsavel;
+- cada cliente PMOC precisa ter dossie proprio;
+- maquinas e OS nao podem se misturar entre clientes;
+- o relatorio final precisa sair maquina por maquina dentro do mesmo cliente;
+- o fluxo precisa manter separacao por cliente para futura assinatura e envio ao cliente.
+
+O que ja foi feito:
+
+- removemos o PMOC antigo em forma de checklist;
+- criamos a busca de cliente com triagem por PMOC;
+- criamos a lista de clientes com PMOC ativo;
+- criamos a entrada para ativar PMOC em cliente sem cadastro anterior;
+- criamos o dossie do cliente;
+- criamos dados de demo para a Maria com PMOC, engenheiro, maquinas e OS;
+- criamos a previa oficial do relatorio PMOC no backend;
+- o backend agora devolve cliente, engenheiro, periodo, maquinas, OS, checklist, evidencias, assinatura e pendencias;
+- os testes do backend e do frontend passaram com o novo fluxo.
+
+As 4 etapas que faltam do PMOC:
+
+1. Fazer a tela do admin consumir a previa oficial do backend.
+2. Gerar o PDF real do PMOC no servidor.
+3. Criar o fluxo de assinatura do engenheiro responsavel.
+4. Enviar o relatorio assinado ao cliente e guardar o historico final.
 
 ## Backend
 
@@ -202,25 +226,24 @@ https://admin.airmovebr.com.br
 https://api.airmovebr.com.br/api/v1/health
 ```
 
+## O Que Falta No Todo
+
+- consolidar o fluxo de Clientes com equipamentos e historico de OS;
+- ligar o PMOC ao cadastro real de clientes e maquinas;
+- fechar o PDF com assinatura e envio por e-mail;
+- registrar historico por cliente, maquina e engenharia responsavel;
+- manter separado o relatorio tecnico comum do relatorio PMOC;
+- revisar o visual geral do admin para o PMOC ficar bonito e simples de operar;
+- depois disso, fechar homologacao com dados reais e parar de depender de demo.
+
 ## Proximos Passos Para Amanha
 
-1. Abrir o admin local e revisar visualmente a nova Agenda.
-2. Ajustar detalhes da Agenda:
-   - horarios reais de expediente;
-   - visual de servico atrasado;
-   - filtro por equipe/tecnico;
-   - acao rapida para reagendar.
-3. Revisar a Frota no navegador:
-   - carregamento dos tiles;
-   - zoom por carro;
-   - relatorio de consumo;
-   - abastecimento manual.
-4. Aplicar o arquivo real do logo quando estiver disponivel no workspace.
-5. Avancar no fluxo de Clientes:
-   - cadastro melhor;
-   - equipamentos por cliente;
-   - historico de OS.
-6. Depois, voltar para PMOC e transformar a tela em dados gravaveis.
+1. Ligar a tela de PMOC ao endpoint oficial de previa.
+2. Comecar a geracao real do PDF do PMOC.
+3. Desenhar o fluxo de assinatura do engenheiro.
+4. Definir o envio final por e-mail para o cliente.
+5. Revisar a Agenda.
+6. Revisar a Frota.
 
 ## Atencao LGPD/Seguranca
 

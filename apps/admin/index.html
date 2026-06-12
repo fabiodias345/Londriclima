@@ -129,16 +129,16 @@
 
         <section class="summary-grid hidden" id="pmocSummary" aria-label="Resumo do PMOC">
           <article>
-            <span>Cadastro</span>
-            <strong id="pmocEquipmentCount">8</strong>
+            <span>Clientes PMOC</span>
+            <strong id="pmocClientCount">0</strong>
           </article>
           <article>
-            <span>Checklist mensal</span>
-            <strong id="pmocMonthlyCount">25</strong>
+            <span>Maquinas cobertas</span>
+            <strong id="pmocMachineCount">0</strong>
           </article>
           <article>
-            <span>HU / areas criticas</span>
-            <strong id="pmocCriticalCount">8</strong>
+            <span>Pendencias</span>
+            <strong id="pmocPendingCount">0</strong>
           </article>
         </section>
 
@@ -436,52 +436,76 @@
           <div class="data-list" id="engenheirosList"></div>
         </section>
 
-        <section class="worklist hidden" id="pmocView">
-          <div class="worklist-header">
+        <section class="worklist pmoc-workspace hidden" id="pmocView">
+          <div class="pmoc-hero">
             <div>
-              <h2>Plano de Manutencao, Operacao e Controle</h2>
-              <p id="pmocStatus" role="status">Modelo operacional pronto para conferencia.</p>
+              <span class="kicker">Dossie por cliente</span>
+              <h2>PMOC sem mistura de maquinas ou clientes</h2>
+              <p>Procure um cliente, confirme se ele exige PMOC e vincule o engenheiro responsavel antes da futura emissao do relatorio.</p>
             </div>
+            <form class="pmoc-search" id="pmocSearchForm">
+              <label>
+                Procurar cliente
+                <input id="pmocSearchInput" type="search" placeholder="Nome, telefone, documento ou email" autocomplete="off" />
+              </label>
+              <button type="submit">Procurar</button>
+            </form>
           </div>
-          <div class="pmoc-board">
-            <article class="pmoc-panel pmoc-feature">
-              <span class="kicker">Cadastro dos equipamentos</span>
-              <h3>Ficha tecnica minima</h3>
-              <div class="pmoc-field-grid" id="pmocEquipmentFields"></div>
-            </article>
 
-            <article class="pmoc-panel">
-              <div class="pmoc-panel-title">
-                <span class="kicker">Rotina obrigatoria</span>
-                <h3>Checklists por periodicidade</h3>
+          <div class="pmoc-grid hidden" id="pmocSearchPanel">
+            <section class="pmoc-panel pmoc-results-panel">
+              <div class="worklist-header compact-header">
+                <div>
+                  <span class="kicker">Resultado da busca</span>
+                  <h2>Cliente localizado</h2>
+                </div>
+                <p id="pmocStatus" role="status">Carregando clientes...</p>
               </div>
-              <div class="pmoc-checklist" id="pmocChecklist"></div>
-            </article>
+              <div class="pmoc-search-results" id="pmocSearchResults"></div>
+            </section>
 
-            <article class="pmoc-panel">
-              <div class="pmoc-panel-title">
-                <span class="kicker">Ar interior</span>
-                <h3>Qualidade do ar e sistemas centrais</h3>
+            <section class="pmoc-panel pmoc-conversion-panel hidden" id="pmocConversionPanel">
+              <div>
+                <span class="kicker">Ativar PMOC</span>
+                <h2 id="pmocConversionTitle">Cliente sem PMOC</h2>
+                <p id="pmocConversionText">Selecione o engenheiro responsavel para colocar este cliente no fluxo PMOC.</p>
               </div>
-              <div class="pmoc-checklist" id="pmocAirQuality"></div>
-            </article>
-
-            <article class="pmoc-panel">
-              <div class="pmoc-panel-title">
-                <span class="kicker">Dossie PMOC</span>
-                <h3>Documentos obrigatorios</h3>
-              </div>
-              <div class="pmoc-checklist" id="pmocDocuments"></div>
-            </article>
-
-            <article class="pmoc-panel pmoc-hospital">
-              <div class="pmoc-panel-title">
-                <span class="kicker">Hospital / HU</span>
-                <h3>Ambientes criticos</h3>
-              </div>
-              <div class="pmoc-checklist" id="pmocHospital"></div>
-            </article>
+              <form class="pmoc-conversion-form" id="pmocConversionForm">
+                <label>
+                  Engenheiro responsavel
+                  <select id="pmocEngineerSelect" name="engenheiro_responsavel_id" required>
+                    <option value="">Selecione um engenheiro</option>
+                  </select>
+                </label>
+                <button type="submit">Adicionar PMOC ao cliente</button>
+                <p class="status" id="pmocConversionStatus" role="status"></p>
+              </form>
+            </section>
           </div>
+
+          <section class="pmoc-panel pmoc-dossier-panel">
+            <div class="worklist-header compact-header">
+              <div>
+                <span class="kicker">Clientes em PMOC</span>
+                <h2>Dossies separados</h2>
+              </div>
+              <p>Um relatorio por cliente, maquinas isoladas dentro do mesmo arquivo.</p>
+            </div>
+            <div class="pmoc-dossier-list" id="pmocDossierList"></div>
+          </section>
+
+          <section class="pmoc-dossier-detail hidden" id="pmocDossierDetail">
+            <div class="pmoc-detail-header">
+              <div>
+                <span class="kicker">Dossie aberto</span>
+                <h2 id="pmocDossierTitle">Selecione um cliente PMOC</h2>
+                <p id="pmocDossierMeta">Maquinas, pendencias e preparo do relatorio aparecem aqui.</p>
+              </div>
+              <button class="secondary-button" id="pmocGenerateReportButton" type="button" disabled>Gerar relatorio PMOC</button>
+            </div>
+            <div class="pmoc-alerts" id="pmocDossierAlerts"></div>
+            <div class="pmoc-machine-list" id="pmocMachineList"></div>
+          </section>
         </section>
 
         <section class="worklist hidden" id="relatoriosView">

@@ -108,28 +108,51 @@ test("landing possui consulta publica de equipamento protegida por senha", () =>
   assert.doesNotMatch(script, /telefone|documento|valor/);
 });
 
-test("admin possui aba PMOC com cadastro, checklists e itens hospitalares", () => {
+test("admin possui triagem PMOC por cliente e conversao com engenheiro", () => {
   const html = read("apps/admin/index.html");
   const script = read("apps/admin/script.js");
   const styles = read("apps/admin/styles.css");
 
   assert.match(html, /data-view="pmoc"/);
   assert.match(html, /id="pmocView"/);
-  assert.match(html, /id="pmocEquipmentFields"/);
-  assert.match(html, /id="pmocChecklist"/);
-  assert.match(html, /id="pmocAirQuality"/);
-  assert.match(html, /id="pmocDocuments"/);
-  assert.match(html, /id="pmocHospital"/);
-  assert.match(script, /const pmocEquipmentRegistry/);
-  assert.match(script, /Codigo do equipamento/);
-  assert.match(script, /Temperatura insuflamento/);
-  assert.match(script, /ART ou TRT do responsavel tecnico/);
-  assert.match(script, /Pressao diferencial de areas criticas/);
-  assert.match(script, /ABNT NBR 7256/);
+  assert.match(html, /id="pmocSearchForm"/);
+  assert.match(html, /id="pmocSearchInput"/);
+  assert.match(html, /id="pmocSearchPanel"/);
+  assert.match(html, /class="pmoc-grid hidden" id="pmocSearchPanel"/);
+  assert.match(html, /id="pmocSearchResults"/);
+  assert.match(html, /id="pmocConversionPanel"/);
+  assert.match(html, /id="pmocEngineerSelect"/);
+  assert.match(html, /id="pmocDossierList"/);
+  assert.match(html, /id="pmocDossierDetail"/);
+  assert.match(html, /id="pmocMachineList"/);
+  assert.match(html, /id="pmocGenerateReportButton"[^>]*disabled/);
   assert.match(script, /function loadPmoc/);
-  assert.match(script, /function renderPmocGroup/);
-  assert.match(styles, /\.pmoc-board/);
-  assert.match(styles, /\.pmoc-check/);
+  assert.match(script, /function searchPmocClients/);
+  assert.match(script, /function resetPmocSearchResults/);
+  assert.match(script, /function openPmocConversion/);
+  assert.match(script, /function activatePmocClient/);
+  assert.match(script, /function openPmocDossier/);
+  assert.match(script, /function renderPmocMachines/);
+  assert.match(script, /function openPmocReportPreview/);
+  assert.match(script, /hasCompletedPmocMaintenance/);
+  assert.match(script, /pmocGenerateReportButton\?\.addEventListener\("click", openPmocReportPreview\)/);
+  assert.match(script, /\/admin\/clientes\/\$\{client\.id\}\/equipamentos/);
+  assert.match(script, /pmoc_ativo:\s*true/);
+  assert.match(script, /engenheiro_responsavel_id:\s*engineerId/);
+  assert.match(styles, /\.pmoc-hero/);
+  assert.match(styles, /\.pmoc-client-card/);
+  assert.match(styles, /\.pmoc-dossier-row/);
+  assert.match(styles, /\.pmoc-dossier-detail/);
+  assert.match(styles, /\.pmoc-machine-card/);
+  assert.doesNotMatch(html, /id="pmocEquipmentFields"/);
+  assert.doesNotMatch(html, /id="pmocChecklist"/);
+  assert.doesNotMatch(html, /id="pmocAirQuality"/);
+  assert.doesNotMatch(html, /id="pmocDocuments"/);
+  assert.doesNotMatch(html, /id="pmocHospital"/);
+  assert.doesNotMatch(script, /const pmocEquipmentRegistry/);
+  assert.doesNotMatch(script, /function renderPmocGroup/);
+  assert.doesNotMatch(styles, /\.pmoc-board/);
+  assert.doesNotMatch(styles, /\.pmoc-check/);
 });
 
 test("admin separa frota em mapa consumo e abastecimentos", () => {

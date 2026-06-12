@@ -78,15 +78,27 @@ const equipmentScannerVideo = document.querySelector("#equipmentScannerVideo");
 const clientCount = document.querySelector("#clientCount");
 const clientOpenCount = document.querySelector("#clientOpenCount");
 const equipmentCount = document.querySelector("#equipmentCount");
+const pmocClientCount = document.querySelector("#pmocClientCount");
+const pmocMachineCount = document.querySelector("#pmocMachineCount");
+const pmocPendingCount = document.querySelector("#pmocPendingCount");
+const pmocSearchForm = document.querySelector("#pmocSearchForm");
+const pmocSearchInput = document.querySelector("#pmocSearchInput");
+const pmocSearchPanel = document.querySelector("#pmocSearchPanel");
+const pmocSearchResults = document.querySelector("#pmocSearchResults");
 const pmocStatus = document.querySelector("#pmocStatus");
-const pmocEquipmentCount = document.querySelector("#pmocEquipmentCount");
-const pmocMonthlyCount = document.querySelector("#pmocMonthlyCount");
-const pmocCriticalCount = document.querySelector("#pmocCriticalCount");
-const pmocEquipmentFields = document.querySelector("#pmocEquipmentFields");
-const pmocChecklist = document.querySelector("#pmocChecklist");
-const pmocAirQuality = document.querySelector("#pmocAirQuality");
-const pmocDocuments = document.querySelector("#pmocDocuments");
-const pmocHospital = document.querySelector("#pmocHospital");
+const pmocConversionPanel = document.querySelector("#pmocConversionPanel");
+const pmocConversionTitle = document.querySelector("#pmocConversionTitle");
+const pmocConversionText = document.querySelector("#pmocConversionText");
+const pmocConversionForm = document.querySelector("#pmocConversionForm");
+const pmocEngineerSelect = document.querySelector("#pmocEngineerSelect");
+const pmocConversionStatus = document.querySelector("#pmocConversionStatus");
+const pmocDossierList = document.querySelector("#pmocDossierList");
+const pmocDossierDetail = document.querySelector("#pmocDossierDetail");
+const pmocDossierTitle = document.querySelector("#pmocDossierTitle");
+const pmocDossierMeta = document.querySelector("#pmocDossierMeta");
+const pmocGenerateReportButton = document.querySelector("#pmocGenerateReportButton");
+const pmocDossierAlerts = document.querySelector("#pmocDossierAlerts");
+const pmocMachineList = document.querySelector("#pmocMachineList");
 const relatoriosStatus = document.querySelector("#relatoriosStatus");
 const reportGrid = document.querySelector("#reportGrid");
 const reportOsCount = document.querySelector("#reportOsCount");
@@ -106,183 +118,19 @@ let selectedAgendaDate = "";
 let lastCepLookup = "";
 let clientPendingDeleteId = "";
 let selectedEquipmentClientId = "";
+let selectedPmocClientId = "";
+let selectedPmocDossierClientId = "";
+let selectedPmocDossierMachines = [];
 let equipmentScanStream = null;
 let equipmentScanTimer = 0;
 let activeFleetTab = "mapa";
 let leafletMap = null;
 let fleetMarkerGroup = null;
 let fleetMarkers = new Map();
-let pmocRendered = false;
 let dispatchOptions = {
   equipes: [],
   tecnicos: []
 };
-
-const pmocEquipmentRegistry = [
-  "Codigo do equipamento",
-  "Localizacao",
-  "Marca",
-  "Modelo",
-  "Capacidade (BTU/h ou TR)",
-  "Numero de patrimonio",
-  "Tipo: Split, VRF, Chiller, Fan Coil, Cassete etc.",
-  "Data de instalacao"
-];
-
-const pmocChecklistGroups = [
-  {
-    title: "Mensal - Filtros",
-    cadence: "obrigatorio",
-    items: ["Limpeza realizada", "Substituicao necessaria", "Integridade verificada"]
-  },
-  {
-    title: "Mensal - Bandeja de condensado",
-    cadence: "obrigatorio",
-    items: ["Limpeza", "Ausencia de lodo", "Drenagem funcionando"]
-  },
-  {
-    title: "Mensal - Dreno",
-    cadence: "obrigatorio",
-    items: ["Sem obstrucao", "Sem vazamentos"]
-  },
-  {
-    title: "Mensal - Serpentinas",
-    cadence: "obrigatorio",
-    items: ["Limpeza", "Corrosao", "Aletas amassadas"]
-  },
-  {
-    title: "Mensal - Ventiladores",
-    cadence: "obrigatorio",
-    items: ["Limpeza", "Ruido anormal", "Vibracao"]
-  },
-  {
-    title: "Mensal - Gabinete",
-    cadence: "obrigatorio",
-    items: ["Limpeza interna", "Limpeza externa", "Vedacao adequada"]
-  },
-  {
-    title: "Mensal - Eletrica",
-    cadence: "obrigatorio",
-    items: ["Tensao", "Corrente", "Aperto de conexoes", "Disjuntores"]
-  },
-  {
-    title: "Mensal - Refrigeracao",
-    cadence: "obrigatorio",
-    items: ["Temperatura insuflamento", "Temperatura retorno", "Pressoes", "Vazamento de fluido"]
-  },
-  {
-    title: "Trimestral",
-    cadence: "a cada 3 meses",
-    items: [
-      "Limpeza profunda serpentinas",
-      "Higienizacao evaporador",
-      "Higienizacao condensador",
-      "Verificacao isolamento termico",
-      "Verificacao suportes",
-      "Verificacao vibracao"
-    ]
-  },
-  {
-    title: "Semestral",
-    cadence: "a cada 6 meses",
-    items: [
-      "Desencrustacao serpentinas",
-      "Limpeza ventiladores",
-      "Balanceamento ventiladores",
-      "Revisao eletrica geral",
-      "Verificacao motores"
-    ]
-  },
-  {
-    title: "Anual",
-    cadence: "1 vez ao ano",
-    items: [
-      "Teste completo de operacao",
-      "Avaliacao eficiencia energetica",
-      "Revisao geral sistema",
-      "Calibracao instrumentos",
-      "Atualizacao PMOC"
-    ]
-  }
-];
-
-const pmocAirQualityGroups = [
-  {
-    title: "Sistemas centrais - Casa de maquinas",
-    cadence: "Chiller / Fan Coil / UTA",
-    items: ["Limpeza", "Iluminacao", "Acesso restrito"]
-  },
-  {
-    title: "Sistemas centrais - Torres de resfriamento",
-    cadence: "quando aplicavel",
-    items: ["Limpeza", "Tratamento quimico", "Controle microbiologico"]
-  },
-  {
-    title: "Sistemas centrais - Casa de mistura",
-    cadence: "quando aplicavel",
-    items: ["Exclusiva do sistema", "Sem armazenamento de materiais"]
-  },
-  {
-    title: "Sistemas centrais - Captacao de ar externo",
-    cadence: "quando aplicavel",
-    items: ["Sem fontes contaminantes", "Filtros instalados"]
-  },
-  {
-    title: "Renovacao de ar",
-    cadence: "conforme projeto",
-    items: ["Vazao conforme projeto", "Minimo 27 m3/h/pessoa"]
-  },
-  {
-    title: "Controle da qualidade do ar - RE 09",
-    cadence: "monitoramento",
-    items: [
-      "Temperatura",
-      "Umidade relativa",
-      "Velocidade do ar",
-      "CO2",
-      "Fungos",
-      "Particulas",
-      "Taxa de renovacao de ar"
-    ]
-  }
-];
-
-const pmocDocumentGroups = [
-  {
-    title: "Documentos obrigatorios",
-    cadence: "dossie tecnico",
-    items: [
-      "ART ou TRT do responsavel tecnico",
-      "Relacao completa dos equipamentos",
-      "Cronograma de manutencao",
-      "Procedimentos de emergencia",
-      "Registros das manutencoes",
-      "Relatorios de execucao",
-      "Laudos de qualidade do ar quando aplicavel",
-      "Certificados de calibracao",
-      "Treinamentos da equipe"
-    ]
-  }
-];
-
-const pmocHospitalGroups = [
-  {
-    title: "Hospital / HU",
-    cadence: "ANVISA e ABNT NBR 7256",
-    items: [
-      "Pressao diferencial de areas criticas",
-      "Troca de filtros G4/F8/HEPA",
-      "Salas cirurgicas",
-      "UTIs",
-      "Isolamentos",
-      "CME",
-      "Hemodinamica",
-      "Banco de Leite",
-      "Laboratorios"
-    ],
-    note: "Esses ambientes seguem normas especificas da ANVISA e ABNT NBR 7256, alem da Lei do PMOC."
-  }
-];
 
 function getToken() {
   return localStorage.getItem("airmovebr_access_token");
@@ -372,7 +220,7 @@ async function loadActiveView() {
   }
 
   if (activeView === "pmoc") {
-    loadPmoc();
+    await loadPmoc();
     return;
   }
 
@@ -541,6 +389,29 @@ async function loadClientes() {
   renderClientes(items);
 }
 
+async function loadPmoc() {
+  pmocStatus.textContent = "Carregando clientes...";
+  pmocConversionPanel?.classList.add("hidden");
+  selectedPmocClientId = "";
+  await loadEngenheiros(false);
+
+  const result = await fetchAdminJson("/admin/clientes", pmocStatus);
+
+  if (!result) {
+    return;
+  }
+
+  latestClients = result.items || [];
+  renderPmocEngineerOptions();
+  renderPmocSummary();
+  resetPmocSearchResults();
+  renderPmocDossiers();
+  if (selectedPmocDossierClientId) {
+    await openPmocDossier(selectedPmocDossierClientId);
+  }
+  pmocStatus.textContent = `${latestClients.length} clientes na base`;
+}
+
 async function loadEngenheiros(renderList = true) {
   if (renderList) {
     engenheirosStatus.textContent = "Carregando...";
@@ -608,28 +479,6 @@ async function loadFuelHistory() {
 
   fuelHistoryStatus.textContent = result.total === 1 ? "1 registro" : `${result.total} registros`;
   renderFuelHistory(result.items || []);
-}
-
-function loadPmoc() {
-  const monthlyTotal = pmocChecklistGroups
-    .filter((group) => group.title.startsWith("Mensal"))
-    .reduce((total, group) => total + group.items.length, 0);
-
-  pmocEquipmentCount.textContent = pmocEquipmentRegistry.length;
-  pmocMonthlyCount.textContent = monthlyTotal;
-  pmocCriticalCount.textContent = pmocHospitalGroups.reduce((total, group) => total + group.items.length, 0);
-  pmocStatus.textContent = "Modelo PMOC pronto para conferencia e futura gravacao por cliente/equipamento.";
-
-  if (pmocRendered) {
-    return;
-  }
-
-  renderPmocEquipmentFields();
-  renderPmocGroups(pmocChecklist, pmocChecklistGroups, "pmoc-periodic");
-  renderPmocGroups(pmocAirQuality, pmocAirQualityGroups, "pmoc-air");
-  renderPmocGroups(pmocDocuments, pmocDocumentGroups, "pmoc-docs");
-  renderPmocGroups(pmocHospital, pmocHospitalGroups, "pmoc-hospital");
-  pmocRendered = true;
 }
 
 async function loadRelatorios() {
@@ -1071,6 +920,471 @@ function renderClientes(items) {
   }
 }
 
+function renderPmocSummary() {
+  const pmocClients = latestClients.filter((item) => item.pmoc_ativo);
+  const pendingClients = pmocClients.filter((item) => !item.engenheiro_responsavel || !item.total_equipamentos);
+
+  pmocClientCount.textContent = pmocClients.length;
+  pmocMachineCount.textContent = pmocClients.reduce((total, item) => total + (item.total_equipamentos || 0), 0);
+  pmocPendingCount.textContent = pendingClients.length;
+}
+
+function renderPmocEngineerOptions(selectedId = "") {
+  if (!pmocEngineerSelect) {
+    return;
+  }
+
+  pmocEngineerSelect.innerHTML = '<option value="">Selecione um engenheiro</option>';
+
+  for (const item of latestEngineers) {
+    const option = document.createElement("option");
+    option.value = item.id;
+    option.textContent = `${item.nome} - CREA ${item.crea}`;
+    pmocEngineerSelect.appendChild(option);
+  }
+
+  if (selectedId) {
+    pmocEngineerSelect.value = selectedId;
+  }
+}
+
+function renderPmocSearchResults(items) {
+  pmocSearchPanel?.classList.remove("hidden");
+  pmocSearchResults.innerHTML = "";
+
+  if (!items.length) {
+    pmocSearchResults.innerHTML = '<article class="pmoc-empty"><strong>Nenhum cliente encontrado.</strong><span>Cadastre o cliente na aba Clientes antes de iniciar PMOC.</span></article>';
+    return;
+  }
+
+  for (const item of items) {
+    const card = document.createElement("article");
+    const status = getPmocClientStatus(item);
+    card.className = `pmoc-client-card ${item.pmoc_ativo ? "is-active" : "needs-action"}`;
+    card.innerHTML = `
+      <div>
+        <span class="pmoc-status ${status.tone}">${escapeHtml(status.label)}</span>
+        <strong>${escapeHtml(item.nome)}</strong>
+        <p>${formatPhone(item.telefone)} - ${escapeHtml(item.email || "sem email")}</p>
+      </div>
+      <div class="pmoc-client-facts">
+        <span>${item.total_equipamentos || 0} maquinas</span>
+        <span>${item.os_abertas || 0} OS abertas</span>
+        <span>${escapeHtml(item.engenheiro_responsavel?.nome || "sem engenheiro")}</span>
+      </div>
+      <div class="data-row-actions">
+        ${
+          item.pmoc_ativo
+            ? `<button class="secondary-button compact-button" type="button" data-action="pmoc-ver-cliente" data-id="${item.id}">Ver dossie</button>`
+            : `<button class="approve-button compact-button" type="button" data-action="pmoc-ativar-cliente" data-id="${item.id}">Adicionar PMOC</button>`
+        }
+      </div>
+    `;
+    pmocSearchResults.appendChild(card);
+  }
+}
+
+function resetPmocSearchResults() {
+  pmocSearchPanel?.classList.add("hidden");
+  pmocSearchResults.innerHTML = "";
+}
+
+function renderPmocDossiers() {
+  const pmocClients = latestClients.filter((item) => item.pmoc_ativo);
+  pmocDossierList.innerHTML = "";
+
+  if (!pmocClients.length) {
+    pmocDossierList.innerHTML = '<article class="pmoc-empty"><strong>Nenhum cliente em PMOC.</strong><span>Use a busca acima para adicionar o primeiro cliente.</span></article>';
+    return;
+  }
+
+  for (const item of pmocClients) {
+    const status = getPmocClientStatus(item);
+    const row = document.createElement("article");
+    row.className = "pmoc-dossier-row";
+    row.innerHTML = `
+      <div>
+        <span class="pmoc-status ${status.tone}">${escapeHtml(status.label)}</span>
+        <strong>${escapeHtml(item.nome)}</strong>
+        <p>${escapeHtml(formatAddress(item.endereco))}</p>
+      </div>
+      <div>
+        <span>Eng. ${escapeHtml(item.engenheiro_responsavel?.nome || "pendente")}</span>
+        <span>${escapeHtml(item.engenheiro_responsavel?.email || "email pendente")}</span>
+      </div>
+      <div>
+        <span>${item.total_equipamentos || 0} maquinas separadas</span>
+        <span>${item.os_abertas || 0} OS em andamento</span>
+      </div>
+      <div class="data-row-actions">
+        <button class="secondary-button compact-button" type="button" data-action="pmoc-ver-cliente" data-id="${item.id}">Ver dossie</button>
+      </div>
+    `;
+    pmocDossierList.appendChild(row);
+  }
+}
+
+async function openPmocDossier(clientId) {
+  const client = latestClients.find((item) => item.id === clientId);
+
+  if (!client) {
+    return;
+  }
+
+  selectedPmocDossierClientId = client.id;
+  pmocDossierDetail?.classList.remove("hidden");
+  pmocDossierTitle.textContent = client.nome;
+  pmocDossierMeta.textContent = "Carregando maquinas do cliente...";
+  pmocDossierAlerts.innerHTML = "";
+  pmocMachineList.innerHTML = '<article class="pmoc-empty"><strong>Carregando maquinas.</strong><span>Buscando equipamentos vinculados a este cliente.</span></article>';
+  pmocGenerateReportButton.disabled = true;
+
+  const result = await fetchAdminJson(`/admin/clientes/${client.id}/equipamentos`, pmocDossierMeta);
+
+  if (!result) {
+    return;
+  }
+
+  const machines = result.items || [];
+  selectedPmocDossierMachines = machines;
+  pmocDossierMeta.textContent = `${machines.length} maquinas - ${client.os_abertas || 0} OS abertas - ${client.engenheiro_responsavel?.nome || "sem engenheiro"}`;
+  pmocGenerateReportButton.disabled = !hasCompletedPmocMaintenance(machines);
+  renderPmocDossierAlerts(client, machines);
+  renderPmocMachines(machines);
+}
+
+function renderPmocDossierAlerts(client, machines) {
+  const alerts = getPmocDossierAlerts(client, machines);
+  pmocDossierAlerts.innerHTML = "";
+
+  if (!alerts.length) {
+    pmocDossierAlerts.innerHTML = '<article class="pmoc-alert success"><strong>Cadastro base pronto.</strong><span>Cliente, engenheiro e maquinas ja estao separados para o futuro relatorio.</span></article>';
+    return;
+  }
+
+  for (const alert of alerts) {
+    const row = document.createElement("article");
+    row.className = `pmoc-alert ${alert.tone}`;
+    row.innerHTML = `<strong>${escapeHtml(alert.title)}</strong><span>${escapeHtml(alert.text)}</span>`;
+    pmocDossierAlerts.appendChild(row);
+  }
+}
+
+function getPmocDossierAlerts(client, machines) {
+  const alerts = [];
+
+  if (!client.engenheiro_responsavel) {
+    alerts.push({
+      tone: "danger",
+      title: "Engenheiro pendente",
+      text: "Vincule o responsavel tecnico antes de gerar qualquer relatorio PMOC."
+    });
+  }
+
+  if (!client.email) {
+    alerts.push({
+      tone: "warning",
+      title: "E-mail do cliente pendente",
+      text: "O envio final ao cliente depende de um e-mail valido no cadastro."
+    });
+  }
+
+  if (!machines.length) {
+    alerts.push({
+      tone: "danger",
+      title: "Nenhuma maquina cadastrada",
+      text: "Cadastre as maquinas do cliente para manter o dossie separado equipamento por equipamento."
+    });
+  }
+
+  const machinesWithoutGas = machines.filter((item) => !item.gas_refrigerante).length;
+
+  if (machinesWithoutGas) {
+    alerts.push({
+      tone: "warning",
+      title: "Gas refrigerante pendente",
+      text: `${machinesWithoutGas} maquina(s) ainda precisam do gas refrigerante na ficha tecnica ou primeira visita.`
+    });
+  }
+
+  return alerts;
+}
+
+function renderPmocMachines(machines) {
+  pmocMachineList.innerHTML = "";
+
+  if (!machines.length) {
+    pmocMachineList.innerHTML = '<article class="pmoc-empty"><strong>Sem maquinas neste cliente.</strong><span>Cadastre equipamentos na aba Clientes para iniciar o dossie PMOC.</span></article>';
+    return;
+  }
+
+  for (const item of machines) {
+    const status = getPmocMachineStatus(item);
+    const card = document.createElement("article");
+    card.className = "pmoc-machine-card";
+    card.innerHTML = `
+      <div>
+        <span class="pmoc-status ${status.tone}">${escapeHtml(status.label)}</span>
+        <strong>${escapeHtml([item.tipo, item.marca, item.modelo].filter(Boolean).join(" ") || "Equipamento")}</strong>
+        <p>${escapeHtml(item.local_instalacao || "Local nao informado")}</p>
+      </div>
+      <div class="pmoc-machine-specs">
+        <span>Patrimonio: ${escapeHtml(item.patrimonio || "nao informado")}</span>
+        <span>Serie: ${escapeHtml(item.numero_serie || "nao informada")}</span>
+        <span>Gas: ${escapeHtml(item.gas_refrigerante || "pendente")}</span>
+        <span>BTU: ${escapeHtml(item.capacidade_btu || "nao informado")}</span>
+      </div>
+      <div class="pmoc-machine-specs">
+        <span>${item.total_os || 0} OS no historico</span>
+        <span>${item.os_abertas || 0} OS abertas</span>
+        <span>Atualizado ${formatDateTime(item.atualizado_em)}</span>
+      </div>
+    `;
+    pmocMachineList.appendChild(card);
+  }
+}
+
+function getPmocMachineStatus(machine) {
+  const completedCount = Math.max((machine.total_os || 0) - (machine.os_abertas || 0), 0);
+
+  if (!machine.gas_refrigerante) {
+    return { label: "Ficha pendente", tone: "warning" };
+  }
+
+  if (completedCount > 0 && machine.os_abertas > 0) {
+    return { label: "Manutencao + OS aberta", tone: "success" };
+  }
+
+  if (completedCount > 0) {
+    return { label: "Manutencao registrada", tone: "success" };
+  }
+
+  if (machine.os_abertas > 0) {
+    return { label: "OS aberta", tone: "danger" };
+  }
+
+  return { label: "Sem OS", tone: "warning" };
+}
+
+function hasCompletedPmocMaintenance(machines) {
+  return machines.some((item) => (item.total_os || 0) > (item.os_abertas || 0));
+}
+
+function openPmocReportPreview() {
+  const client = latestClients.find((item) => item.id === selectedPmocDossierClientId);
+
+  if (!client || !hasCompletedPmocMaintenance(selectedPmocDossierMachines)) {
+    pmocDossierMeta.textContent = "Selecione um dossie com pelo menos uma OS concluida.";
+    return;
+  }
+
+  const reportWindow = window.open("", "_blank", "width=980,height=720");
+
+  if (!reportWindow) {
+    pmocDossierMeta.textContent = "Permita pop-ups para gerar a previa do PMOC.";
+    return;
+  }
+
+  const machineRows = selectedPmocDossierMachines
+    .map((item) => {
+      const status = getPmocMachineStatus(item);
+      return `
+        <article>
+          <h3>${escapeHtml([item.tipo, item.marca, item.modelo].filter(Boolean).join(" ") || "Equipamento")}</h3>
+          <p><strong>Local:</strong> ${escapeHtml(item.local_instalacao || "nao informado")}</p>
+          <p><strong>Patrimonio:</strong> ${escapeHtml(item.patrimonio || "nao informado")} | <strong>Serie:</strong> ${escapeHtml(item.numero_serie || "nao informada")}</p>
+          <p><strong>Gas:</strong> ${escapeHtml(item.gas_refrigerante || "pendente")} | <strong>Status:</strong> ${escapeHtml(status.label)}</p>
+          <p><strong>Historico:</strong> ${item.total_os || 0} OS, ${Math.max((item.total_os || 0) - (item.os_abertas || 0), 0)} concluida(s), ${item.os_abertas || 0} aberta(s)</p>
+        </article>
+      `;
+    })
+    .join("");
+
+  const content = `
+    <!doctype html>
+    <html lang="pt-BR">
+      <head>
+        <meta charset="utf-8" />
+        <title>Previa PMOC - ${escapeHtml(client.nome)}</title>
+        <style>
+          body { margin: 32px; color: #07151d; font-family: Arial, sans-serif; }
+          header { border-bottom: 3px solid #008c95; margin-bottom: 22px; padding-bottom: 18px; }
+          h1 { margin: 0 0 8px; font-size: 28px; }
+          h2 { margin: 24px 0 12px; }
+          h3 { margin: 0 0 8px; }
+          p { margin: 5px 0; }
+          article { page-break-inside: avoid; border: 1px solid #d9e2df; border-radius: 8px; margin: 12px 0; padding: 14px; }
+          .meta { color: #66747b; font-weight: 700; }
+          .notice { background: #fff6df; border-color: #ffb84d; }
+          .signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 42px; }
+          .line { border-top: 1px solid #07151d; padding-top: 8px; text-align: center; }
+        </style>
+      </head>
+      <body>
+        <header>
+          <h1>Previa PMOC - ${escapeHtml(client.nome)}</h1>
+          <p class="meta">Documento de teste gerado no painel. O PDF final com assinatura do engenheiro sera implementado no backend.</p>
+        </header>
+        <section>
+          <h2>Cliente e responsavel tecnico</h2>
+          <p><strong>Cliente:</strong> ${escapeHtml(client.nome)}</p>
+          <p><strong>E-mail cliente:</strong> ${escapeHtml(client.email || "pendente")}</p>
+          <p><strong>Endereco:</strong> ${escapeHtml(formatAddress(client.endereco))}</p>
+          <p><strong>Engenheiro:</strong> ${escapeHtml(client.engenheiro_responsavel?.nome || "pendente")}</p>
+          <p><strong>CREA:</strong> ${escapeHtml(client.engenheiro_responsavel?.crea || "pendente")}</p>
+        </section>
+        <section>
+          <h2>Maquinas do cliente</h2>
+          ${machineRows || '<article class="notice"><p>Nenhuma maquina cadastrada.</p></article>'}
+        </section>
+        <section class="notice">
+          <h2>Escopo da proxima etapa</h2>
+          <p>O relatorio final deve incluir fotos, horarios, GPS, checklist executado no aplicativo e assinatura do engenheiro responsavel.</p>
+        </section>
+        <section class="signatures">
+          <div class="line">Responsavel tecnico</div>
+          <div class="line">Cliente</div>
+        </section>
+      </body>
+    </html>
+  `;
+
+  reportWindow.document.open();
+  reportWindow.document.write(content);
+  reportWindow.document.close();
+  reportWindow.focus();
+}
+
+function getPmocClientStatus(client) {
+  if (!client.pmoc_ativo) {
+    return { label: "Cliente sem PMOC", tone: "warning" };
+  }
+
+  if (!client.engenheiro_responsavel) {
+    return { label: "Falta engenheiro", tone: "danger" };
+  }
+
+  if (!client.total_equipamentos) {
+    return { label: "Falta maquina", tone: "warning" };
+  }
+
+  return { label: "Cadastro pronto", tone: "success" };
+}
+
+function searchPmocClients(query) {
+  const normalized = normalizeSearch(query);
+
+  if (!normalized) {
+    return latestClients;
+  }
+
+  return latestClients.filter((item) => {
+    const content = [
+      item.nome,
+      item.email,
+      item.telefone,
+      item.documento,
+      item.engenheiro_responsavel?.nome,
+      item.engenheiro_responsavel?.crea
+    ].map(normalizeSearch).join(" ");
+
+    return content.includes(normalized);
+  });
+}
+
+function openPmocConversion(clientId) {
+  const client = latestClients.find((item) => item.id === clientId);
+
+  if (!client) {
+    return;
+  }
+
+  if (client.pmoc_ativo) {
+    pmocConversionPanel?.classList.add("hidden");
+    pmocStatus.textContent = `${client.nome} ja esta no PMOC.`;
+    return;
+  }
+
+  selectedPmocClientId = client.id;
+  pmocConversionTitle.textContent = `${client.nome} esta sem PMOC`;
+  pmocConversionText.textContent = "Confirme o engenheiro responsavel para transformar este cliente em PMOC.";
+  pmocConversionStatus.textContent = "";
+  renderPmocEngineerOptions("");
+  pmocConversionPanel?.classList.remove("hidden");
+}
+
+async function activatePmocClient(event) {
+  event.preventDefault();
+
+  const client = latestClients.find((item) => item.id === selectedPmocClientId);
+  const engineerId = pmocEngineerSelect.value;
+
+  if (!client) {
+    pmocConversionStatus.textContent = "Selecione um cliente primeiro.";
+    return;
+  }
+
+  if (!engineerId) {
+    pmocConversionStatus.textContent = "Selecione o engenheiro responsavel.";
+    return;
+  }
+
+  const button = pmocConversionForm.querySelector("button[type='submit']");
+  button.disabled = true;
+  button.textContent = "Adicionando...";
+  pmocConversionStatus.textContent = "";
+
+  try {
+    const response = await fetch(`${apiBaseUrl}/admin/clientes/${client.id}`, {
+      method: "PATCH",
+      headers: {
+        ...authHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(buildClientPmocPayload(client, engineerId))
+    });
+
+    if (await handleUnauthorized(response)) {
+      return;
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      pmocConversionStatus.textContent = error.message || "Nao foi possivel adicionar PMOC.";
+      return;
+    }
+
+    pmocConversionStatus.textContent = "Cliente adicionado ao PMOC.";
+    pmocConversionPanel?.classList.add("hidden");
+    await loadPmoc();
+  } catch {
+    pmocConversionStatus.textContent = "API indisponivel.";
+  } finally {
+    button.disabled = false;
+    button.textContent = "Adicionar PMOC ao cliente";
+  }
+}
+
+function buildClientPmocPayload(client, engineerId) {
+  const address = client.endereco || {};
+
+  return removeEmptyValues({
+    tipo: client.tipo || "pf",
+    nome: client.nome || "",
+    telefone: onlyDigits(client.telefone || ""),
+    email: client.email || "",
+    documento: client.documento || "",
+    pmoc_ativo: true,
+    engenheiro_responsavel_id: engineerId,
+    cep: onlyDigits(address.cep || ""),
+    logradouro: address.logradouro || "",
+    numero: address.numero || "",
+    bairro: address.bairro || "",
+    cidade: address.cidade || "",
+    uf: String(address.uf || "").toUpperCase()
+  });
+}
+
 function renderEngenheiros(items) {
   engenheirosList.innerHTML = "";
 
@@ -1336,48 +1650,6 @@ function openFleetReport() {
   reportWindow.document.close();
   reportWindow.focus();
   reportWindow.print();
-}
-
-function renderPmocEquipmentFields() {
-  pmocEquipmentFields.innerHTML = pmocEquipmentRegistry
-    .map(
-      (field, index) => `
-        <div class="pmoc-field">
-          <span>${String(index + 1).padStart(2, "0")}</span>
-          <strong>${escapeHtml(field)}</strong>
-        </div>
-      `
-    )
-    .join("");
-}
-
-function renderPmocGroups(container, groups, prefix) {
-  container.innerHTML = groups.map((group, groupIndex) => renderPmocGroup(group, `${prefix}-${groupIndex}`)).join("");
-}
-
-function renderPmocGroup(group, groupId) {
-  const items = group.items
-    .map(
-      (item, itemIndex) => `
-        <label class="pmoc-check">
-          <input type="checkbox" name="${groupId}-${itemIndex}" />
-          ${escapeHtml(item)}
-        </label>
-      `
-    )
-    .join("");
-  const note = group.note ? `<p class="pmoc-note">${escapeHtml(group.note)}</p>` : "";
-
-  return `
-    <section class="pmoc-group">
-      <div class="pmoc-group-title">
-        <strong>${escapeHtml(group.title)}</strong>
-        <span>${escapeHtml(group.cadence)}</span>
-      </div>
-      <div class="pmoc-items">${items}</div>
-      ${note}
-    </section>
-  `;
 }
 
 async function updatePreChamado(osId, action, payload = null) {
@@ -1670,6 +1942,15 @@ function stopEquipmentScanner() {
 
 function onlyDigits(value) {
   return value.replace(/\D/g, "");
+}
+
+function normalizeSearch(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
 }
 
 function validateClientIdentity(tipo, telefone, documento) {
@@ -2096,9 +2377,11 @@ fuelForm?.addEventListener("submit", submitFuel);
 clientForm?.addEventListener("submit", submitClient);
 engineerForm?.addEventListener("submit", submitEngineer);
 equipmentForm?.addEventListener("submit", submitEquipment);
+pmocConversionForm?.addEventListener("submit", activatePmocClient);
 resetClientFormButton?.addEventListener("click", resetClientForm);
 resetEngineerFormButton?.addEventListener("click", resetEngineerForm);
 fleetReportExportButton?.addEventListener("click", openFleetReport);
+pmocGenerateReportButton?.addEventListener("click", openPmocReportPreview);
 refreshButton?.addEventListener("click", loadActiveView);
 logoutButton?.addEventListener("click", () => {
   clearToken();
@@ -2117,6 +2400,66 @@ for (const button of fleetTabButtons) {
     setFleetTab(button.dataset.fleetTab || "mapa");
   });
 }
+
+pmocSearchForm?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const query = pmocSearchInput?.value || "";
+
+  if (!normalizeSearch(query)) {
+    resetPmocSearchResults();
+    pmocConversionPanel?.classList.add("hidden");
+    pmocStatus.textContent = "Digite para procurar clientes fora ou dentro do PMOC.";
+    return;
+  }
+
+  const results = searchPmocClients(query);
+  renderPmocSearchResults(results);
+  pmocConversionPanel?.classList.add("hidden");
+  pmocStatus.textContent = results.length === 1 ? "1 cliente encontrado" : `${results.length} clientes encontrados`;
+});
+
+pmocSearchInput?.addEventListener("input", () => {
+  if (!normalizeSearch(pmocSearchInput.value)) {
+    resetPmocSearchResults();
+    pmocConversionPanel?.classList.add("hidden");
+    pmocStatus.textContent = "Digite para procurar clientes fora ou dentro do PMOC.";
+    return;
+  }
+
+  const results = searchPmocClients(pmocSearchInput.value);
+  renderPmocSearchResults(results);
+  pmocStatus.textContent = results.length === 1 ? "1 cliente encontrado" : `${results.length} clientes encontrados`;
+});
+
+pmocSearchResults?.addEventListener("click", (event) => {
+  const target = event.target;
+  const button = target instanceof Element ? target.closest("[data-action]") : null;
+
+  if (!(button instanceof HTMLButtonElement) || !button.dataset.id) {
+    return;
+  }
+
+  if (button.dataset.action === "pmoc-ativar-cliente") {
+    openPmocConversion(button.dataset.id);
+  }
+
+  if (button.dataset.action === "pmoc-ver-cliente") {
+    void openPmocDossier(button.dataset.id);
+  }
+});
+
+pmocDossierList?.addEventListener("click", (event) => {
+  const target = event.target;
+  const button = target instanceof Element ? target.closest("[data-action]") : null;
+
+  if (!(button instanceof HTMLButtonElement) || !button.dataset.id) {
+    return;
+  }
+
+  if (button.dataset.action === "pmoc-ver-cliente") {
+    void openPmocDossier(button.dataset.id);
+  }
+});
 
 agendaCalendar?.addEventListener("click", (event) => {
   const target = event.target;

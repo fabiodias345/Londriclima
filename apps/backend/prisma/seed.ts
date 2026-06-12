@@ -4,6 +4,9 @@ import { promisify } from "node:util";
 
 const prisma = new PrismaClient();
 const ORDEM_SERVICO_TESTE_ID = "55555555-5555-4555-8555-555555555555";
+const ORDEM_SERVICO_PMOC_CONCLUIDA_ID = "5a5a5a5a-5555-4555-8555-5a5a5a5a5a5a";
+const EQUIPAMENTO_TESTE_ID = "88888888-8888-4888-8888-888888888888";
+const ENGENHEIRO_TESTE_ID = "99999999-9999-4999-8999-999999999999";
 const VEICULO_1_ID = "66666666-6666-4666-8666-666666666666";
 const VEICULO_2_ID = "77777777-7777-4777-8777-777777777777";
 const scryptAsync = promisify(scrypt);
@@ -98,6 +101,31 @@ async function main() {
     }
   });
 
+  const engenheiro = await prisma.engenheiroResponsavel.upsert({
+    where: {
+      id: ENGENHEIRO_TESTE_ID
+    },
+    update: {
+      empresaId: empresa.id,
+      nome: "Paulo Londriclima",
+      cpf: "12345678901",
+      crea: "CREA-PR 123456",
+      email: "paulo@londriclima.com",
+      telefone: "43999991111",
+      ativo: true
+    },
+    create: {
+      id: ENGENHEIRO_TESTE_ID,
+      empresaId: empresa.id,
+      nome: "Paulo Londriclima",
+      cpf: "12345678901",
+      crea: "CREA-PR 123456",
+      email: "paulo@londriclima.com",
+      telefone: "43999991111",
+      ativo: true
+    }
+  });
+
   const cliente = await prisma.cliente.upsert({
     where: {
       id: "33333333-3333-4333-8333-333333333333"
@@ -108,7 +136,9 @@ async function main() {
       nome: "Maria Souza",
       documento: "12345678900",
       email: "maria@example.com",
-      telefone: "43988887777"
+      telefone: "43988887777",
+      pmocAtivo: true,
+      engenheiroResponsavelId: engenheiro.id
     },
     create: {
       id: "33333333-3333-4333-8333-333333333333",
@@ -117,7 +147,9 @@ async function main() {
       nome: "Maria Souza",
       documento: "12345678900",
       email: "maria@example.com",
-      telefone: "43988887777"
+      telefone: "43988887777",
+      pmocAtivo: true,
+      engenheiroResponsavelId: engenheiro.id
     }
   });
 
@@ -153,6 +185,42 @@ async function main() {
       latitude: -23.3045,
       longitude: -51.1696,
       principal: true
+    }
+  });
+
+  const equipamento = await prisma.equipamento.upsert({
+    where: {
+      id: EQUIPAMENTO_TESTE_ID
+    },
+    update: {
+      empresaId: empresa.id,
+      clienteId: cliente.id,
+      tipo: "Split Hi Wall",
+      patrimonio: "PMOC-MARIA-001",
+      codigoBarras: "789000000001",
+      marca: "LG",
+      modelo: "Dual Inverter",
+      capacidadeBtu: 12000,
+      gasRefrigerante: "R-410A",
+      numeroSerie: "LG-MARIA-12000",
+      localInstalacao: "Sala principal"
+    },
+    create: {
+      id: EQUIPAMENTO_TESTE_ID,
+      empresaId: empresa.id,
+      clienteId: cliente.id,
+      codigoPublico: "EQ-MARIA001",
+      senhaPublicaHash: await hashPassword("123456"),
+      acessoPublicoAtivo: true,
+      tipo: "Split Hi Wall",
+      patrimonio: "PMOC-MARIA-001",
+      codigoBarras: "789000000001",
+      marca: "LG",
+      modelo: "Dual Inverter",
+      capacidadeBtu: 12000,
+      gasRefrigerante: "R-410A",
+      numeroSerie: "LG-MARIA-12000",
+      localInstalacao: "Sala principal"
     }
   });
 
@@ -212,6 +280,7 @@ async function main() {
       empresaId: empresa.id,
       clienteId: cliente.id,
       enderecoId: endereco.id,
+      equipamentoId: equipamento.id,
       equipeId: equipe.id,
       tecnicoId: tecnico.id,
       status: "aberta",
@@ -224,12 +293,185 @@ async function main() {
       empresaId: empresa.id,
       clienteId: cliente.id,
       enderecoId: endereco.id,
+      equipamentoId: equipamento.id,
       equipeId: equipe.id,
       tecnicoId: tecnico.id,
       status: "aberta",
       titulo: "Limpeza preventiva de ar-condicionado",
       problemaRelatado: "Cliente solicitou limpeza completa e revisão preventiva.",
       agendadaPara: new Date("2026-06-10T12:00:00.000Z")
+    }
+  });
+
+  const checklistPmocExistente = await prisma.ordemServicoChecklist.findUnique({
+    where: {
+      ordemServicoId: ORDEM_SERVICO_PMOC_CONCLUIDA_ID
+    },
+    select: {
+      id: true
+    }
+  });
+
+  if (checklistPmocExistente) {
+    await prisma.ordemServicoPeca.deleteMany({
+      where: {
+        checklistId: checklistPmocExistente.id
+      }
+    });
+  }
+
+  await prisma.automacaoAgendada.deleteMany({
+    where: {
+      ordemServicoId: ORDEM_SERVICO_PMOC_CONCLUIDA_ID
+    }
+  });
+  await prisma.ordemServicoObservacao.deleteMany({
+    where: {
+      ordemServicoId: ORDEM_SERVICO_PMOC_CONCLUIDA_ID
+    }
+  });
+  await prisma.ordemServicoAssinatura.deleteMany({
+    where: {
+      ordemServicoId: ORDEM_SERVICO_PMOC_CONCLUIDA_ID
+    }
+  });
+  await prisma.ordemServicoChecklist.deleteMany({
+    where: {
+      ordemServicoId: ORDEM_SERVICO_PMOC_CONCLUIDA_ID
+    }
+  });
+  await prisma.ordemServicoEvidencia.deleteMany({
+    where: {
+      ordemServicoId: ORDEM_SERVICO_PMOC_CONCLUIDA_ID
+    }
+  });
+  await prisma.ordemServicoEvento.deleteMany({
+    where: {
+      ordemServicoId: ORDEM_SERVICO_PMOC_CONCLUIDA_ID
+    }
+  });
+
+  const ordemPmocConcluida = await prisma.ordemServico.upsert({
+    where: {
+      id: ORDEM_SERVICO_PMOC_CONCLUIDA_ID
+    },
+    update: {
+      empresaId: empresa.id,
+      clienteId: cliente.id,
+      enderecoId: endereco.id,
+      equipamentoId: equipamento.id,
+      equipeId: equipe.id,
+      tecnicoId: tecnico.id,
+      status: "concluida",
+      titulo: "PMOC mensal - Maria Souza",
+      problemaRelatado: "Execucao mensal do PMOC com higienizacao, verificacoes operacionais e evidencias.",
+      agendadaPara: new Date("2026-06-11T12:00:00.000Z"),
+      concluidaEm: new Date("2026-06-11T15:20:00.000Z")
+    },
+    create: {
+      id: ORDEM_SERVICO_PMOC_CONCLUIDA_ID,
+      empresaId: empresa.id,
+      clienteId: cliente.id,
+      enderecoId: endereco.id,
+      equipamentoId: equipamento.id,
+      equipeId: equipe.id,
+      tecnicoId: tecnico.id,
+      status: "concluida",
+      titulo: "PMOC mensal - Maria Souza",
+      problemaRelatado: "Execucao mensal do PMOC com higienizacao, verificacoes operacionais e evidencias.",
+      agendadaPara: new Date("2026-06-11T12:00:00.000Z"),
+      concluidaEm: new Date("2026-06-11T15:20:00.000Z")
+    }
+  });
+
+  await prisma.ordemServicoEvento.createMany({
+    data: [
+      {
+        empresaId: empresa.id,
+        ordemServicoId: ordemPmocConcluida.id,
+        usuarioId: tecnico.id,
+        acao: "cheguei_cliente",
+        statusAnterior: "em_deslocamento",
+        statusNovo: "em_atendimento",
+        latitude: -23.3045,
+        longitude: -51.1696,
+        registradoEm: new Date("2026-06-11T12:10:00.000Z")
+      },
+      {
+        empresaId: empresa.id,
+        ordemServicoId: ordemPmocConcluida.id,
+        usuarioId: tecnico.id,
+        acao: "finalizar",
+        statusAnterior: "em_atendimento",
+        statusNovo: "concluida",
+        latitude: -23.3047,
+        longitude: -51.1697,
+        registradoEm: new Date("2026-06-11T15:20:00.000Z")
+      }
+    ]
+  });
+
+  await prisma.ordemServicoEvidencia.createMany({
+    data: [
+      {
+        empresaId: empresa.id,
+        ordemServicoId: ordemPmocConcluida.id,
+        tipo: "antes",
+        descricao: "Filtro com acumulacao leve de poeira antes da higienizacao.",
+        storageUrl: "/storage/demo/maria/antes.webp",
+        mimeType: "image/webp",
+        tamanhoBytes: 128000
+      },
+      {
+        empresaId: empresa.id,
+        ordemServicoId: ordemPmocConcluida.id,
+        tipo: "depois",
+        descricao: "Equipamento limpo, operando normalmente apos manutencao.",
+        storageUrl: "/storage/demo/maria/depois.webp",
+        mimeType: "image/webp",
+        tamanhoBytes: 126000
+      }
+    ]
+  });
+
+  const checklistPmoc = await prisma.ordemServicoChecklist.create({
+    data: {
+      empresaId: empresa.id,
+      ordemServicoId: ordemPmocConcluida.id,
+      servicoRealizado: "PMOC mensal executado com limpeza de filtro, verificacao de dreno, evaporadora, funcionamento eletrico e leitura operacional.",
+      procedimentos: ["limpeza_filtro", "verificacao_dreno", "verificacao_eletrica", "teste_operacional"],
+      custoTotalPecas: 0
+    }
+  });
+
+  await prisma.ordemServicoPeca.create({
+    data: {
+      empresaId: empresa.id,
+      checklistId: checklistPmoc.id,
+      descricaoPeca: "Produto higienizante",
+      quantidade: 1,
+      custoUnitario: 18
+    }
+  });
+
+  await prisma.ordemServicoObservacao.create({
+    data: {
+      empresaId: empresa.id,
+      ordemServicoId: ordemPmocConcluida.id,
+      texto: "Equipamento em bom estado. Manter rotina mensal do PMOC.",
+      visivelNoRelatorio: true
+    }
+  });
+
+  await prisma.ordemServicoAssinatura.create({
+    data: {
+      empresaId: empresa.id,
+      ordemServicoId: ordemPmocConcluida.id,
+      nomeResponsavel: "Maria Souza",
+      storageUrl: "/storage/demo/maria/assinatura.png",
+      latitude: -23.3047,
+      longitude: -51.1697,
+      assinadoEm: new Date("2026-06-11T15:20:00.000Z")
     }
   });
 

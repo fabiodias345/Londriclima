@@ -236,7 +236,83 @@ function criarPrismaMock() {
       })
     },
     cliente: {
-      findFirst: async () => null,
+      findFirst: async ({ where }: { where?: { id?: string } } = {}) => {
+        if (where?.id === clienteId) {
+          return {
+            id: clienteId,
+            nome: "Maria Souza",
+            tipo: "pf",
+            documento: "12345678900",
+            telefone: "43999999999",
+            email: "maria@example.com",
+            pmocAtivo: true,
+            atualizadoEm: new Date("2026-06-10T12:00:00.000Z"),
+            engenheiroResponsavel: {
+              id: "engenheiro-1",
+              nome: "Paulo Londriclima",
+              cpf: "12345678901",
+              crea: "CREA-PR 123456",
+              email: "paulo@example.com",
+              telefone: "43999991111",
+              atualizadoEm: new Date("2026-06-10T12:00:00.000Z")
+            },
+            enderecos: [{ bairro: "Centro", cidade: "Londrina", uf: "PR" }],
+            equipamentos: [
+              {
+                id: "equipamento-1",
+                tipo: "Split",
+                patrimonio: "PMOC-001",
+                codigoBarras: "789",
+                marca: "LG",
+                modelo: "Dual Inverter",
+                capacidadeBtu: 12000,
+                gasRefrigerante: "R-410A",
+                numeroSerie: "SN-1",
+                localInstalacao: "Sala",
+                atualizadoEm: new Date("2026-06-10T12:00:00.000Z"),
+                ordensServico: [
+                  {
+                    id: osId,
+                    titulo: "PMOC mensal",
+                    problemaRelatado: "Rotina mensal",
+                    status: OrdemServicoStatus.concluida,
+                    agendadaPara: new Date("2026-06-10T12:00:00.000Z"),
+                    concluidaEm: new Date("2026-06-10T15:00:00.000Z"),
+                    valorCobrado: new Prisma.Decimal(250),
+                    tecnico: { id: usuarioId, nome: "Tecnico AIRMOVEBR", email: "tecnico@airmovebr.local" },
+                    equipe: { id: "equipe-1", nome: "Equipe 1" },
+                    eventos: [
+                      {
+                        id: "evento-1",
+                        acao: OrdemServicoEventoAcao.finalizar,
+                        statusAnterior: OrdemServicoStatus.em_atendimento,
+                        statusNovo: OrdemServicoStatus.concluida,
+                        latitude: new Prisma.Decimal(-23.3047),
+                        longitude: new Prisma.Decimal(-51.1697),
+                        registradoEm: new Date("2026-06-10T15:00:00.000Z")
+                      }
+                    ],
+                    evidencias: [],
+                    checklist: {
+                      id: "check-1",
+                      servicoRealizado: "Limpeza",
+                      procedimentos: ["limpeza_filtro"],
+                      custoTotalPecas: new Prisma.Decimal(0),
+                      criadoEm: new Date("2026-06-10T14:00:00.000Z"),
+                      atualizadoEm: new Date("2026-06-10T14:00:00.000Z"),
+                      pecas: []
+                    },
+                    assinatura: null,
+                    observacoes: []
+                  }
+                ]
+              }
+            ]
+          };
+        }
+
+        return null;
+      },
       findMany: async () => [
         {
           id: clienteId,
@@ -375,6 +451,20 @@ test("GET /api/v1/admin/clientes responde clientes autenticados", async () => {
 
   assert.equal(response.status, 200);
   assert.equal(body.total, 1);
+});
+
+test("GET /api/v1/admin/pmoc/clientes/:clienteId/previa responde dossie PMOC", async () => {
+  const response = await fetch(`${baseUrl}/api/v1/admin/pmoc/clientes/${clienteId}/previa`, {
+    headers: jsonHeaders(accessToken)
+  });
+  const body = await lerJson(response);
+
+  assert.equal(response.status, 200);
+  assert.equal((body.cliente as { nome: string }).nome, "Maria Souza");
+  assert.equal((body.engenheiro_responsavel as { crea: string }).crea, "CREA-PR 123456");
+  assert.equal(body.total_maquinas, 1);
+  assert.equal(body.total_os_concluidas, 1);
+  assert.equal(Array.isArray(body.maquinas), true);
 });
 
 test("GET /api/v1/admin/relatorios responde indicadores autenticados", async () => {

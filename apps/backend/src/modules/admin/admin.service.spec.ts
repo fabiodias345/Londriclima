@@ -317,6 +317,127 @@ test("listarEquipamentosCliente exige cliente da empresa e retorna links publico
   assert.equal(resposta.items[0].os_abertas, 1);
 });
 
+test("obterPreviaPmocCliente retorna cliente, engenheiro, maquinas e OS concluidas separadas", async () => {
+  const prisma = {
+    cliente: {
+      findFirst: async () => ({
+        id: "cliente-1",
+        nome: "Maria Souza",
+        tipo: "pf",
+        documento: "12345678900",
+        telefone: "43988887777",
+        email: "maria@example.com",
+        pmocAtivo: true,
+        atualizadoEm: new Date("2026-06-12T10:00:00.000Z"),
+        engenheiroResponsavel: {
+          id: "engenheiro-1",
+          nome: "Paulo Londriclima",
+          cpf: "12345678901",
+          crea: "CREA-PR 123456",
+          email: "paulo@example.com",
+          telefone: "43999991111",
+          atualizadoEm: new Date("2026-06-12T10:00:00.000Z")
+        },
+        enderecos: [{ cidade: "Londrina", uf: "PR", bairro: "Centro" }],
+        equipamentos: [
+          {
+            id: "equipamento-1",
+            tipo: "Split",
+            patrimonio: "PMOC-001",
+            codigoBarras: "789",
+            marca: "LG",
+            modelo: "Dual Inverter",
+            capacidadeBtu: 12000,
+            gasRefrigerante: "R-410A",
+            numeroSerie: "SN-1",
+            localInstalacao: "Sala",
+            atualizadoEm: new Date("2026-06-12T10:00:00.000Z"),
+            ordensServico: [
+              {
+                id: "os-1",
+                titulo: "PMOC mensal",
+                problemaRelatado: "Rotina mensal",
+                status: OrdemServicoStatus.concluida,
+                agendadaPara: new Date("2026-06-11T12:00:00.000Z"),
+                concluidaEm: new Date("2026-06-11T15:00:00.000Z"),
+                valorCobrado: new Prisma.Decimal(250),
+                tecnico: { id: "tecnico-1", nome: "Joao", email: "joao@example.com" },
+                equipe: { id: "equipe-1", nome: "Equipe 1" },
+                eventos: [
+                  {
+                    id: "evento-1",
+                    acao: OrdemServicoEventoAcao.finalizar,
+                    statusAnterior: OrdemServicoStatus.em_atendimento,
+                    statusNovo: OrdemServicoStatus.concluida,
+                    latitude: new Prisma.Decimal(-23.3047),
+                    longitude: new Prisma.Decimal(-51.1697),
+                    registradoEm: new Date("2026-06-11T15:00:00.000Z")
+                  }
+                ],
+                evidencias: [
+                  {
+                    id: "ev-1",
+                    tipo: "antes",
+                    descricao: "Antes",
+                    storageUrl: "/antes.webp",
+                    mimeType: "image/webp",
+                    tamanhoBytes: 1000,
+                    criadoEm: new Date("2026-06-11T12:30:00.000Z")
+                  }
+                ],
+                checklist: {
+                  id: "check-1",
+                  servicoRealizado: "Limpeza",
+                  procedimentos: ["limpeza_filtro"],
+                  custoTotalPecas: new Prisma.Decimal(18),
+                  criadoEm: new Date("2026-06-11T14:00:00.000Z"),
+                  atualizadoEm: new Date("2026-06-11T14:00:00.000Z"),
+                  pecas: [
+                    {
+                      id: "peca-1",
+                      descricaoPeca: "Produto",
+                      quantidade: 1,
+                      custoUnitario: new Prisma.Decimal(18)
+                    }
+                  ]
+                },
+                assinatura: {
+                  id: "assinatura-1",
+                  nomeResponsavel: "Maria Souza",
+                  storageUrl: "/assinatura.png",
+                  latitude: new Prisma.Decimal(-23.3047),
+                  longitude: new Prisma.Decimal(-51.1697),
+                  assinadoEm: new Date("2026-06-11T15:00:00.000Z")
+                },
+                observacoes: [
+                  {
+                    id: "obs-1",
+                    texto: "Tudo ok",
+                    visivelNoRelatorio: true,
+                    criadoEm: new Date("2026-06-11T14:50:00.000Z")
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      })
+    }
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.obterPreviaPmocCliente("cliente-1", usuario);
+
+  assert.equal(resposta.cliente.nome, "Maria Souza");
+  assert.equal(resposta.engenheiro_responsavel?.crea, "CREA-PR 123456");
+  assert.equal(resposta.total_maquinas, 1);
+  assert.equal(resposta.total_os_concluidas, 1);
+  assert.equal(resposta.pronto_para_pdf, true);
+  assert.deepEqual(resposta.pendencias, []);
+  assert.equal(resposta.maquinas[0].os_concluidas[0].checklist?.servico_realizado, "Limpeza");
+  assert.equal(resposta.maquinas[0].os_concluidas[0].assinatura?.latitude, -23.3047);
+});
+
 test("criarEquipamentoCliente gera codigo publico e senha inicial", async () => {
   const chamadas = {
     createData: undefined as unknown

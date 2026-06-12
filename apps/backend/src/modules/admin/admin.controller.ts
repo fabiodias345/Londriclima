@@ -57,6 +57,14 @@ export class AdminController {
     return this.adminService.listarClientes(usuario);
   }
 
+  @Get("pmoc/clientes/:clienteId/previa")
+  obterPreviaPmocCliente(
+    @Param("clienteId", new ParseUUIDPipe()) clienteId: string,
+    @CurrentUser() usuario: AuthenticatedUser
+  ) {
+    return this.adminService.obterPreviaPmocCliente(clienteId, usuario);
+  }
+
   @Get("engenheiros")
   listarEngenheirosResponsaveis(@CurrentUser() usuario: AuthenticatedUser) {
     return this.adminService.listarEngenheirosResponsaveis(usuario);
