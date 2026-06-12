@@ -527,7 +527,7 @@ export class AdminService {
 
   async criarEngenheiroResponsavel(dto: SalvarEngenheiroResponsavelDto, usuario: AuthenticatedUser) {
     const engenheiro = await this.prisma.engenheiroResponsavel.create({
-      data: this.montarEngenheiroResponsavelData(dto, usuario.empresa_id),
+      data: this.montarEngenheiroResponsavelCreateData(dto, usuario.empresa_id),
       select: this.engenheiroResponsavelSelect()
     });
 
@@ -545,7 +545,7 @@ export class AdminService {
       where: {
         id: engenheiroId
       },
-      data: this.montarEngenheiroResponsavelData(dto, usuario.empresa_id, false),
+      data: this.montarEngenheiroResponsavelUpdateData(dto),
       select: this.engenheiroResponsavelSelect()
     });
 
@@ -1097,24 +1097,30 @@ export class AdminService {
     };
   }
 
-  private montarEngenheiroResponsavelData(
+  private montarEngenheiroResponsavelCreateData(
     dto: SalvarEngenheiroResponsavelDto,
-    empresaId: string,
-    incluirEmpresa = true
-  ): Prisma.EngenheiroResponsavelUncheckedCreateInput | Prisma.EngenheiroResponsavelUncheckedUpdateInput {
-    const data: Prisma.EngenheiroResponsavelUncheckedCreateInput | Prisma.EngenheiroResponsavelUncheckedUpdateInput = {
+    empresaId: string
+  ): Prisma.EngenheiroResponsavelUncheckedCreateInput {
+    return {
+      ...this.montarEngenheiroResponsavelCampos(dto),
+      empresaId
+    };
+  }
+
+  private montarEngenheiroResponsavelUpdateData(
+    dto: SalvarEngenheiroResponsavelDto
+  ): Prisma.EngenheiroResponsavelUncheckedUpdateInput {
+    return this.montarEngenheiroResponsavelCampos(dto);
+  }
+
+  private montarEngenheiroResponsavelCampos(dto: SalvarEngenheiroResponsavelDto) {
+    return {
       nome: dto.nome.trim(),
       cpf: dto.cpf.replace(/\D/g, ""),
       crea: dto.crea.trim().toUpperCase(),
       email: dto.email.trim().toLowerCase(),
       telefone: dto.telefone?.replace(/\D/g, "") || null
     };
-
-    if (incluirEmpresa) {
-      data.empresaId = empresaId;
-    }
-
-    return data;
   }
 
   private equipamentoSelect() {
