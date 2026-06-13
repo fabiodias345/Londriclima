@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
+import { AutomacaoTipo, PmocRelatorioStatus, Prisma } from "@prisma/client";
 import { PrismaService } from "../../database/prisma.service";
 import { PasswordHashService } from "../auth/password-hash.service";
 import { ConsultarEquipamentoDto } from "./dto/consultar-equipamento.dto";
@@ -205,6 +206,151 @@ export class SiteService {
     };
   }
 
+  async consultarAssinaturaPmoc(token: string) {
+    const relatorio = await this.prisma.pmocRelatorio.findUnique({
+      where: {
+        tokenAssinatura: token
+      },
+      select: {
+        id: true,
+        status: true,
+        pdfHash: true,
+        assinadoEm: true,
+        emailCliente: true,
+        emailAgendadoEm: true,
+        historicoFinalizadoEm: true,
+        cliente: {
+          select: {
+            nome: true,
+            email: true
+          }
+        },
+        engenheiroResponsavel: {
+          select: {
+            nome: true,
+            crea: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    if (!relatorio) {
+      throw new NotFoundException("Relatorio PMOC nao encontrado.");
+    }
+
+    return this.mapearAssinaturaPmoc(relatorio);
+  }
+
+  async confirmarAssinaturaPmoc(token: string) {
+    const relatorio = await this.prisma.pmocRelatorio.findUnique({
+      where: {
+        tokenAssinatura: token
+      },
+      select: {
+        id: true,
+        empresaId: true,
+        clienteId: true,
+        status: true,
+        pdfHash: true,
+        emailCliente: true,
+        emailAgendadoEm: true,
+        historicoFinalizadoEm: true,
+        cliente: {
+          select: {
+            id: true,
+            nome: true,
+            email: true
+          }
+        },
+        engenheiroResponsavel: {
+          select: {
+            nome: true,
+            crea: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    if (!relatorio) {
+      throw new NotFoundException("Relatorio PMOC nao encontrado.");
+    }
+
+    if (relatorio.status === PmocRelatorioStatus.assinado) {
+      return {
+        id: relatorio.id,
+        status: relatorio.status,
+        email_cliente: relatorio.emailCliente,
+        email_agendado: Boolean(relatorio.emailAgendadoEm),
+        historico_finalizado: Boolean(relatorio.historicoFinalizadoEm)
+      };
+    }
+
+    if (relatorio.status !== PmocRelatorioStatus.aguardando_assinatura_engenheiro) {
+      throw new ConflictException("Relatorio PMOC nao esta aguardando assinatura.");
+    }
+
+    if (!relatorio.cliente.email) {
+      throw new BadRequestException("Cliente sem e-mail para envio final.");
+    }
+
+    const agora = new Date();
+    const payload: Prisma.JsonObject = {
+      tipo: "pmoc_relatorio_assinado",
+      relatorio_id: relatorio.id,
+      cliente_id: relatorio.clienteId,
+      cliente_email: relatorio.cliente.email,
+      engenheiro_crea: relatorio.engenheiroResponsavel.crea,
+      pdf_hash: relatorio.pdfHash
+    };
+
+    const assinado = await this.prisma.$transaction(async (tx) => {
+      const atualizado = await tx.pmocRelatorio.update({
+        where: {
+          id: relatorio.id
+        },
+        data: {
+          status: PmocRelatorioStatus.assinado,
+          assinadoEm: agora,
+          emailCliente: relatorio.cliente.email,
+          emailAgendadoEm: agora,
+          historicoFinalizadoEm: agora
+        },
+        select: {
+          id: true,
+          status: true,
+          pdfHash: true,
+          assinadoEm: true,
+          emailCliente: true,
+          emailAgendadoEm: true,
+          historicoFinalizadoEm: true
+        }
+      });
+
+      await tx.automacaoAgendada.create({
+        data: {
+          empresaId: relatorio.empresaId,
+          tipo: AutomacaoTipo.enviar_email,
+          executarEm: agora,
+          payload
+        }
+      });
+
+      return atualizado;
+    });
+
+    return {
+      id: assinado.id,
+      status: assinado.status,
+      pdf_hash: assinado.pdfHash,
+      assinado_em: assinado.assinadoEm?.toISOString() ?? null,
+      email_cliente: assinado.emailCliente,
+      email_agendado: Boolean(assinado.emailAgendadoEm),
+      historico_finalizado: Boolean(assinado.historicoFinalizadoEm)
+    };
+  }
+
   private normalizarTelefone(telefone: string) {
     return telefone.replace(/\D/g, "");
   }
@@ -216,6 +362,44 @@ export class SiteService {
       logradouro: local.trim(),
       bairro: bairro || null,
       cidade: cidade || "Londrina"
+    };
+  }
+
+  private mapearAssinaturaPmoc(relatorio: {
+    id: string;
+    status: PmocRelatorioStatus;
+    pdfHash: string;
+    assinadoEm: Date | null;
+    emailCliente?: string | null;
+    emailAgendadoEm?: Date | null;
+    historicoFinalizadoEm?: Date | null;
+    cliente: {
+      nome: string;
+      email: string | null;
+    };
+    engenheiroResponsavel: {
+      nome: string;
+      crea: string;
+      email: string;
+    };
+  }) {
+    return {
+      id: relatorio.id,
+      status: relatorio.status,
+      pdf_hash: relatorio.pdfHash,
+      assinado_em: relatorio.assinadoEm?.toISOString() ?? null,
+      email_cliente: relatorio.emailCliente ?? null,
+      email_agendado_em: relatorio.emailAgendadoEm?.toISOString() ?? null,
+      historico_finalizado_em: relatorio.historicoFinalizadoEm?.toISOString() ?? null,
+      cliente: {
+        nome: relatorio.cliente.nome,
+        email: relatorio.cliente.email
+      },
+      engenheiro_responsavel: {
+        nome: relatorio.engenheiroResponsavel.nome,
+        crea: relatorio.engenheiroResponsavel.crea,
+        email: relatorio.engenheiroResponsavel.email
+      }
     };
   }
 }

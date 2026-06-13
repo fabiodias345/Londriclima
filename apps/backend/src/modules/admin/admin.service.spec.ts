@@ -1,7 +1,7 @@
 ﻿import { test } from "node:test";
 import * as assert from "node:assert/strict";
 import { BadRequestException, ConflictException, NotFoundException } from "@nestjs/common";
-import { OrdemServicoEventoAcao, OrdemServicoStatus, Prisma, UsuarioRole } from "@prisma/client";
+import { AutomacaoTipo, OrdemServicoEventoAcao, OrdemServicoStatus, Prisma, UsuarioRole } from "@prisma/client";
 import { AdminService } from "./admin.service";
 
 const usuario = {
@@ -436,6 +436,115 @@ test("obterPreviaPmocCliente retorna cliente, engenheiro, maquinas e OS concluid
   assert.deepEqual(resposta.pendencias, []);
   assert.equal(resposta.maquinas[0].os_concluidas[0].checklist?.servico_realizado, "Limpeza");
   assert.equal(resposta.maquinas[0].os_concluidas[0].assinatura?.latitude, -23.3047);
+});
+
+test("gerarPdfPmocCliente retorna PDF com nome de arquivo e conteudo oficial", async () => {
+  const prisma = {
+    cliente: {
+      findFirst: async () => ({
+        id: "cliente-1",
+        nome: "Maria Souza",
+        tipo: "pf",
+        documento: "12345678900",
+        telefone: "43988887777",
+        email: "maria@example.com",
+        pmocAtivo: true,
+        atualizadoEm: new Date("2026-06-12T10:00:00.000Z"),
+        engenheiroResponsavel: {
+          id: "engenheiro-1",
+          nome: "Paulo Londriclima",
+          cpf: "12345678901",
+          crea: "CREA-PR 123456",
+          email: "paulo@example.com",
+          telefone: "43999991111",
+          atualizadoEm: new Date("2026-06-12T10:00:00.000Z")
+        },
+        enderecos: [{ cidade: "Londrina", uf: "PR", bairro: "Centro" }],
+        equipamentos: []
+      })
+    }
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.gerarPdfPmocCliente("cliente-1", usuario);
+
+  assert.equal(resposta.contentType, "application/pdf");
+  assert.equal(resposta.filename, "pmoc-maria-souza.pdf");
+  assert.equal(resposta.buffer.subarray(0, 4).toString("utf8"), "%PDF");
+  assert.match(resposta.buffer.toString("latin1"), /Maria Souza/);
+});
+
+test("solicitarAssinaturaPmocEngenheiro cria relatorio com token e hash do PDF", async () => {
+  const chamadas = {
+    createData: undefined as unknown,
+    emailData: undefined as unknown
+  };
+  const prisma = {
+    cliente: {
+      findFirst: async () => ({
+        id: "cliente-1",
+        nome: "Maria Souza",
+        tipo: "pf",
+        documento: "12345678900",
+        telefone: "43988887777",
+        email: "maria@example.com",
+        pmocAtivo: true,
+        atualizadoEm: new Date("2026-06-12T10:00:00.000Z"),
+        engenheiroResponsavel: {
+          id: "engenheiro-1",
+          nome: "Paulo Londriclima",
+          cpf: "12345678901",
+          crea: "CREA-PR 123456",
+          email: "paulo@example.com",
+          telefone: "43999991111",
+          atualizadoEm: new Date("2026-06-12T10:00:00.000Z")
+        },
+        enderecos: [{ cidade: "Londrina", uf: "PR", bairro: "Centro" }],
+        equipamentos: []
+      })
+    },
+    pmocRelatorio: {
+      create: async ({ data }: { data: unknown }) => {
+        chamadas.createData = data;
+        return {
+          id: "relatorio-1",
+          ...(data as object),
+          status: "aguardando_assinatura_engenheiro",
+          criadoEm: new Date("2026-06-12T11:00:00.000Z"),
+          atualizadoEm: new Date("2026-06-12T11:00:00.000Z")
+        };
+      }
+    },
+    automacaoAgendada: {
+      create: async ({ data }: { data: unknown }) => {
+        chamadas.emailData = data;
+      }
+    }
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.solicitarAssinaturaPmocEngenheiro("cliente-1", usuario);
+
+  assert.equal((chamadas.createData as { clienteId: string }).clienteId, "cliente-1");
+  assert.equal((chamadas.createData as { engenheiroResponsavelId: string }).engenheiroResponsavelId, "engenheiro-1");
+  assert.equal((chamadas.createData as { status: string }).status, "aguardando_assinatura_engenheiro");
+  assert.match((chamadas.createData as { tokenAssinatura: string }).tokenAssinatura, /^[a-f0-9]{48}$/);
+  assert.match((chamadas.createData as { pdfHash: string }).pdfHash, /^[a-f0-9]{64}$/);
+  assert.equal((chamadas.emailData as { tipo: AutomacaoTipo }).tipo, AutomacaoTipo.enviar_email);
+  const tokenAssinatura = (chamadas.createData as { tokenAssinatura: string }).tokenAssinatura;
+  assert.deepEqual((chamadas.emailData as { payload: unknown }).payload, {
+    tipo: "pmoc_assinatura_engenheiro",
+    relatorio_id: "relatorio-1",
+    cliente_nome: "Maria Souza",
+    engenheiro_email: "paulo@example.com",
+    engenheiro_nome: "Paulo Londriclima",
+    link_assinatura: `http://127.0.0.1:5174/landing/assinatura-pmoc?token=${tokenAssinatura}`,
+    pdf_hash: (chamadas.createData as { pdfHash: string }).pdfHash
+  });
+  assert.equal(resposta.status, "aguardando_assinatura_engenheiro");
+  assert.equal(resposta.engenheiro_responsavel.crea, "CREA-PR 123456");
+  assert.equal((resposta as { email_engenheiro_agendado: boolean }).email_engenheiro_agendado, true);
+  assert.equal("token_assinatura" in resposta, false);
 });
 
 test("criarEquipamentoCliente gera codigo publico e senha inicial", async () => {

@@ -1,13 +1,16 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import {
   AutomacaoStatus,
+  AutomacaoTipo,
   OrdemServicoEventoAcao,
   OrdemServicoStatus,
   PessoaTipo,
+  PmocRelatorioStatus,
   Prisma,
   UsuarioRole
 } from "@prisma/client";
-import { randomBytes, randomInt } from "node:crypto";
+import { ConfigService } from "@nestjs/config";
+import { createHash, randomBytes, randomInt } from "node:crypto";
 import { PrismaService } from "../../database/prisma.service";
 import { PasswordHashService } from "../auth/password-hash.service";
 import { AuthenticatedUser } from "../auth/auth-user";
@@ -23,11 +26,16 @@ const STATUS_OS_OPERACIONAIS: OrdemServicoStatus[] = [
   OrdemServicoStatus.em_atendimento
 ];
 
+type PreviaPmocCliente = Awaited<ReturnType<AdminService["obterPreviaPmocCliente"]>>;
+
 @Injectable()
 export class AdminService {
   private readonly passwordHash = new PasswordHashService();
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config?: ConfigService
+  ) {}
 
   async listarPreChamados(usuario: AuthenticatedUser) {
     const ordens = await this.prisma.ordemServico.findMany({
@@ -634,6 +642,69 @@ export class AdminService {
       pronto_para_pdf: pendencias.length === 0,
       pendencias,
       maquinas
+    };
+  }
+
+  async gerarPdfPmocCliente(clienteId: string, usuario: AuthenticatedUser) {
+    const previa = await this.obterPreviaPmocCliente(clienteId, usuario);
+    const buffer = this.gerarPdfBasicoPmoc(previa);
+
+    return {
+      filename: `${this.slugArquivo(`pmoc-${previa.cliente.nome}`)}.pdf`,
+      contentType: "application/pdf",
+      buffer
+    };
+  }
+
+  async solicitarAssinaturaPmocEngenheiro(clienteId: string, usuario: AuthenticatedUser) {
+    const previa = await this.obterPreviaPmocCliente(clienteId, usuario);
+
+    if (!previa.engenheiro_responsavel) {
+      throw new BadRequestException("Cliente PMOC precisa de engenheiro responsavel antes da assinatura.");
+    }
+
+    const pdf = await this.gerarPdfPmocCliente(clienteId, usuario);
+    const pdfHash = createHash("sha256").update(pdf.buffer).digest("hex");
+    const tokenAssinatura = randomBytes(24).toString("hex");
+
+    const relatorio = await this.prisma.pmocRelatorio.create({
+      data: {
+        empresaId: usuario.empresa_id,
+        clienteId: previa.cliente.id,
+        engenheiroResponsavelId: previa.engenheiro_responsavel.id,
+        criadoPorUsuarioId: usuario.id,
+        status: PmocRelatorioStatus.aguardando_assinatura_engenheiro,
+        tokenAssinatura,
+        pdfHash
+      }
+    });
+    const linkAssinatura = this.montarLinkAssinaturaPmoc(relatorio.tokenAssinatura);
+
+    await this.prisma.automacaoAgendada.create({
+      data: {
+        empresaId: usuario.empresa_id,
+        tipo: AutomacaoTipo.enviar_email,
+        executarEm: new Date(),
+        payload: {
+          tipo: "pmoc_assinatura_engenheiro",
+          relatorio_id: relatorio.id,
+          cliente_nome: previa.cliente.nome,
+          engenheiro_email: previa.engenheiro_responsavel.email,
+          engenheiro_nome: previa.engenheiro_responsavel.nome,
+          link_assinatura: linkAssinatura,
+          pdf_hash: relatorio.pdfHash
+        } satisfies Prisma.JsonObject
+      }
+    });
+
+    return {
+      id: relatorio.id,
+      cliente: previa.cliente,
+      engenheiro_responsavel: previa.engenheiro_responsavel,
+      status: relatorio.status,
+      pdf_hash: relatorio.pdfHash,
+      email_engenheiro_agendado: true,
+      criado_em: relatorio.criadoEm.toISOString()
     };
   }
 
@@ -1614,6 +1685,122 @@ export class AdminService {
       inicio: datas[0] ?? null,
       fim: datas[datas.length - 1] ?? null
     };
+  }
+
+  private gerarPdfBasicoPmoc(previa: PreviaPmocCliente) {
+    const linhas = [
+      "AIRMOVEBR - Relatorio PMOC",
+      `Cliente: ${previa.cliente.nome}`,
+      `Documento: ${previa.cliente.documento || "nao informado"}`,
+      `Email: ${previa.cliente.email || "pendente"}`,
+      `Engenheiro: ${previa.engenheiro_responsavel?.nome || "pendente"}`,
+      `CREA: ${previa.engenheiro_responsavel?.crea || "pendente"}`,
+      `Periodo: ${previa.periodo.inicio || "sem inicio"} ate ${previa.periodo.fim || "sem fim"}`,
+      `Status PDF: ${previa.pronto_para_pdf ? "pronto" : "com pendencias"}`,
+      `Pendencias: ${previa.pendencias.join(", ") || "nenhuma"}`,
+      "",
+      "Maquinas"
+    ];
+
+    for (const maquina of previa.maquinas) {
+      linhas.push(
+        `- ${[maquina.tipo, maquina.marca, maquina.modelo].filter(Boolean).join(" ") || "Equipamento"}`,
+        `  Patrimonio: ${maquina.patrimonio || "nao informado"} | Serie: ${maquina.numero_serie || "nao informada"}`,
+        `  Local: ${maquina.local_instalacao || "nao informado"} | Gas: ${maquina.gas_refrigerante || "pendente"}`,
+        `  OS concluidas: ${maquina.os_concluidas.length} | Pendencias: ${maquina.pendencias.join(", ") || "nenhuma"}`
+      );
+
+      for (const ordem of maquina.os_concluidas) {
+        linhas.push(
+          `    OS: ${ordem.titulo} | Concluida: ${ordem.concluida_em || "sem data"}`,
+          `    Checklist: ${ordem.checklist?.servico_realizado || "pendente"} | Evidencias: ${ordem.evidencias.length}`,
+          `    Assinatura cliente: ${ordem.assinatura ? ordem.assinatura.nome_responsavel : "pendente"}`
+        );
+      }
+    }
+
+    linhas.push("", "Assinatura do engenheiro responsavel: aguardando fluxo especifico deste relatorio.");
+
+    return this.criarPdfTexto(linhas);
+  }
+
+  private criarPdfTexto(linhas: string[]) {
+    const texto = linhas
+      .flatMap((linha) => this.quebrarLinhaPdf(linha, 96))
+      .slice(0, 46)
+      .map((linha) => `(${this.escaparTextoPdf(linha)}) Tj T*`)
+      .join("\n");
+    const conteudo = `BT\n/F1 11 Tf\n50 790 Td\n14 TL\n${texto}\nET`;
+    const objetos = [
+      "<< /Type /Catalog /Pages 2 0 R >>",
+      "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+      "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>",
+      `<< /Length ${Buffer.byteLength(conteudo, "latin1")} >>\nstream\n${conteudo}\nendstream`,
+      "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"
+    ];
+    let pdf = "%PDF-1.4\n";
+    const offsets = [0];
+
+    for (let index = 0; index < objetos.length; index += 1) {
+      offsets.push(Buffer.byteLength(pdf, "latin1"));
+      pdf += `${index + 1} 0 obj\n${objetos[index]}\nendobj\n`;
+    }
+
+    const xrefOffset = Buffer.byteLength(pdf, "latin1");
+    pdf += `xref\n0 ${objetos.length + 1}\n0000000000 65535 f \n`;
+    pdf += offsets
+      .slice(1)
+      .map((offset) => `${String(offset).padStart(10, "0")} 00000 n \n`)
+      .join("");
+    pdf += `trailer\n<< /Size ${objetos.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+
+    return Buffer.from(pdf, "latin1");
+  }
+
+  private quebrarLinhaPdf(linha: string, limite: number) {
+    const palavras = this.normalizarTextoPdf(linha).split(/\s+/);
+    const linhas: string[] = [];
+    let atual = "";
+
+    for (const palavra of palavras) {
+      const proxima = atual ? `${atual} ${palavra}` : palavra;
+
+      if (proxima.length > limite && atual) {
+        linhas.push(atual);
+        atual = palavra;
+      } else {
+        atual = proxima;
+      }
+    }
+
+    return linhas.concat(atual || "");
+  }
+
+  private normalizarTextoPdf(valor: string) {
+    return valor
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^\x20-\x7E]/g, " ");
+  }
+
+  private escaparTextoPdf(valor: string) {
+    return this.normalizarTextoPdf(valor).replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+  }
+
+  private slugArquivo(valor: string) {
+    const slug = valor
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+
+    return slug || "pmoc";
+  }
+
+  private montarLinkAssinaturaPmoc(tokenAssinatura: string) {
+    const baseUrl = this.config?.get<string>("APP_PUBLIC_URL", "http://127.0.0.1:5174") ?? "http://127.0.0.1:5174";
+    return `${baseUrl.replace(/\/$/, "")}/landing/assinatura-pmoc?token=${tokenAssinatura}`;
   }
 
   private equipamentoSelect() {

@@ -108,6 +108,20 @@ test("landing possui consulta publica de equipamento protegida por senha", () =>
   assert.doesNotMatch(script, /telefone|documento|valor/);
 });
 
+test("landing possui assinatura publica de PMOC por token", () => {
+  const html = read("apps/landing/assinatura-pmoc.html");
+  const script = read("apps/landing/assinatura-pmoc.js");
+
+  assert.match(html, /id="pmocSignaturePanel"/);
+  assert.match(html, /id="pmocSignatureStatus"/);
+  assert.match(html, /id="pmocSignatureConfirmButton"/);
+  assert.match(script, /URLSearchParams\(window\.location\.search\)/);
+  assert.match(script, /\/site\/pmoc\/assinaturas\/\$\{encodeURIComponent\(token\)\}/);
+  assert.match(script, /\/site\/pmoc\/assinaturas\/\$\{encodeURIComponent\(token\)\}\/confirmar/);
+  assert.match(script, /method:\s*"POST"/);
+  assert.match(script, /pdf_hash/);
+});
+
 test("admin possui triagem PMOC por cliente e conversao com engenheiro", () => {
   const html = read("apps/admin/index.html");
   const script = read("apps/admin/script.js");
@@ -126,6 +140,7 @@ test("admin possui triagem PMOC por cliente e conversao com engenheiro", () => {
   assert.match(html, /id="pmocDossierDetail"/);
   assert.match(html, /id="pmocMachineList"/);
   assert.match(html, /id="pmocGenerateReportButton"[^>]*disabled/);
+  assert.match(html, /id="pmocRequestSignatureButton"[^>]*disabled/);
   assert.match(script, /function loadPmoc/);
   assert.match(script, /function searchPmocClients/);
   assert.match(script, /function resetPmocSearchResults/);
@@ -137,6 +152,14 @@ test("admin possui triagem PMOC por cliente e conversao com engenheiro", () => {
   assert.match(script, /hasCompletedPmocMaintenance/);
   assert.match(script, /pmocGenerateReportButton\?\.addEventListener\("click", openPmocReportPreview\)/);
   assert.match(script, /\/admin\/clientes\/\$\{client\.id\}\/equipamentos/);
+  assert.match(script, /\/admin\/pmoc\/clientes\/\$\{selectedPmocDossierClientId\}\/previa/);
+  assert.match(script, /\/admin\/pmoc\/clientes\/\$\{selectedPmocDossierClientId\}\/pdf/);
+  assert.match(script, /\/admin\/pmoc\/clientes\/\$\{selectedPmocDossierClientId\}\/assinatura-engenheiro/);
+  assert.match(script, /email_engenheiro_agendado/);
+  assert.doesNotMatch(script, /token_assinatura/);
+  assert.match(script, /pronto_para_pdf/);
+  assert.match(script, /total_os_concluidas/);
+  assert.match(script, /os_concluidas/);
   assert.match(script, /pmoc_ativo:\s*true/);
   assert.match(script, /engenheiro_responsavel_id:\s*engineerId/);
   assert.match(styles, /\.pmoc-hero/);

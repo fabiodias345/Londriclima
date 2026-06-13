@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Header, Param, ParseUUIDPipe, Patch, Post, Res, StreamableFile, UseGuards } from "@nestjs/common";
 import { AuthenticatedUser } from "../auth/auth-user";
 import { CurrentUser } from "../auth/current-user.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
@@ -8,6 +8,10 @@ import { SalvarEquipamentoDto } from "./dto/salvar-equipamento.dto";
 import { SalvarClienteDto } from "./dto/salvar-cliente.dto";
 import { SalvarEngenheiroResponsavelDto } from "./dto/salvar-engenheiro-responsavel.dto";
 import { AdminService } from "./admin.service";
+
+type HeaderResponse = {
+  setHeader(name: string, value: string): void;
+};
 
 @Controller("admin")
 @UseGuards(JwtAuthGuard)
@@ -63,6 +67,26 @@ export class AdminController {
     @CurrentUser() usuario: AuthenticatedUser
   ) {
     return this.adminService.obterPreviaPmocCliente(clienteId, usuario);
+  }
+
+  @Get("pmoc/clientes/:clienteId/pdf")
+  @Header("Content-Type", "application/pdf")
+  async gerarPdfPmocCliente(
+    @Param("clienteId", new ParseUUIDPipe()) clienteId: string,
+    @CurrentUser() usuario: AuthenticatedUser,
+    @Res({ passthrough: true }) response: HeaderResponse
+  ) {
+    const pdf = await this.adminService.gerarPdfPmocCliente(clienteId, usuario);
+    response.setHeader("Content-Disposition", `attachment; filename="${pdf.filename}"`);
+    return new StreamableFile(pdf.buffer);
+  }
+
+  @Post("pmoc/clientes/:clienteId/assinatura-engenheiro")
+  solicitarAssinaturaPmocEngenheiro(
+    @Param("clienteId", new ParseUUIDPipe()) clienteId: string,
+    @CurrentUser() usuario: AuthenticatedUser
+  ) {
+    return this.adminService.solicitarAssinaturaPmocEngenheiro(clienteId, usuario);
   }
 
   @Get("engenheiros")

@@ -97,6 +97,7 @@ const pmocDossierDetail = document.querySelector("#pmocDossierDetail");
 const pmocDossierTitle = document.querySelector("#pmocDossierTitle");
 const pmocDossierMeta = document.querySelector("#pmocDossierMeta");
 const pmocGenerateReportButton = document.querySelector("#pmocGenerateReportButton");
+const pmocRequestSignatureButton = document.querySelector("#pmocRequestSignatureButton");
 const pmocDossierAlerts = document.querySelector("#pmocDossierAlerts");
 const pmocMachineList = document.querySelector("#pmocMachineList");
 const relatoriosStatus = document.querySelector("#relatoriosStatus");
@@ -1038,6 +1039,7 @@ async function openPmocDossier(clientId) {
   pmocDossierAlerts.innerHTML = "";
   pmocMachineList.innerHTML = '<article class="pmoc-empty"><strong>Carregando maquinas.</strong><span>Buscando equipamentos vinculados a este cliente.</span></article>';
   pmocGenerateReportButton.disabled = true;
+  pmocRequestSignatureButton.disabled = true;
 
   const result = await fetchAdminJson(`/admin/clientes/${client.id}/equipamentos`, pmocDossierMeta);
 
@@ -1049,6 +1051,7 @@ async function openPmocDossier(clientId) {
   selectedPmocDossierMachines = machines;
   pmocDossierMeta.textContent = `${machines.length} maquinas - ${client.os_abertas || 0} OS abertas - ${client.engenheiro_responsavel?.nome || "sem engenheiro"}`;
   pmocGenerateReportButton.disabled = !hasCompletedPmocMaintenance(machines);
+  pmocRequestSignatureButton.disabled = !hasCompletedPmocMaintenance(machines) || !client.engenheiro_responsavel;
   renderPmocDossierAlerts(client, machines);
   renderPmocMachines(machines);
 }
@@ -1170,89 +1173,95 @@ function hasCompletedPmocMaintenance(machines) {
   return machines.some((item) => (item.total_os || 0) > (item.os_abertas || 0));
 }
 
-function openPmocReportPreview() {
-  const client = latestClients.find((item) => item.id === selectedPmocDossierClientId);
-
-  if (!client || !hasCompletedPmocMaintenance(selectedPmocDossierMachines)) {
+async function openPmocReportPreview() {
+  if (!selectedPmocDossierClientId || !hasCompletedPmocMaintenance(selectedPmocDossierMachines)) {
     pmocDossierMeta.textContent = "Selecione um dossie com pelo menos uma OS concluida.";
     return;
   }
 
-  const reportWindow = window.open("", "_blank", "width=980,height=720");
+  pmocGenerateReportButton.disabled = true;
+  pmocGenerateReportButton.textContent = "Gerando PDF...";
+  pmocDossierMeta.textContent = "Buscando previa oficial do PMOC...";
 
-  if (!reportWindow) {
-    pmocDossierMeta.textContent = "Permita pop-ups para gerar a previa do PMOC.";
+  const preview = await fetchAdminJson(`/admin/pmoc/clientes/${selectedPmocDossierClientId}/previa`, pmocDossierMeta);
+
+  pmocGenerateReportButton.disabled = false;
+  pmocGenerateReportButton.textContent = "Gerar PDF PMOC";
+
+  if (!preview) {
     return;
   }
 
-  const machineRows = selectedPmocDossierMachines
-    .map((item) => {
-      const status = getPmocMachineStatus(item);
-      return `
-        <article>
-          <h3>${escapeHtml([item.tipo, item.marca, item.modelo].filter(Boolean).join(" ") || "Equipamento")}</h3>
-          <p><strong>Local:</strong> ${escapeHtml(item.local_instalacao || "nao informado")}</p>
-          <p><strong>Patrimonio:</strong> ${escapeHtml(item.patrimonio || "nao informado")} | <strong>Serie:</strong> ${escapeHtml(item.numero_serie || "nao informada")}</p>
-          <p><strong>Gas:</strong> ${escapeHtml(item.gas_refrigerante || "pendente")} | <strong>Status:</strong> ${escapeHtml(status.label)}</p>
-          <p><strong>Historico:</strong> ${item.total_os || 0} OS, ${Math.max((item.total_os || 0) - (item.os_abertas || 0), 0)} concluida(s), ${item.os_abertas || 0} aberta(s)</p>
-        </article>
-      `;
-    })
-    .join("");
+  const completedOrders = (preview.maquinas || []).reduce(
+    (total, machine) => total + (machine.os_concluidas || []).length,
+    0
+  );
+  const officialCompletedOrders = preview.total_os_concluidas ?? completedOrders;
+  pmocDossierMeta.textContent = preview.pronto_para_pdf
+    ? `Gerando PDF oficial do PMOC com ${officialCompletedOrders} OS concluidas...`
+    : "Gerando PDF oficial do PMOC com pendencias registradas...";
 
-  const content = `
-    <!doctype html>
-    <html lang="pt-BR">
-      <head>
-        <meta charset="utf-8" />
-        <title>Previa PMOC - ${escapeHtml(client.nome)}</title>
-        <style>
-          body { margin: 32px; color: #07151d; font-family: Arial, sans-serif; }
-          header { border-bottom: 3px solid #008c95; margin-bottom: 22px; padding-bottom: 18px; }
-          h1 { margin: 0 0 8px; font-size: 28px; }
-          h2 { margin: 24px 0 12px; }
-          h3 { margin: 0 0 8px; }
-          p { margin: 5px 0; }
-          article { page-break-inside: avoid; border: 1px solid #d9e2df; border-radius: 8px; margin: 12px 0; padding: 14px; }
-          .meta { color: #66747b; font-weight: 700; }
-          .notice { background: #fff6df; border-color: #ffb84d; }
-          .signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 42px; }
-          .line { border-top: 1px solid #07151d; padding-top: 8px; text-align: center; }
-        </style>
-      </head>
-      <body>
-        <header>
-          <h1>Previa PMOC - ${escapeHtml(client.nome)}</h1>
-          <p class="meta">Documento de teste gerado no painel. O PDF final com assinatura do engenheiro sera implementado no backend.</p>
-        </header>
-        <section>
-          <h2>Cliente e responsavel tecnico</h2>
-          <p><strong>Cliente:</strong> ${escapeHtml(client.nome)}</p>
-          <p><strong>E-mail cliente:</strong> ${escapeHtml(client.email || "pendente")}</p>
-          <p><strong>Endereco:</strong> ${escapeHtml(formatAddress(client.endereco))}</p>
-          <p><strong>Engenheiro:</strong> ${escapeHtml(client.engenheiro_responsavel?.nome || "pendente")}</p>
-          <p><strong>CREA:</strong> ${escapeHtml(client.engenheiro_responsavel?.crea || "pendente")}</p>
-        </section>
-        <section>
-          <h2>Maquinas do cliente</h2>
-          ${machineRows || '<article class="notice"><p>Nenhuma maquina cadastrada.</p></article>'}
-        </section>
-        <section class="notice">
-          <h2>Escopo da proxima etapa</h2>
-          <p>O relatorio final deve incluir fotos, horarios, GPS, checklist executado no aplicativo e assinatura do engenheiro responsavel.</p>
-        </section>
-        <section class="signatures">
-          <div class="line">Responsavel tecnico</div>
-          <div class="line">Cliente</div>
-        </section>
-      </body>
-    </html>
-  `;
+  let response;
 
-  reportWindow.document.open();
-  reportWindow.document.write(content);
-  reportWindow.document.close();
-  reportWindow.focus();
+  try {
+    response = await fetch(`${apiBaseUrl}/admin/pmoc/clientes/${selectedPmocDossierClientId}/pdf`, {
+      headers: authHeaders()
+    });
+  } catch {
+    pmocDossierMeta.textContent = "API indisponivel ao gerar PDF.";
+    return;
+  }
+
+  if (await handleUnauthorized(response)) {
+    return;
+  }
+
+  if (!response.ok) {
+    pmocDossierMeta.textContent = "Nao foi possivel gerar o PDF PMOC.";
+    return;
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  window.open(url, "_blank", "noopener");
+  pmocDossierMeta.textContent = `${preview.total_maquinas || 0} maquinas - PDF oficial gerado no servidor`;
+}
+
+async function requestPmocEngineerSignature() {
+  if (!selectedPmocDossierClientId) {
+    pmocDossierMeta.textContent = "Selecione um dossie PMOC.";
+    return;
+  }
+
+  pmocRequestSignatureButton.disabled = true;
+  pmocRequestSignatureButton.textContent = "Solicitando...";
+  pmocDossierMeta.textContent = "Criando fluxo de assinatura do engenheiro...";
+
+  try {
+    const response = await fetch(`${apiBaseUrl}/admin/pmoc/clientes/${selectedPmocDossierClientId}/assinatura-engenheiro`, {
+      method: "POST",
+      headers: authHeaders()
+    });
+
+    if (await handleUnauthorized(response)) {
+      return;
+    }
+
+    if (!response.ok) {
+      pmocDossierMeta.textContent = "Nao foi possivel solicitar assinatura.";
+      return;
+    }
+
+    const result = await response.json();
+    pmocDossierMeta.textContent = result.email_engenheiro_agendado
+      ? "PDF PMOC gerado e e-mail de assinatura agendado para o engenheiro."
+      : "Fluxo de assinatura criado. Verifique a fila de automacoes.";
+  } catch {
+    pmocDossierMeta.textContent = "API indisponivel ao solicitar assinatura.";
+  } finally {
+    pmocRequestSignatureButton.disabled = false;
+    pmocRequestSignatureButton.textContent = "Solicitar assinatura";
+  }
 }
 
 function getPmocClientStatus(client) {
@@ -2382,6 +2391,7 @@ resetClientFormButton?.addEventListener("click", resetClientForm);
 resetEngineerFormButton?.addEventListener("click", resetEngineerForm);
 fleetReportExportButton?.addEventListener("click", openFleetReport);
 pmocGenerateReportButton?.addEventListener("click", openPmocReportPreview);
+pmocRequestSignatureButton?.addEventListener("click", requestPmocEngineerSignature);
 refreshButton?.addEventListener("click", loadActiveView);
 logoutButton?.addEventListener("click", () => {
   clearToken();

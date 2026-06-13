@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Post } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post } from "@nestjs/common";
 import { ConsultarEquipamentoDto } from "./dto/consultar-equipamento.dto";
 import { CriarPreChamadoDto } from "./dto/criar-pre-chamado.dto";
 import { SiteService } from "./site.service";
@@ -18,5 +18,15 @@ export class SiteController {
     @Body() dto: ConsultarEquipamentoDto
   ) {
     return this.siteService.consultarEquipamentoPublico(codigoPublico, dto);
+  }
+
+  @Get("pmoc/assinaturas/:token")
+  consultarAssinaturaPmoc(@Param("token") token: string) {
+    return this.siteService.consultarAssinaturaPmoc(token);
+  }
+
+  @Post("pmoc/assinaturas/:token/confirmar")
+  confirmarAssinaturaPmoc(@Param("token") token: string) {
+    return this.siteService.confirmarAssinaturaPmoc(token);
   }
 }

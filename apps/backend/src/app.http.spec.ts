@@ -3,7 +3,7 @@ import * as assert from "node:assert/strict";
 import { ValidationPipe } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import type { INestApplication } from "@nestjs/common";
-import { EvidenciaTipo, OrdemServicoEventoAcao, OrdemServicoStatus, Prisma, UsuarioRole } from "@prisma/client";
+import { AutomacaoTipo, EvidenciaTipo, OrdemServicoEventoAcao, OrdemServicoStatus, PmocRelatorioStatus, Prisma, UsuarioRole } from "@prisma/client";
 import { AppModule } from "./app.module";
 import { PrismaService } from "./database/prisma.service";
 import { PasswordHashService } from "./modules/auth/password-hash.service";
@@ -20,6 +20,8 @@ let app: INestApplication;
 let baseUrl = "";
 let senhaHash = "";
 let accessToken = "";
+let assinaturaPmocToken = "token-assinatura";
+let assinaturaPmocStatus: PmocRelatorioStatus = PmocRelatorioStatus.aguardando_assinatura_engenheiro;
 
 function jsonHeaders(token?: string) {
   return {
@@ -71,7 +73,22 @@ function criarPrismaMock() {
       create: async () => ({ id: "assinatura-1" })
     },
     automacaoAgendada: {
-      createMany: async () => ({ count: 4 })
+      createMany: async () => ({ count: 4 }),
+      create: async () => ({ id: "automacao-email-1" })
+    },
+    pmocRelatorio: {
+      update: async ({ data }: { data: { status: PmocRelatorioStatus } }) => {
+        assinaturaPmocStatus = data.status;
+        return {
+          id: "99999999-9999-4999-8999-999999999999",
+          status: assinaturaPmocStatus,
+          pdfHash: "hash-pdf",
+          assinadoEm: new Date("2026-06-12T12:00:00.000Z"),
+          emailCliente: "maria@example.com",
+          emailAgendadoEm: new Date("2026-06-12T12:00:00.000Z"),
+          historicoFinalizadoEm: new Date("2026-06-12T12:00:00.000Z")
+        };
+      }
     }
   };
 
@@ -330,7 +347,59 @@ function criarPrismaMock() {
       count: async () => 1
     },
     automacaoAgendada: {
-      count: async () => 2
+      count: async () => 2,
+      findMany: async () => [],
+      create: async () => ({ id: "automacao-email-engenheiro-1" })
+    },
+    pmocRelatorio: {
+      create: async ({ data }: { data: Record<string, unknown> }) => {
+        assinaturaPmocToken = String(data.tokenAssinatura);
+        return {
+          id: "99999999-9999-4999-8999-999999999999",
+          ...data,
+          status: PmocRelatorioStatus.aguardando_assinatura_engenheiro,
+          criadoEm: new Date("2026-06-12T12:00:00.000Z"),
+          atualizadoEm: new Date("2026-06-12T12:00:00.000Z")
+        };
+      },
+      findUnique: async ({ where }: { where: { tokenAssinatura?: string } }) =>
+        where.tokenAssinatura === assinaturaPmocToken
+          ? {
+              id: "99999999-9999-4999-8999-999999999999",
+              empresaId,
+              clienteId,
+              engenheiroResponsavelId: "engenheiro-1",
+              status: assinaturaPmocStatus,
+              tokenAssinatura: assinaturaPmocToken,
+              pdfHash: "hash-pdf",
+              assinadoEm: assinaturaPmocStatus === PmocRelatorioStatus.assinado ? new Date("2026-06-12T12:00:00.000Z") : null,
+              emailCliente: assinaturaPmocStatus === PmocRelatorioStatus.assinado ? "maria@example.com" : null,
+              emailAgendadoEm: assinaturaPmocStatus === PmocRelatorioStatus.assinado ? new Date("2026-06-12T12:00:00.000Z") : null,
+              historicoFinalizadoEm: assinaturaPmocStatus === PmocRelatorioStatus.assinado ? new Date("2026-06-12T12:00:00.000Z") : null,
+              cliente: {
+                id: clienteId,
+                nome: "Maria Souza",
+                email: "maria@example.com"
+              },
+              engenheiroResponsavel: {
+                nome: "Paulo Londriclima",
+                crea: "CREA-PR 123456",
+                email: "paulo@example.com"
+              }
+            }
+          : null,
+      update: async ({ data }: { data: { status: PmocRelatorioStatus } }) => {
+        assinaturaPmocStatus = data.status;
+        return {
+          id: "99999999-9999-4999-8999-999999999999",
+          status: assinaturaPmocStatus,
+          pdfHash: "hash-pdf",
+          assinadoEm: new Date("2026-06-12T12:00:00.000Z"),
+          emailCliente: "maria@example.com",
+          emailAgendadoEm: new Date("2026-06-12T12:00:00.000Z"),
+          historicoFinalizadoEm: new Date("2026-06-12T12:00:00.000Z")
+        };
+      }
     }
   };
 }
@@ -465,6 +534,58 @@ test("GET /api/v1/admin/pmoc/clientes/:clienteId/previa responde dossie PMOC", a
   assert.equal(body.total_maquinas, 1);
   assert.equal(body.total_os_concluidas, 1);
   assert.equal(Array.isArray(body.maquinas), true);
+});
+
+test("GET /api/v1/admin/pmoc/clientes/:clienteId/pdf baixa PDF PMOC autenticado", async () => {
+  const response = await fetch(`${baseUrl}/api/v1/admin/pmoc/clientes/${clienteId}/pdf`, {
+    headers: jsonHeaders(accessToken)
+  });
+  const body = Buffer.from(await response.arrayBuffer());
+
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("content-type") || "", /application\/pdf/);
+  assert.match(response.headers.get("content-disposition") || "", /pmoc-maria-souza\.pdf/);
+  assert.equal(body.subarray(0, 4).toString("utf8"), "%PDF");
+  assert.match(body.toString("latin1"), /AIRMOVEBR/);
+});
+
+test("POST /api/v1/admin/pmoc/clientes/:clienteId/assinatura-engenheiro inicia fluxo de assinatura", async () => {
+  const response = await fetch(`${baseUrl}/api/v1/admin/pmoc/clientes/${clienteId}/assinatura-engenheiro`, {
+    method: "POST",
+    headers: jsonHeaders(accessToken)
+  });
+  const body = await lerJson(response);
+
+  assert.equal(response.status, 201);
+  assert.equal(body.status, "aguardando_assinatura_engenheiro");
+  assert.equal((body.engenheiro_responsavel as { crea: string }).crea, "CREA-PR 123456");
+  assert.equal(body.email_engenheiro_agendado, true);
+  assert.equal("token_assinatura" in body, false);
+  assert.equal(typeof body.pdf_hash, "string");
+  assinaturaPmocStatus = PmocRelatorioStatus.aguardando_assinatura_engenheiro;
+});
+
+test("GET /api/v1/site/pmoc/assinaturas/:token consulta relatorio para engenheiro", async () => {
+  const response = await fetch(`${baseUrl}/api/v1/site/pmoc/assinaturas/${assinaturaPmocToken}`);
+  const body = await lerJson(response);
+
+  assert.equal(response.status, 200);
+  assert.equal(body.status, PmocRelatorioStatus.aguardando_assinatura_engenheiro);
+  assert.equal((body.cliente as { nome: string }).nome, "Maria Souza");
+  assert.equal((body.engenheiro_responsavel as { crea: string }).crea, "CREA-PR 123456");
+});
+
+test("POST /api/v1/site/pmoc/assinaturas/:token/confirmar assina e agenda email ao cliente", async () => {
+  const response = await fetch(`${baseUrl}/api/v1/site/pmoc/assinaturas/${assinaturaPmocToken}/confirmar`, {
+    method: "POST",
+    headers: jsonHeaders()
+  });
+  const body = await lerJson(response);
+
+  assert.equal(response.status, 201);
+  assert.equal(body.status, PmocRelatorioStatus.assinado);
+  assert.equal(body.email_agendado, true);
+  assert.equal(body.historico_finalizado, true);
 });
 
 test("GET /api/v1/admin/relatorios responde indicadores autenticados", async () => {

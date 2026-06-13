@@ -58,6 +58,13 @@ enum AutomacaoStatus {
   cancelada
 }
 
+enum PmocRelatorioStatus {
+  gerado
+  aguardando_assinatura_engenheiro
+  assinado
+  cancelado
+}
+
 model Empresa {
   id        String   @id @default(uuid()) @db.Uuid
   nome      String
@@ -78,6 +85,7 @@ model Empresa {
   veiculos          Veiculo[]
   veiculoLocalizacoes VeiculoLocalizacao[]
   veiculoAbastecimentos VeiculoAbastecimento[]
+  pmocRelatorios   PmocRelatorio[]
 
   @@map("empresas")
 }
@@ -99,6 +107,7 @@ model Usuario {
   ordensComoTecnico OrdemServico[] @relation("OrdemTecnico")
   eventos OrdemServicoEvento[]
   veiculoAbastecimentos VeiculoAbastecimento[]
+  pmocRelatoriosCriados PmocRelatorio[] @relation("PmocRelatorioCriador")
 
   @@unique([empresaId, email])
   @@index([empresaId])
@@ -157,6 +166,7 @@ model Cliente {
   enderecos ClienteEndereco[]
   equipamentos Equipamento[]
   ordensServico OrdemServico[]
+  pmocRelatorios PmocRelatorio[]
 
   @@index([empresaId])
   @@index([empresaId, pmocAtivo])
@@ -178,10 +188,38 @@ model EngenheiroResponsavel {
 
   empresa Empresa @relation(fields: [empresaId], references: [id])
   clientes Cliente[]
+  pmocRelatorios PmocRelatorio[]
 
   @@unique([empresaId, crea])
   @@index([empresaId])
   @@map("engenheiros_responsaveis")
+}
+
+model PmocRelatorio {
+  id        String   @id @default(uuid()) @db.Uuid
+  empresaId String  @map("empresa_id") @db.Uuid
+  clienteId String  @map("cliente_id") @db.Uuid
+  engenheiroResponsavelId String @map("engenheiro_responsavel_id") @db.Uuid
+  criadoPorUsuarioId String @map("criado_por_usuario_id") @db.Uuid
+  status PmocRelatorioStatus @default(gerado)
+  tokenAssinatura String @unique @map("token_assinatura")
+  pdfHash String @map("pdf_hash")
+  pdfStorageUrl String? @map("pdf_storage_url")
+  assinadoEm DateTime? @map("assinado_em")
+  emailCliente String? @map("email_cliente")
+  emailAgendadoEm DateTime? @map("email_agendado_em")
+  historicoFinalizadoEm DateTime? @map("historico_finalizado_em")
+  criadoEm DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+  cliente Cliente @relation(fields: [clienteId], references: [id])
+  engenheiroResponsavel EngenheiroResponsavel @relation(fields: [engenheiroResponsavelId], references: [id])
+  criadoPorUsuario Usuario @relation("PmocRelatorioCriador", fields: [criadoPorUsuarioId], references: [id])
+
+  @@index([empresaId, clienteId])
+  @@index([empresaId, status])
+  @@map("pmoc_relatorios")
 }
 
 model ClienteEndereco {

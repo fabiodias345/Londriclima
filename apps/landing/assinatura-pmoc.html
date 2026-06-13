@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AIRMOVEBR | Assinatura PMOC</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./equipamento.css" />
+  </head>
+  <body>
+    <main class="equipment-page">
+      <section class="access-panel" id="pmocSignaturePanel">
+        <a class="brand" href="./index.html" aria-label="AIRMOVEBR inicio">
+          <span class="brand-mark">AM</span>
+          <span>
+            <strong>AIRMOVEBR</strong>
+            <small>Assinatura PMOC</small>
+          </span>
+        </a>
+
+        <div class="access-copy">
+          <span class="kicker">Relatorio PMOC</span>
+          <h1>Confirme a assinatura tecnica</h1>
+          <p id="pmocSignatureIntro">Validando token de assinatura.</p>
+        </div>
+
+        <button type="button" id="pmocSignatureConfirmButton" disabled>Confirmar assinatura</button>
+        <p class="form-status" id="pmocSignatureStatus" role="status"></p>
+      </section>
+
+      <section class="result-panel hidden" id="pmocSignatureResultPanel">
+        <div>
+          <span class="kicker">Cliente</span>
+          <h2 id="pmocSignatureClient">-</h2>
+          <p id="pmocSignatureEngineer">-</p>
+        </div>
+        <div class="status-card">
+          <span>Status do relatorio</span>
+          <strong id="pmocSignatureReportStatus">-</strong>
+          <p id="pmocSignatureHash">-</p>
+        </div>
+      </section>
+    </main>
+
+    <script src="./assinatura-pmoc.js"></script>
+  </body>
+</html>

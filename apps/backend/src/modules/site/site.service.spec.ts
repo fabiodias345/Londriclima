@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
 import { NotFoundException, UnauthorizedException } from "@nestjs/common";
-import { OrdemServicoEventoAcao, OrdemServicoStatus } from "@prisma/client";
+import { AutomacaoTipo, OrdemServicoEventoAcao, OrdemServicoStatus, PmocRelatorioStatus } from "@prisma/client";
 import { PasswordHashService } from "../auth/password-hash.service";
 import { SiteService } from "./site.service";
 
@@ -245,4 +245,111 @@ test("consultarEquipamentoPublico rejeita senha incorreta", async () => {
     () => service.consultarEquipamentoPublico("EQ-ABC123", { senha: "000000" }),
     UnauthorizedException
   );
+});
+
+test("consultarAssinaturaPmoc retorna relatorio publico pelo token", async () => {
+  const prisma = {
+    pmocRelatorio: {
+      findUnique: async ({ where }: { where: unknown }) => {
+        assert.deepEqual(where, { tokenAssinatura: "token-assinatura" });
+        return {
+          id: "relatorio-1",
+          status: PmocRelatorioStatus.aguardando_assinatura_engenheiro,
+          pdfHash: "hash-pdf",
+          assinadoEm: null,
+          emailCliente: null,
+          cliente: {
+            nome: "Maria Souza",
+            email: "maria@example.com"
+          },
+          engenheiroResponsavel: {
+            nome: "Paulo Londriclima",
+            crea: "CREA-PR 123456",
+            email: "paulo@example.com"
+          }
+        };
+      }
+    }
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.consultarAssinaturaPmoc("token-assinatura");
+
+  assert.equal(resposta.id, "relatorio-1");
+  assert.equal(resposta.status, PmocRelatorioStatus.aguardando_assinatura_engenheiro);
+  assert.equal(resposta.cliente.nome, "Maria Souza");
+  assert.equal(resposta.engenheiro_responsavel.crea, "CREA-PR 123456");
+  assert.equal(resposta.pdf_hash, "hash-pdf");
+});
+
+test("confirmarAssinaturaPmoc assina relatorio e agenda envio de email ao cliente", async () => {
+  const chamadas = {
+    updateData: undefined as unknown,
+    emailData: undefined as unknown
+  };
+  const tx = {
+    pmocRelatorio: {
+      update: async ({ data }: { data: unknown }) => {
+        chamadas.updateData = data;
+        return {
+          id: "relatorio-1",
+          status: PmocRelatorioStatus.assinado,
+          pdfHash: "hash-pdf",
+          assinadoEm: new Date("2026-06-12T12:00:00.000Z"),
+          emailCliente: "maria@example.com",
+          emailAgendadoEm: new Date("2026-06-12T12:00:00.000Z"),
+          historicoFinalizadoEm: new Date("2026-06-12T12:00:00.000Z")
+        };
+      }
+    },
+    automacaoAgendada: {
+      create: async ({ data }: { data: unknown }) => {
+        chamadas.emailData = data;
+      }
+    }
+  };
+  const prisma = {
+    pmocRelatorio: {
+      findUnique: async () => ({
+        id: "relatorio-1",
+        empresaId: "empresa-1",
+        clienteId: "cliente-1",
+        engenheiroResponsavelId: "engenheiro-1",
+        status: PmocRelatorioStatus.aguardando_assinatura_engenheiro,
+        tokenAssinatura: "token-assinatura",
+        pdfHash: "hash-pdf",
+        assinadoEm: null,
+        cliente: {
+          id: "cliente-1",
+          nome: "Maria Souza",
+          email: "maria@example.com"
+        },
+        engenheiroResponsavel: {
+          nome: "Paulo Londriclima",
+          crea: "CREA-PR 123456",
+          email: "paulo@example.com"
+        }
+      })
+    },
+    $transaction: async (callback: (tx: unknown) => unknown) => callback(tx)
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.confirmarAssinaturaPmoc("token-assinatura");
+
+  assert.equal((chamadas.updateData as { status: PmocRelatorioStatus }).status, PmocRelatorioStatus.assinado);
+  assert.equal((chamadas.updateData as { emailCliente: string }).emailCliente, "maria@example.com");
+  assert.equal((chamadas.emailData as { tipo: AutomacaoTipo }).tipo, AutomacaoTipo.enviar_email);
+  assert.equal((chamadas.emailData as { empresaId: string }).empresaId, "empresa-1");
+  assert.deepEqual((chamadas.emailData as { payload: unknown }).payload, {
+    tipo: "pmoc_relatorio_assinado",
+    relatorio_id: "relatorio-1",
+    cliente_id: "cliente-1",
+    cliente_email: "maria@example.com",
+    engenheiro_crea: "CREA-PR 123456",
+    pdf_hash: "hash-pdf"
+  });
+  assert.equal(resposta.status, PmocRelatorioStatus.assinado);
+  assert.equal(resposta.email_agendado, true);
+  assert.equal(resposta.historico_finalizado, true);
 });
