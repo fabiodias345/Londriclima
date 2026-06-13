@@ -317,6 +317,98 @@ test("listarEquipamentosCliente exige cliente da empresa e retorna links publico
   assert.equal(resposta.items[0].os_abertas, 1);
 });
 
+test("apagarEquipamento remove maquina e historico operacional vinculado", async () => {
+  const chamadas = [] as { tabela: string; where: unknown }[];
+  const tx = {
+    automacaoAgendada: {
+      deleteMany: async ({ where }: { where: unknown }) => chamadas.push({ tabela: "automacaoAgendada", where })
+    },
+    ordemServicoPeca: {
+      deleteMany: async ({ where }: { where: unknown }) => chamadas.push({ tabela: "ordemServicoPeca", where })
+    },
+    ordemServicoChecklist: {
+      deleteMany: async ({ where }: { where: unknown }) => chamadas.push({ tabela: "ordemServicoChecklist", where })
+    },
+    ordemServicoEvidencia: {
+      deleteMany: async ({ where }: { where: unknown }) => chamadas.push({ tabela: "ordemServicoEvidencia", where })
+    },
+    ordemServicoAssinatura: {
+      deleteMany: async ({ where }: { where: unknown }) => chamadas.push({ tabela: "ordemServicoAssinatura", where })
+    },
+    ordemServicoObservacao: {
+      deleteMany: async ({ where }: { where: unknown }) => chamadas.push({ tabela: "ordemServicoObservacao", where })
+    },
+    ordemServicoEvento: {
+      deleteMany: async ({ where }: { where: unknown }) => chamadas.push({ tabela: "ordemServicoEvento", where })
+    },
+    ordemServico: {
+      deleteMany: async ({ where }: { where: unknown }) => chamadas.push({ tabela: "ordemServico", where })
+    },
+    equipamento: {
+      delete: async ({ where }: { where: unknown }) => chamadas.push({ tabela: "equipamento", where })
+    }
+  };
+  const prisma = {
+    equipamento: {
+      findFirst: async () => ({
+        id: "equipamento-1",
+        clienteId: "cliente-1",
+        marca: "LG",
+        modelo: "Dual"
+      })
+    },
+    ordemServico: {
+      findMany: async () => [
+        {
+          id: "os-1",
+          checklist: {
+            id: "checklist-1"
+          }
+        }
+      ]
+    },
+    $transaction: async (callback: (tx: unknown) => unknown) => callback(tx)
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.apagarEquipamento("equipamento-1", usuario);
+
+  assert.deepEqual(resposta, {
+    id: "equipamento-1",
+    cliente_id: "cliente-1",
+    ordens_removidas: 1,
+    apagado: true
+  });
+  assert.deepEqual(chamadas.map((item) => item.tabela), [
+    "automacaoAgendada",
+    "ordemServicoPeca",
+    "ordemServicoChecklist",
+    "ordemServicoEvidencia",
+    "ordemServicoAssinatura",
+    "ordemServicoObservacao",
+    "ordemServicoEvento",
+    "ordemServico",
+    "equipamento"
+  ]);
+  assert.deepEqual(chamadas.at(-1), {
+    tabela: "equipamento",
+    where: {
+      id: "equipamento-1"
+    }
+  });
+});
+
+test("apagarEquipamento exige maquina da empresa", async () => {
+  const prisma = {
+    equipamento: {
+      findFirst: async () => null
+    }
+  };
+  const service = criarService(prisma);
+
+  await assert.rejects(() => service.apagarEquipamento("equipamento-1", usuario), NotFoundException);
+});
+
 test("obterPreviaPmocCliente retorna cliente, engenheiro, maquinas e OS concluidas separadas", async () => {
   const prisma = {
     cliente: {
@@ -452,10 +544,10 @@ test("gerarPdfPmocCliente retorna PDF com nome de arquivo e conteudo oficial", a
         atualizadoEm: new Date("2026-06-12T10:00:00.000Z"),
         engenheiroResponsavel: {
           id: "engenheiro-1",
-          nome: "Paulo Londriclima",
-          cpf: "12345678901",
-          crea: "CREA-PR 123456",
-          email: "paulo@example.com",
+          nome: "Fabio Dias",
+          cpf: "45678912345",
+          crea: "CREA-PR 654321",
+          email: "fabio@example.com",
           telefone: "43999991111",
           atualizadoEm: new Date("2026-06-12T10:00:00.000Z")
         },
@@ -471,7 +563,16 @@ test("gerarPdfPmocCliente retorna PDF com nome de arquivo e conteudo oficial", a
   assert.equal(resposta.contentType, "application/pdf");
   assert.equal(resposta.filename, "pmoc-maria-souza.pdf");
   assert.equal(resposta.buffer.subarray(0, 4).toString("utf8"), "%PDF");
-  assert.match(resposta.buffer.toString("latin1"), /Maria Souza/);
+  const pdf = resposta.buffer.toString("latin1");
+  assert.match(pdf, /Maria Souza/);
+  assert.match(pdf, /FICHA TECNICA DA MAQUINA/);
+  assert.match(pdf, /DECLARACAO DE CONFORMIDADE/);
+  assert.match(pdf, /Engenheiro responsavel: Fabio Dias/);
+  assert.match(pdf, /Engenheiro Responsavel: Fabio Dias/);
+  assert.match(pdf, /CPF: 456789123-45/);
+  assert.match(pdf, /CREA: CREA-PR 654321/);
+  assert.match(pdf, /Referente: junho de 2026/);
+  assert.doesNotMatch(pdf, /Responsavel pelo Empreendimento/);
 });
 
 test("solicitarAssinaturaPmocEngenheiro cria relatorio com token e hash do PDF", async () => {
@@ -532,15 +633,29 @@ test("solicitarAssinaturaPmocEngenheiro cria relatorio com token e hash do PDF",
   assert.match((chamadas.createData as { pdfHash: string }).pdfHash, /^[a-f0-9]{64}$/);
   assert.equal((chamadas.emailData as { tipo: AutomacaoTipo }).tipo, AutomacaoTipo.enviar_email);
   const tokenAssinatura = (chamadas.createData as { tokenAssinatura: string }).tokenAssinatura;
-  assert.deepEqual((chamadas.emailData as { payload: unknown }).payload, {
-    tipo: "pmoc_assinatura_engenheiro",
-    relatorio_id: "relatorio-1",
-    cliente_nome: "Maria Souza",
-    engenheiro_email: "paulo@example.com",
-    engenheiro_nome: "Paulo Londriclima",
-    link_assinatura: `http://127.0.0.1:5174/landing/assinatura-pmoc?token=${tokenAssinatura}`,
-    pdf_hash: (chamadas.createData as { pdfHash: string }).pdfHash
-  });
+  const payload = (chamadas.emailData as { payload: Record<string, unknown> }).payload;
+  assert.match(String(payload.data_envio), /^\d{4}-\d{2}-\d{2}T/);
+  assert.deepEqual(
+    {
+      ...payload,
+      pdf_base64: "base64-validado",
+      data_envio: "data-validada"
+    },
+    {
+      tipo: "pmoc_assinatura_engenheiro",
+      relatorio_id: "relatorio-1",
+      cliente_nome: "Maria Souza",
+      cliente_email: "maria@example.com",
+      data_envio: "data-validada",
+      engenheiro_email: "paulo@example.com",
+      engenheiro_nome: "Paulo Londriclima",
+      link_assinatura: `http://127.0.0.1:5174/landing/assinatura-pmoc?token=${tokenAssinatura}`,
+      pdf_hash: (chamadas.createData as { pdfHash: string }).pdfHash,
+      pdf_filename: "pmoc-maria-souza.pdf",
+      pdf_base64: "base64-validado"
+    }
+  );
+  assert.match(String(payload.pdf_base64), /^[A-Za-z0-9+/]+=*$/);
   assert.equal(resposta.status, "aguardando_assinatura_engenheiro");
   assert.equal(resposta.engenheiro_responsavel.crea, "CREA-PR 123456");
   assert.equal((resposta as { email_engenheiro_agendado: boolean }).email_engenheiro_agendado, true);

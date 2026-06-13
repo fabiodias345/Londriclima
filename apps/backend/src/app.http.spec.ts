@@ -3,7 +3,7 @@ import * as assert from "node:assert/strict";
 import { ValidationPipe } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import type { INestApplication } from "@nestjs/common";
-import { AutomacaoTipo, EvidenciaTipo, OrdemServicoEventoAcao, OrdemServicoStatus, PmocRelatorioStatus, Prisma, UsuarioRole } from "@prisma/client";
+import { EvidenciaTipo, OrdemServicoEventoAcao, OrdemServicoStatus, PmocRelatorioStatus, Prisma, UsuarioRole } from "@prisma/client";
 import { AppModule } from "./app.module";
 import { PrismaService } from "./database/prisma.service";
 import { PasswordHashService } from "./modules/auth/password-hash.service";
@@ -383,6 +383,7 @@ function criarPrismaMock() {
               },
               engenheiroResponsavel: {
                 nome: "Paulo Londriclima",
+                cpf: "12345678901",
                 crea: "CREA-PR 123456",
                 email: "paulo@example.com"
               }
@@ -556,7 +557,7 @@ test("POST /api/v1/admin/pmoc/clientes/:clienteId/assinatura-engenheiro inicia f
   });
   const body = await lerJson(response);
 
-  assert.equal(response.status, 201);
+  assert.equal(response.status, 201, JSON.stringify(body));
   assert.equal(body.status, "aguardando_assinatura_engenheiro");
   assert.equal((body.engenheiro_responsavel as { crea: string }).crea, "CREA-PR 123456");
   assert.equal(body.email_engenheiro_agendado, true);
@@ -582,7 +583,7 @@ test("POST /api/v1/site/pmoc/assinaturas/:token/confirmar assina e agenda email 
   });
   const body = await lerJson(response);
 
-  assert.equal(response.status, 201);
+  assert.equal(response.status, 201, JSON.stringify(body));
   assert.equal(body.status, PmocRelatorioStatus.assinado);
   assert.equal(body.email_agendado, true);
   assert.equal(body.historico_finalizado, true);

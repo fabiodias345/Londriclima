@@ -1,6 +1,16 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
-import { AutomacaoTipo, PmocRelatorioStatus, Prisma } from "@prisma/client";
+import {
+  BadRequestException,
+  ConflictException,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+  Optional,
+  UnauthorizedException
+} from "@nestjs/common";
+import { AutomacaoTipo, PmocRelatorioStatus, Prisma, UsuarioRole } from "@prisma/client";
 import { PrismaService } from "../../database/prisma.service";
+import { AdminService } from "../admin/admin.service";
 import { PasswordHashService } from "../auth/password-hash.service";
 import { ConsultarEquipamentoDto } from "./dto/consultar-equipamento.dto";
 import { CriarPreChamadoDto } from "./dto/criar-pre-chamado.dto";
@@ -11,7 +21,12 @@ const EMPRESA_PILOTO_CNPJ = "00000000000000";
 export class SiteService {
   private readonly passwordHash = new PasswordHashService();
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional()
+    @Inject(AdminService)
+    private readonly adminService?: Pick<AdminService, "gerarPdfPmocCliente">
+  ) {}
 
   async criarPreChamado(dto: CriarPreChamadoDto) {
     const empresa = await this.prisma.empresa.findUnique({
@@ -228,6 +243,7 @@ export class SiteService {
         engenheiroResponsavel: {
           select: {
             nome: true,
+            cpf: true,
             crea: true,
             email: true
           }
@@ -266,6 +282,7 @@ export class SiteService {
         engenheiroResponsavel: {
           select: {
             nome: true,
+            cpf: true,
             crea: true,
             email: true
           }
@@ -296,13 +313,34 @@ export class SiteService {
     }
 
     const agora = new Date();
+    if (!this.adminService) {
+      throw new InternalServerErrorException("Gerador de PDF PMOC indisponivel.");
+    }
+
+    const pdf = await this.adminService.gerarPdfPmocCliente(relatorio.clienteId, {
+      id: "sistema",
+      empresa_id: relatorio.empresaId,
+      email: "sistema@airmovebr.local",
+      role: UsuarioRole.admin
+    });
+
+    if (!pdf.buffer.length) {
+      throw new InternalServerErrorException("PDF PMOC vazio.");
+    }
+
     const payload: Prisma.JsonObject = {
       tipo: "pmoc_relatorio_assinado",
       relatorio_id: relatorio.id,
       cliente_id: relatorio.clienteId,
+      cliente_nome: relatorio.cliente.nome,
       cliente_email: relatorio.cliente.email,
+      data_envio: agora.toISOString(),
+      engenheiro_nome: relatorio.engenheiroResponsavel.nome,
+      engenheiro_cpf: relatorio.engenheiroResponsavel.cpf,
       engenheiro_crea: relatorio.engenheiroResponsavel.crea,
-      pdf_hash: relatorio.pdfHash
+      pdf_hash: relatorio.pdfHash,
+      pdf_filename: pdf.filename,
+      pdf_base64: pdf.buffer.toString("base64")
     };
 
     const assinado = await this.prisma.$transaction(async (tx) => {

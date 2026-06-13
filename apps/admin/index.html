@@ -320,6 +320,7 @@
             </label>
             <div class="form-actions">
               <button type="submit">Salvar cliente</button>
+              <button class="secondary-button hidden" id="backToClientsButton" type="button">Voltar para clientes</button>
               <button class="secondary-button" id="resetClientFormButton" type="button">Novo</button>
             </div>
             <p class="status" id="clientFormStatus" role="status"></p>
@@ -437,7 +438,7 @@
         </section>
 
         <section class="worklist pmoc-workspace hidden" id="pmocView">
-          <div class="pmoc-hero">
+          <div class="pmoc-hero" id="pmocHero">
             <div>
               <span class="kicker">Dossie por cliente</span>
               <h2>PMOC sem mistura de maquinas ou clientes</h2>
@@ -483,7 +484,7 @@
             </section>
           </div>
 
-          <section class="pmoc-panel pmoc-dossier-panel">
+          <section class="pmoc-panel pmoc-dossier-panel" id="pmocDossierPanel">
             <div class="worklist-header compact-header">
               <div>
                 <span class="kicker">Clientes em PMOC</span>
@@ -502,6 +503,7 @@
                 <p id="pmocDossierMeta">Maquinas, pendencias e preparo do relatorio aparecem aqui.</p>
               </div>
               <div class="pmoc-detail-actions">
+                <button class="secondary-button" id="pmocBackToClientsButton" type="button">Voltar para clientes</button>
                 <button class="secondary-button" id="pmocGenerateReportButton" type="button" disabled>Gerar PDF PMOC</button>
                 <button class="secondary-button" id="pmocRequestSignatureButton" type="button" disabled>Solicitar assinatura</button>
               </div>

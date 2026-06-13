@@ -8,6 +8,11 @@ export type EmailMessage = {
   to: string;
   subject: string;
   text: string;
+  attachments?: Array<{
+    filename: string;
+    contentType: string;
+    contentBase64: string;
+  }>;
 };
 
 export interface EmailSender {
@@ -64,6 +69,10 @@ export class SmtpEmailService implements EmailSender {
   }
 
   private montarMensagem(message: EmailMessage) {
+    if (message.attachments?.length) {
+      return this.montarMensagemComAnexos(message);
+    }
+
     const headers = [
       `From: ${message.from}`,
       `To: ${message.to}`,
@@ -75,6 +84,40 @@ export class SmtpEmailService implements EmailSender {
     const body = message.text.replace(/\r?\n/g, "\r\n").replace(/^\./gm, "..");
 
     return `${headers.join("\r\n")}\r\n\r\n${body}`;
+  }
+
+  private montarMensagemComAnexos(message: EmailMessage) {
+    const attachments = message.attachments ?? [];
+    const boundary = `airmovebr-${Date.now().toString(36)}`;
+    const headers = [
+      `From: ${message.from}`,
+      `To: ${message.to}`,
+      `Subject: ${this.codificarCabecalho(message.subject)}`,
+      "MIME-Version: 1.0",
+      `Content-Type: multipart/mixed; boundary="${boundary}"`
+    ];
+    const partes = [
+      `--${boundary}`,
+      "Content-Type: text/plain; charset=utf-8",
+      "Content-Transfer-Encoding: 8bit",
+      "",
+      message.text.replace(/\r?\n/g, "\r\n").replace(/^\./gm, "..")
+    ];
+
+    for (const attachment of attachments) {
+      partes.push(
+        `--${boundary}`,
+        `Content-Type: ${attachment.contentType}; name="${this.escaparParametroMime(attachment.filename)}"`,
+        "Content-Transfer-Encoding: base64",
+        `Content-Disposition: attachment; filename="${this.escaparParametroMime(attachment.filename)}"`,
+        "",
+        this.quebrarBase64(attachment.contentBase64)
+      );
+    }
+
+    partes.push(`--${boundary}--`);
+
+    return `${headers.join("\r\n")}\r\n\r\n${partes.join("\r\n")}`;
   }
 
   private conectar(host: string, port: number, secure: boolean) {
@@ -159,6 +202,14 @@ export class SmtpEmailService implements EmailSender {
 
   private codificarCabecalho(valor: string) {
     return /^[\x00-\x7F]*$/.test(valor) ? valor : `=?UTF-8?B?${Buffer.from(valor).toString("base64")}?=`;
+  }
+
+  private escaparParametroMime(valor: string) {
+    return valor.replace(/["\r\n]/g, "");
+  }
+
+  private quebrarBase64(valor: string) {
+    return valor.replace(/\s+/g, "").replace(/.{1,76}/g, "$&\r\n").trim();
   }
 
   private lerBoolean(chave: string, padrao: boolean) {

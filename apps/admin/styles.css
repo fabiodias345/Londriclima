@@ -897,6 +897,10 @@ form button,
     var(--white);
 }
 
+.pmoc-workspace.is-dossier-open {
+  gap: 0;
+}
+
 .pmoc-hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(320px, 0.56fr);
@@ -1096,6 +1100,11 @@ form button,
   background:
     linear-gradient(180deg, rgba(238, 243, 241, 0.72), rgba(255, 255, 255, 0.9)),
     var(--white);
+}
+
+.pmoc-workspace.is-dossier-open .pmoc-dossier-detail {
+  border-top: 0;
+  min-height: 520px;
 }
 
 .pmoc-detail-header {

@@ -53,6 +53,7 @@ const clientForm = document.querySelector("#clientForm");
 const clientFormStatus = document.querySelector("#clientFormStatus");
 const clientCepStatus = document.querySelector("#clientCepStatus");
 const resetClientFormButton = document.querySelector("#resetClientFormButton");
+const backToClientsButton = document.querySelector("#backToClientsButton");
 const clientDocumentLabel = document.querySelector("#clientDocumentLabel");
 const clientDocumentHelp = document.querySelector("#clientDocumentHelp");
 const clientEngineerSelect = document.querySelector("#clientEngineerSelect");
@@ -83,6 +84,7 @@ const pmocMachineCount = document.querySelector("#pmocMachineCount");
 const pmocPendingCount = document.querySelector("#pmocPendingCount");
 const pmocSearchForm = document.querySelector("#pmocSearchForm");
 const pmocSearchInput = document.querySelector("#pmocSearchInput");
+const pmocHero = document.querySelector("#pmocHero");
 const pmocSearchPanel = document.querySelector("#pmocSearchPanel");
 const pmocSearchResults = document.querySelector("#pmocSearchResults");
 const pmocStatus = document.querySelector("#pmocStatus");
@@ -93,9 +95,11 @@ const pmocConversionForm = document.querySelector("#pmocConversionForm");
 const pmocEngineerSelect = document.querySelector("#pmocEngineerSelect");
 const pmocConversionStatus = document.querySelector("#pmocConversionStatus");
 const pmocDossierList = document.querySelector("#pmocDossierList");
+const pmocDossierPanel = document.querySelector("#pmocDossierPanel");
 const pmocDossierDetail = document.querySelector("#pmocDossierDetail");
 const pmocDossierTitle = document.querySelector("#pmocDossierTitle");
 const pmocDossierMeta = document.querySelector("#pmocDossierMeta");
+const pmocBackToClientsButton = document.querySelector("#pmocBackToClientsButton");
 const pmocGenerateReportButton = document.querySelector("#pmocGenerateReportButton");
 const pmocRequestSignatureButton = document.querySelector("#pmocRequestSignatureButton");
 const pmocDossierAlerts = document.querySelector("#pmocDossierAlerts");
@@ -409,6 +413,8 @@ async function loadPmoc() {
   renderPmocDossiers();
   if (selectedPmocDossierClientId) {
     await openPmocDossier(selectedPmocDossierClientId);
+  } else {
+    closePmocDossier();
   }
   pmocStatus.textContent = `${latestClients.length} clientes na base`;
 }
@@ -990,6 +996,29 @@ function resetPmocSearchResults() {
   pmocSearchResults.innerHTML = "";
 }
 
+function setPmocDossierMode(isOpen) {
+  pmocView?.classList.toggle("is-dossier-open", isOpen);
+  pmocSummary?.classList.toggle("hidden", isOpen || activeView !== "pmoc");
+  pmocHero?.classList.toggle("hidden", isOpen);
+  pmocSearchPanel?.classList.toggle("hidden", isOpen || !pmocSearchResults.innerHTML);
+  pmocConversionPanel?.classList.add("hidden");
+  pmocDossierPanel?.classList.toggle("hidden", isOpen);
+  pmocDossierDetail?.classList.toggle("hidden", !isOpen);
+}
+
+function closePmocDossier() {
+  selectedPmocDossierClientId = "";
+  selectedPmocDossierMachines = [];
+  resetPmocSearchResults();
+  pmocDossierTitle.textContent = "Selecione um cliente PMOC";
+  pmocDossierMeta.textContent = "Maquinas, pendencias e preparo do relatorio aparecem aqui.";
+  pmocDossierAlerts.innerHTML = "";
+  pmocMachineList.innerHTML = "";
+  pmocGenerateReportButton.disabled = true;
+  pmocRequestSignatureButton.disabled = true;
+  setPmocDossierMode(false);
+}
+
 function renderPmocDossiers() {
   const pmocClients = latestClients.filter((item) => item.pmoc_ativo);
   pmocDossierList.innerHTML = "";
@@ -1033,7 +1062,7 @@ async function openPmocDossier(clientId) {
   }
 
   selectedPmocDossierClientId = client.id;
-  pmocDossierDetail?.classList.remove("hidden");
+  setPmocDossierMode(true);
   pmocDossierTitle.textContent = client.nome;
   pmocDossierMeta.textContent = "Carregando maquinas do cliente...";
   pmocDossierAlerts.innerHTML = "";
@@ -1469,6 +1498,7 @@ function renderClientEquipments(items) {
         <span class="equipment-link">${escapeHtml(publicUrl || "link publico indisponivel")}</span>
         <button class="secondary-button compact-button" type="button" data-action="copiar-link-equipamento" data-link="${escapeHtml(publicUrl)}">Copiar link</button>
         <button class="secondary-button compact-button" type="button" data-action="renovar-acesso-equipamento" data-id="${item.id}">Nova senha</button>
+        <button class="secondary-button compact-button danger-button" type="button" data-action="apagar-equipamento" data-id="${item.id}">Apagar</button>
       </div>
     `;
     clientEquipmentList.appendChild(row);
@@ -1892,6 +1922,42 @@ async function renewEquipmentAccess(equipmentId) {
   }
 }
 
+async function deleteEquipment(equipmentId) {
+  if (!equipmentId || !selectedEquipmentClientId) {
+    return;
+  }
+
+  if (!window.confirm("Apagar esta maquina e todo o historico de OS vinculado a ela?")) {
+    return;
+  }
+
+  equipmentFormStatus.textContent = "Apagando equipamento...";
+
+  try {
+    const response = await fetch(`${apiBaseUrl}/admin/equipamentos/${equipmentId}`, {
+      method: "DELETE",
+      headers: authHeaders()
+    });
+
+    if (await handleUnauthorized(response)) {
+      return;
+    }
+
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      equipmentFormStatus.textContent = result.message || "Nao foi possivel apagar o equipamento.";
+      return;
+    }
+
+    equipmentFormStatus.textContent = `Equipamento apagado. ${result.ordens_removidas || 0} OS removida(s).`;
+    await loadClientEquipments(selectedEquipmentClientId);
+    await loadClientes();
+  } catch {
+    equipmentFormStatus.textContent = "API indisponivel.";
+  }
+}
+
 async function startEquipmentScanner() {
   if (!("BarcodeDetector" in window)) {
     equipmentFormStatus.textContent = "Leitor de codigo/QR indisponivel neste navegador. Digite manualmente.";
@@ -2104,6 +2170,8 @@ function fillClientForm(clientId) {
   setClientCepStatus("");
   clientFormStatus.textContent = "Editando cliente selecionado.";
   selectedEquipmentClientId = client.id;
+  clientesList.classList.add("hidden");
+  backToClientsButton?.classList.remove("hidden");
   clientEquipmentPanel?.classList.remove("hidden");
 
   if (clientEquipmentTitle) {
@@ -2126,6 +2194,8 @@ function resetClientForm() {
   setClientCepStatus("");
   selectedEquipmentClientId = "";
   clientEquipmentPanel?.classList.add("hidden");
+  backToClientsButton?.classList.add("hidden");
+  clientesList.classList.remove("hidden");
   clientEquipmentList.innerHTML = "";
   clientFormStatus.textContent = "";
 }
@@ -2388,8 +2458,10 @@ engineerForm?.addEventListener("submit", submitEngineer);
 equipmentForm?.addEventListener("submit", submitEquipment);
 pmocConversionForm?.addEventListener("submit", activatePmocClient);
 resetClientFormButton?.addEventListener("click", resetClientForm);
+backToClientsButton?.addEventListener("click", resetClientForm);
 resetEngineerFormButton?.addEventListener("click", resetEngineerForm);
 fleetReportExportButton?.addEventListener("click", openFleetReport);
+pmocBackToClientsButton?.addEventListener("click", closePmocDossier);
 pmocGenerateReportButton?.addEventListener("click", openPmocReportPreview);
 pmocRequestSignatureButton?.addEventListener("click", requestPmocEngineerSignature);
 refreshButton?.addEventListener("click", loadActiveView);
@@ -2601,6 +2673,10 @@ clientEquipmentList?.addEventListener("click", async (event) => {
 
   if (target.dataset.action === "renovar-acesso-equipamento" && target.dataset.id) {
     await renewEquipmentAccess(target.dataset.id);
+  }
+
+  if (target.dataset.action === "apagar-equipamento" && target.dataset.id) {
+    await deleteEquipment(target.dataset.id);
   }
 
   if (target.dataset.action === "copiar-link-equipamento" && target.dataset.link) {

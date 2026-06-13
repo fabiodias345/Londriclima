@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
-import { NotFoundException, UnauthorizedException } from "@nestjs/common";
+import { InternalServerErrorException, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { AutomacaoTipo, OrdemServicoEventoAcao, OrdemServicoStatus, PmocRelatorioStatus } from "@prisma/client";
 import { PasswordHashService } from "../auth/password-hash.service";
 import { SiteService } from "./site.service";
@@ -14,8 +14,8 @@ const dto = {
   empresa_id: "empresa-maliciosa"
 };
 
-function criarService(prisma: unknown) {
-  return new SiteService(prisma as never);
+function criarService(prisma: unknown, adminService?: unknown) {
+  return new SiteService(prisma as never, adminService as never);
 }
 
 test("criarPreChamado sempre busca empresa piloto por CNPJ fixo", async () => {
@@ -264,6 +264,7 @@ test("consultarAssinaturaPmoc retorna relatorio publico pelo token", async () =>
           },
           engenheiroResponsavel: {
             nome: "Paulo Londriclima",
+            cpf: "12345678901",
             crea: "CREA-PR 123456",
             email: "paulo@example.com"
           }
@@ -271,7 +272,14 @@ test("consultarAssinaturaPmoc retorna relatorio publico pelo token", async () =>
       }
     }
   };
-  const service = criarService(prisma);
+  const adminService = {
+    gerarPdfPmocCliente: async () => ({
+      filename: "pmoc-maria-souza.pdf",
+      contentType: "application/pdf",
+      buffer: Buffer.from("%PDF-1.4\npmoc")
+    })
+  };
+  const service = criarService(prisma, adminService);
 
   const resposta = await service.consultarAssinaturaPmoc("token-assinatura");
 
@@ -326,6 +334,7 @@ test("confirmarAssinaturaPmoc assina relatorio e agenda envio de email ao client
         },
         engenheiroResponsavel: {
           nome: "Paulo Londriclima",
+          cpf: "12345678901",
           crea: "CREA-PR 123456",
           email: "paulo@example.com"
         }
@@ -333,7 +342,14 @@ test("confirmarAssinaturaPmoc assina relatorio e agenda envio de email ao client
     },
     $transaction: async (callback: (tx: unknown) => unknown) => callback(tx)
   };
-  const service = criarService(prisma);
+  const adminService = {
+    gerarPdfPmocCliente: async () => ({
+      filename: "pmoc-maria-souza.pdf",
+      contentType: "application/pdf",
+      buffer: Buffer.from("%PDF-1.4\npmoc")
+    })
+  };
+  const service = criarService(prisma, adminService);
 
   const resposta = await service.confirmarAssinaturaPmoc("token-assinatura");
 
@@ -341,15 +357,67 @@ test("confirmarAssinaturaPmoc assina relatorio e agenda envio de email ao client
   assert.equal((chamadas.updateData as { emailCliente: string }).emailCliente, "maria@example.com");
   assert.equal((chamadas.emailData as { tipo: AutomacaoTipo }).tipo, AutomacaoTipo.enviar_email);
   assert.equal((chamadas.emailData as { empresaId: string }).empresaId, "empresa-1");
-  assert.deepEqual((chamadas.emailData as { payload: unknown }).payload, {
-    tipo: "pmoc_relatorio_assinado",
-    relatorio_id: "relatorio-1",
-    cliente_id: "cliente-1",
-    cliente_email: "maria@example.com",
-    engenheiro_crea: "CREA-PR 123456",
-    pdf_hash: "hash-pdf"
-  });
+  const payload = (chamadas.emailData as { payload: Record<string, unknown> }).payload;
+  assert.match(String(payload.data_envio), /^\d{4}-\d{2}-\d{2}T/);
+  assert.deepEqual(
+    {
+      ...payload,
+      data_envio: "data-validada"
+    },
+    {
+      tipo: "pmoc_relatorio_assinado",
+      relatorio_id: "relatorio-1",
+      cliente_id: "cliente-1",
+      cliente_nome: "Maria Souza",
+      cliente_email: "maria@example.com",
+      data_envio: "data-validada",
+      engenheiro_nome: "Paulo Londriclima",
+      engenheiro_cpf: "12345678901",
+      engenheiro_crea: "CREA-PR 123456",
+      pdf_hash: "hash-pdf",
+      pdf_filename: "pmoc-maria-souza.pdf",
+      pdf_base64: Buffer.from("%PDF-1.4\npmoc").toString("base64")
+    }
+  );
   assert.equal(resposta.status, PmocRelatorioStatus.assinado);
   assert.equal(resposta.email_agendado, true);
   assert.equal(resposta.historico_finalizado, true);
+});
+
+test("confirmarAssinaturaPmoc bloqueia assinatura quando nao consegue anexar PDF", async () => {
+  const chamadas = {
+    transacao: false
+  };
+  const prisma = {
+    pmocRelatorio: {
+      findUnique: async () => ({
+        id: "relatorio-1",
+        empresaId: "empresa-1",
+        clienteId: "cliente-1",
+        status: PmocRelatorioStatus.aguardando_assinatura_engenheiro,
+        pdfHash: "hash-pdf",
+        emailCliente: null,
+        emailAgendadoEm: null,
+        historicoFinalizadoEm: null,
+        cliente: {
+          id: "cliente-1",
+          nome: "Maria Souza",
+          email: "maria@example.com"
+        },
+        engenheiroResponsavel: {
+          nome: "Paulo Londriclima",
+          cpf: "12345678901",
+          crea: "CREA-PR 123456",
+          email: "paulo@example.com"
+        }
+      })
+    },
+    $transaction: async () => {
+      chamadas.transacao = true;
+    }
+  };
+  const service = criarService(prisma);
+
+  await assert.rejects(() => service.confirmarAssinaturaPmoc("token-assinatura"), InternalServerErrorException);
+  assert.equal(chamadas.transacao, false);
 });

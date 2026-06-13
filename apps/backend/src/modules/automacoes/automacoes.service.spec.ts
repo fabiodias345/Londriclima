@@ -26,9 +26,15 @@ test("processarPendentes envia email PMOC e marca automacao como concluida", asy
             tipo: "pmoc_relatorio_assinado",
             relatorio_id: "relatorio-1",
             cliente_id: "cliente-1",
+            cliente_nome: "Maria Souza",
             cliente_email: "maria@example.com",
+            data_envio: "2026-06-12T12:00:00.000Z",
+            engenheiro_nome: "Paulo Londriclima",
+            engenheiro_cpf: "12345678901",
             engenheiro_crea: "CREA-PR 123456",
-            pdf_hash: "hash-pdf"
+            pdf_hash: "hash-pdf",
+            pdf_filename: "pmoc-maria-souza.pdf",
+            pdf_base64: Buffer.from("%PDF-1.4\npmoc").toString("base64")
           },
           tentativas: 0
         }
@@ -57,15 +63,31 @@ test("processarPendentes envia email PMOC e marca automacao como concluida", asy
   assert.deepEqual(chamadas.email, {
     from: "AIRMOVEBR <noreply@example.com>",
     to: "maria@example.com",
-    subject: "Relatorio PMOC assinado - AIRMOVEBR",
+    subject: "Relatorio Tecnico PMOC - Junho/2026 - Maria Souza",
     text: [
-      "O relatorio PMOC foi assinado pelo engenheiro responsavel.",
+      "Prezado(a) Senhor(a) Souza,",
       "",
-      "Relatorio: relatorio-1",
-      "Cliente: cliente-1",
-      "CREA: CREA-PR 123456",
-      "Hash PDF: hash-pdf"
-    ].join("\n")
+      "Cumprimentando-o(a) cordialmente, encaminhamos em anexo o relatorio final do PMOC referente ao periodo de junho de 2026.",
+      "",
+      "O documento ja se encontra devidamente validado e assinado pelo engenheiro responsavel pela inspecao. Seguem abaixo as informacoes de registro do profissional:",
+      "",
+      "Responsavel Tecnico: Paulo Londriclima",
+      "CPF: 123.456.789-01",
+      "Conselho Regional: CREA-PR 123456",
+      "",
+      "Agradecemos a confianca em nossos servicos e renovamos nossos protestos de estima. Permanecemos a inteira disposicao.",
+      "",
+      "Cordialmente,",
+      "",
+      "AIRMOVEBR"
+    ].join("\n"),
+    attachments: [
+      {
+        filename: "pmoc-maria-souza.pdf",
+        contentType: "application/pdf",
+        contentBase64: Buffer.from("%PDF-1.4\npmoc").toString("base64")
+      }
+    ]
   });
   assert.deepEqual(chamadas.updates.at(-1), {
     where: { id: "automacao-1" },
@@ -90,10 +112,14 @@ test("processarPendentes envia link de assinatura PMOC para o engenheiro", async
             tipo: "pmoc_assinatura_engenheiro",
             relatorio_id: "relatorio-1",
             cliente_nome: "Maria Souza",
+            cliente_email: "maria@example.com",
+            data_envio: "2026-06-12T12:00:00.000Z",
             engenheiro_email: "paulo@example.com",
             engenheiro_nome: "Paulo Londriclima",
             link_assinatura: "https://airmovebr.com.br/landing/assinatura-pmoc.html?token=abc123",
-            pdf_hash: "hash-pdf"
+            pdf_hash: "hash-pdf",
+            pdf_filename: "pmoc-maria-souza.pdf",
+            pdf_base64: Buffer.from("%PDF-1.4\npmoc").toString("base64")
           },
           tentativas: 0
         }
@@ -117,15 +143,24 @@ test("processarPendentes envia link de assinatura PMOC para o engenheiro", async
     to: "paulo@example.com",
     subject: "Assinatura PMOC pendente - Maria Souza",
     text: [
-      "Paulo Londriclima, existe um relatorio PMOC aguardando sua assinatura.",
+      "Paulo Londriclima, existe um PMOC aguardando sua assinatura.",
       "",
       "Cliente: Maria Souza",
+      "E-mail: maria@example.com",
+      "Data: 12/06/2026 09:00",
       "Relatorio: relatorio-1",
-      "Hash PDF: hash-pdf",
       "",
-      "Acesse o link abaixo para conferir e assinar:",
+      "PDF em anexo.",
+      "Acesse o link para assinar:",
       "https://airmovebr.com.br/landing/assinatura-pmoc.html?token=abc123"
-    ].join("\n")
+    ].join("\n"),
+    attachments: [
+      {
+        filename: "pmoc-maria-souza.pdf",
+        contentType: "application/pdf",
+        contentBase64: Buffer.from("%PDF-1.4\npmoc").toString("base64")
+      }
+    ]
   });
 });
 
@@ -143,9 +178,15 @@ test("processarPendentes registra falha SMTP e incrementa tentativa", async () =
             tipo: "pmoc_relatorio_assinado",
             relatorio_id: "relatorio-2",
             cliente_id: "cliente-2",
+            cliente_nome: "Ana Oliveira",
             cliente_email: "ana@example.com",
+            data_envio: "2026-06-12T12:00:00.000Z",
+            engenheiro_nome: "Paulo Londriclima",
+            engenheiro_cpf: "12345678901",
             engenheiro_crea: "CREA-PR 999999",
-            pdf_hash: "hash-falha"
+            pdf_hash: "hash-falha",
+            pdf_filename: "pmoc-ana.pdf",
+            pdf_base64: Buffer.from("%PDF-1.4\npmoc").toString("base64")
           },
           tentativas: 1
         }

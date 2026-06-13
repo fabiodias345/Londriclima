@@ -158,6 +158,14 @@ export class AdminController {
     return this.adminService.renovarAcessoPublicoEquipamento(equipamentoId, usuario);
   }
 
+  @Delete("equipamentos/:equipamentoId")
+  apagarEquipamento(
+    @Param("equipamentoId", new ParseUUIDPipe()) equipamentoId: string,
+    @CurrentUser() usuario: AuthenticatedUser
+  ) {
+    return this.adminService.apagarEquipamento(equipamentoId, usuario);
+  }
+
   @Get("relatorios")
   obterRelatorios(@CurrentUser() usuario: AuthenticatedUser) {
     return this.adminService.obterRelatorios(usuario);

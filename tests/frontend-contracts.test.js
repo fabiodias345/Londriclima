@@ -90,9 +90,17 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(script, /gas_refrigerante:\s*String\(data\.get\("gas_refrigerante"\)/);
   assert.match(script, /Gas: \$\{escapeHtml\(item\.gas_refrigerante/);
   assert.match(script, /\/admin\/equipamentos\/\$\{equipmentId\}\/renovar-acesso/);
+  assert.match(script, /\/admin\/equipamentos\/\$\{equipmentId\}/);
   assert.match(script, /BarcodeDetector/);
   assert.match(script, /qr_code/);
   assert.match(script, /data-action="renovar-acesso-equipamento"/);
+  assert.match(script, /data-action="apagar-equipamento"/);
+  assert.match(html, /id="backToClientsButton"/);
+  assert.match(script, /backToClientsButton\?\.classList\.remove\("hidden"\)/);
+  assert.match(script, /backToClientsButton\?\.classList\.add\("hidden"\)/);
+  assert.match(script, /backToClientsButton\?\.addEventListener\("click", resetClientForm\)/);
+  assert.match(script, /clientesList\.classList\.add\("hidden"\)/);
+  assert.match(script, /clientesList\.classList\.remove\("hidden"\)/);
 });
 
 test("landing possui consulta publica de equipamento protegida por senha", () => {
@@ -131,13 +139,17 @@ test("admin possui triagem PMOC por cliente e conversao com engenheiro", () => {
   assert.match(html, /id="pmocView"/);
   assert.match(html, /id="pmocSearchForm"/);
   assert.match(html, /id="pmocSearchInput"/);
+  assert.match(html, /id="pmocHero"/);
   assert.match(html, /id="pmocSearchPanel"/);
   assert.match(html, /class="pmoc-grid hidden" id="pmocSearchPanel"/);
   assert.match(html, /id="pmocSearchResults"/);
   assert.match(html, /id="pmocConversionPanel"/);
   assert.match(html, /id="pmocEngineerSelect"/);
+  assert.match(html, /id="pmocDossierPanel"/);
   assert.match(html, /id="pmocDossierList"/);
   assert.match(html, /id="pmocDossierDetail"/);
+  assert.match(html, /id="pmocBackToClientsButton"/);
+  assert.match(html, /Voltar para clientes/);
   assert.match(html, /id="pmocMachineList"/);
   assert.match(html, /id="pmocGenerateReportButton"[^>]*disabled/);
   assert.match(html, /id="pmocRequestSignatureButton"[^>]*disabled/);
@@ -146,11 +158,16 @@ test("admin possui triagem PMOC por cliente e conversao com engenheiro", () => {
   assert.match(script, /function resetPmocSearchResults/);
   assert.match(script, /function openPmocConversion/);
   assert.match(script, /function activatePmocClient/);
+  assert.match(script, /function setPmocDossierMode/);
   assert.match(script, /function openPmocDossier/);
+  assert.match(script, /function closePmocDossier/);
   assert.match(script, /function renderPmocMachines/);
   assert.match(script, /function openPmocReportPreview/);
   assert.match(script, /hasCompletedPmocMaintenance/);
   assert.match(script, /pmocGenerateReportButton\?\.addEventListener\("click", openPmocReportPreview\)/);
+  assert.match(script, /pmocBackToClientsButton\?\.addEventListener\("click", closePmocDossier\)/);
+  assert.match(script, /pmocDossierPanel\?\.classList\.toggle\("hidden", isOpen\)/);
+  assert.match(script, /pmocHero\?\.classList\.toggle\("hidden", isOpen\)/);
   assert.match(script, /\/admin\/clientes\/\$\{client\.id\}\/equipamentos/);
   assert.match(script, /\/admin\/pmoc\/clientes\/\$\{selectedPmocDossierClientId\}\/previa/);
   assert.match(script, /\/admin\/pmoc\/clientes\/\$\{selectedPmocDossierClientId\}\/pdf/);
@@ -166,6 +183,7 @@ test("admin possui triagem PMOC por cliente e conversao com engenheiro", () => {
   assert.match(styles, /\.pmoc-client-card/);
   assert.match(styles, /\.pmoc-dossier-row/);
   assert.match(styles, /\.pmoc-dossier-detail/);
+  assert.match(styles, /\.pmoc-workspace\.is-dossier-open/);
   assert.match(styles, /\.pmoc-machine-card/);
   assert.doesNotMatch(html, /id="pmocEquipmentFields"/);
   assert.doesNotMatch(html, /id="pmocChecklist"/);

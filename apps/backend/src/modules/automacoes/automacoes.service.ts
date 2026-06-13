@@ -10,30 +10,44 @@ type AutomacaoEmailPayload = {
   cliente_id?: unknown;
   cliente_nome?: unknown;
   cliente_email?: unknown;
+  data_envio?: unknown;
+  engenheiro_cpf?: unknown;
   engenheiro_email?: unknown;
   engenheiro_nome?: unknown;
   engenheiro_crea?: unknown;
   link_assinatura?: unknown;
   pdf_hash?: unknown;
+  pdf_filename?: unknown;
+  pdf_base64?: unknown;
 };
 
 type PayloadAssinaturaEngenheiro = {
   tipo: "pmoc_assinatura_engenheiro";
   relatorio_id: string;
   cliente_nome: string;
+  cliente_email: string;
+  data_envio: string;
   engenheiro_email: string;
   engenheiro_nome: string;
   link_assinatura: string;
   pdf_hash: string;
+  pdf_filename: string;
+  pdf_base64: string;
 };
 
 type PayloadRelatorioAssinado = {
   tipo: "pmoc_relatorio_assinado";
   relatorio_id: string;
   cliente_id: string;
+  cliente_nome: string;
   cliente_email: string;
+  data_envio: string;
+  engenheiro_nome: string;
+  engenheiro_cpf: string;
   engenheiro_crea: string;
   pdf_hash: string;
+  pdf_filename: string;
+  pdf_base64: string;
 };
 
 @Injectable()
@@ -171,30 +185,55 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
         to: dados.engenheiro_email,
         subject: `Assinatura PMOC pendente - ${dados.cliente_nome}`,
         text: [
-          `${dados.engenheiro_nome}, existe um relatorio PMOC aguardando sua assinatura.`,
+          `${dados.engenheiro_nome}, existe um PMOC aguardando sua assinatura.`,
           "",
           `Cliente: ${dados.cliente_nome}`,
+          `E-mail: ${dados.cliente_email}`,
+          `Data: ${this.formatarDataEmail(dados.data_envio)}`,
           `Relatorio: ${dados.relatorio_id}`,
-          `Hash PDF: ${dados.pdf_hash}`,
           "",
-          "Acesse o link abaixo para conferir e assinar:",
+          "PDF em anexo.",
+          "Acesse o link para assinar:",
           dados.link_assinatura
-        ].join("\n")
+        ].join("\n"),
+        attachments: [
+          {
+            filename: dados.pdf_filename,
+            contentType: "application/pdf",
+            contentBase64: dados.pdf_base64
+          }
+        ]
       };
     }
 
     return {
       from,
       to: dados.cliente_email,
-      subject: "Relatorio PMOC assinado - AIRMOVEBR",
+      subject: `Relatorio Tecnico PMOC - ${this.formatarMesAnoAssunto(dados.data_envio)} - ${dados.cliente_nome}`,
       text: [
-        "O relatorio PMOC foi assinado pelo engenheiro responsavel.",
+        `Prezado(a) Senhor(a) ${this.obterSobrenomeCliente(dados.cliente_nome)},`,
         "",
-        `Relatorio: ${dados.relatorio_id}`,
-        `Cliente: ${dados.cliente_id}`,
-        `CREA: ${dados.engenheiro_crea}`,
-        `Hash PDF: ${dados.pdf_hash}`
-      ].join("\n")
+        `Cumprimentando-o(a) cordialmente, encaminhamos em anexo o relatorio final do PMOC referente ao periodo de ${this.formatarPeriodoTexto(dados.data_envio)}.`,
+        "",
+        "O documento ja se encontra devidamente validado e assinado pelo engenheiro responsavel pela inspecao. Seguem abaixo as informacoes de registro do profissional:",
+        "",
+        `Responsavel Tecnico: ${dados.engenheiro_nome}`,
+        `CPF: ${this.formatarCpfEmail(dados.engenheiro_cpf)}`,
+        `Conselho Regional: ${dados.engenheiro_crea}`,
+        "",
+        "Agradecemos a confianca em nossos servicos e renovamos nossos protestos de estima. Permanecemos a inteira disposicao.",
+        "",
+        "Cordialmente,",
+        "",
+        "AIRMOVEBR"
+      ].join("\n"),
+      attachments: [
+        {
+          filename: dados.pdf_filename,
+          contentType: "application/pdf",
+          contentBase64: dados.pdf_base64
+        }
+      ]
     };
   }
 
@@ -210,10 +249,14 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
         tipo: dados.tipo,
         relatorio_id: this.exigirString(dados.relatorio_id, "relatorio_id"),
         cliente_nome: this.exigirString(dados.cliente_nome, "cliente_nome"),
+        cliente_email: this.exigirString(dados.cliente_email, "cliente_email"),
+        data_envio: this.exigirString(dados.data_envio, "data_envio"),
         engenheiro_email: this.exigirString(dados.engenheiro_email, "engenheiro_email"),
         engenheiro_nome: this.exigirString(dados.engenheiro_nome, "engenheiro_nome"),
         link_assinatura: this.exigirString(dados.link_assinatura, "link_assinatura"),
-        pdf_hash: this.exigirString(dados.pdf_hash, "pdf_hash")
+        pdf_hash: this.exigirString(dados.pdf_hash, "pdf_hash"),
+        pdf_filename: this.exigirString(dados.pdf_filename, "pdf_filename"),
+        pdf_base64: this.exigirString(dados.pdf_base64, "pdf_base64")
       };
     }
 
@@ -222,9 +265,15 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
         tipo: dados.tipo,
         relatorio_id: this.exigirString(dados.relatorio_id, "relatorio_id"),
         cliente_id: this.exigirString(dados.cliente_id, "cliente_id"),
+        cliente_nome: this.exigirString(dados.cliente_nome, "cliente_nome"),
         cliente_email: this.exigirString(dados.cliente_email, "cliente_email"),
+        data_envio: this.exigirString(dados.data_envio, "data_envio"),
+        engenheiro_nome: this.exigirString(dados.engenheiro_nome, "engenheiro_nome"),
+        engenheiro_cpf: this.exigirString(dados.engenheiro_cpf, "engenheiro_cpf"),
         engenheiro_crea: this.exigirString(dados.engenheiro_crea, "engenheiro_crea"),
-        pdf_hash: this.exigirString(dados.pdf_hash, "pdf_hash")
+        pdf_hash: this.exigirString(dados.pdf_hash, "pdf_hash"),
+        pdf_filename: this.exigirString(dados.pdf_filename, "pdf_filename"),
+        pdf_base64: this.exigirString(dados.pdf_base64, "pdf_base64")
       };
     }
 
@@ -237,6 +286,73 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
     }
 
     return valor.trim();
+  }
+
+  private formatarDataEmail(valor: string) {
+    const data = new Date(valor);
+
+    if (Number.isNaN(data.getTime())) {
+      return valor;
+    }
+
+    return new Intl.DateTimeFormat("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false
+    })
+      .format(data)
+      .replace(",", "");
+  }
+
+  private formatarMesAnoAssunto(valor: string) {
+    const data = this.parseDataEmail(valor);
+    const mes = new Intl.DateTimeFormat("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+      month: "long"
+    }).format(data);
+    const ano = new Intl.DateTimeFormat("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+      year: "numeric"
+    }).format(data);
+
+    return `${this.capitalizar(mes)}/${ano}`;
+  }
+
+  private formatarPeriodoTexto(valor: string) {
+    const data = this.parseDataEmail(valor);
+    return new Intl.DateTimeFormat("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+      month: "long",
+      year: "numeric"
+    }).format(data);
+  }
+
+  private parseDataEmail(valor: string) {
+    const data = new Date(valor);
+    return Number.isNaN(data.getTime()) ? new Date() : data;
+  }
+
+  private obterSobrenomeCliente(nome: string) {
+    const partes = nome.trim().split(/\s+/);
+    return partes.at(-1) || nome;
+  }
+
+  private formatarCpfEmail(valor: string) {
+    const digitos = valor.replace(/\D/g, "");
+
+    if (digitos.length !== 11) {
+      return valor;
+    }
+
+    return `${digitos.slice(0, 3)}.${digitos.slice(3, 6)}.${digitos.slice(6, 9)}-${digitos.slice(9)}`;
+  }
+
+  private capitalizar(valor: string) {
+    return valor ? `${valor.charAt(0).toUpperCase()}${valor.slice(1)}` : valor;
   }
 
   private obterMensagemErro(error: unknown) {

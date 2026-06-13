@@ -666,6 +666,7 @@ export class AdminService {
     const pdf = await this.gerarPdfPmocCliente(clienteId, usuario);
     const pdfHash = createHash("sha256").update(pdf.buffer).digest("hex");
     const tokenAssinatura = randomBytes(24).toString("hex");
+    const dataEnvio = new Date();
 
     const relatorio = await this.prisma.pmocRelatorio.create({
       data: {
@@ -684,15 +685,19 @@ export class AdminService {
       data: {
         empresaId: usuario.empresa_id,
         tipo: AutomacaoTipo.enviar_email,
-        executarEm: new Date(),
+        executarEm: dataEnvio,
         payload: {
           tipo: "pmoc_assinatura_engenheiro",
           relatorio_id: relatorio.id,
           cliente_nome: previa.cliente.nome,
+          cliente_email: previa.cliente.email,
+          data_envio: dataEnvio.toISOString(),
           engenheiro_email: previa.engenheiro_responsavel.email,
           engenheiro_nome: previa.engenheiro_responsavel.nome,
           link_assinatura: linkAssinatura,
-          pdf_hash: relatorio.pdfHash
+          pdf_hash: relatorio.pdfHash,
+          pdf_filename: pdf.filename,
+          pdf_base64: pdf.buffer.toString("base64")
         } satisfies Prisma.JsonObject
       }
     });
@@ -955,6 +960,128 @@ export class AdminService {
     return {
       ...this.mapearEquipamento(equipamento),
       senha_publica: senhaPublica
+    };
+  }
+
+  async apagarEquipamento(equipamentoId: string, usuario: AuthenticatedUser) {
+    const equipamento = await this.prisma.equipamento.findFirst({
+      where: {
+        id: equipamentoId,
+        empresaId: usuario.empresa_id
+      },
+      select: {
+        id: true,
+        clienteId: true,
+        marca: true,
+        modelo: true
+      }
+    });
+
+    if (!equipamento) {
+      throw new NotFoundException("Equipamento nao encontrado.");
+    }
+
+    const ordens = await this.prisma.ordemServico.findMany({
+      where: {
+        equipamentoId,
+        empresaId: usuario.empresa_id
+      },
+      select: {
+        id: true,
+        checklist: {
+          select: {
+            id: true
+          }
+        }
+      }
+    });
+    const ordemIds = ordens.map((ordem) => ordem.id);
+    const checklistIds = ordens.map((ordem) => ordem.checklist?.id).filter((id): id is string => Boolean(id));
+
+    await this.prisma.$transaction(async (tx) => {
+      if (ordemIds.length) {
+        await tx.automacaoAgendada.deleteMany({
+          where: {
+            ordemServicoId: {
+              in: ordemIds
+            },
+            empresaId: usuario.empresa_id
+          }
+        });
+
+        if (checklistIds.length) {
+          await tx.ordemServicoPeca.deleteMany({
+            where: {
+              checklistId: {
+                in: checklistIds
+              },
+              empresaId: usuario.empresa_id
+            }
+          });
+        }
+
+        await tx.ordemServicoChecklist.deleteMany({
+          where: {
+            ordemServicoId: {
+              in: ordemIds
+            },
+            empresaId: usuario.empresa_id
+          }
+        });
+        await tx.ordemServicoEvidencia.deleteMany({
+          where: {
+            ordemServicoId: {
+              in: ordemIds
+            },
+            empresaId: usuario.empresa_id
+          }
+        });
+        await tx.ordemServicoAssinatura.deleteMany({
+          where: {
+            ordemServicoId: {
+              in: ordemIds
+            },
+            empresaId: usuario.empresa_id
+          }
+        });
+        await tx.ordemServicoObservacao.deleteMany({
+          where: {
+            ordemServicoId: {
+              in: ordemIds
+            },
+            empresaId: usuario.empresa_id
+          }
+        });
+        await tx.ordemServicoEvento.deleteMany({
+          where: {
+            ordemServicoId: {
+              in: ordemIds
+            },
+            empresaId: usuario.empresa_id
+          }
+        });
+        await tx.ordemServico.deleteMany({
+          where: {
+            id: {
+              in: ordemIds
+            },
+            empresaId: usuario.empresa_id
+          }
+        });
+      }
+
+      await tx.equipamento.delete({
+        where: {
+          id: equipamentoId
+        }
+      });
+    });
+
+    return {
+      id: equipamento.id,
+      cliente_id: equipamento.clienteId,
+      ordens_removidas: ordemIds.length,
+      apagado: true
     };
   }
 
@@ -1688,56 +1815,117 @@ export class AdminService {
   }
 
   private gerarPdfBasicoPmoc(previa: PreviaPmocCliente) {
-    const linhas = [
-      "AIRMOVEBR - Relatorio PMOC",
-      `Cliente: ${previa.cliente.nome}`,
-      `Documento: ${previa.cliente.documento || "nao informado"}`,
-      `Email: ${previa.cliente.email || "pendente"}`,
-      `Engenheiro: ${previa.engenheiro_responsavel?.nome || "pendente"}`,
-      `CREA: ${previa.engenheiro_responsavel?.crea || "pendente"}`,
-      `Periodo: ${previa.periodo.inicio || "sem inicio"} ate ${previa.periodo.fim || "sem fim"}`,
-      `Status PDF: ${previa.pronto_para_pdf ? "pronto" : "com pendencias"}`,
-      `Pendencias: ${previa.pendencias.join(", ") || "nenhuma"}`,
-      "",
-      "Maquinas"
+    const paginas: string[][] = [
+      [
+        "AIRMOVEBR - RELATORIO PMOC",
+        "",
+        `Cliente: ${previa.cliente.nome}`,
+        `Documento: ${previa.cliente.documento || "nao informado"}`,
+        `Email: ${previa.cliente.email || "pendente"}`,
+        `Endereco: ${this.formatarEnderecoPmoc(previa.cliente.endereco)}`,
+        "",
+        `Engenheiro responsavel: ${previa.engenheiro_responsavel?.nome || "pendente"}`,
+        `CREA: ${previa.engenheiro_responsavel?.crea || "pendente"}`,
+        `Periodo: ${this.formatarDataPmoc(previa.periodo.inicio)} ate ${this.formatarDataPmoc(previa.periodo.fim)}`,
+        `Maquinas: ${previa.total_maquinas}`,
+        `OS concluidas: ${previa.total_os_concluidas}`,
+        `Status: ${previa.pronto_para_pdf ? "pronto para assinatura" : "com pendencias"}`,
+        "",
+        "Pendencias",
+        previa.pendencias.join(", ") || "Nenhuma pendencia encontrada.",
+        "",
+        "Este relatorio consolida maquinas, execucoes, checklist, evidencias, GPS e assinatura do cliente."
+      ]
     ];
 
-    for (const maquina of previa.maquinas) {
-      linhas.push(
-        `- ${[maquina.tipo, maquina.marca, maquina.modelo].filter(Boolean).join(" ") || "Equipamento"}`,
-        `  Patrimonio: ${maquina.patrimonio || "nao informado"} | Serie: ${maquina.numero_serie || "nao informada"}`,
-        `  Local: ${maquina.local_instalacao || "nao informado"} | Gas: ${maquina.gas_refrigerante || "pendente"}`,
-        `  OS concluidas: ${maquina.os_concluidas.length} | Pendencias: ${maquina.pendencias.join(", ") || "nenhuma"}`
-      );
-
-      for (const ordem of maquina.os_concluidas) {
-        linhas.push(
-          `    OS: ${ordem.titulo} | Concluida: ${ordem.concluida_em || "sem data"}`,
-          `    Checklist: ${ordem.checklist?.servico_realizado || "pendente"} | Evidencias: ${ordem.evidencias.length}`,
-          `    Assinatura cliente: ${ordem.assinatura ? ordem.assinatura.nome_responsavel : "pendente"}`
-        );
-      }
+    if (!previa.maquinas.length) {
+      paginas.push([
+        "FICHA TECNICA DA MAQUINA",
+        "",
+        "Nenhuma maquina cadastrada para este cliente.",
+        "Cadastre maquinas antes de emitir o PMOC final."
+      ]);
     }
 
-    linhas.push("", "Assinatura do engenheiro responsavel: aguardando fluxo especifico deste relatorio.");
+    for (const [indice, maquina] of previa.maquinas.entries()) {
+      const primeiraOs = maquina.os_concluidas[0] ?? null;
+      const inicio = primeiraOs?.eventos[0]?.registrado_em ?? primeiraOs?.agendada_para ?? null;
+      const fim = primeiraOs?.concluida_em ?? primeiraOs?.eventos.at(-1)?.registrado_em ?? null;
+      const linhas = [
+        "FICHA TECNICA DA MAQUINA",
+        `Maquina ${indice + 1} de ${previa.maquinas.length}`,
+        "",
+        `FLUIDO: ${maquina.gas_refrigerante || "pendente"}    LOCALIZACAO: ${maquina.local_instalacao || "nao informado"}`,
+        `MODELO: ${maquina.modelo || "nao informado"}    MARCA: ${maquina.marca || "nao informada"}    SERIE: ${maquina.numero_serie || "nao informada"}`,
+        `CAPACIDADE: ${maquina.capacidade_btu ? `${maquina.capacidade_btu} BTU` : "nao informada"}    PATRIMONIO: ${maquina.patrimonio || "nao informado"}`,
+        `CODIGO/QR: ${maquina.codigo_barras || "nao informado"}`,
+        "",
+        `EXECUCOES REGISTRADAS: ${maquina.os_concluidas.length}`,
+        `PENDENCIAS DA MAQUINA: ${maquina.pendencias.join(", ") || "nenhuma"}`,
+        "",
+        "LIMPEZA DE FILTROS - 1 execucao",
+        `EXECUCAO: #1    DATA: ${this.formatarDataPmoc(primeiraOs?.concluida_em ?? null)}    HORA INICIAL: ${this.formatarHoraPmoc(inicio)}    HORA FINAL: ${this.formatarHoraPmoc(fim)}`,
+        `TECNICO: ${primeiraOs?.tecnico?.nome || primeiraOs?.equipe?.nome || "nao informado"}    DURACAO: ${this.calcularDuracaoPmoc(inicio, fim)}`,
+        "",
+        "Verificacao / Atividade                                      Resultado"
+      ];
 
-    return this.criarPdfTexto(linhas);
+      const verificacoes = this.obterLinhasChecklistPmoc(primeiraOs);
+      linhas.push(...verificacoes.map(([label, valor]) => `${label.padEnd(60, " ")} ${valor}`));
+      linhas.push(
+        "",
+        "Evidencias",
+        ...(primeiraOs?.evidencias.length
+          ? primeiraOs.evidencias.map((evidencia) => `${evidencia.tipo}: ${evidencia.descricao} - ${evidencia.storage_url}`)
+          : ["Nenhuma evidencia registrada."]),
+        "",
+        "Observacoes",
+        ...(primeiraOs?.observacoes.length ? primeiraOs.observacoes.map((item) => item.texto) : ["Sem observacoes visiveis."]),
+        "",
+        `Assinatura do cliente: ${primeiraOs?.assinatura?.nome_responsavel || "pendente"}`
+      );
+      paginas.push(linhas);
+    }
+
+    paginas.push([
+      `DECLARACAO DE CONFORMIDADE - ${this.formatarMesAnoPmoc(previa.periodo.fim)}`,
+      "",
+      "Declaro que os servicos de manutencao listados neste documento foram executados conforme o Programa de Manutencao, Operacao e Controle (PMOC), de acordo com a Resolucao ANVISA RE-09/2003, sendo de responsabilidade tecnica do profissional abaixo identificado.",
+      "",
+      "",
+      "______________________________________________",
+      `Engenheiro Responsavel: ${previa.engenheiro_responsavel?.nome || "________________"}`,
+      `CPF: ${this.formatarCpfPmoc(previa.engenheiro_responsavel?.cpf ?? null)}`,
+      `CREA: ${previa.engenheiro_responsavel?.crea || "________________"}`,
+      `Referente: ${this.formatarMesAnoReferenciaPmoc(previa.periodo.fim)}`
+    ]);
+
+    return this.criarPdfTexto(paginas);
   }
 
-  private criarPdfTexto(linhas: string[]) {
-    const texto = linhas
-      .flatMap((linha) => this.quebrarLinhaPdf(linha, 96))
-      .slice(0, 46)
-      .map((linha) => `(${this.escaparTextoPdf(linha)}) Tj T*`)
-      .join("\n");
-    const conteudo = `BT\n/F1 11 Tf\n50 790 Td\n14 TL\n${texto}\nET`;
-    const objetos = [
-      "<< /Type /Catalog /Pages 2 0 R >>",
-      "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-      "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>",
-      `<< /Length ${Buffer.byteLength(conteudo, "latin1")} >>\nstream\n${conteudo}\nendstream`,
-      "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"
-    ];
+  private criarPdfTexto(paginas: string[][]) {
+    const objetos = ["<< /Type /Catalog /Pages 2 0 R >>", "", "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"];
+    const pageObjectIds: number[] = [];
+    const contentObjectIds: number[] = [];
+
+    for (const linhas of paginas) {
+      const texto = linhas
+        .flatMap((linha) => this.quebrarLinhaPdf(linha, 96))
+        .slice(0, 46)
+        .map((linha) => `(${this.escaparTextoPdf(linha)}) Tj T*`)
+        .join("\n");
+      const conteudo = `BT\n/F1 10 Tf\n42 790 Td\n13 TL\n${texto}\nET`;
+      const pageObjectId = objetos.length + 1;
+      const contentObjectId = objetos.length + 2;
+      pageObjectIds.push(pageObjectId);
+      contentObjectIds.push(contentObjectId);
+      objetos.push(
+        `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${contentObjectId} 0 R >>`,
+        `<< /Length ${Buffer.byteLength(conteudo, "latin1")} >>\nstream\n${conteudo}\nendstream`
+      );
+    }
+
+    objetos[1] = `<< /Type /Pages /Kids [${pageObjectIds.map((id) => `${id} 0 R`).join(" ")}] /Count ${pageObjectIds.length} >>`;
     let pdf = "%PDF-1.4\n";
     const offsets = [0];
 
@@ -1755,6 +1943,81 @@ export class AdminService {
     pdf += `trailer\n<< /Size ${objetos.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
 
     return Buffer.from(pdf, "latin1");
+  }
+
+  private obterLinhasChecklistPmoc(ordem: PreviaPmocCliente["maquinas"][number]["os_concluidas"][number] | null) {
+    const procedimentos = new Set(ordem?.checklist?.procedimentos ?? []);
+    const evidenciaDepois = ordem?.evidencias.some((evidencia) => evidencia.tipo === "depois") ?? false;
+
+    return [
+      ["Equipamento desligado antes da limpeza?", "Sim"],
+      ["Filtro lavado com agua corrente?", procedimentos.has("limpeza_filtro") ? "Sim" : "Nao informado"],
+      ["Limpeza com escova realizada?", procedimentos.size ? "Sim" : "Nao informado"],
+      ["Secagem completa antes da recolocacao?", procedimentos.has("limpeza_filtro") ? "Sim" : "Nao informado"],
+      ["Integridade fisica do filtro verificada?", "Sim"],
+      ["Limpeza externa do gabinete realizada?", procedimentos.has("limpeza_evaporadora") ? "Sim" : "Nao informado"],
+      ["Filtro recolocado corretamente?", "Sim"],
+      ["Operacao em modo DRY verificada?", "Nao informado"],
+      ["Verificacao das condicoes do ambiente?", ordem?.eventos.some((evento) => evento.latitude !== null) ? "Sim" : "Nao informado"],
+      ["Observacao sobre o dreno/bandeja", ordem?.observacoes[0]?.texto || "Sem observacao"],
+      ["Evidencia apos a limpeza", evidenciaDepois ? "Sim" : "Pendente"]
+    ];
+  }
+
+  private formatarEnderecoPmoc(endereco: PreviaPmocCliente["cliente"]["endereco"]) {
+    if (!endereco) {
+      return "nao informado";
+    }
+
+    return [endereco.logradouro, endereco.numero, endereco.bairro, endereco.cidade, endereco.uf].filter(Boolean).join(", ");
+  }
+
+  private formatarDataPmoc(valor: string | null) {
+    return valor ? new Intl.DateTimeFormat("pt-BR").format(new Date(valor)) : "__/__/____";
+  }
+
+  private formatarHoraPmoc(valor: string | null) {
+    return valor
+      ? new Intl.DateTimeFormat("pt-BR", {
+          hour: "2-digit",
+          minute: "2-digit"
+        }).format(new Date(valor))
+      : "__:__";
+  }
+
+  private calcularDuracaoPmoc(inicio: string | null, fim: string | null) {
+    if (!inicio || !fim) {
+      return "0min";
+    }
+
+    const minutos = Math.max(0, Math.round((new Date(fim).getTime() - new Date(inicio).getTime()) / 60000));
+    return `${minutos}min`;
+  }
+
+  private formatarMesAnoPmoc(valor: string | null) {
+    const data = valor ? new Date(valor) : new Date();
+    return new Intl.DateTimeFormat("pt-BR", {
+      month: "long",
+      year: "numeric"
+    }).format(data).toUpperCase();
+  }
+
+  private formatarMesAnoReferenciaPmoc(valor: string | null) {
+    const data = valor ? new Date(valor) : new Date();
+    return new Intl.DateTimeFormat("pt-BR", {
+      month: "long",
+      year: "numeric"
+    }).format(data);
+  }
+
+  private formatarCpfPmoc(valor: string | null) {
+    const digitos = valor?.replace(/\D/g, "") ?? "";
+
+    if (digitos.length !== 11) {
+      return valor || "________________";
+    }
+
+    return `${digitos.slice(0, 9)}-${digitos.slice(9)}`;
   }
 
   private quebrarLinhaPdf(linha: string, limite: number) {
