@@ -620,6 +620,28 @@ export class AdminService {
 
     const maquinas = cliente.equipamentos.map((equipamento) => this.mapearMaquinaPreviaPmoc(equipamento));
     const pendencias = this.obterPendenciasPreviaPmoc(cliente, maquinas);
+    const anoPmoc = this.obterAnoPmoc(maquinas);
+    const relatoriosPmoc = await this.prisma.pmocRelatorio.findMany({
+      where: {
+        empresaId: usuario.empresa_id,
+        clienteId: cliente.id,
+        criadoEm: {
+          gte: new Date(Date.UTC(anoPmoc, 0, 1, 0, 0, 0, 0)),
+          lt: new Date(Date.UTC(anoPmoc + 1, 0, 1, 0, 0, 0, 0))
+        }
+      },
+      orderBy: {
+        criadoEm: "desc"
+      },
+      select: {
+        id: true,
+        status: true,
+        pdfHash: true,
+        criadoEm: true,
+        emailAgendadoEm: true,
+        assinadoEm: true
+      }
+    });
 
     return {
       cliente: {
@@ -641,6 +663,7 @@ export class AdminService {
       total_os_concluidas: maquinas.reduce((total, maquina) => total + maquina.os_concluidas.length, 0),
       pronto_para_pdf: pendencias.length === 0,
       pendencias,
+      pmoc_meses: this.mapearMesesPmoc(anoPmoc, relatoriosPmoc),
       maquinas
     };
   }
@@ -1814,6 +1837,50 @@ export class AdminService {
     };
   }
 
+  private obterAnoPmoc(maquinas: Array<{ os_concluidas: Array<{ concluida_em: string | null }> }>) {
+    const periodo = this.obterPeriodoPreviaPmoc(maquinas);
+    const dataBase = periodo.fim ? new Date(periodo.fim) : new Date();
+    return dataBase.getUTCFullYear();
+  }
+
+  private mapearMesesPmoc(
+    ano: number,
+    relatorios: Array<{
+      id: string;
+      status: PmocRelatorioStatus;
+      pdfHash: string;
+      criadoEm: Date;
+      emailAgendadoEm: Date | null;
+      assinadoEm: Date | null;
+    }>
+  ) {
+    const labels = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+    const porMes = new Map<number, (typeof relatorios)[number]>();
+
+    for (const relatorio of relatorios) {
+      const mes = relatorio.criadoEm.getUTCMonth();
+      if (!porMes.has(mes)) {
+        porMes.set(mes, relatorio);
+      }
+    }
+
+    return labels.map((label, indice) => {
+      const relatorio = porMes.get(indice);
+
+      return {
+        mes: label,
+        ano,
+        numero: indice + 1,
+        status: relatorio ? "enviado" : "pendente",
+        relatorio_id: relatorio?.id ?? null,
+        relatorio_status: relatorio?.status ?? null,
+        enviado_em: relatorio?.criadoEm.toISOString() ?? null,
+        assinado_em: relatorio?.assinadoEm?.toISOString() ?? null,
+        pdf_hash: relatorio?.pdfHash ?? null
+      };
+    });
+  }
+
   private gerarPdfBasicoPmoc(previa: PreviaPmocCliente) {
     const paginas: string[][] = [
       [
@@ -1891,6 +1958,10 @@ export class AdminService {
       `DECLARACAO DE CONFORMIDADE - ${this.formatarMesAnoPmoc(previa.periodo.fim)}`,
       "",
       "Declaro que os servicos de manutencao listados neste documento foram executados conforme o Programa de Manutencao, Operacao e Controle (PMOC), de acordo com a Resolucao ANVISA RE-09/2003, sendo de responsabilidade tecnica do profissional abaixo identificado.",
+      "",
+      "",
+      "",
+      "",
       "",
       "",
       "______________________________________________",

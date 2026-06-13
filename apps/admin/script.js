@@ -103,6 +103,7 @@ const pmocBackToClientsButton = document.querySelector("#pmocBackToClientsButton
 const pmocGenerateReportButton = document.querySelector("#pmocGenerateReportButton");
 const pmocRequestSignatureButton = document.querySelector("#pmocRequestSignatureButton");
 const pmocDossierAlerts = document.querySelector("#pmocDossierAlerts");
+const pmocMonthBoard = document.querySelector("#pmocMonthBoard");
 const pmocMachineList = document.querySelector("#pmocMachineList");
 const relatoriosStatus = document.querySelector("#relatoriosStatus");
 const reportGrid = document.querySelector("#reportGrid");
@@ -1013,6 +1014,7 @@ function closePmocDossier() {
   pmocDossierTitle.textContent = "Selecione um cliente PMOC";
   pmocDossierMeta.textContent = "Maquinas, pendencias e preparo do relatorio aparecem aqui.";
   pmocDossierAlerts.innerHTML = "";
+  pmocMonthBoard.innerHTML = "";
   pmocMachineList.innerHTML = "";
   pmocGenerateReportButton.disabled = true;
   pmocRequestSignatureButton.disabled = true;
@@ -1066,6 +1068,7 @@ async function openPmocDossier(clientId) {
   pmocDossierTitle.textContent = client.nome;
   pmocDossierMeta.textContent = "Carregando maquinas do cliente...";
   pmocDossierAlerts.innerHTML = "";
+  pmocMonthBoard.innerHTML = "";
   pmocMachineList.innerHTML = '<article class="pmoc-empty"><strong>Carregando maquinas.</strong><span>Buscando equipamentos vinculados a este cliente.</span></article>';
   pmocGenerateReportButton.disabled = true;
   pmocRequestSignatureButton.disabled = true;
@@ -1083,6 +1086,13 @@ async function openPmocDossier(clientId) {
   pmocRequestSignatureButton.disabled = !hasCompletedPmocMaintenance(machines) || !client.engenheiro_responsavel;
   renderPmocDossierAlerts(client, machines);
   renderPmocMachines(machines);
+
+  const preview = await fetchAdminJson(`/admin/pmoc/clientes/${client.id}/previa`, pmocDossierMeta);
+
+  if (preview) {
+    renderPmocMonths(preview.pmoc_meses || []);
+    pmocDossierMeta.textContent = `${preview.total_maquinas || machines.length} maquinas - ${preview.total_os_concluidas || 0} OS concluidas - ${client.engenheiro_responsavel?.nome || "sem engenheiro"}`;
+  }
 }
 
 function renderPmocDossierAlerts(client, machines) {
@@ -1174,6 +1184,38 @@ function renderPmocMachines(machines) {
     `;
     pmocMachineList.appendChild(card);
   }
+}
+
+function renderPmocMonths(months) {
+  if (!pmocMonthBoard) {
+    return;
+  }
+
+  if (!months.length) {
+    pmocMonthBoard.innerHTML = "";
+    return;
+  }
+
+  pmocMonthBoard.innerHTML = `
+    <div class="pmoc-month-board-header">
+      <strong>Controle mensal PMOC</strong>
+      <span>Vermelho: ja enviado ao engenheiro. Verde: falta solicitar.</span>
+    </div>
+    <div class="pmoc-month-grid">
+      ${months
+        .map((month) => {
+          const isSent = month.status === "enviado";
+
+          return `
+            <article class="pmoc-month-card ${isSent ? "is-sent" : "is-pending"}">
+              <strong>${escapeHtml(month.mes)}</strong>
+              <span>${isSent ? "Enviado" : "Falta enviar"}</span>
+            </article>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
 }
 
 function getPmocMachineStatus(machine) {
@@ -1285,6 +1327,7 @@ async function requestPmocEngineerSignature() {
     pmocDossierMeta.textContent = result.email_engenheiro_agendado
       ? "PDF PMOC gerado e e-mail de assinatura agendado para o engenheiro."
       : "Fluxo de assinatura criado. Verifique a fila de automacoes.";
+    await openPmocDossier(selectedPmocDossierClientId);
   } catch {
     pmocDossierMeta.textContent = "API indisponivel ao solicitar assinatura.";
   } finally {

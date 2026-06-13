@@ -8,6 +8,7 @@ const token = String(params.get("token") || "").trim();
 const intro = document.querySelector("#pmocSignatureIntro");
 const statusMessage = document.querySelector("#pmocSignatureStatus");
 const confirmButton = document.querySelector("#pmocSignatureConfirmButton");
+const signedPdfInput = document.querySelector("#pmocSignedPdfInput");
 const resultPanel = document.querySelector("#pmocSignatureResultPanel");
 const clientName = document.querySelector("#pmocSignatureClient");
 const engineerMeta = document.querySelector("#pmocSignatureEngineer");
@@ -21,32 +22,55 @@ if (!token) {
 }
 
 confirmButton?.addEventListener("click", async () => {
+  const file = signedPdfInput?.files?.[0];
+
+  if (!file) {
+    statusMessage.textContent = "Selecione o PDF assinado no Gov.br.";
+    return;
+  }
+
+  if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+    statusMessage.textContent = "Envie somente arquivo PDF.";
+    return;
+  }
+
   confirmButton.disabled = true;
-  confirmButton.textContent = "Confirmando...";
-  statusMessage.textContent = "Registrando assinatura...";
+  signedPdfInput.disabled = true;
+  confirmButton.textContent = "Enviando...";
+  statusMessage.textContent = "Enviando PDF assinado...";
 
   try {
+    const pdfAssinadoBase64 = await lerArquivoBase64(file);
     const response = await fetch(`${apiBaseUrl}/site/pmoc/assinaturas/${encodeURIComponent(token)}/confirmar`, {
-      method: "POST"
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        pdf_assinado_base64: pdfAssinadoBase64,
+        pdf_assinado_filename: file.name
+      })
     });
     const result = await response.json().catch(() => ({}));
 
     if (!response.ok) {
       statusMessage.textContent = result.message || "Nao foi possivel confirmar a assinatura.";
       confirmButton.disabled = false;
-      confirmButton.textContent = "Confirmar assinatura";
+      signedPdfInput.disabled = false;
+      confirmButton.textContent = "Enviar PDF assinado";
       return;
     }
 
     statusMessage.textContent = result.email_agendado
       ? "Assinatura registrada e envio ao cliente agendado."
       : "Assinatura registrada.";
-    confirmButton.textContent = "Assinatura confirmada";
+    confirmButton.textContent = "PDF assinado enviado";
     renderAssinatura(result);
   } catch {
     statusMessage.textContent = "API indisponivel. Tente novamente em instantes.";
     confirmButton.disabled = false;
-    confirmButton.textContent = "Confirmar assinatura";
+    signedPdfInput.disabled = false;
+    confirmButton.textContent = "Enviar PDF assinado";
   }
 });
 
@@ -65,7 +89,8 @@ async function carregarAssinatura() {
     renderAssinatura(result);
     statusMessage.textContent = "";
     confirmButton.disabled = result.status === "assinado";
-    confirmButton.textContent = result.status === "assinado" ? "Assinatura confirmada" : "Confirmar assinatura";
+    signedPdfInput.disabled = result.status === "assinado";
+    confirmButton.textContent = result.status === "assinado" ? "PDF assinado enviado" : "Enviar PDF assinado";
   } catch {
     statusMessage.textContent = "API indisponivel. Tente novamente em instantes.";
   }
@@ -74,7 +99,7 @@ async function carregarAssinatura() {
 function renderAssinatura(result) {
   intro.textContent = result.status === "assinado"
     ? "Este relatorio PMOC ja foi assinado."
-    : "Confira os dados do relatorio antes de confirmar a assinatura.";
+    : "Baixe o PDF recebido por e-mail, assine no Gov.br e envie o arquivo assinado nesta pagina.";
   clientName.textContent = result.cliente?.nome || "Cliente";
   engineerMeta.textContent = [
     result.engenheiro_responsavel?.nome,
@@ -83,6 +108,19 @@ function renderAssinatura(result) {
   reportStatus.textContent = formatStatus(result.status);
   reportHash.textContent = result.pdf_hash ? `Hash PDF: ${result.pdf_hash}` : "Hash PDF indisponivel";
   resultPanel.classList.remove("hidden");
+}
+
+function lerArquivoBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const result = String(reader.result || "");
+      resolve(result.replace(/^data:application\/pdf;base64,/i, ""));
+    };
+    reader.onerror = () => reject(new Error("Falha ao ler PDF."));
+    reader.readAsDataURL(file);
+  });
 }
 
 function formatStatus(statusValue) {

@@ -21,13 +21,16 @@ O repositorio ja possui:
 - Painel administrativo web estatico em `apps/admin`.
 - Landing page publica em `apps/landing`, integrada ao endpoint de
   pre-chamados.
+- Fluxo PMOC com previa, PDF, assinatura Gov.br enviada pelo engenheiro e
+  e-mail final ao cliente com PDF assinado anexado.
+- Automacoes SMTP para assinatura PMOC e envio do relatorio assinado.
 - Docker Compose local para PostgreSQL e Adminer.
 - Testes unitarios/HTTP do backend e testes de contrato do frontend.
 - Documentacao de produto, API, telemetria GPS e implantacao.
 
 Ainda estao como roadmap ou documentacao, e nao como app completo neste
-repositorio: aplicativo mobile Flutter, automacoes reais de PDF/e-mail/WhatsApp
-e fluxo gravavel completo de PMOC.
+repositorio: aplicativo mobile Flutter, WhatsApp real, PDF PMOC em formato
+profissional por maquina e fluxo gravavel completo de checklist PMOC no app.
 
 ## Stack
 
@@ -168,8 +171,14 @@ GET  /admin/clientes
 POST /admin/clientes
 PATCH /admin/clientes/:clienteId
 GET  /admin/relatorios
+GET  /admin/pmoc/clientes/:clienteId/previa
+GET  /admin/pmoc/clientes/:clienteId/pdf
+POST /admin/pmoc/clientes/:clienteId/assinatura-engenheiro
 PATCH /admin/pre-chamados/:osId/aprovar
 PATCH /admin/pre-chamados/:osId/rejeitar
+
+GET  /site/pmoc/assinaturas/:token
+POST /site/pmoc/assinaturas/:token/confirmar  # recebe PDF assinado no Gov.br em base64
 
 PATCH /os/:osId/status
 PUT   /os/:osId/identificacao-equipamento
@@ -244,5 +253,13 @@ O plano de implantacao esta documentado em
 [docs/implantacao-producao.md](./docs/implantacao-producao.md). O dominio alvo
 documentado e `airmovebr.com.br`, com subdominios para admin e API.
 
-Antes de publicar, valide DNS, `.env.production`, backup do banco, HTTPS e
-permissoes de acesso.
+Estado operacional atual:
+
+```text
+Branches alinhadas: dev, main, seg
+Branch de deploy:   main
+IP esperado:        191.252.226.11
+```
+
+Antes de publicar, valide DNS, `.env.production`, migrations, SMTP real, backup
+do banco, HTTPS e permissoes de acesso.

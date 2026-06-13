@@ -1,7 +1,7 @@
 ﻿import { test } from "node:test";
 import * as assert from "node:assert/strict";
 import { BadRequestException, ConflictException, NotFoundException } from "@nestjs/common";
-import { AutomacaoTipo, OrdemServicoEventoAcao, OrdemServicoStatus, Prisma, UsuarioRole } from "@prisma/client";
+import { AutomacaoTipo, OrdemServicoEventoAcao, OrdemServicoStatus, PmocRelatorioStatus, Prisma, UsuarioRole } from "@prisma/client";
 import { AdminService } from "./admin.service";
 
 const usuario = {
@@ -514,6 +514,30 @@ test("obterPreviaPmocCliente retorna cliente, engenheiro, maquinas e OS concluid
           }
         ]
       })
+    },
+    pmocRelatorio: {
+      findMany: async ({ where }: { where: Record<string, unknown> }) => {
+        assert.equal(where.empresaId, usuario.empresa_id);
+        assert.equal(where.clienteId, "cliente-1");
+        return [
+          {
+            id: "relatorio-jan",
+            status: PmocRelatorioStatus.assinado,
+            pdfHash: "hash-jan",
+            criadoEm: new Date("2026-01-15T12:00:00.000Z"),
+            emailAgendadoEm: new Date("2026-01-15T12:00:00.000Z"),
+            assinadoEm: new Date("2026-01-16T12:00:00.000Z")
+          },
+          {
+            id: "relatorio-jun",
+            status: PmocRelatorioStatus.aguardando_assinatura_engenheiro,
+            pdfHash: "hash-jun",
+            criadoEm: new Date("2026-06-12T12:00:00.000Z"),
+            emailAgendadoEm: new Date("2026-06-12T12:00:00.000Z"),
+            assinadoEm: null
+          }
+        ];
+      }
     }
   };
   const service = criarService(prisma);
@@ -526,6 +550,25 @@ test("obterPreviaPmocCliente retorna cliente, engenheiro, maquinas e OS concluid
   assert.equal(resposta.total_os_concluidas, 1);
   assert.equal(resposta.pronto_para_pdf, true);
   assert.deepEqual(resposta.pendencias, []);
+  assert.equal(resposta.pmoc_meses.length, 12);
+  assert.deepEqual(
+    resposta.pmoc_meses.map((mes) => ({ mes: mes.mes, status: mes.status })),
+    [
+      { mes: "jan", status: "enviado" },
+      { mes: "fev", status: "pendente" },
+      { mes: "mar", status: "pendente" },
+      { mes: "abr", status: "pendente" },
+      { mes: "mai", status: "pendente" },
+      { mes: "jun", status: "enviado" },
+      { mes: "jul", status: "pendente" },
+      { mes: "ago", status: "pendente" },
+      { mes: "set", status: "pendente" },
+      { mes: "out", status: "pendente" },
+      { mes: "nov", status: "pendente" },
+      { mes: "dez", status: "pendente" }
+    ]
+  );
+  assert.equal(resposta.pmoc_meses[5].relatorio_id, "relatorio-jun");
   assert.equal(resposta.maquinas[0].os_concluidas[0].checklist?.servico_realizado, "Limpeza");
   assert.equal(resposta.maquinas[0].os_concluidas[0].assinatura?.latitude, -23.3047);
 });
@@ -554,6 +597,9 @@ test("gerarPdfPmocCliente retorna PDF com nome de arquivo e conteudo oficial", a
         enderecos: [{ cidade: "Londrina", uf: "PR", bairro: "Centro" }],
         equipamentos: []
       })
+    },
+    pmocRelatorio: {
+      findMany: async () => []
     }
   };
   const service = criarService(prisma);
@@ -572,6 +618,13 @@ test("gerarPdfPmocCliente retorna PDF com nome de arquivo e conteudo oficial", a
   assert.match(pdf, /CPF: 456789123-45/);
   assert.match(pdf, /CREA: CREA-PR 654321/);
   assert.match(pdf, /Referente: junho de 2026/);
+  const linhasPdf = pdf.split("\n");
+  const linhaDeclaracao = linhasPdf.findIndex((linha) => linha.includes("abaixo identificado."));
+  const linhaAssinatura = linhasPdf.findIndex((linha) => linha.includes("______________________________________________"));
+  assert.equal(
+    linhasPdf.slice(linhaDeclaracao + 1, linhaAssinatura).filter((linha) => linha === "() Tj T*").length,
+    6
+  );
   assert.doesNotMatch(pdf, /Responsavel pelo Empreendimento/);
 });
 
@@ -605,6 +658,7 @@ test("solicitarAssinaturaPmocEngenheiro cria relatorio com token e hash do PDF",
       })
     },
     pmocRelatorio: {
+      findMany: async () => [],
       create: async ({ data }: { data: unknown }) => {
         chamadas.createData = data;
         return {

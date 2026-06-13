@@ -25,11 +25,18 @@
 
         <div class="access-copy">
           <span class="kicker">Relatorio PMOC</span>
-          <h1>Confirme a assinatura tecnica</h1>
+          <h1>Envie o PDF assinado no Gov.br</h1>
           <p id="pmocSignatureIntro">Validando token de assinatura.</p>
         </div>
 
-        <button type="button" id="pmocSignatureConfirmButton" disabled>Confirmar assinatura</button>
+        <label class="field">
+          <span>PDF assinado no Gov.br</span>
+          <input type="file" id="pmocSignedPdfInput" accept="application/pdf" disabled />
+        </label>
+
+        <a href="https://assinador.iti.br/" target="_blank" rel="noopener">Abrir assinador Gov.br</a>
+
+        <button type="button" id="pmocSignatureConfirmButton" disabled>Enviar PDF assinado</button>
         <p class="form-status" id="pmocSignatureStatus" role="status"></p>
       </section>
 

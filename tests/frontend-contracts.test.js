@@ -122,11 +122,16 @@ test("landing possui assinatura publica de PMOC por token", () => {
 
   assert.match(html, /id="pmocSignaturePanel"/);
   assert.match(html, /id="pmocSignatureStatus"/);
+  assert.match(html, /id="pmocSignedPdfInput"/);
+  assert.match(html, /type="file"/);
+  assert.match(html, /accept="application\/pdf"/);
   assert.match(html, /id="pmocSignatureConfirmButton"/);
   assert.match(script, /URLSearchParams\(window\.location\.search\)/);
   assert.match(script, /\/site\/pmoc\/assinaturas\/\$\{encodeURIComponent\(token\)\}/);
   assert.match(script, /\/site\/pmoc\/assinaturas\/\$\{encodeURIComponent\(token\)\}\/confirmar/);
   assert.match(script, /method:\s*"POST"/);
+  assert.match(script, /pdf_assinado_base64/);
+  assert.match(script, /FileReader/);
   assert.match(script, /pdf_hash/);
 });
 
@@ -148,6 +153,7 @@ test("admin possui triagem PMOC por cliente e conversao com engenheiro", () => {
   assert.match(html, /id="pmocDossierPanel"/);
   assert.match(html, /id="pmocDossierList"/);
   assert.match(html, /id="pmocDossierDetail"/);
+  assert.match(html, /id="pmocMonthBoard"/);
   assert.match(html, /id="pmocBackToClientsButton"/);
   assert.match(html, /Voltar para clientes/);
   assert.match(html, /id="pmocMachineList"/);
@@ -162,6 +168,10 @@ test("admin possui triagem PMOC por cliente e conversao com engenheiro", () => {
   assert.match(script, /function openPmocDossier/);
   assert.match(script, /function closePmocDossier/);
   assert.match(script, /function renderPmocMachines/);
+  assert.match(script, /function renderPmocMonths/);
+  assert.match(script, /pmoc_meses/);
+  assert.match(script, /is-sent/);
+  assert.match(script, /is-pending/);
   assert.match(script, /function openPmocReportPreview/);
   assert.match(script, /hasCompletedPmocMaintenance/);
   assert.match(script, /pmocGenerateReportButton\?\.addEventListener\("click", openPmocReportPreview\)/);
@@ -184,6 +194,9 @@ test("admin possui triagem PMOC por cliente e conversao com engenheiro", () => {
   assert.match(styles, /\.pmoc-dossier-row/);
   assert.match(styles, /\.pmoc-dossier-detail/);
   assert.match(styles, /\.pmoc-workspace\.is-dossier-open/);
+  assert.match(styles, /\.pmoc-month-grid/);
+  assert.match(styles, /\.pmoc-month-card\.is-sent/);
+  assert.match(styles, /\.pmoc-month-card\.is-pending/);
   assert.match(styles, /\.pmoc-machine-card/);
   assert.doesNotMatch(html, /id="pmocEquipmentFields"/);
   assert.doesNotMatch(html, /id="pmocChecklist"/);

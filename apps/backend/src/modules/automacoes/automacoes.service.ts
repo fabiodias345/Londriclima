@@ -192,8 +192,8 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
           `Data: ${this.formatarDataEmail(dados.data_envio)}`,
           `Relatorio: ${dados.relatorio_id}`,
           "",
-          "PDF em anexo.",
-          "Acesse o link para assinar:",
+          "PDF original em anexo.",
+          "Assine o PDF no portal Gov.br e envie o arquivo assinado pelo link abaixo:",
           dados.link_assinatura
         ].join("\n"),
         attachments: [

@@ -362,6 +362,16 @@ function criarPrismaMock() {
           atualizadoEm: new Date("2026-06-12T12:00:00.000Z")
         };
       },
+      findMany: async () => [
+        {
+          id: "relatorio-jun",
+          status: PmocRelatorioStatus.aguardando_assinatura_engenheiro,
+          pdfHash: "hash-pdf",
+          criadoEm: new Date("2026-06-12T12:00:00.000Z"),
+          emailAgendadoEm: new Date("2026-06-12T12:00:00.000Z"),
+          assinadoEm: null
+        }
+      ],
       findUnique: async ({ where }: { where: { tokenAssinatura?: string } }) =>
         where.tokenAssinatura === assinaturaPmocToken
           ? {
@@ -579,7 +589,11 @@ test("GET /api/v1/site/pmoc/assinaturas/:token consulta relatorio para engenheir
 test("POST /api/v1/site/pmoc/assinaturas/:token/confirmar assina e agenda email ao cliente", async () => {
   const response = await fetch(`${baseUrl}/api/v1/site/pmoc/assinaturas/${assinaturaPmocToken}/confirmar`, {
     method: "POST",
-    headers: jsonHeaders()
+    headers: jsonHeaders(),
+    body: JSON.stringify({
+      pdf_assinado_base64: Buffer.from("%PDF-1.7\nassinado-govbr").toString("base64"),
+      pdf_assinado_filename: "pmoc-maria-souza-assinado-govbr.pdf"
+    })
   });
   const body = await lerJson(response);
 

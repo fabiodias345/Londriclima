@@ -26,7 +26,7 @@ export class SiteController {
   }
 
   @Post("pmoc/assinaturas/:token/confirmar")
-  confirmarAssinaturaPmoc(@Param("token") token: string) {
-    return this.siteService.confirmarAssinaturaPmoc(token);
+  confirmarAssinaturaPmoc(@Param("token") token: string, @Body() dto: unknown) {
+    return this.siteService.confirmarAssinaturaPmoc(token, dto);
   }
 }

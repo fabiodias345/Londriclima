@@ -150,8 +150,8 @@ test("processarPendentes envia link de assinatura PMOC para o engenheiro", async
       "Data: 12/06/2026 09:00",
       "Relatorio: relatorio-1",
       "",
-      "PDF em anexo.",
-      "Acesse o link para assinar:",
+      "PDF original em anexo.",
+      "Assine o PDF no portal Gov.br e envie o arquivo assinado pelo link abaixo:",
       "https://airmovebr.com.br/landing/assinatura-pmoc.html?token=abc123"
     ].join("\n"),
     attachments: [

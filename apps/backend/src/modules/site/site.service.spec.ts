@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
-import { InternalServerErrorException, NotFoundException, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, NotFoundException, UnauthorizedException } from "@nestjs/common";
+import { createHash } from "node:crypto";
 import { AutomacaoTipo, OrdemServicoEventoAcao, OrdemServicoStatus, PmocRelatorioStatus } from "@prisma/client";
 import { PasswordHashService } from "../auth/password-hash.service";
 import { SiteService } from "./site.service";
@@ -290,7 +291,10 @@ test("consultarAssinaturaPmoc retorna relatorio publico pelo token", async () =>
   assert.equal(resposta.pdf_hash, "hash-pdf");
 });
 
-test("confirmarAssinaturaPmoc assina relatorio e agenda envio de email ao cliente", async () => {
+test("confirmarAssinaturaPmoc exige PDF assinado no Gov.br e agenda envio de email ao cliente", async () => {
+  const pdfAssinado = Buffer.from("%PDF-1.7\nassinado-govbr");
+  const pdfAssinadoBase64 = pdfAssinado.toString("base64");
+  const pdfAssinadoHash = createHash("sha256").update(pdfAssinado).digest("hex");
   const chamadas = {
     updateData: undefined as unknown,
     emailData: undefined as unknown
@@ -302,7 +306,7 @@ test("confirmarAssinaturaPmoc assina relatorio e agenda envio de email ao client
         return {
           id: "relatorio-1",
           status: PmocRelatorioStatus.assinado,
-          pdfHash: "hash-pdf",
+          pdfHash: (data as { pdfHash: string }).pdfHash,
           assinadoEm: new Date("2026-06-12T12:00:00.000Z"),
           emailCliente: "maria@example.com",
           emailAgendadoEm: new Date("2026-06-12T12:00:00.000Z"),
@@ -342,16 +346,12 @@ test("confirmarAssinaturaPmoc assina relatorio e agenda envio de email ao client
     },
     $transaction: async (callback: (tx: unknown) => unknown) => callback(tx)
   };
-  const adminService = {
-    gerarPdfPmocCliente: async () => ({
-      filename: "pmoc-maria-souza.pdf",
-      contentType: "application/pdf",
-      buffer: Buffer.from("%PDF-1.4\npmoc")
-    })
-  };
-  const service = criarService(prisma, adminService);
+  const service = criarService(prisma);
 
-  const resposta = await service.confirmarAssinaturaPmoc("token-assinatura");
+  const resposta = await service.confirmarAssinaturaPmoc("token-assinatura", {
+    pdf_assinado_base64: pdfAssinadoBase64,
+    pdf_assinado_filename: "pmoc-maria-souza-assinado-govbr.pdf"
+  });
 
   assert.equal((chamadas.updateData as { status: PmocRelatorioStatus }).status, PmocRelatorioStatus.assinado);
   assert.equal((chamadas.updateData as { emailCliente: string }).emailCliente, "maria@example.com");
@@ -374,17 +374,18 @@ test("confirmarAssinaturaPmoc assina relatorio e agenda envio de email ao client
       engenheiro_nome: "Paulo Londriclima",
       engenheiro_cpf: "12345678901",
       engenheiro_crea: "CREA-PR 123456",
-      pdf_hash: "hash-pdf",
-      pdf_filename: "pmoc-maria-souza.pdf",
-      pdf_base64: Buffer.from("%PDF-1.4\npmoc").toString("base64")
+      pdf_hash: pdfAssinadoHash,
+      pdf_filename: "pmoc-maria-souza-assinado-govbr.pdf",
+      pdf_base64: pdfAssinadoBase64
     }
   );
   assert.equal(resposta.status, PmocRelatorioStatus.assinado);
+  assert.equal(resposta.pdf_hash, pdfAssinadoHash);
   assert.equal(resposta.email_agendado, true);
   assert.equal(resposta.historico_finalizado, true);
 });
 
-test("confirmarAssinaturaPmoc bloqueia assinatura quando nao consegue anexar PDF", async () => {
+test("confirmarAssinaturaPmoc rejeita confirmacao sem PDF assinado valido", async () => {
   const chamadas = {
     transacao: false
   };
@@ -418,6 +419,9 @@ test("confirmarAssinaturaPmoc bloqueia assinatura quando nao consegue anexar PDF
   };
   const service = criarService(prisma);
 
-  await assert.rejects(() => service.confirmarAssinaturaPmoc("token-assinatura"), InternalServerErrorException);
+  await assert.rejects(
+    () => service.confirmarAssinaturaPmoc("token-assinatura", { pdf_assinado_base64: Buffer.from("texto").toString("base64") }),
+    BadRequestException
+  );
   assert.equal(chamadas.transacao, false);
 });

@@ -1168,6 +1168,78 @@ form button,
   line-height: 1.45;
 }
 
+.pmoc-month-board {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--white);
+}
+
+.pmoc-month-board:empty {
+  display: none;
+}
+
+.pmoc-month-board-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.pmoc-month-board-header strong {
+  font-family: "Archivo", sans-serif;
+  font-size: 18px;
+}
+
+.pmoc-month-board-header span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.pmoc-month-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(72px, 1fr));
+  gap: 8px;
+}
+
+.pmoc-month-card {
+  display: grid;
+  gap: 4px;
+  min-height: 62px;
+  align-content: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 10px;
+  text-align: center;
+}
+
+.pmoc-month-card strong {
+  text-transform: uppercase;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+}
+
+.pmoc-month-card span {
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.pmoc-month-card.is-sent {
+  color: #7f1d1d;
+  border-color: rgba(220, 38, 38, 0.28);
+  background: rgba(254, 226, 226, 0.92);
+}
+
+.pmoc-month-card.is-pending {
+  color: #065f46;
+  border-color: rgba(16, 185, 129, 0.24);
+  background: rgba(209, 250, 229, 0.9);
+}
+
 .pmoc-machine-list {
   display: grid;
   gap: 12px;
@@ -1239,6 +1311,10 @@ form button,
   .pmoc-results-panel {
     border-right: 0;
     border-bottom: 1px solid var(--line);
+  }
+
+  .pmoc-month-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .request-actions {
