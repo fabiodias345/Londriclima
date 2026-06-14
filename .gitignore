@@ -17,6 +17,8 @@ pnpm-debug.log*
 
 storage/*
 !storage/.gitkeep
+apps/backend/storage/*
+!apps/backend/storage/.gitkeep
 
 .DS_Store
 Thumbs.db

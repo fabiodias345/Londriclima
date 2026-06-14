@@ -6,6 +6,7 @@ import * as tls from "node:tls";
 export type EmailMessage = {
   from: string;
   to: string;
+  bcc?: string | string[];
   subject: string;
   text: string;
   attachments?: Array<{
@@ -16,10 +17,15 @@ export type EmailMessage = {
 };
 
 export interface EmailSender {
-  enviar(message: EmailMessage): Promise<void>;
+  enviar(message: EmailMessage): Promise<EmailDeliveryResult>;
 }
 
 type SmtpSocket = net.Socket | tls.TLSSocket;
+
+export type EmailDeliveryResult = {
+  recipient: string;
+  response: string;
+};
 
 @Injectable()
 export class SmtpEmailService implements EmailSender {
@@ -58,11 +64,17 @@ export class SmtpEmailService implements EmailSender {
       }
 
       await this.enviarComando(socket, `MAIL FROM:<${this.extrairEndereco(message.from)}>`, [250]);
-      await this.enviarComando(socket, `RCPT TO:<${this.extrairEndereco(message.to)}>`, [250, 251]);
+      for (const recipient of this.listarDestinatarios(message)) {
+        await this.enviarComando(socket, `RCPT TO:<${this.extrairEndereco(recipient)}>`, [250, 251]);
+      }
       await this.enviarComando(socket, "DATA", [354]);
       socket.write(`${this.montarMensagem(message)}\r\n.\r\n`);
-      await this.lerResposta(socket, [250]);
+      const response = await this.lerResposta(socket, [250]);
       await this.enviarComando(socket, "QUIT", [221]);
+      return {
+        recipient: this.listarDestinatarios(message).map((recipient) => this.extrairEndereco(recipient)).join(","),
+        response: response.trim()
+      };
     } finally {
       socket.destroy();
     }
@@ -198,6 +210,11 @@ export class SmtpEmailService implements EmailSender {
 
   private extrairEndereco(valor: string) {
     return valor.match(/<(?<email>[^>]+)>/)?.groups?.email ?? valor;
+  }
+
+  private listarDestinatarios(message: EmailMessage) {
+    const bcc = Array.isArray(message.bcc) ? message.bcc : message.bcc ? [message.bcc] : [];
+    return [message.to, ...bcc].filter((recipient) => recipient.trim());
   }
 
   private codificarCabecalho(valor: string) {

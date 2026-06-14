@@ -1084,23 +1084,46 @@ async function openPmocDossier(clientId) {
   pmocDossierMeta.textContent = `${machines.length} maquinas - ${client.os_abertas || 0} OS abertas - ${client.engenheiro_responsavel?.nome || "sem engenheiro"}`;
   pmocGenerateReportButton.disabled = !hasCompletedPmocMaintenance(machines);
   pmocRequestSignatureButton.disabled = !hasCompletedPmocMaintenance(machines) || !client.engenheiro_responsavel;
-  renderPmocDossierAlerts(client, machines);
+  renderPmocDossierAlerts(client, machines, null);
   renderPmocMachines(machines);
 
   const preview = await fetchAdminJson(`/admin/pmoc/clientes/${client.id}/previa`, pmocDossierMeta);
 
   if (preview) {
+    const hasPendingSignature = preview.assinatura_atual?.status === "aguardando_assinatura_engenheiro";
+    const hasSignedCurrentMonth = getCurrentPmocMonth(preview)?.relatorio_status === "assinado";
+    const isTestClient = isPmocTestClient(client);
+    const canRequestSignature = (!hasPendingSignature || isTestClient) && (!hasSignedCurrentMonth || isTestClient) && preview.pronto_para_pdf;
     renderPmocMonths(preview.pmoc_meses || []);
+    renderPmocDossierAlerts(client, machines, preview);
     pmocDossierMeta.textContent = `${preview.total_maquinas || machines.length} maquinas - ${preview.total_os_concluidas || 0} OS concluidas - ${client.engenheiro_responsavel?.nome || "sem engenheiro"}`;
+    pmocRequestSignatureButton.disabled = !canRequestSignature;
+    pmocRequestSignatureButton.textContent = isTestClient
+      ? "Solicitar assinatura"
+      : hasSignedCurrentMonth
+      ? "PMOC enviado"
+      : hasPendingSignature
+      ? "Assinatura solicitada"
+      : "Solicitar assinatura";
   }
 }
 
-function renderPmocDossierAlerts(client, machines) {
-  const alerts = getPmocDossierAlerts(client, machines);
+function getCurrentPmocMonth(preview) {
+  const months = preview?.pmoc_meses || [];
+  const date = preview?.periodo?.fim ? new Date(preview.periodo.fim) : new Date();
+  const number = Number.isNaN(date.getTime()) ? new Date().getMonth() + 1 : date.getUTCMonth() + 1;
+  return months.find((month) => month.numero === number) || null;
+}
+
+function isPmocTestClient(client) {
+  return String(client?.nome || "").trim().toLowerCase() === "cris magnani";
+}
+
+function renderPmocDossierAlerts(client, machines, preview) {
+  const alerts = getPmocDossierAlerts(client, machines, preview);
   pmocDossierAlerts.innerHTML = "";
 
   if (!alerts.length) {
-    pmocDossierAlerts.innerHTML = '<article class="pmoc-alert success"><strong>Cadastro base pronto.</strong><span>Cliente, engenheiro e maquinas ja estao separados para o futuro relatorio.</span></article>';
     return;
   }
 
@@ -1112,8 +1135,29 @@ function renderPmocDossierAlerts(client, machines) {
   }
 }
 
-function getPmocDossierAlerts(client, machines) {
+function getPmocDossierAlerts(client, machines, preview) {
   const alerts = [];
+  const currentSignature = preview?.assinatura_atual;
+
+  if (currentSignature?.status === "assinado") {
+    alerts.push({
+      tone: "success",
+      title: "PMOC enviado ao cliente",
+      text: currentSignature.assinado_em
+        ? `Relatorio assinado em ${formatDateTime(currentSignature.assinado_em)}.`
+        : "Relatorio assinado e envio final agendado."
+    });
+  }
+
+  if (currentSignature?.status === "aguardando_assinatura_engenheiro") {
+    alerts.push({
+      tone: "success",
+      title: "Assinatura solicitada ao engenheiro",
+      text: currentSignature.assinafy_document_id
+        ? `Assinafy recebeu o documento. Status: ${currentSignature.assinafy_status || "aguardando assinatura"}.`
+        : "PDF PMOC ja foi gerado e enviado para assinatura do engenheiro."
+    });
+  }
 
   if (!client.engenheiro_responsavel) {
     alerts.push({
@@ -1199,23 +1243,35 @@ function renderPmocMonths(months) {
   pmocMonthBoard.innerHTML = `
     <div class="pmoc-month-board-header">
       <strong>Controle mensal PMOC</strong>
-      <span>Vermelho: ja enviado ao engenheiro. Verde: falta solicitar.</span>
+      <span>Vermelho: falta solicitar. Amarelo: aguardando assinatura. Verde: enviado ao cliente.</span>
     </div>
     <div class="pmoc-month-grid">
       ${months
         .map((month) => {
-          const isSent = month.status === "enviado";
+          const status = getPmocMonthStatus(month);
 
           return `
-            <article class="pmoc-month-card ${isSent ? "is-sent" : "is-pending"}">
+            <article class="pmoc-month-card ${status.className}">
               <strong>${escapeHtml(month.mes)}</strong>
-              <span>${isSent ? "Enviado" : "Falta enviar"}</span>
+              <span>${escapeHtml(status.label)}</span>
             </article>
           `;
         })
         .join("")}
     </div>
   `;
+}
+
+function getPmocMonthStatus(month) {
+  if (month.relatorio_status === "assinado") {
+    return { className: "is-sent", label: "Enviado ao cliente" };
+  }
+
+  if (month.relatorio_status === "aguardando_assinatura_engenheiro" || month.assinafy_status === "pending") {
+    return { className: "is-waiting-signature", label: "Aguardando assinatura" };
+  }
+
+  return { className: "is-pending", label: "Falta solicitar" };
 }
 
 function getPmocMachineStatus(machine) {
@@ -1309,7 +1365,7 @@ async function requestPmocEngineerSignature() {
   pmocDossierMeta.textContent = "Criando fluxo de assinatura do engenheiro...";
 
   try {
-    const response = await fetch(`${apiBaseUrl}/admin/pmoc/clientes/${selectedPmocDossierClientId}/assinatura-engenheiro`, {
+    const response = await fetch(`${apiBaseUrl}/assinaturas/pmoc/clientes/${selectedPmocDossierClientId}/assinafy`, {
       method: "POST",
       headers: authHeaders()
     });
@@ -1324,9 +1380,9 @@ async function requestPmocEngineerSignature() {
     }
 
     const result = await response.json();
-    pmocDossierMeta.textContent = result.email_engenheiro_agendado
-      ? "PDF PMOC gerado e e-mail de assinatura agendado para o engenheiro."
-      : "Fluxo de assinatura criado. Verifique a fila de automacoes.";
+    pmocDossierMeta.textContent = result.assinafy_document_id
+      ? "Assinatura solicitada ao engenheiro pela Assinafy."
+      : "Fluxo de assinatura criado.";
     await openPmocDossier(selectedPmocDossierClientId);
   } catch {
     pmocDossierMeta.textContent = "API indisponivel ao solicitar assinatura.";

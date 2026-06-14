@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nest
 import { ConfigService } from "@nestjs/config";
 import { AutomacaoStatus, AutomacaoTipo, Prisma } from "@prisma/client";
 import { PrismaService } from "../../database/prisma.service";
-import { EmailSender, SmtpEmailService } from "./smtp-email.service";
+import { EmailDeliveryResult, EmailSender, SmtpEmailService } from "./smtp-email.service";
 
 type AutomacaoEmailPayload = {
   tipo?: unknown;
@@ -132,14 +132,16 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
         }
 
         try {
-          await this.processarEmail(automacao.payload);
+          const entrega = await this.processarEmail(automacao.payload);
+          this.validarEntregaSmtp(entrega);
           await this.prisma.automacaoAgendada.update({
             where: {
               id: automacao.id
             },
             data: {
               status: AutomacaoStatus.concluida,
-              erroUltimaTentativa: null
+              erroUltimaTentativa: null,
+              payload: this.anexarEntregaSmtp(automacao.payload, entrega, agora) as Prisma.InputJsonValue
             }
           });
           concluidas += 1;
@@ -148,13 +150,7 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
             where: {
               id: automacao.id
             },
-            data: {
-              status: AutomacaoStatus.falhou,
-              tentativas: {
-                increment: 1
-              },
-              erroUltimaTentativa: this.obterMensagemErro(error)
-            }
+            data: this.montarFalhaAutomacao(automacao.tentativas, this.obterMensagemErro(error), agora)
           });
           falhas += 1;
         }
@@ -172,7 +168,51 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
 
   private async processarEmail(payload: Prisma.JsonValue) {
     const email = this.montarEmail(payload);
-    await this.emailSender.enviar(email);
+    return this.emailSender.enviar(email);
+  }
+
+  private validarEntregaSmtp(entrega: EmailDeliveryResult | undefined) {
+    if (!entrega?.recipient?.trim() || !entrega.response?.trim()) {
+      throw new Error("Entrega SMTP sem comprovante.");
+    }
+  }
+
+  private montarFalhaAutomacao(tentativasAtuais: number, mensagem: string, agora: Date) {
+    const proximaTentativa = tentativasAtuais + 1;
+    const maxTentativas = Number(this.config.get<number | string>("AUTOMACOES_MAX_TENTATIVAS", 3));
+    const data: Prisma.AutomacaoAgendadaUpdateInput = {
+      status: AutomacaoStatus.falhou,
+      tentativas: {
+        increment: 1
+      },
+      erroUltimaTentativa: mensagem
+    };
+
+    if (proximaTentativa < maxTentativas) {
+      data.status = AutomacaoStatus.pendente;
+      data.executarEm = new Date(agora.getTime() + this.retryDelayMs());
+    }
+
+    return data;
+  }
+
+  private retryDelayMs() {
+    return Number(this.config.get<number | string>("AUTOMACOES_RETRY_DELAY_MS", 5 * 60 * 1000));
+  }
+
+  private anexarEntregaSmtp(payload: Prisma.JsonValue, entrega: EmailDeliveryResult, enviadoEm: Date): Prisma.JsonValue {
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+      return payload;
+    }
+
+    return {
+      ...payload,
+      smtp_entrega: {
+        destinatario: entrega.recipient,
+        resposta: entrega.response,
+        enviado_em: enviadoEm.toISOString()
+      }
+    };
   }
 
   private montarEmail(payload: Prisma.JsonValue) {
@@ -206,9 +246,12 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
       };
     }
 
+    const internalCopyEmail = this.config.get<string>("PMOC_INTERNAL_COPY_EMAIL");
+
     return {
       from,
       to: dados.cliente_email,
+      ...(internalCopyEmail?.trim() ? { bcc: internalCopyEmail.trim() } : {}),
       subject: `Relatorio Tecnico PMOC - ${this.formatarMesAnoAssunto(dados.data_envio)} - ${dados.cliente_nome}`,
       text: [
         `Prezado(a) Senhor(a) ${this.obterSobrenomeCliente(dados.cliente_nome)},`,

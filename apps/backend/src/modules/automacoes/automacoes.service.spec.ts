@@ -51,6 +51,10 @@ test("processarPendentes envia email PMOC e marca automacao como concluida", asy
   const emailSender: EmailSender = {
     enviar: async (email) => {
       chamadas.email = email;
+      return {
+        response: "250 2.0.0 OK smtp-id - gsmtp",
+        recipient: email.to
+      };
     }
   };
   const service = new AutomacoesService(prisma as never, emailSender, criarConfig({ SMTP_FROM: "AIRMOVEBR <noreply@example.com>" }) as never);
@@ -93,9 +97,84 @@ test("processarPendentes envia email PMOC e marca automacao como concluida", asy
     where: { id: "automacao-1" },
     data: {
       status: AutomacaoStatus.concluida,
-      erroUltimaTentativa: null
+      erroUltimaTentativa: null,
+      payload: {
+        tipo: "pmoc_relatorio_assinado",
+        relatorio_id: "relatorio-1",
+        cliente_id: "cliente-1",
+        cliente_nome: "Maria Souza",
+        cliente_email: "maria@example.com",
+        data_envio: "2026-06-12T12:00:00.000Z",
+        engenheiro_nome: "Paulo Londriclima",
+        engenheiro_cpf: "12345678901",
+        engenheiro_crea: "CREA-PR 123456",
+        pdf_hash: "hash-pdf",
+        pdf_filename: "pmoc-maria-souza.pdf",
+        pdf_base64: Buffer.from("%PDF-1.4\npmoc").toString("base64"),
+        smtp_entrega: {
+          destinatario: "maria@example.com",
+          resposta: "250 2.0.0 OK smtp-id - gsmtp",
+          enviado_em: "2026-06-12T12:00:00.000Z"
+        }
+      }
     }
   });
+});
+
+test("processarPendentes envia copia oculta interna no email final PMOC quando configurado", async () => {
+  const chamadas = {
+    email: undefined as unknown
+  };
+  const prisma = {
+    automacaoAgendada: {
+      findMany: async () => [
+        {
+          id: "automacao-copia-1",
+          tipo: AutomacaoTipo.enviar_email,
+          payload: {
+            tipo: "pmoc_relatorio_assinado",
+            relatorio_id: "relatorio-1",
+            cliente_id: "cliente-1",
+            cliente_nome: "Maria Souza",
+            cliente_email: "maria@example.com",
+            data_envio: "2026-06-12T12:00:00.000Z",
+            engenheiro_nome: "Paulo Londriclima",
+            engenheiro_cpf: "12345678901",
+            engenheiro_crea: "CREA-PR 123456",
+            pdf_hash: "hash-pdf",
+            pdf_filename: "pmoc-maria-souza.pdf",
+            pdf_base64: Buffer.from("%PDF-1.4\npmoc").toString("base64")
+          },
+          tentativas: 0
+        }
+      ],
+      updateMany: async () => ({ count: 1 }),
+      update: async () => undefined
+    }
+  };
+  const emailSender: EmailSender = {
+    enviar: async (email) => {
+      chamadas.email = email;
+      return {
+        response: "250 2.0.0 OK smtp-id - gsmtp",
+        recipient: email.to
+      };
+    }
+  };
+  const service = new AutomacoesService(
+    prisma as never,
+    emailSender,
+    criarConfig({
+      SMTP_FROM: "AIRMOVEBR <noreply@example.com>",
+      PMOC_INTERNAL_COPY_EMAIL: "AIRMOVRBR2@gmail.com"
+    }) as never
+  );
+
+  const resultado = await service.processarPendentes(new Date("2026-06-12T12:00:00.000Z"));
+
+  assert.equal(resultado.concluidas, 1);
+  assert.equal((chamadas.email as { to?: unknown }).to, "maria@example.com");
+  assert.equal((chamadas.email as { bcc?: unknown }).bcc, "AIRMOVRBR2@gmail.com");
 });
 
 test("processarPendentes envia link de assinatura PMOC para o engenheiro", async () => {
@@ -131,6 +210,10 @@ test("processarPendentes envia link de assinatura PMOC para o engenheiro", async
   const emailSender: EmailSender = {
     enviar: async (email) => {
       chamadas.email = email;
+      return {
+        response: "250 2.0.0 OK smtp-id - gsmtp",
+        recipient: email.to
+      };
     }
   };
   const service = new AutomacoesService(prisma as never, emailSender, criarConfig({ SMTP_FROM: "AIRMOVEBR <noreply@example.com>" }) as never);
@@ -164,7 +247,8 @@ test("processarPendentes envia link de assinatura PMOC para o engenheiro", async
   });
 });
 
-test("processarPendentes registra falha SMTP e incrementa tentativa", async () => {
+test("processarPendentes reagenda falha SMTP antes do limite de tentativas", async () => {
+  const agora = new Date("2026-06-12T12:00:00.000Z");
   const chamadas = {
     updateFinal: undefined as unknown
   };
@@ -204,6 +288,61 @@ test("processarPendentes registra falha SMTP e incrementa tentativa", async () =
   };
   const service = new AutomacoesService(prisma as never, emailSender, criarConfig() as never);
 
+  const resultado = await service.processarPendentes(agora);
+
+  assert.equal(resultado.processadas, 1);
+  assert.equal(resultado.concluidas, 0);
+  assert.equal(resultado.falhas, 1);
+  assert.deepEqual(chamadas.updateFinal, {
+    status: AutomacaoStatus.pendente,
+    tentativas: {
+      increment: 1
+    },
+    executarEm: new Date("2026-06-12T12:05:00.000Z"),
+    erroUltimaTentativa: "SMTP indisponivel"
+  });
+});
+
+test("processarPendentes marca falha definitiva quando atinge limite de tentativas", async () => {
+  const chamadas = {
+    updateFinal: undefined as unknown
+  };
+  const prisma = {
+    automacaoAgendada: {
+      findMany: async () => [
+        {
+          id: "automacao-limite-1",
+          tipo: AutomacaoTipo.enviar_email,
+          payload: {
+            tipo: "pmoc_relatorio_assinado",
+            relatorio_id: "relatorio-3",
+            cliente_id: "cliente-3",
+            cliente_nome: "Carlos Lima",
+            cliente_email: "carlos@example.com",
+            data_envio: "2026-06-12T12:00:00.000Z",
+            engenheiro_nome: "Paulo Londriclima",
+            engenheiro_cpf: "12345678901",
+            engenheiro_crea: "CREA-PR 999999",
+            pdf_hash: "hash-limite",
+            pdf_filename: "pmoc-carlos.pdf",
+            pdf_base64: Buffer.from("%PDF-1.4\npmoc").toString("base64")
+          },
+          tentativas: 2
+        }
+      ],
+      updateMany: async () => ({ count: 1 }),
+      update: async ({ data }: { data: unknown }) => {
+        chamadas.updateFinal = data;
+      }
+    }
+  };
+  const emailSender: EmailSender = {
+    enviar: async () => {
+      throw new Error("SMTP indisponivel");
+    }
+  };
+  const service = new AutomacoesService(prisma as never, emailSender, criarConfig() as never);
+
   const resultado = await service.processarPendentes(new Date("2026-06-12T12:00:00.000Z"));
 
   assert.equal(resultado.processadas, 1);
@@ -215,5 +354,58 @@ test("processarPendentes registra falha SMTP e incrementa tentativa", async () =
       increment: 1
     },
     erroUltimaTentativa: "SMTP indisponivel"
+  });
+});
+
+test("processarPendentes nao conclui sem comprovante SMTP", async () => {
+  const chamadas = {
+    updateFinal: undefined as unknown
+  };
+  const prisma = {
+    automacaoAgendada: {
+      findMany: async () => [
+        {
+          id: "automacao-sem-comprovante-1",
+          tipo: AutomacaoTipo.enviar_email,
+          payload: {
+            tipo: "pmoc_relatorio_assinado",
+            relatorio_id: "relatorio-4",
+            cliente_id: "cliente-4",
+            cliente_nome: "Beatriz Rocha",
+            cliente_email: "beatriz@example.com",
+            data_envio: "2026-06-12T12:00:00.000Z",
+            engenheiro_nome: "Paulo Londriclima",
+            engenheiro_cpf: "12345678901",
+            engenheiro_crea: "CREA-PR 999999",
+            pdf_hash: "hash-sem-comprovante",
+            pdf_filename: "pmoc-beatriz.pdf",
+            pdf_base64: Buffer.from("%PDF-1.4\npmoc").toString("base64")
+          },
+          tentativas: 0
+        }
+      ],
+      updateMany: async () => ({ count: 1 }),
+      update: async ({ data }: { data: unknown }) => {
+        chamadas.updateFinal = data;
+      }
+    }
+  };
+  const emailSender: EmailSender = {
+    enviar: async () => undefined as never
+  };
+  const service = new AutomacoesService(prisma as never, emailSender, criarConfig() as never);
+
+  const resultado = await service.processarPendentes(new Date("2026-06-12T12:00:00.000Z"));
+
+  assert.equal(resultado.processadas, 1);
+  assert.equal(resultado.concluidas, 0);
+  assert.equal(resultado.falhas, 1);
+  assert.deepEqual(chamadas.updateFinal, {
+    status: AutomacaoStatus.pendente,
+    tentativas: {
+      increment: 1
+    },
+    executarEm: new Date("2026-06-12T12:05:00.000Z"),
+    erroUltimaTentativa: "Entrega SMTP sem comprovante."
   });
 });

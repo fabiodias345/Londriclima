@@ -3,6 +3,7 @@ import {
   ConflictException,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
   Optional,
   UnauthorizedException
@@ -12,6 +13,7 @@ import { AutomacaoTipo, PmocRelatorioStatus, Prisma } from "@prisma/client";
 import { PrismaService } from "../../database/prisma.service";
 import { AdminService } from "../admin/admin.service";
 import { PasswordHashService } from "../auth/password-hash.service";
+import { GoogleDriveStorageService } from "../storage/google-drive-storage.service";
 import { ConsultarEquipamentoDto } from "./dto/consultar-equipamento.dto";
 import { CriarPreChamadoDto } from "./dto/criar-pre-chamado.dto";
 
@@ -26,12 +28,16 @@ type ConfirmarAssinaturaPmocPayload = {
 @Injectable()
 export class SiteService {
   private readonly passwordHash = new PasswordHashService();
+  private readonly logger = new Logger(SiteService.name);
 
   constructor(
     private readonly prisma: PrismaService,
     @Optional()
     @Inject(AdminService)
-    private readonly adminService?: Pick<AdminService, "gerarPdfPmocCliente">
+    private readonly adminService?: Pick<AdminService, "gerarPdfPmocCliente">,
+    @Optional()
+    @Inject(GoogleDriveStorageService)
+    private readonly driveStorage?: Pick<GoogleDriveStorageService, "salvarPdfAssinadoPmoc">
   ) {}
 
   async criarPreChamado(dto: CriarPreChamadoDto) {
@@ -236,6 +242,7 @@ export class SiteService {
         id: true,
         status: true,
         pdfHash: true,
+        ...({ pdfDriveUrl: true } as Record<string, boolean>),
         assinadoEm: true,
         emailCliente: true,
         emailAgendadoEm: true,
@@ -275,6 +282,7 @@ export class SiteService {
         clienteId: true,
         status: true,
         pdfHash: true,
+        ...({ pdfDriveUrl: true } as Record<string, boolean>),
         emailCliente: true,
         emailAgendadoEm: true,
         historicoFinalizadoEm: true,
@@ -306,6 +314,7 @@ export class SiteService {
         status: relatorio.status,
         email_cliente: relatorio.emailCliente,
         email_agendado: Boolean(relatorio.emailAgendadoEm),
+        pdf_drive_url: (relatorio as { pdfDriveUrl?: string | null }).pdfDriveUrl ?? null,
         historico_finalizado: Boolean(relatorio.historicoFinalizadoEm)
       };
     }
@@ -320,6 +329,12 @@ export class SiteService {
 
     const agora = new Date();
     const pdfAssinado = this.validarPdfAssinadoGovBr(dto, relatorio.cliente.nome);
+    const pdfDriveUrl = await this.salvarPdfAssinadoDrive({
+      relatorioId: relatorio.id,
+      clienteNome: relatorio.cliente.nome,
+      filename: pdfAssinado.filename,
+      pdf: Buffer.from(pdfAssinado.base64, "base64")
+    });
 
     const payload: Prisma.JsonObject = {
       tipo: "pmoc_relatorio_assinado",
@@ -344,6 +359,7 @@ export class SiteService {
         data: {
           status: PmocRelatorioStatus.assinado,
           pdfHash: pdfAssinado.hash,
+          ...({ pdfDriveUrl } as Record<string, string | null>),
           assinadoEm: agora,
           emailCliente: relatorio.cliente.email,
           emailAgendadoEm: agora,
@@ -353,6 +369,7 @@ export class SiteService {
           id: true,
           status: true,
           pdfHash: true,
+          ...({ pdfDriveUrl: true } as Record<string, boolean>),
           assinadoEm: true,
           emailCliente: true,
           emailAgendadoEm: true,
@@ -376,6 +393,7 @@ export class SiteService {
       id: assinado.id,
       status: assinado.status,
       pdf_hash: assinado.pdfHash,
+      pdf_drive_url: (assinado as { pdfDriveUrl?: string | null }).pdfDriveUrl ?? null,
       assinado_em: assinado.assinadoEm?.toISOString() ?? null,
       email_cliente: assinado.emailCliente,
       email_agendado: Boolean(assinado.emailAgendadoEm),
@@ -401,6 +419,7 @@ export class SiteService {
     id: string;
     status: PmocRelatorioStatus;
     pdfHash: string;
+    pdfDriveUrl?: string | null;
     assinadoEm: Date | null;
     emailCliente?: string | null;
     emailAgendadoEm?: Date | null;
@@ -419,6 +438,7 @@ export class SiteService {
       id: relatorio.id,
       status: relatorio.status,
       pdf_hash: relatorio.pdfHash,
+      pdf_drive_url: relatorio.pdfDriveUrl ?? null,
       assinado_em: relatorio.assinadoEm?.toISOString() ?? null,
       email_cliente: relatorio.emailCliente ?? null,
       email_agendado_em: relatorio.emailAgendadoEm?.toISOString() ?? null,
@@ -433,6 +453,24 @@ export class SiteService {
         email: relatorio.engenheiroResponsavel.email
       }
     };
+  }
+
+  private async salvarPdfAssinadoDrive(input: {
+    relatorioId: string;
+    clienteNome: string;
+    filename: string;
+    pdf: Buffer;
+  }) {
+    try {
+      return await (this.driveStorage?.salvarPdfAssinadoPmoc(input) ?? null);
+    } catch (error) {
+      this.logger.error(`Falha ao arquivar PMOC assinado no Drive: ${this.obterMensagemErro(error)}`);
+      return null;
+    }
+  }
+
+  private obterMensagemErro(error: unknown) {
+    return error instanceof Error ? error.message : String(error);
   }
 
   private validarPdfAssinadoGovBr(dto: unknown, clienteNome: string) {

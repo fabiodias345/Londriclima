@@ -1229,15 +1229,21 @@ form button,
 }
 
 .pmoc-month-card.is-sent {
+  color: #065f46;
+  border-color: rgba(16, 185, 129, 0.24);
+  background: rgba(209, 250, 229, 0.9);
+}
+
+.pmoc-month-card.is-pending {
   color: #7f1d1d;
   border-color: rgba(220, 38, 38, 0.28);
   background: rgba(254, 226, 226, 0.92);
 }
 
-.pmoc-month-card.is-pending {
-  color: #065f46;
-  border-color: rgba(16, 185, 129, 0.24);
-  background: rgba(209, 250, 229, 0.9);
+.pmoc-month-card.is-waiting-signature {
+  color: #854d0e;
+  border-color: rgba(245, 158, 11, 0.34);
+  background: rgba(254, 243, 199, 0.94);
 }
 
 .pmoc-machine-list {

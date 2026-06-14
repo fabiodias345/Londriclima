@@ -69,7 +69,6 @@ export class AdminService {
         }
       }
     });
-
     return {
       total: ordens.length,
       items: ordens.map((ordem) => ({
@@ -163,7 +162,6 @@ export class AdminService {
         }
       }
     });
-
     return {
       total: veiculos.length,
       items: veiculos.map((veiculo) => {
@@ -637,11 +635,18 @@ export class AdminService {
         id: true,
         status: true,
         pdfHash: true,
+        assinafyDocumentId: true,
+        assinafyAssignmentId: true,
+        assinafyStatus: true,
         criadoEm: true,
         emailAgendadoEm: true,
         assinadoEm: true
       }
     });
+    const relatoriosPmocOrdenados = [...relatoriosPmoc].sort(
+      (a, b) => b.criadoEm.getTime() - a.criadoEm.getTime()
+    );
+    const assinaturaAtual = this.obterRelatorioPmocPreferido(relatoriosPmocOrdenados);
 
     return {
       cliente: {
@@ -663,7 +668,19 @@ export class AdminService {
       total_os_concluidas: maquinas.reduce((total, maquina) => total + maquina.os_concluidas.length, 0),
       pronto_para_pdf: pendencias.length === 0,
       pendencias,
-      pmoc_meses: this.mapearMesesPmoc(anoPmoc, relatoriosPmoc),
+      assinatura_atual: assinaturaAtual
+        ? {
+            id: assinaturaAtual.id,
+            status: assinaturaAtual.status,
+            assinafy_document_id: assinaturaAtual.assinafyDocumentId,
+            assinafy_assignment_id: assinaturaAtual.assinafyAssignmentId,
+            assinafy_status: assinaturaAtual.assinafyStatus,
+            email_agendado: Boolean(assinaturaAtual.emailAgendadoEm),
+            assinado_em: assinaturaAtual.assinadoEm?.toISOString() ?? null,
+            criado_em: assinaturaAtual.criadoEm.toISOString()
+          }
+        : null,
+      pmoc_meses: this.mapearMesesPmoc(anoPmoc, relatoriosPmocOrdenados),
       maquinas
     };
   }
@@ -1849,6 +1866,9 @@ export class AdminService {
       id: string;
       status: PmocRelatorioStatus;
       pdfHash: string;
+      assinafyDocumentId: string | null;
+      assinafyAssignmentId: string | null;
+      assinafyStatus: string | null;
       criadoEm: Date;
       emailAgendadoEm: Date | null;
       assinadoEm: Date | null;
@@ -1859,7 +1879,8 @@ export class AdminService {
 
     for (const relatorio of relatorios) {
       const mes = relatorio.criadoEm.getUTCMonth();
-      if (!porMes.has(mes)) {
+      const atual = porMes.get(mes);
+      if (!atual || this.compararRelatoriosPmoc(relatorio, atual) < 0) {
         porMes.set(mes, relatorio);
       }
     }
@@ -1874,11 +1895,54 @@ export class AdminService {
         status: relatorio ? "enviado" : "pendente",
         relatorio_id: relatorio?.id ?? null,
         relatorio_status: relatorio?.status ?? null,
+        assinafy_status: relatorio?.assinafyStatus ?? null,
         enviado_em: relatorio?.criadoEm.toISOString() ?? null,
         assinado_em: relatorio?.assinadoEm?.toISOString() ?? null,
         pdf_hash: relatorio?.pdfHash ?? null
       };
     });
+  }
+
+  private obterRelatorioPmocPreferido<T extends { status: PmocRelatorioStatus; criadoEm: Date }>(relatorios: T[]) {
+    const ultimoMes = relatorios.reduce<number | null>((maior, relatorio) => {
+      const mes = Date.UTC(relatorio.criadoEm.getUTCFullYear(), relatorio.criadoEm.getUTCMonth(), 1);
+      return maior === null || mes > maior ? mes : maior;
+    }, null);
+
+    if (ultimoMes === null) {
+      return null;
+    }
+
+    return relatorios
+      .filter((relatorio) => Date.UTC(relatorio.criadoEm.getUTCFullYear(), relatorio.criadoEm.getUTCMonth(), 1) === ultimoMes)
+      .sort((a, b) => this.compararRelatoriosPmoc(a, b))[0] ?? null;
+  }
+
+  private compararRelatoriosPmoc<T extends { status: PmocRelatorioStatus; criadoEm: Date }>(a: T, b: T) {
+    const prioridadeA = this.prioridadeRelatorioPmoc(a.status);
+    const prioridadeB = this.prioridadeRelatorioPmoc(b.status);
+
+    if (prioridadeA !== prioridadeB) {
+      return prioridadeA - prioridadeB;
+    }
+
+    return b.criadoEm.getTime() - a.criadoEm.getTime();
+  }
+
+  private prioridadeRelatorioPmoc(status: PmocRelatorioStatus) {
+    if (status === PmocRelatorioStatus.assinado) {
+      return 0;
+    }
+
+    if (status === PmocRelatorioStatus.aguardando_assinatura_engenheiro) {
+      return 1;
+    }
+
+    if (status === PmocRelatorioStatus.gerado) {
+      return 2;
+    }
+
+    return 3;
   }
 
   private gerarPdfBasicoPmoc(previa: PreviaPmocCliente) {
@@ -1957,18 +2021,9 @@ export class AdminService {
     paginas.push([
       `DECLARACAO DE CONFORMIDADE - ${this.formatarMesAnoPmoc(previa.periodo.fim)}`,
       "",
-      "Declaro que os servicos de manutencao listados neste documento foram executados conforme o Programa de Manutencao, Operacao e Controle (PMOC), de acordo com a Resolucao ANVISA RE-09/2003, sendo de responsabilidade tecnica do profissional abaixo identificado.",
+      "Declaro que os servicos de manutencao listados neste documento foram executados conforme o Programa de Manutencao, Operacao e Controle (PMOC), de acordo com a Resolucao ANVISA RE-09/2003.",
       "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "______________________________________________",
-      `Engenheiro Responsavel: ${previa.engenheiro_responsavel?.nome || "________________"}`,
-      `CPF: ${this.formatarCpfPmoc(previa.engenheiro_responsavel?.cpf ?? null)}`,
-      `CREA: ${previa.engenheiro_responsavel?.crea || "________________"}`,
-      `Referente: ${this.formatarMesAnoReferenciaPmoc(previa.periodo.fim)}`
+      "A validade da assinatura tecnica e registrada digitalmente pela plataforma de assinatura."
     ]);
 
     return this.criarPdfTexto(paginas);

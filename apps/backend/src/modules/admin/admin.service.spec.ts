@@ -524,6 +524,9 @@ test("obterPreviaPmocCliente retorna cliente, engenheiro, maquinas e OS concluid
             id: "relatorio-jan",
             status: PmocRelatorioStatus.assinado,
             pdfHash: "hash-jan",
+            assinafyDocumentId: "doc-jan",
+            assinafyAssignmentId: "assignment-jan",
+            assinafyStatus: "completed",
             criadoEm: new Date("2026-01-15T12:00:00.000Z"),
             emailAgendadoEm: new Date("2026-01-15T12:00:00.000Z"),
             assinadoEm: new Date("2026-01-16T12:00:00.000Z")
@@ -532,9 +535,23 @@ test("obterPreviaPmocCliente retorna cliente, engenheiro, maquinas e OS concluid
             id: "relatorio-jun",
             status: PmocRelatorioStatus.aguardando_assinatura_engenheiro,
             pdfHash: "hash-jun",
+            assinafyDocumentId: "doc-jun",
+            assinafyAssignmentId: "assignment-jun",
+            assinafyStatus: "pending",
             criadoEm: new Date("2026-06-12T12:00:00.000Z"),
             emailAgendadoEm: new Date("2026-06-12T12:00:00.000Z"),
             assinadoEm: null
+          },
+          {
+            id: "relatorio-jun-assinado",
+            status: PmocRelatorioStatus.assinado,
+            pdfHash: "hash-jun-assinado",
+            assinafyDocumentId: "doc-jun-assinado",
+            assinafyAssignmentId: "assignment-jun-assinado",
+            assinafyStatus: "certificated",
+            criadoEm: new Date("2026-06-12T11:00:00.000Z"),
+            emailAgendadoEm: new Date("2026-06-12T11:30:00.000Z"),
+            assinadoEm: new Date("2026-06-12T11:30:00.000Z")
           }
         ];
       }
@@ -568,7 +585,11 @@ test("obterPreviaPmocCliente retorna cliente, engenheiro, maquinas e OS concluid
       { mes: "dez", status: "pendente" }
     ]
   );
-  assert.equal(resposta.pmoc_meses[5].relatorio_id, "relatorio-jun");
+  assert.equal(resposta.pmoc_meses[5].relatorio_id, "relatorio-jun-assinado");
+  assert.equal(resposta.pmoc_meses[5].relatorio_status, PmocRelatorioStatus.assinado);
+  assert.equal(resposta.assinatura_atual?.status, PmocRelatorioStatus.assinado);
+  assert.equal(resposta.assinatura_atual?.assinafy_document_id, "doc-jun-assinado");
+  assert.equal(resposta.assinatura_atual?.assinafy_status, "certificated");
   assert.equal(resposta.maquinas[0].os_concluidas[0].checklist?.servico_realizado, "Limpeza");
   assert.equal(resposta.maquinas[0].os_concluidas[0].assinatura?.latitude, -23.3047);
 });
@@ -614,17 +635,12 @@ test("gerarPdfPmocCliente retorna PDF com nome de arquivo e conteudo oficial", a
   assert.match(pdf, /FICHA TECNICA DA MAQUINA/);
   assert.match(pdf, /DECLARACAO DE CONFORMIDADE/);
   assert.match(pdf, /Engenheiro responsavel: Fabio Dias/);
-  assert.match(pdf, /Engenheiro Responsavel: Fabio Dias/);
-  assert.match(pdf, /CPF: 456789123-45/);
-  assert.match(pdf, /CREA: CREA-PR 654321/);
-  assert.match(pdf, /Referente: junho de 2026/);
-  const linhasPdf = pdf.split("\n");
-  const linhaDeclaracao = linhasPdf.findIndex((linha) => linha.includes("abaixo identificado."));
-  const linhaAssinatura = linhasPdf.findIndex((linha) => linha.includes("______________________________________________"));
-  assert.equal(
-    linhasPdf.slice(linhaDeclaracao + 1, linhaAssinatura).filter((linha) => linha === "() Tj T*").length,
-    6
-  );
+  const declaracao = pdf.slice(pdf.indexOf("(DECLARACAO DE CONFORMIDADE"));
+  assert.doesNotMatch(declaracao, /Engenheiro Responsavel: Fabio Dias/);
+  assert.doesNotMatch(declaracao, /CPF: 456789123-45/);
+  assert.doesNotMatch(declaracao, /CREA: CREA-PR 654321/);
+  assert.doesNotMatch(declaracao, /Referente: junho de 2026/);
+  assert.doesNotMatch(declaracao, /______________________________________________/);
   assert.doesNotMatch(pdf, /Responsavel pelo Empreendimento/);
 });
 

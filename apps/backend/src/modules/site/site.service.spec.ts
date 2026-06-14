@@ -15,8 +15,8 @@ const dto = {
   empresa_id: "empresa-maliciosa"
 };
 
-function criarService(prisma: unknown, adminService?: unknown) {
-  return new SiteService(prisma as never, adminService as never);
+function criarService(prisma: unknown, adminService?: unknown, driveStorage?: unknown) {
+  return new SiteService(prisma as never, adminService as never, driveStorage as never);
 }
 
 test("criarPreChamado sempre busca empresa piloto por CNPJ fixo", async () => {
@@ -383,6 +383,78 @@ test("confirmarAssinaturaPmoc exige PDF assinado no Gov.br e agenda envio de ema
   assert.equal(resposta.pdf_hash, pdfAssinadoHash);
   assert.equal(resposta.email_agendado, true);
   assert.equal(resposta.historico_finalizado, true);
+});
+
+test("confirmarAssinaturaPmoc arquiva PDF assinado no Drive", async () => {
+  const pdfAssinado = Buffer.from("%PDF-1.7\nassinado-govbr");
+  const chamadas = {
+    updateData: undefined as unknown,
+    drive: undefined as unknown
+  };
+  const tx = {
+    pmocRelatorio: {
+      update: async ({ data }: { data: unknown }) => {
+        chamadas.updateData = data;
+        return {
+          id: "relatorio-1",
+          status: PmocRelatorioStatus.assinado,
+          pdfHash: (data as { pdfHash: string }).pdfHash,
+          pdfDriveUrl: (data as { pdfDriveUrl: string }).pdfDriveUrl,
+          assinadoEm: new Date("2026-06-12T12:00:00.000Z"),
+          emailCliente: "maria@example.com",
+          emailAgendadoEm: new Date("2026-06-12T12:00:00.000Z"),
+          historicoFinalizadoEm: new Date("2026-06-12T12:00:00.000Z")
+        };
+      }
+    },
+    automacaoAgendada: {
+      create: async () => undefined
+    }
+  };
+  const prisma = {
+    pmocRelatorio: {
+      findUnique: async () => ({
+        id: "relatorio-1",
+        empresaId: "empresa-1",
+        clienteId: "cliente-1",
+        status: PmocRelatorioStatus.aguardando_assinatura_engenheiro,
+        pdfHash: "hash-pdf",
+        cliente: {
+          id: "cliente-1",
+          nome: "Maria Souza",
+          email: "maria@example.com"
+        },
+        engenheiroResponsavel: {
+          nome: "Paulo Londriclima",
+          cpf: "12345678901",
+          crea: "CREA-PR 123456",
+          email: "paulo@example.com"
+        }
+      })
+    },
+    $transaction: async (callback: (tx: unknown) => unknown) => callback(tx)
+  };
+  const driveStorage = {
+    salvarPdfAssinadoPmoc: async (input: unknown) => {
+      chamadas.drive = input;
+      return "https://drive.google.com/file/d/pdf-drive-1/view";
+    }
+  };
+  const service = criarService(prisma, undefined, driveStorage);
+
+  const resposta = await service.confirmarAssinaturaPmoc("token-assinatura", {
+    pdf_assinado_base64: pdfAssinado.toString("base64"),
+    pdf_assinado_filename: "pmoc-maria-souza-assinado-govbr.pdf"
+  });
+
+  assert.deepEqual(chamadas.drive, {
+    relatorioId: "relatorio-1",
+    clienteNome: "Maria Souza",
+    filename: "pmoc-maria-souza-assinado-govbr.pdf",
+    pdf: pdfAssinado
+  });
+  assert.equal((chamadas.updateData as { pdfDriveUrl?: unknown }).pdfDriveUrl, "https://drive.google.com/file/d/pdf-drive-1/view");
+  assert.equal(resposta.pdf_drive_url, "https://drive.google.com/file/d/pdf-drive-1/view");
 });
 
 test("confirmarAssinaturaPmoc rejeita confirmacao sem PDF assinado valido", async () => {
