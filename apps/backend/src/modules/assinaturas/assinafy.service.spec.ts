@@ -285,12 +285,12 @@ test("processarWebhook cancela PMOC e agenda alerta interno quando Assinafy recu
   const resposta = await service.processarWebhook({
     document_id: "doc-assinafy-1",
     assignment_id: "assignment-1",
-    status: "refused"
+    status: "rejected_by_signer"
   });
 
   assert.deepEqual(chamadas.updateWhere, { id: "relatorio-1" });
   assert.equal((chamadas.updateData as { status?: unknown }).status, PmocRelatorioStatus.cancelado);
-  assert.equal((chamadas.updateData as { assinafyStatus?: unknown }).assinafyStatus, "refused");
+  assert.equal((chamadas.updateData as { assinafyStatus?: unknown }).assinafyStatus, "rejected_by_signer");
   assert.ok((chamadas.updateData as { historicoFinalizadoEm?: unknown }).historicoFinalizadoEm instanceof Date);
 
   const automacao = chamadas.automacaoData as { empresaId?: unknown; tipo?: unknown; payload?: Record<string, unknown> };
@@ -300,7 +300,7 @@ test("processarWebhook cancela PMOC e agenda alerta interno quando Assinafy recu
   assert.equal(automacao.payload?.relatorio_id, "relatorio-1");
   assert.equal(automacao.payload?.cliente_nome, "Hospital Teste");
   assert.equal(automacao.payload?.engenheiro_nome, "Paulo Silva");
-  assert.equal(automacao.payload?.assinafy_status, "refused");
+  assert.equal(automacao.payload?.assinafy_status, "rejected_by_signer");
   assert.equal(resposta.status, PmocRelatorioStatus.cancelado);
 });
 
@@ -337,7 +337,7 @@ test("sincronizarPendentesAssinafy cancela PMOC quando assignment vem recusado",
   const { service, chamadas } = criarServico({
     pendentesAssinafy: [{ assinafyDocumentId: "doc-assinafy-1", assinafyAssignmentId: "assignment-1" }],
     documentStatus: "pending",
-    assignmentStatus: "refused"
+    assignmentStatus: "rejected_by_signer"
   });
 
   const resultado = await service.sincronizarPendentesAssinafy();

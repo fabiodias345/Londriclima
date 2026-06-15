@@ -17,6 +17,11 @@ type AutomacaoEmailPayload = {
   engenheiro_crea?: unknown;
   data_evento?: unknown;
   assinafy_status?: unknown;
+  periodo_inicio?: unknown;
+  periodo_fim?: unknown;
+  total_maquinas?: unknown;
+  total_os_concluidas?: unknown;
+  os_ids?: unknown;
   link_assinatura?: unknown;
   pdf_hash?: unknown;
   pdf_filename?: unknown;
@@ -60,6 +65,21 @@ type PayloadAssinaturaNegada = {
   data_evento: string;
   engenheiro_nome: string;
   assinafy_status: string;
+};
+
+type PayloadRelatorioTecnicoAvulso = {
+  tipo: "relatorio_tecnico_avulso";
+  cliente_id: string;
+  cliente_nome: string;
+  cliente_email: string;
+  data_envio: string;
+  periodo_inicio: string | null;
+  periodo_fim: string | null;
+  total_maquinas: number;
+  total_os_concluidas: number;
+  os_ids: string[];
+  pdf_filename: string;
+  pdf_base64: string;
 };
 
 @Injectable()
@@ -278,6 +298,39 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
       };
     }
 
+    if (dados.tipo === "relatorio_tecnico_avulso") {
+      const internalCopyEmail = this.obterEmailCopiaRelatorio();
+
+      return {
+        from,
+        to: dados.cliente_email,
+        ...(internalCopyEmail ? { bcc: internalCopyEmail } : {}),
+        subject: `Relatorio Tecnico - ${dados.cliente_nome}`,
+        text: [
+          `Prezado(a) ${dados.cliente_nome},`,
+          "",
+          "Encaminhamos em anexo o relatorio tecnico referente ao atendimento realizado pela AIRMOVEBR.",
+          "",
+          `Periodo: ${this.formatarPeriodoRelatorioAvulso(dados.periodo_inicio, dados.periodo_fim)}`,
+          `Maquinas atendidas: ${dados.total_maquinas}`,
+          `OS concluidas: ${dados.total_os_concluidas}`,
+          "",
+          "Permanecemos a disposicao.",
+          "",
+          "Cordialmente,",
+          "",
+          "AIRMOVEBR"
+        ].join("\n"),
+        attachments: [
+          {
+            filename: dados.pdf_filename,
+            contentType: "application/pdf",
+            contentBase64: dados.pdf_base64
+          }
+        ]
+      };
+    }
+
     const internalCopyEmail = this.config.get<string>("PMOC_INTERNAL_COPY_EMAIL");
 
     return {
@@ -312,7 +365,9 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
-  private validarPayload(payload: Prisma.JsonValue): PayloadAssinaturaEngenheiro | PayloadRelatorioAssinado | PayloadAssinaturaNegada {
+  private validarPayload(
+    payload: Prisma.JsonValue
+  ): PayloadAssinaturaEngenheiro | PayloadRelatorioAssinado | PayloadAssinaturaNegada | PayloadRelatorioTecnicoAvulso {
     if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
       throw new Error("Payload de e-mail invalido.");
     }
@@ -352,6 +407,23 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
       };
     }
 
+    if (dados.tipo === "relatorio_tecnico_avulso") {
+      return {
+        tipo: dados.tipo,
+        cliente_id: this.exigirString(dados.cliente_id, "cliente_id"),
+        cliente_nome: this.exigirString(dados.cliente_nome, "cliente_nome"),
+        cliente_email: this.exigirString(dados.cliente_email, "cliente_email"),
+        data_envio: this.exigirString(dados.data_envio, "data_envio"),
+        periodo_inicio: this.stringOuNulo(dados.periodo_inicio),
+        periodo_fim: this.stringOuNulo(dados.periodo_fim),
+        total_maquinas: this.exigirNumero(dados.total_maquinas, "total_maquinas"),
+        total_os_concluidas: this.exigirNumero(dados.total_os_concluidas, "total_os_concluidas"),
+        os_ids: this.exigirListaStrings(dados.os_ids, "os_ids"),
+        pdf_filename: this.exigirString(dados.pdf_filename, "pdf_filename"),
+        pdf_base64: this.exigirString(dados.pdf_base64, "pdf_base64")
+      };
+    }
+
     if (dados.tipo === "pmoc_assinatura_negada") {
       return {
         tipo: dados.tipo,
@@ -381,6 +453,14 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
     return configurado.trim();
   }
 
+  private obterEmailCopiaRelatorio() {
+    return (
+      this.config.get<string>("REPORT_INTERNAL_COPY_EMAIL") ||
+      this.config.get<string>("PMOC_INTERNAL_COPY_EMAIL") ||
+      this.config.get<string>("PMOC_SIGNATURE_ALERT_EMAIL")
+    )?.trim();
+  }
+
   private extrairEmailFrom(valor?: string) {
     if (!valor) {
       return undefined;
@@ -395,6 +475,34 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
     }
 
     return valor.trim();
+  }
+
+  private stringOuNulo(valor: unknown) {
+    return typeof valor === "string" && valor.trim() ? valor.trim() : null;
+  }
+
+  private exigirNumero(valor: unknown, campo: string) {
+    if (typeof valor !== "number" || !Number.isFinite(valor)) {
+      throw new Error(`Payload de e-mail sem ${campo}.`);
+    }
+
+    return valor;
+  }
+
+  private exigirListaStrings(valor: unknown, campo: string) {
+    if (!Array.isArray(valor) || valor.some((item) => typeof item !== "string" || !item.trim())) {
+      throw new Error(`Payload de e-mail sem ${campo}.`);
+    }
+
+    return valor.map((item) => item.trim());
+  }
+
+  private formatarPeriodoRelatorioAvulso(inicio: string | null, fim: string | null) {
+    if (!inicio && !fim) {
+      return "nao informado";
+    }
+
+    return `${this.formatarDataEmail(inicio ?? fim ?? "")} ate ${this.formatarDataEmail(fim ?? inicio ?? "")}`;
   }
 
   private formatarDataEmail(valor: string) {

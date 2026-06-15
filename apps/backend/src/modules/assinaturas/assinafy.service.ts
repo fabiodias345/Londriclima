@@ -432,9 +432,19 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
   }
 
   private statusRecusado(status: string) {
-    return ["refused", "rejected", "declined", "denied", "canceled", "cancelled", "cancelado", "recusado", "negado", "reprovado"].includes(
-      status.toLowerCase()
-    );
+    return [
+      "refused",
+      "rejected",
+      "rejected_by_signer",
+      "declined",
+      "denied",
+      "canceled",
+      "cancelled",
+      "cancelado",
+      "recusado",
+      "negado",
+      "reprovado"
+    ].includes(status.toLowerCase());
   }
 
   private statusFinalizado(status: string) {

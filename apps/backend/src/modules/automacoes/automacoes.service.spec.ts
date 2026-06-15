@@ -177,6 +177,88 @@ test("processarPendentes envia copia oculta interna no email final PMOC quando c
   assert.equal((chamadas.email as { bcc?: unknown }).bcc, "airmovebr2@gmail.com");
 });
 
+test("processarPendentes envia relatorio tecnico avulso direto ao cliente com copia interna", async () => {
+  const chamadas = {
+    email: undefined as unknown
+  };
+  const prisma = {
+    automacaoAgendada: {
+      findMany: async () => [
+        {
+          id: "automacao-avulsa-1",
+          tipo: AutomacaoTipo.enviar_email,
+          payload: {
+            tipo: "relatorio_tecnico_avulso",
+            cliente_id: "cliente-1",
+            cliente_nome: "Cliente Avulso",
+            cliente_email: "cliente@example.com",
+            data_envio: "2026-06-12T12:00:00.000Z",
+            periodo_inicio: "2026-06-11T12:00:00.000Z",
+            periodo_fim: "2026-06-11T15:00:00.000Z",
+            total_maquinas: 1,
+            total_os_concluidas: 1,
+            os_ids: ["os-1"],
+            pdf_filename: "relatorio-tecnico-cliente-avulso.pdf",
+            pdf_base64: Buffer.from("%PDF-1.4\nrelatorio").toString("base64")
+          },
+          tentativas: 0
+        }
+      ],
+      updateMany: async () => ({ count: 1 }),
+      update: async () => undefined
+    }
+  };
+  const emailSender: EmailSender = {
+    enviar: async (email) => {
+      chamadas.email = email;
+      return {
+        response: "250 2.0.0 OK smtp-id - gsmtp",
+        recipient: email.to
+      };
+    }
+  };
+  const service = new AutomacoesService(
+    prisma as never,
+    emailSender,
+    criarConfig({
+      SMTP_FROM: "AIRMOVEBR <noreply@example.com>",
+      REPORT_INTERNAL_COPY_EMAIL: "airmovebr2@gmail.com"
+    }) as never
+  );
+
+  const resultado = await service.processarPendentes(new Date("2026-06-12T12:00:00.000Z"));
+
+  assert.equal(resultado.concluidas, 1);
+  assert.deepEqual(chamadas.email, {
+    from: "AIRMOVEBR <noreply@example.com>",
+    to: "cliente@example.com",
+    bcc: "airmovebr2@gmail.com",
+    subject: "Relatorio Tecnico - Cliente Avulso",
+    text: [
+      "Prezado(a) Cliente Avulso,",
+      "",
+      "Encaminhamos em anexo o relatorio tecnico referente ao atendimento realizado pela AIRMOVEBR.",
+      "",
+      "Periodo: 11/06/2026 09:00 ate 11/06/2026 12:00",
+      "Maquinas atendidas: 1",
+      "OS concluidas: 1",
+      "",
+      "Permanecemos a disposicao.",
+      "",
+      "Cordialmente,",
+      "",
+      "AIRMOVEBR"
+    ].join("\n"),
+    attachments: [
+      {
+        filename: "relatorio-tecnico-cliente-avulso.pdf",
+        contentType: "application/pdf",
+        contentBase64: Buffer.from("%PDF-1.4\nrelatorio").toString("base64")
+      }
+    ]
+  });
+});
+
 test("processarPendentes envia link de assinatura PMOC para o engenheiro", async () => {
   const chamadas = {
     email: undefined as unknown
@@ -287,7 +369,7 @@ test("processarPendentes envia alerta interno quando assinatura PMOC e negada no
     emailSender,
     criarConfig({
       SMTP_FROM: "AIRMOVEBR <noreply@example.com>",
-      PMOC_SIGNATURE_ALERT_EMAIL: "operacao@airmovebr.com.br"
+      PMOC_SIGNATURE_ALERT_EMAIL: "airmovebr2@gmail.com"
     }) as never
   );
 
@@ -296,7 +378,7 @@ test("processarPendentes envia alerta interno quando assinatura PMOC e negada no
   assert.equal(resultado.concluidas, 1);
   assert.deepEqual(chamadas.email, {
     from: "AIRMOVEBR <noreply@example.com>",
-    to: "operacao@airmovebr.com.br",
+    to: "airmovebr2@gmail.com",
     subject: "Assinatura PMOC negada - Maria Souza",
     text: [
       "A assinatura do PMOC foi negada no Assinafy.",

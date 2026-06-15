@@ -22,14 +22,27 @@
         <span>AM</span>
         <strong>AIRMOVEBR</strong>
       </a>
-      <nav>
-        <button class="nav-link active" type="button" data-view="preChamados">Pre-chamados</button>
-        <button class="nav-link" type="button" data-view="frota">Frota</button>
-        <button class="nav-link" type="button" data-view="agenda">Agenda</button>
-        <button class="nav-link" type="button" data-view="clientes">Clientes</button>
-        <button class="nav-link" type="button" data-view="engenheiros">Engenheiros</button>
-        <button class="nav-link" type="button" data-view="pmoc">PMOC</button>
-        <button class="nav-link" type="button" data-view="relatorios">Relatorios</button>
+      <nav class="side-nav" aria-label="Menu administrativo">
+        <section class="nav-group" aria-label="Operacao">
+          <span class="nav-group-title">Operacao</span>
+          <button class="nav-link active" type="button" data-view="preChamados">Pre-chamados</button>
+          <button class="nav-link" type="button" data-view="agenda">Agenda</button>
+          <button class="nav-link" type="button" data-view="frota">Frota</button>
+        </section>
+
+        <section class="nav-group" aria-label="Cadastros">
+          <span class="nav-group-title">Cadastros</span>
+          <button class="nav-link" type="button" data-view="empresa">Empresa</button>
+          <button class="nav-link" type="button" data-view="clientes">Clientes</button>
+          <button class="nav-link" type="button" data-view="engenheiros">Engenheiros</button>
+        </section>
+
+        <section class="nav-group" aria-label="Documentos">
+          <span class="nav-group-title">Documentos</span>
+          <button class="nav-link" type="button" data-view="pmoc">PMOC</button>
+          <button class="nav-link" type="button" data-view="relatoriosAvulsos">Relatorios Avulsos</button>
+          <button class="nav-link" type="button" data-view="relatorios">Relatorios</button>
+        </section>
       </nav>
       <div class="sidebar-footer">
         <small>Ambiente MVP</small>
@@ -152,8 +165,42 @@
             <strong id="reportRevenue">R$ 0</strong>
           </article>
           <article>
+            <span>Receita arrecadada</span>
+            <strong id="reportCollectedRevenue">R$ 0</strong>
+          </article>
+          <article>
             <span>Automações</span>
             <strong id="automationCount">0</strong>
+          </article>
+        </section>
+
+        <section class="summary-grid hidden" id="empresaSummary" aria-label="Resumo da empresa">
+          <article>
+            <span>Status</span>
+            <strong id="empresaStatusSummary">Ativa</strong>
+          </article>
+          <article>
+            <span>CNPJ</span>
+            <strong id="empresaCnpjSummary">Pendente</strong>
+          </article>
+          <article>
+            <span>Contato</span>
+            <strong id="empresaContatoSummary">Pendente</strong>
+          </article>
+        </section>
+
+        <section class="summary-grid hidden" id="relatoriosAvulsosSummary" aria-label="Resumo de relatorios avulsos">
+          <article>
+            <span>Clientes avulsos</span>
+            <strong id="avulsoClientCount">0</strong>
+          </article>
+          <article>
+            <span>Prontos</span>
+            <strong id="avulsoReadyCount">0</strong>
+          </article>
+          <article>
+            <span>Fluxo</span>
+            <strong>Direto</strong>
           </article>
         </section>
 
@@ -401,6 +448,118 @@
           <div class="data-list" id="clientesList"></div>
         </section>
 
+        <section class="worklist hidden" id="empresaView">
+          <div class="worklist-header">
+            <div>
+              <h2>Cadastro da empresa</h2>
+              <p>Dados base para cabeçalhos e futuros dossies.</p>
+            </div>
+            <p id="empresaStatus" role="status">Carregando...</p>
+          </div>
+          <form class="company-form" id="empresaForm">
+            <fieldset>
+              <legend>Dados cadastrais</legend>
+              <label>
+                Razao social
+                <input name="razao_social" type="text" autocomplete="organization" />
+              </label>
+              <label>
+                Nome fantasia
+                <input name="nome_fantasia" type="text" autocomplete="organization" />
+              </label>
+              <label>
+                CNPJ
+                <input name="cnpj" type="text" inputmode="numeric" />
+              </label>
+              <label>
+                E-mail
+                <input name="email" type="email" autocomplete="email" />
+              </label>
+              <label>
+                Telefone
+                <input name="telefone" type="tel" autocomplete="tel" />
+              </label>
+              <label>
+                Status
+                <select name="status">
+                  <option value="ativa">Ativa</option>
+                  <option value="suspensa">Suspensa</option>
+                  <option value="inativa">Inativa</option>
+                </select>
+              </label>
+            </fieldset>
+
+            <fieldset>
+              <legend>Endereco</legend>
+              <label>
+                CEP
+                <input name="cep" type="text" inputmode="numeric" />
+              </label>
+              <label>
+                Rua
+                <input name="logradouro" type="text" autocomplete="address-line1" />
+              </label>
+              <label>
+                Numero
+                <input name="numero" type="text" autocomplete="address-line2" />
+              </label>
+              <label>
+                Complemento
+                <input name="complemento" type="text" />
+              </label>
+              <label>
+                Bairro
+                <input name="bairro" type="text" />
+              </label>
+              <label>
+                Cidade
+                <input name="cidade" type="text" autocomplete="address-level2" />
+              </label>
+              <label>
+                UF
+                <input name="uf" type="text" maxlength="2" autocomplete="address-level1" />
+              </label>
+            </fieldset>
+
+            <fieldset>
+              <legend>Fiscal e responsavel</legend>
+              <label>
+                Inscricao estadual
+                <input name="inscricao_estadual" type="text" />
+              </label>
+              <label>
+                Inscricao municipal
+                <input name="inscricao_municipal" type="text" />
+              </label>
+              <label>
+                Responsavel legal
+                <input name="responsavel_legal" type="text" />
+              </label>
+              <label>
+                CPF do responsavel
+                <input name="responsavel_cpf" type="text" inputmode="numeric" />
+              </label>
+              <label>
+                Contato principal
+                <input name="contato_principal" type="text" />
+              </label>
+              <label>
+                Cargo do contato
+                <input name="contato_cargo" type="text" />
+              </label>
+              <label class="full-span">
+                Observacoes
+                <textarea name="observacoes" rows="4"></textarea>
+              </label>
+            </fieldset>
+
+            <div class="form-actions">
+              <button type="submit">Salvar empresa</button>
+              <p class="status" id="empresaFormStatus" role="status"></p>
+            </div>
+          </form>
+        </section>
+
         <section class="worklist hidden" id="engenheirosView">
           <div class="worklist-header">
             <h2>Engenheiros responsaveis</h2>
@@ -516,10 +675,24 @@
 
         <section class="worklist hidden" id="relatoriosView">
           <div class="worklist-header">
-            <h2>Indicadores do MVP</h2>
-            <p id="relatoriosStatus" role="status">Carregando...</p>
+            <div>
+              <h2>Relatorio operacional</h2>
+              <p id="relatoriosStatus" role="status">Carregando...</p>
+            </div>
+            <button class="secondary-button compact-button" id="printReportsButton" type="button">Imprimir</button>
           </div>
           <div class="report-grid" id="reportGrid"></div>
+        </section>
+
+        <section class="worklist hidden" id="relatoriosAvulsosView">
+          <div class="worklist-header">
+            <div>
+              <h2>Relatorios tecnicos avulsos</h2>
+              <p>Clientes sem PMOC recebem o relatorio direto por e-mail, com copia interna.</p>
+            </div>
+            <p id="relatoriosAvulsosStatus" role="status">Carregando...</p>
+          </div>
+          <div class="data-list" id="relatoriosAvulsosList"></div>
         </section>
       </section>
     </main>

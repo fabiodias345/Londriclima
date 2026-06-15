@@ -68,9 +68,26 @@ enum PmocRelatorioStatus {
 model Empresa {
   id        String   @id @default(uuid()) @db.Uuid
   nome      String
+  razaoSocial String? @map("razao_social")
+  nomeFantasia String? @map("nome_fantasia")
   cnpj      String?  @unique
   telefone  String?
   email     String?
+  logradouro String?
+  numero String?
+  complemento String?
+  bairro String?
+  cidade String?
+  uf String? @db.Char(2)
+  cep String?
+  inscricaoEstadual String? @map("inscricao_estadual")
+  inscricaoMunicipal String? @map("inscricao_municipal")
+  responsavelLegal String? @map("responsavel_legal")
+  responsavelCpf String? @map("responsavel_cpf")
+  contatoPrincipal String? @map("contato_principal")
+  contatoCargo String? @map("contato_cargo")
+  status String @default("ativa")
+  observacoes String?
   ativa     Boolean  @default(true)
   criadoEm  DateTime @default(now()) @map("criado_em")
   atualizadoEm DateTime @updatedAt @map("atualizado_em")

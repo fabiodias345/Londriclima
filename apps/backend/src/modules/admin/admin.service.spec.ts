@@ -98,6 +98,237 @@ test("listarLocalizacoesFrota filtra veiculos ativos pela empresa do usuario", a
   assert.equal(resposta.items[0].localizacao?.velocidade_kmh, 42.5);
 });
 
+test("obterRelatorios consolida clientes, OS, frota, receitas e automacoes por dia mes e ano", async () => {
+  const prisma = {
+    ordemServico: {
+      findMany: async () => [
+        {
+          status: OrdemServicoStatus.pre_chamado,
+          valorCobrado: new Prisma.Decimal(100),
+          criadaEm: new Date("2026-06-15T10:00:00.000Z"),
+          agendadaPara: null,
+          concluidaEm: null
+        },
+        {
+          status: OrdemServicoStatus.aberta,
+          valorCobrado: new Prisma.Decimal(200),
+          criadaEm: new Date("2026-06-01T10:00:00.000Z"),
+          agendadaPara: new Date("2026-06-15T13:00:00.000Z"),
+          concluidaEm: null
+        },
+        {
+          status: OrdemServicoStatus.em_atendimento,
+          valorCobrado: new Prisma.Decimal(300),
+          criadaEm: new Date("2026-01-10T10:00:00.000Z"),
+          agendadaPara: new Date("2026-06-10T13:00:00.000Z"),
+          concluidaEm: null
+        },
+        {
+          status: OrdemServicoStatus.concluida,
+          valorCobrado: new Prisma.Decimal(400),
+          criadaEm: new Date("2026-05-01T10:00:00.000Z"),
+          agendadaPara: new Date("2026-06-14T13:00:00.000Z"),
+          concluidaEm: new Date("2026-06-15T16:00:00.000Z")
+        },
+        {
+          status: OrdemServicoStatus.concluida,
+          valorCobrado: new Prisma.Decimal(500),
+          criadaEm: new Date("2025-12-01T10:00:00.000Z"),
+          agendadaPara: new Date("2025-12-10T13:00:00.000Z"),
+          concluidaEm: new Date("2025-12-10T16:00:00.000Z")
+        }
+      ]
+    },
+    cliente: {
+      count: async () => 7
+    },
+    veiculo: {
+      count: async () => 2,
+      findMany: async () => [
+        {
+          id: "veiculo-1",
+          nome: "Carro 1",
+          placa: "ABC1D23",
+          abastecimentos: [
+            {
+              odometroKm: new Prisma.Decimal(1000),
+              litros: new Prisma.Decimal(10),
+              valorTotal: new Prisma.Decimal(60),
+              abastecidoEm: new Date("2026-06-01T09:00:00.000Z")
+            },
+            {
+              odometroKm: new Prisma.Decimal(1120),
+              litros: new Prisma.Decimal(12),
+              valorTotal: new Prisma.Decimal(72),
+              abastecidoEm: new Date("2026-06-15T09:00:00.000Z")
+            }
+          ]
+        }
+      ]
+    },
+    automacaoAgendada: {
+      count: async () => 3
+    }
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.obterRelatorios(usuario, new Date("2026-06-15T12:00:00.000Z"));
+
+  assert.equal(resposta.clientes, 7);
+  assert.equal(resposta.veiculos_ativos, 2);
+  assert.equal(resposta.automacoes_pendentes, 3);
+  assert.equal(resposta.receita_prevista, 1000);
+  assert.equal(resposta.receita_arrecadada, 400);
+  assert.deepEqual(resposta.pre_chamados, { dia: 1, mes: 1, ano: 1 });
+  assert.deepEqual(resposta.os_abertas, { dia: 1, mes: 1, ano: 1 });
+  assert.deepEqual(resposta.em_atendimento, { dia: 0, mes: 1, ano: 1 });
+  assert.deepEqual(resposta.concluidas, { dia: 1, mes: 1, ano: 1 });
+  assert.deepEqual(resposta.manutencoes, { dia: 1, mes: 1, ano: 1 });
+  assert.deepEqual(resposta.frota.km_rodados_periodo, { dia: 120, mes: 120, ano: 120 });
+});
+
+test("obterEmpresa retorna cadastro completo da empresa do usuario", async () => {
+  const prisma = {
+    empresa: {
+      findUnique: async ({ where }: { where: unknown }) => {
+        assert.deepEqual(where, { id: usuario.empresa_id });
+        return {
+          id: "empresa-1",
+          nome: "AIRMOVEBR",
+          razaoSocial: "AIRMOVEBR LTDA",
+          nomeFantasia: "AIRMOVEBR",
+          cnpj: "12345678000190",
+          email: "contato@airmovebr.com.br",
+          telefone: "43999999999",
+          logradouro: "Rua Teste",
+          numero: "100",
+          complemento: "Sala 1",
+          bairro: "Centro",
+          cidade: "Londrina",
+          uf: "PR",
+          cep: "86000000",
+          inscricaoEstadual: "ISENTO",
+          inscricaoMunicipal: "12345",
+          responsavelLegal: "Fabio Dias",
+          responsavelCpf: "12345678901",
+          contatoPrincipal: "Fabio Dias",
+          contatoCargo: "Diretor",
+          status: "ativa",
+          observacoes: "Empresa piloto",
+          ativa: true,
+          criadoEm: new Date("2026-06-10T10:00:00.000Z"),
+          atualizadoEm: new Date("2026-06-12T10:00:00.000Z")
+        };
+      }
+    }
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.obterEmpresa(usuario);
+
+  assert.equal(resposta.razao_social, "AIRMOVEBR LTDA");
+  assert.equal(resposta.nome_fantasia, "AIRMOVEBR");
+  assert.equal(resposta.cnpj, "12.345.678/0001-90");
+  assert.equal(resposta.responsavel_cpf, "123.456.789-01");
+  assert.equal(resposta.status, "ativa");
+});
+
+test("atualizarEmpresa normaliza cadastro fiscal e status da empresa do usuario", async () => {
+  const chamadas = {
+    updateWhere: undefined as unknown,
+    updateData: undefined as unknown
+  };
+  const prisma = {
+    empresa: {
+      update: async ({ where, data }: { where: unknown; data: unknown }) => {
+        chamadas.updateWhere = where;
+        chamadas.updateData = data;
+        return {
+          id: "empresa-1",
+          nome: (data as { nome: string }).nome,
+          razaoSocial: (data as { razaoSocial?: string }).razaoSocial,
+          nomeFantasia: (data as { nomeFantasia?: string }).nomeFantasia,
+          cnpj: (data as { cnpj?: string }).cnpj,
+          email: (data as { email?: string }).email,
+          telefone: (data as { telefone?: string }).telefone,
+          logradouro: (data as { logradouro?: string }).logradouro,
+          numero: (data as { numero?: string }).numero,
+          complemento: null,
+          bairro: (data as { bairro?: string }).bairro,
+          cidade: (data as { cidade?: string }).cidade,
+          uf: (data as { uf?: string }).uf,
+          cep: (data as { cep?: string }).cep,
+          inscricaoEstadual: (data as { inscricaoEstadual?: string }).inscricaoEstadual,
+          inscricaoMunicipal: (data as { inscricaoMunicipal?: string }).inscricaoMunicipal,
+          responsavelLegal: (data as { responsavelLegal?: string }).responsavelLegal,
+          responsavelCpf: (data as { responsavelCpf?: string }).responsavelCpf,
+          contatoPrincipal: (data as { contatoPrincipal?: string }).contatoPrincipal,
+          contatoCargo: (data as { contatoCargo?: string }).contatoCargo,
+          status: (data as { status?: string }).status,
+          observacoes: (data as { observacoes?: string }).observacoes,
+          ativa: (data as { ativa?: boolean }).ativa,
+          criadoEm: new Date("2026-06-10T10:00:00.000Z"),
+          atualizadoEm: new Date("2026-06-12T10:00:00.000Z")
+        };
+      }
+    }
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.atualizarEmpresa(
+    {
+      razao_social: " AIRMOVEBR LTDA ",
+      nome_fantasia: " AirMove BR ",
+      cnpj: "12.345.678/0001-90",
+      email: "CONTATO@AIRMOVEBR.COM.BR",
+      telefone: "(43) 99999-9999",
+      logradouro: "Rua Teste",
+      numero: "100",
+      bairro: "Centro",
+      cidade: "Londrina",
+      uf: "pr",
+      cep: "86000-000",
+      inscricao_estadual: " isento ",
+      inscricao_municipal: " 12345 ",
+      responsavel_legal: " Fabio Dias ",
+      responsavel_cpf: "123.456.789-01",
+      contato_principal: " Fabio ",
+      contato_cargo: " Diretor ",
+      status: "suspensa",
+      observacoes: "  Revisar documentos "
+    },
+    usuario
+  );
+
+  assert.deepEqual(chamadas.updateWhere, { id: usuario.empresa_id });
+  assert.deepEqual(chamadas.updateData, {
+    nome: "AirMove BR",
+    razaoSocial: "AIRMOVEBR LTDA",
+    nomeFantasia: "AirMove BR",
+    cnpj: "12345678000190",
+    email: "contato@airmovebr.com.br",
+    telefone: "43999999999",
+    logradouro: "Rua Teste",
+    numero: "100",
+    complemento: null,
+    bairro: "Centro",
+    cidade: "Londrina",
+    uf: "PR",
+    cep: "86000000",
+    inscricaoEstadual: "isento",
+    inscricaoMunicipal: "12345",
+    responsavelLegal: "Fabio Dias",
+    responsavelCpf: "12345678901",
+    contatoPrincipal: "Fabio",
+    contatoCargo: "Diretor",
+    status: "suspensa",
+    observacoes: "Revisar documentos",
+    ativa: false
+  });
+  assert.equal(resposta.nome_fantasia, "AirMove BR");
+  assert.equal(resposta.status, "suspensa");
+});
+
 test("aprovarPreChamado esconde pre-chamado de outra empresa", async () => {
   const tx = {
     ordemServico: {
@@ -555,6 +786,32 @@ test("obterPreviaPmocCliente retorna cliente, engenheiro, maquinas e OS concluid
           }
         ];
       }
+    },
+    automacaoAgendada: {
+      findMany: async () => [
+        {
+          payload: {
+            tipo: "pmoc_relatorio_assinado",
+            relatorio_id: "relatorio-jan",
+            smtp_entrega: {
+              destinatario: "maria@example.com",
+              resposta: "250 OK",
+              enviado_em: "2026-01-15T12:05:00.000Z"
+            }
+          }
+        },
+        {
+          payload: {
+            tipo: "pmoc_relatorio_assinado",
+            relatorio_id: "relatorio-jun-assinado",
+            smtp_entrega: {
+              destinatario: "maria@example.com",
+              resposta: "250 OK",
+              enviado_em: "2026-06-12T11:35:00.000Z"
+            }
+          }
+        }
+      ]
     }
   };
   const service = criarService(prisma);
@@ -590,8 +847,66 @@ test("obterPreviaPmocCliente retorna cliente, engenheiro, maquinas e OS concluid
   assert.equal(resposta.assinatura_atual?.status, PmocRelatorioStatus.assinado);
   assert.equal(resposta.assinatura_atual?.assinafy_document_id, "doc-jun-assinado");
   assert.equal(resposta.assinatura_atual?.assinafy_status, "certificated");
+  assert.equal(resposta.assinatura_atual?.email_entregue, true);
   assert.equal(resposta.maquinas[0].os_concluidas[0].checklist?.servico_realizado, "Limpeza");
   assert.equal(resposta.maquinas[0].os_concluidas[0].assinatura?.latitude, -23.3047);
+});
+
+test("obterPreviaPmocCliente nao bloqueia reenvio quando PMOC assinado ainda nao foi entregue ao cliente", async () => {
+  const prisma = {
+    cliente: {
+      findFirst: async () => ({
+        id: "cliente-1",
+        nome: "Maria Souza",
+        tipo: "pf",
+        documento: "12345678900",
+        telefone: "43988887777",
+        email: "maria@example.com",
+        pmocAtivo: true,
+        atualizadoEm: new Date("2026-06-12T10:00:00.000Z"),
+        engenheiroResponsavel: {
+          id: "engenheiro-1",
+          nome: "Paulo Londriclima",
+          cpf: "12345678901",
+          crea: "CREA-PR 123456",
+          email: "paulo@example.com",
+          telefone: "43999991111",
+          atualizadoEm: new Date("2026-06-12T10:00:00.000Z")
+        },
+        enderecos: [{ cidade: "Londrina", uf: "PR", bairro: "Centro" }],
+        equipamentos: [
+          criarEquipamentoPmocTeste("equipamento-1", "Sala", "PMOC-001", "SN-1", "2026-06-11T12:00:00.000Z")
+        ]
+      })
+    },
+    pmocRelatorio: {
+      findMany: async () => [
+        {
+          id: "relatorio-assinado-sem-entrega",
+          status: PmocRelatorioStatus.assinado,
+          pdfHash: "hash-jun",
+          assinafyDocumentId: "doc-jun",
+          assinafyAssignmentId: "assignment-jun",
+          assinafyStatus: "certificated",
+          criadoEm: new Date("2026-06-12T12:00:00.000Z"),
+          emailAgendadoEm: new Date("2026-06-12T12:00:00.000Z"),
+          assinadoEm: new Date("2026-06-12T12:00:00.000Z")
+        }
+      ]
+    },
+    automacaoAgendada: {
+      findMany: async () => []
+    }
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.obterPreviaPmocCliente("cliente-1", usuario);
+
+  assert.equal(resposta.pmoc_meses[5].status, "pendente");
+  assert.equal(resposta.pmoc_meses[5].relatorio_status, PmocRelatorioStatus.assinado);
+  assert.equal(resposta.pmoc_meses[5].email_entregue, false);
+  assert.equal(resposta.assinatura_atual?.status, PmocRelatorioStatus.assinado);
+  assert.equal(resposta.assinatura_atual?.email_entregue, false);
 });
 
 test("gerarPdfPmocCliente retorna PDF com nome de arquivo e conteudo oficial", async () => {
@@ -656,6 +971,83 @@ test("gerarPdfPmocCliente retorna PDF com nome de arquivo e conteudo oficial", a
   assert.doesNotMatch(declaracao, /Referente: junho de 2026/);
   assert.doesNotMatch(declaracao, /______________________________________________/);
   assert.doesNotMatch(pdf, /Responsavel pelo Empreendimento/);
+});
+
+test("obterPreviaRelatorioAvulsoCliente retorna cliente sem PMOC com OS concluidas", async () => {
+  const prisma = {
+    cliente: {
+      findFirst: async ({ where }: { where: Record<string, unknown> }) => {
+        assert.equal(where.id, "cliente-1");
+        assert.equal(where.empresaId, usuario.empresa_id);
+        return {
+          id: "cliente-1",
+          nome: "Cliente Avulso",
+          tipo: "pf",
+          documento: "12345678900",
+          telefone: "43988887777",
+          email: "cliente@example.com",
+          pmocAtivo: false,
+          atualizadoEm: new Date("2026-06-12T10:00:00.000Z"),
+          enderecos: [{ cidade: "Londrina", uf: "PR", bairro: "Centro" }],
+          equipamentos: [
+            criarEquipamentoPmocTeste("equipamento-1", "Sala", "AV-001", "SN-AV-1", "2026-06-11T12:00:00.000Z")
+          ]
+        };
+      }
+    }
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.obterPreviaRelatorioAvulsoCliente("cliente-1", usuario);
+
+  assert.equal(resposta.cliente.nome, "Cliente Avulso");
+  assert.equal(resposta.total_maquinas, 1);
+  assert.equal(resposta.total_os_concluidas, 1);
+  assert.equal(resposta.pronto_para_envio, true);
+  assert.deepEqual(resposta.pendencias, []);
+});
+
+test("enviarRelatorioAvulsoCliente agenda email direto ao cliente com copia interna via automacao", async () => {
+  const chamadas = {
+    emailData: undefined as unknown
+  };
+  const prisma = {
+    cliente: {
+      findFirst: async () => ({
+        id: "cliente-1",
+        nome: "Cliente Avulso",
+        tipo: "pf",
+        documento: "12345678900",
+        telefone: "43988887777",
+        email: "cliente@example.com",
+        pmocAtivo: false,
+        atualizadoEm: new Date("2026-06-12T10:00:00.000Z"),
+        enderecos: [{ cidade: "Londrina", uf: "PR", bairro: "Centro" }],
+        equipamentos: [
+          criarEquipamentoPmocTeste("equipamento-1", "Sala", "AV-001", "SN-AV-1", "2026-06-11T12:00:00.000Z")
+        ]
+      })
+    },
+    automacaoAgendada: {
+      create: async ({ data }: { data: unknown }) => {
+        chamadas.emailData = data;
+        return { id: "automacao-1" };
+      }
+    }
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.enviarRelatorioAvulsoCliente("cliente-1", usuario);
+
+  assert.equal(resposta.email_cliente_agendado, true);
+  assert.equal((chamadas.emailData as { tipo: AutomacaoTipo }).tipo, AutomacaoTipo.enviar_email);
+  const payload = (chamadas.emailData as { payload: Record<string, unknown> }).payload;
+  assert.equal(payload.tipo, "relatorio_tecnico_avulso");
+  assert.equal(payload.cliente_id, "cliente-1");
+  assert.equal(payload.cliente_email, "cliente@example.com");
+  assert.match(String(payload.pdf_filename), /^relatorio-tecnico-cliente-avulso\.pdf$/);
+  assert.match(String(payload.pdf_base64), /^[A-Za-z0-9+/]+=*$/);
+  assert.deepEqual(payload.os_ids, ["os-equipamento-1"]);
 });
 
 function criarEquipamentoPmocTeste(id: string, localInstalacao: string, patrimonio: string, numeroSerie: string, inicioIso: string) {

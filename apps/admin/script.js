@@ -2,6 +2,7 @@ const localHosts = ["localhost", "127.0.0.1", ""];
 const apiBaseUrl = localHosts.includes(window.location.hostname)
   ? "http://localhost:3000/api/v1"
   : "https://api.airmovebr.com.br/api/v1";
+const AGENDA_LOOKAHEAD_DAYS = 180;
 const loginPanel = document.querySelector("#loginPanel");
 const dashboard = document.querySelector("#dashboard");
 const loginForm = document.querySelector("#loginForm");
@@ -17,16 +18,20 @@ const viewTitle = document.querySelector("#viewTitle");
 const preChamadosSummary = document.querySelector("#preChamadosSummary");
 const frotaSummary = document.querySelector("#frotaSummary");
 const agendaSummary = document.querySelector("#agendaSummary");
+const empresaSummary = document.querySelector("#empresaSummary");
 const clientesSummary = document.querySelector("#clientesSummary");
 const pmocSummary = document.querySelector("#pmocSummary");
 const relatoriosSummary = document.querySelector("#relatoriosSummary");
+const relatoriosAvulsosSummary = document.querySelector("#relatoriosAvulsosSummary");
 const preChamadosView = document.querySelector("#preChamadosView");
 const frotaView = document.querySelector("#frotaView");
 const agendaView = document.querySelector("#agendaView");
+const empresaView = document.querySelector("#empresaView");
 const clientesView = document.querySelector("#clientesView");
 const engenheirosView = document.querySelector("#engenheirosView");
 const pmocView = document.querySelector("#pmocView");
 const relatoriosView = document.querySelector("#relatoriosView");
+const relatoriosAvulsosView = document.querySelector("#relatoriosAvulsosView");
 const fleetMap = document.querySelector("#fleetMap");
 const fleetTabButtons = document.querySelectorAll("[data-fleet-tab]");
 const fleetTabPanels = document.querySelectorAll("[data-fleet-panel]");
@@ -47,6 +52,12 @@ const agendaSelectedDateMeta = document.querySelector("#agendaSelectedDateMeta")
 const agendaCount = document.querySelector("#agendaCount");
 const attendanceCount = document.querySelector("#attendanceCount");
 const todayCount = document.querySelector("#todayCount");
+const empresaStatus = document.querySelector("#empresaStatus");
+const empresaForm = document.querySelector("#empresaForm");
+const empresaFormStatus = document.querySelector("#empresaFormStatus");
+const empresaStatusSummary = document.querySelector("#empresaStatusSummary");
+const empresaCnpjSummary = document.querySelector("#empresaCnpjSummary");
+const empresaContatoSummary = document.querySelector("#empresaContatoSummary");
 const clientesStatus = document.querySelector("#clientesStatus");
 const clientesList = document.querySelector("#clientesList");
 const clientForm = document.querySelector("#clientForm");
@@ -106,10 +117,16 @@ const pmocDossierAlerts = document.querySelector("#pmocDossierAlerts");
 const pmocMonthBoard = document.querySelector("#pmocMonthBoard");
 const pmocMachineList = document.querySelector("#pmocMachineList");
 const relatoriosStatus = document.querySelector("#relatoriosStatus");
+const relatoriosAvulsosStatus = document.querySelector("#relatoriosAvulsosStatus");
+const relatoriosAvulsosList = document.querySelector("#relatoriosAvulsosList");
+const avulsoClientCount = document.querySelector("#avulsoClientCount");
+const avulsoReadyCount = document.querySelector("#avulsoReadyCount");
 const reportGrid = document.querySelector("#reportGrid");
 const reportOsCount = document.querySelector("#reportOsCount");
 const reportRevenue = document.querySelector("#reportRevenue");
+const reportCollectedRevenue = document.querySelector("#reportCollectedRevenue");
 const automationCount = document.querySelector("#automationCount");
+const printReportsButton = document.querySelector("#printReportsButton");
 const fleetReportStatus = document.querySelector("#fleetReportStatus");
 const fleetReportList = document.querySelector("#fleetReportList");
 const fleetReportExportButton = document.querySelector("#fleetReportExportButton");
@@ -119,6 +136,7 @@ let latestFleetItems = [];
 let latestClients = [];
 let latestEngineers = [];
 let latestAgendaItems = [];
+let latestReports = null;
 let selectedFleetVehicleId = "";
 let selectedAgendaDate = "";
 let lastCepLookup = "";
@@ -215,6 +233,11 @@ async function loadActiveView() {
     return;
   }
 
+  if (activeView === "empresa") {
+    await loadEmpresa();
+    return;
+  }
+
   if (activeView === "clientes") {
     await loadClientes();
     return;
@@ -227,6 +250,11 @@ async function loadActiveView() {
 
   if (activeView === "pmoc") {
     await loadPmoc();
+    return;
+  }
+
+  if (activeView === "relatoriosAvulsos") {
+    await loadRelatoriosAvulsos();
     return;
   }
 
@@ -249,9 +277,11 @@ function setActiveView(view) {
     preChamados: ["Operacao comercial", "Pre-chamados do site"],
     frota: ["Monitoramento operacional", "Localizacao da frota"],
     agenda: ["Despacho de servicos", "Agenda operacional"],
+    empresa: ["Cadastro base", "Empresa"],
     clientes: ["Relacionamento", "Clientes e equipamentos"],
     engenheiros: ["Responsabilidade tecnica", "Engenheiros responsaveis"],
     pmoc: ["Conformidade tecnica", "PMOC"],
+    relatoriosAvulsos: ["Atendimento avulso", "Relatorios diretos ao cliente"],
     relatorios: ["Gestao", "Relatorios do MVP"]
   }[view] ?? ["Operacao comercial", "Pre-chamados do site"];
 
@@ -260,16 +290,20 @@ function setActiveView(view) {
   preChamadosSummary.classList.toggle("hidden", view !== "preChamados");
   frotaSummary.classList.toggle("hidden", view !== "frota");
   agendaSummary.classList.toggle("hidden", view !== "agenda");
+  empresaSummary.classList.toggle("hidden", view !== "empresa");
   clientesSummary.classList.toggle("hidden", view !== "clientes");
   pmocSummary.classList.toggle("hidden", view !== "pmoc");
   relatoriosSummary.classList.toggle("hidden", view !== "relatorios");
+  relatoriosAvulsosSummary.classList.toggle("hidden", view !== "relatoriosAvulsos");
   preChamadosView.classList.toggle("hidden", view !== "preChamados");
   frotaView.classList.toggle("hidden", view !== "frota");
   agendaView.classList.toggle("hidden", view !== "agenda");
+  empresaView.classList.toggle("hidden", view !== "empresa");
   clientesView.classList.toggle("hidden", view !== "clientes");
   engenheirosView.classList.toggle("hidden", view !== "engenheiros");
   pmocView.classList.toggle("hidden", view !== "pmoc");
   relatoriosView.classList.toggle("hidden", view !== "relatorios");
+  relatoriosAvulsosView.classList.toggle("hidden", view !== "relatoriosAvulsos");
 }
 
 async function loadPreChamados() {
@@ -395,6 +429,63 @@ async function loadClientes() {
   renderClientes(items);
 }
 
+async function loadEmpresa() {
+  empresaStatus.textContent = "Carregando...";
+
+  const result = await fetchAdminJson("/admin/empresa", empresaStatus);
+
+  if (!result) {
+    return;
+  }
+
+  preencherEmpresaForm(result);
+  empresaStatusSummary.textContent = formatEmpresaStatus(result.status);
+  empresaCnpjSummary.textContent = result.cnpj || "Pendente";
+  empresaContatoSummary.textContent = result.contato_principal || result.email || "Pendente";
+  empresaStatus.textContent = `Atualizado em ${formatDateTime(result.atualizado_em)}`;
+}
+
+function preencherEmpresaForm(empresa) {
+  const campos = [
+    "razao_social",
+    "nome_fantasia",
+    "cnpj",
+    "email",
+    "telefone",
+    "status",
+    "cep",
+    "logradouro",
+    "numero",
+    "complemento",
+    "bairro",
+    "cidade",
+    "uf",
+    "inscricao_estadual",
+    "inscricao_municipal",
+    "responsavel_legal",
+    "responsavel_cpf",
+    "contato_principal",
+    "contato_cargo",
+    "observacoes"
+  ];
+
+  for (const campo of campos) {
+    if (empresaForm?.elements[campo]) {
+      empresaForm.elements[campo].value = empresa[campo] || "";
+    }
+  }
+}
+
+function formatEmpresaStatus(status) {
+  const labels = {
+    ativa: "Ativa",
+    suspensa: "Suspensa",
+    inativa: "Inativa"
+  };
+
+  return labels[status] || "Ativa";
+}
+
 async function loadPmoc() {
   pmocStatus.textContent = "Carregando clientes...";
   pmocConversionPanel?.classList.add("hidden");
@@ -498,8 +589,10 @@ async function loadRelatorios() {
     return;
   }
 
+  latestReports = result;
   reportOsCount.textContent = result.total_os;
   reportRevenue.textContent = formatCurrency(result.receita_prevista || 0);
+  reportCollectedRevenue.textContent = formatCurrency(result.receita_arrecadada || 0);
   automationCount.textContent = result.automacoes_pendentes;
   relatoriosStatus.textContent = "Atualizado agora";
   renderRelatorios(result);
@@ -516,6 +609,21 @@ async function loadRelatorioFrota() {
 
   fleetReportStatus.textContent = `${result.total_veiculos} veiculos · ${formatNumber(result.km_rodados)} km`;
   renderRelatorioFrota(result.items || []);
+}
+
+async function loadRelatoriosAvulsos() {
+  relatoriosAvulsosStatus.textContent = "Carregando...";
+
+  const result = await fetchAdminJson("/admin/relatorios-avulsos", relatoriosAvulsosStatus);
+
+  if (!result) {
+    return;
+  }
+
+  avulsoClientCount.textContent = result.total || 0;
+  avulsoReadyCount.textContent = result.pendentes || 0;
+  relatoriosAvulsosStatus.textContent = result.total === 1 ? "1 cliente avulso" : `${result.total || 0} clientes avulsos`;
+  renderRelatoriosAvulsos(result.items || []);
 }
 
 async function fetchAdminJson(path, statusElement) {
@@ -775,7 +883,7 @@ function buildAgendaCalendarDays(items) {
     }
   }
 
-  for (let offset = 1; offset <= 6; offset += 1) {
+  for (let offset = 1; offset <= AGENDA_LOOKAHEAD_DAYS; offset += 1) {
     const date = new Date();
     date.setDate(date.getDate() + offset);
     dateKeys.add(getLocalDateKey(date));
@@ -1091,16 +1199,16 @@ async function openPmocDossier(clientId) {
 
   if (preview) {
     const hasPendingSignature = preview.assinatura_atual?.status === "aguardando_assinatura_engenheiro";
-    const hasSignedCurrentMonth = getCurrentPmocMonth(preview)?.relatorio_status === "assinado";
+    const hasDeliveredCurrentMonth = getCurrentPmocMonth(preview)?.email_entregue === true;
     const isTestClient = isPmocTestClient(client);
-    const canRequestSignature = (!hasPendingSignature || isTestClient) && (!hasSignedCurrentMonth || isTestClient) && preview.pronto_para_pdf;
+    const canRequestSignature = (!hasPendingSignature || isTestClient) && (!hasDeliveredCurrentMonth || isTestClient) && preview.pronto_para_pdf;
     renderPmocMonths(preview.pmoc_meses || []);
     renderPmocDossierAlerts(client, machines, preview);
     pmocDossierMeta.textContent = `${preview.total_maquinas || machines.length} maquinas - ${preview.total_os_concluidas || 0} OS concluidas - ${client.engenheiro_responsavel?.nome || "sem engenheiro"}`;
     pmocRequestSignatureButton.disabled = !canRequestSignature;
     pmocRequestSignatureButton.textContent = isTestClient
       ? "Solicitar assinatura"
-      : hasSignedCurrentMonth
+      : hasDeliveredCurrentMonth
       ? "PMOC enviado"
       : hasPendingSignature
       ? "Assinatura solicitada"
@@ -1139,13 +1247,21 @@ function getPmocDossierAlerts(client, machines, preview) {
   const alerts = [];
   const currentSignature = preview?.assinatura_atual;
 
-  if (currentSignature?.status === "assinado") {
+  if (currentSignature?.status === "assinado" && currentSignature.email_entregue) {
     alerts.push({
       tone: "success",
       title: "PMOC enviado ao cliente",
       text: currentSignature.assinado_em
         ? `Relatorio assinado em ${formatDateTime(currentSignature.assinado_em)}.`
         : "Relatorio assinado e envio final agendado."
+    });
+  }
+
+  if (currentSignature?.status === "assinado" && !currentSignature.email_entregue) {
+    alerts.push({
+      tone: "warning",
+      title: "E-mail do cliente pendente",
+      text: "Relatorio assinado, mas ainda sem confirmacao de entrega do e-mail final ao cliente."
     });
   }
 
@@ -1263,8 +1379,12 @@ function renderPmocMonths(months) {
 }
 
 function getPmocMonthStatus(month) {
-  if (month.relatorio_status === "assinado") {
+  if (month.email_entregue) {
     return { className: "is-sent", label: "Enviado ao cliente" };
+  }
+
+  if (month.relatorio_status === "assinado") {
+    return { className: "is-waiting-signature", label: "E-mail pendente" };
   }
 
   if (month.relatorio_status === "aguardando_assinatura_engenheiro" || month.assinafy_status === "pending") {
@@ -1605,32 +1725,38 @@ function renderClientEquipments(items) {
 }
 
 function renderRelatorios(result) {
-  const statuses = result.por_status || {};
-
   reportGrid.innerHTML = `
-    <article>
+    <article class="report-card report-card-total">
       <span>Clientes cadastrados</span>
       <strong>${result.clientes}</strong>
     </article>
-    <article>
+    <article class="report-card report-card-total">
       <span>Veiculos ativos</span>
       <strong>${result.veiculos_ativos}</strong>
     </article>
-    <article>
-      <span>Pre-chamados</span>
-      <strong>${statuses.pre_chamado || 0}</strong>
-    </article>
-    <article>
-      <span>OS abertas</span>
-      <strong>${statuses.aberta || 0}</strong>
-    </article>
-    <article>
-      <span>Em atendimento</span>
-      <strong>${statuses.em_atendimento || 0}</strong>
-    </article>
-    <article>
-      <span>Concluidas</span>
-      <strong>${statuses.concluida || 0}</strong>
+    ${renderPeriodMetric("Manutencoes", result.manutencoes)}
+    ${renderPeriodMetric("KM da frota", result.frota?.km_rodados_periodo, "km")}
+    ${renderPeriodMetric("Pre-chamados", result.pre_chamados)}
+    ${renderPeriodMetric("OS abertas", result.os_abertas)}
+    ${renderPeriodMetric("Em atendimento", result.em_atendimento)}
+    ${renderPeriodMetric("Concluidas", result.concluidas)}
+  `;
+}
+
+function renderPeriodMetric(title, metric = {}, suffix = "") {
+  const formatValue = (value) => `${formatNumber(value || 0)}${suffix ? ` ${suffix}` : ""}`;
+
+  return `
+    <article class="report-card report-period-card">
+      <span>${escapeHtml(title)}</span>
+      <div class="period-metric">
+        <strong>${formatValue(metric.dia)}</strong>
+        <small>Dia</small>
+      </div>
+      <div class="period-breakdown">
+        <span><b>${formatValue(metric.mes)}</b> Mes</span>
+        <span><b>${formatValue(metric.ano)}</b> Ano</span>
+      </div>
     </article>
   `;
 }
@@ -1661,6 +1787,97 @@ function renderRelatorioFrota(items) {
       </div>
     `;
     fleetReportList.appendChild(row);
+  }
+}
+
+function renderRelatoriosAvulsos(items) {
+  relatoriosAvulsosList.innerHTML = "";
+
+  if (!items.length) {
+    relatoriosAvulsosList.innerHTML = '<article class="data-row"><strong>Sem clientes avulsos.</strong><span>Clientes com PMOC ativo ficam no menu PMOC.</span></article>';
+    return;
+  }
+
+  for (const item of items) {
+    const status = item.pronto_para_envio
+      ? { label: "Pronto para envio", tone: "success" }
+      : { label: "Aguardando OS concluida", tone: "warning" };
+    const row = document.createElement("article");
+    row.className = "data-row avulso-row";
+    row.innerHTML = `
+      <div>
+        <strong>${escapeHtml(item.nome)}</strong>
+        <span>${escapeHtml(item.email || "E-mail pendente")} · ${escapeHtml(item.telefone || "sem telefone")}</span>
+      </div>
+      <div>
+        <span>${item.total_maquinas || 0} maquina(s) · ${item.total_os_concluidas || 0} OS concluida(s)</span>
+        <span class="pmoc-status ${status.tone}">${escapeHtml(status.label)}</span>
+      </div>
+      <div class="data-row-actions">
+        <button class="secondary-button compact-button" type="button" data-action="avulso-pdf" data-id="${item.id}">PDF</button>
+        <button class="approve-button compact-button" type="button" data-action="avulso-enviar" data-id="${item.id}" ${item.pronto_para_envio ? "" : "disabled"}>Enviar</button>
+      </div>
+    `;
+    relatoriosAvulsosList.appendChild(row);
+  }
+}
+
+async function openRelatorioAvulsoPdf(clientId) {
+  relatoriosAvulsosStatus.textContent = "Gerando PDF...";
+
+  let response;
+
+  try {
+    response = await fetch(`${apiBaseUrl}/admin/relatorios-avulsos/clientes/${clientId}/pdf`, {
+      headers: authHeaders()
+    });
+  } catch {
+    relatoriosAvulsosStatus.textContent = "API indisponivel ao gerar PDF.";
+    return;
+  }
+
+  if (await handleUnauthorized(response)) {
+    return;
+  }
+
+  if (!response.ok) {
+    relatoriosAvulsosStatus.textContent = "Nao foi possivel gerar o PDF.";
+    return;
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  window.open(url, "_blank", "noopener");
+  relatoriosAvulsosStatus.textContent = "PDF gerado no servidor.";
+}
+
+async function enviarRelatorioAvulso(clientId, button) {
+  button.disabled = true;
+  button.textContent = "Enviando...";
+  relatoriosAvulsosStatus.textContent = "Agendando envio ao cliente...";
+
+  try {
+    const response = await fetch(`${apiBaseUrl}/admin/relatorios-avulsos/clientes/${clientId}/enviar`, {
+      method: "POST",
+      headers: authHeaders()
+    });
+
+    if (await handleUnauthorized(response)) {
+      return;
+    }
+
+    if (!response.ok) {
+      relatoriosAvulsosStatus.textContent = "Nao foi possivel enviar o relatorio.";
+      return;
+    }
+
+    relatoriosAvulsosStatus.textContent = "Relatorio agendado para envio ao cliente.";
+    await loadRelatoriosAvulsos();
+  } catch {
+    relatoriosAvulsosStatus.textContent = "API indisponivel ao enviar relatorio.";
+  } finally {
+    button.disabled = false;
+    button.textContent = "Enviar";
   }
 }
 
@@ -1740,6 +1957,62 @@ async function submitFuel(event) {
     button.disabled = false;
     button.textContent = "Registrar abastecimento manual";
   }
+}
+
+function openReportsPrint() {
+  if (!latestReports) {
+    relatoriosStatus.textContent = "Carregue os relatorios antes de imprimir.";
+    return;
+  }
+
+  const reportWindow = window.open("", "_blank", "width=980,height=720");
+
+  if (!reportWindow) {
+    relatoriosStatus.textContent = "Permita pop-ups para imprimir o relatorio.";
+    return;
+  }
+
+  const cards = Array.from(reportGrid.querySelectorAll(".report-card"));
+  const content = `
+    <!doctype html>
+    <html lang="pt-BR">
+      <head>
+        <meta charset="utf-8" />
+        <title>Relatorio Operacional</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 32px; color: #07151d; }
+          h1 { margin: 0 0 8px; }
+          .meta { color: #66747b; margin-bottom: 24px; }
+          .totals { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+          .total, article { border: 1px solid #d8e1e5; padding: 14px; }
+          .total span, article span, small { color: #66747b; font-weight: 700; }
+          .total strong { display: block; margin-top: 6px; font-size: 22px; }
+          section { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+          article strong { font-size: 24px; }
+          .period-breakdown { display: flex; gap: 16px; margin-top: 10px; }
+        </style>
+      </head>
+      <body>
+        <h1>Relatorio Operacional</h1>
+        <p class="meta">Gerado em ${new Date().toLocaleString("pt-BR")}</p>
+        <div class="totals">
+          <div class="total"><span>Total de chamadas</span><strong>${latestReports.total_os || 0}</strong></div>
+          <div class="total"><span>Receita prevista</span><strong>${formatCurrency(latestReports.receita_prevista || 0)}</strong></div>
+          <div class="total"><span>Receita arrecadada</span><strong>${formatCurrency(latestReports.receita_arrecadada || 0)}</strong></div>
+          <div class="total"><span>Automações</span><strong>${latestReports.automacoes_pendentes || 0}</strong></div>
+        </div>
+        <section>
+          ${cards.map((card) => `<article>${card.innerHTML}</article>`).join("")}
+        </section>
+      </body>
+    </html>
+  `;
+
+  reportWindow.document.open();
+  reportWindow.document.write(content);
+  reportWindow.document.close();
+  reportWindow.focus();
+  reportWindow.print();
 }
 
 function openFleetReport() {
@@ -1877,6 +2150,67 @@ async function submitClient(event) {
   } finally {
     button.disabled = false;
     button.textContent = "Salvar cliente";
+  }
+}
+
+async function submitEmpresa(event) {
+  event.preventDefault();
+  const button = empresaForm.querySelector("button[type='submit']");
+  const data = new FormData(empresaForm);
+  const payload = removeEmptyValues({
+    razao_social: String(data.get("razao_social") || ""),
+    nome_fantasia: String(data.get("nome_fantasia") || ""),
+    cnpj: onlyDigits(String(data.get("cnpj") || "")),
+    email: String(data.get("email") || ""),
+    telefone: onlyDigits(String(data.get("telefone") || "")),
+    status: String(data.get("status") || "ativa"),
+    cep: onlyDigits(String(data.get("cep") || "")),
+    logradouro: String(data.get("logradouro") || ""),
+    numero: String(data.get("numero") || ""),
+    complemento: String(data.get("complemento") || ""),
+    bairro: String(data.get("bairro") || ""),
+    cidade: String(data.get("cidade") || ""),
+    uf: String(data.get("uf") || "").toUpperCase(),
+    inscricao_estadual: String(data.get("inscricao_estadual") || ""),
+    inscricao_municipal: String(data.get("inscricao_municipal") || ""),
+    responsavel_legal: String(data.get("responsavel_legal") || ""),
+    responsavel_cpf: onlyDigits(String(data.get("responsavel_cpf") || "")),
+    contato_principal: String(data.get("contato_principal") || ""),
+    contato_cargo: String(data.get("contato_cargo") || ""),
+    observacoes: String(data.get("observacoes") || "")
+  });
+
+  button.disabled = true;
+  button.textContent = "Salvando...";
+  empresaFormStatus.textContent = "";
+
+  try {
+    const response = await fetch(`${apiBaseUrl}/admin/empresa`, {
+      method: "PATCH",
+      headers: {
+        ...authHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (await handleUnauthorized(response)) {
+      return;
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      empresaFormStatus.textContent = error.message || "Nao foi possivel salvar a empresa.";
+      return;
+    }
+
+    empresaFormStatus.textContent = "Empresa salva.";
+    await loadEmpresa();
+  } catch {
+    empresaFormStatus.textContent = "API indisponivel.";
+  } finally {
+    button.disabled = false;
+    button.textContent = "Salvar empresa";
   }
 }
 
@@ -2552,6 +2886,7 @@ function escapeHtml(value) {
 
 loginForm?.addEventListener("submit", login);
 fuelForm?.addEventListener("submit", submitFuel);
+empresaForm?.addEventListener("submit", submitEmpresa);
 clientForm?.addEventListener("submit", submitClient);
 engineerForm?.addEventListener("submit", submitEngineer);
 equipmentForm?.addEventListener("submit", submitEquipment);
@@ -2559,6 +2894,7 @@ pmocConversionForm?.addEventListener("submit", activatePmocClient);
 resetClientFormButton?.addEventListener("click", resetClientForm);
 backToClientsButton?.addEventListener("click", resetClientForm);
 resetEngineerFormButton?.addEventListener("click", resetEngineerForm);
+printReportsButton?.addEventListener("click", openReportsPrint);
 fleetReportExportButton?.addEventListener("click", openFleetReport);
 pmocBackToClientsButton?.addEventListener("click", closePmocDossier);
 pmocGenerateReportButton?.addEventListener("click", openPmocReportPreview);
@@ -2639,6 +2975,23 @@ pmocDossierList?.addEventListener("click", (event) => {
 
   if (button.dataset.action === "pmoc-ver-cliente") {
     void openPmocDossier(button.dataset.id);
+  }
+});
+
+relatoriosAvulsosList?.addEventListener("click", (event) => {
+  const target = event.target;
+  const button = target instanceof Element ? target.closest("[data-action]") : null;
+
+  if (!(button instanceof HTMLButtonElement) || !button.dataset.id) {
+    return;
+  }
+
+  if (button.dataset.action === "avulso-pdf") {
+    void openRelatorioAvulsoPdf(button.dataset.id);
+  }
+
+  if (button.dataset.action === "avulso-enviar") {
+    void enviarRelatorioAvulso(button.dataset.id, button);
   }
 });
 

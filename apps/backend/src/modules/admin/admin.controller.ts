@@ -6,6 +6,7 @@ import { AprovarPreChamadoDto } from "./dto/aprovar-pre-chamado.dto";
 import { CriarAbastecimentoDto } from "./dto/criar-abastecimento.dto";
 import { SalvarEquipamentoDto } from "./dto/salvar-equipamento.dto";
 import { SalvarClienteDto } from "./dto/salvar-cliente.dto";
+import { SalvarEmpresaDto } from "./dto/salvar-empresa.dto";
 import { SalvarEngenheiroResponsavelDto } from "./dto/salvar-engenheiro-responsavel.dto";
 import { AdminService } from "./admin.service";
 
@@ -61,6 +62,16 @@ export class AdminController {
     return this.adminService.listarClientes(usuario);
   }
 
+  @Get("empresa")
+  obterEmpresa(@CurrentUser() usuario: AuthenticatedUser) {
+    return this.adminService.obterEmpresa(usuario);
+  }
+
+  @Patch("empresa")
+  atualizarEmpresa(@Body() dto: SalvarEmpresaDto, @CurrentUser() usuario: AuthenticatedUser) {
+    return this.adminService.atualizarEmpresa(dto, usuario);
+  }
+
   @Get("pmoc/clientes/:clienteId/previa")
   obterPreviaPmocCliente(
     @Param("clienteId", new ParseUUIDPipe()) clienteId: string,
@@ -87,6 +98,39 @@ export class AdminController {
     @CurrentUser() usuario: AuthenticatedUser
   ) {
     return this.adminService.solicitarAssinaturaPmocEngenheiro(clienteId, usuario);
+  }
+
+  @Get("relatorios-avulsos")
+  listarRelatoriosAvulsos(@CurrentUser() usuario: AuthenticatedUser) {
+    return this.adminService.listarRelatoriosAvulsos(usuario);
+  }
+
+  @Get("relatorios-avulsos/clientes/:clienteId/previa")
+  obterPreviaRelatorioAvulsoCliente(
+    @Param("clienteId", new ParseUUIDPipe()) clienteId: string,
+    @CurrentUser() usuario: AuthenticatedUser
+  ) {
+    return this.adminService.obterPreviaRelatorioAvulsoCliente(clienteId, usuario);
+  }
+
+  @Get("relatorios-avulsos/clientes/:clienteId/pdf")
+  @Header("Content-Type", "application/pdf")
+  async gerarPdfRelatorioAvulsoCliente(
+    @Param("clienteId", new ParseUUIDPipe()) clienteId: string,
+    @CurrentUser() usuario: AuthenticatedUser,
+    @Res({ passthrough: true }) response: HeaderResponse
+  ) {
+    const pdf = await this.adminService.gerarPdfRelatorioAvulsoCliente(clienteId, usuario);
+    response.setHeader("Content-Disposition", `attachment; filename="${pdf.filename}"`);
+    return new StreamableFile(pdf.buffer);
+  }
+
+  @Post("relatorios-avulsos/clientes/:clienteId/enviar")
+  enviarRelatorioAvulsoCliente(
+    @Param("clienteId", new ParseUUIDPipe()) clienteId: string,
+    @CurrentUser() usuario: AuthenticatedUser
+  ) {
+    return this.adminService.enviarRelatorioAvulsoCliente(clienteId, usuario);
   }
 
   @Get("engenheiros")

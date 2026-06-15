@@ -1,0 +1,17 @@
+ALTER TABLE "empresas" ADD COLUMN "razao_social" TEXT;
+ALTER TABLE "empresas" ADD COLUMN "nome_fantasia" TEXT;
+ALTER TABLE "empresas" ADD COLUMN "logradouro" TEXT;
+ALTER TABLE "empresas" ADD COLUMN "numero" TEXT;
+ALTER TABLE "empresas" ADD COLUMN "complemento" TEXT;
+ALTER TABLE "empresas" ADD COLUMN "bairro" TEXT;
+ALTER TABLE "empresas" ADD COLUMN "cidade" TEXT;
+ALTER TABLE "empresas" ADD COLUMN "uf" CHAR(2);
+ALTER TABLE "empresas" ADD COLUMN "cep" TEXT;
+ALTER TABLE "empresas" ADD COLUMN "inscricao_estadual" TEXT;
+ALTER TABLE "empresas" ADD COLUMN "inscricao_municipal" TEXT;
+ALTER TABLE "empresas" ADD COLUMN "responsavel_legal" TEXT;
+ALTER TABLE "empresas" ADD COLUMN "responsavel_cpf" TEXT;
+ALTER TABLE "empresas" ADD COLUMN "contato_principal" TEXT;
+ALTER TABLE "empresas" ADD COLUMN "contato_cargo" TEXT;
+ALTER TABLE "empresas" ADD COLUMN "status" TEXT NOT NULL DEFAULT 'ativa';
+ALTER TABLE "empresas" ADD COLUMN "observacoes" TEXT;
