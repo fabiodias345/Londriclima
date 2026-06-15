@@ -14,6 +14,8 @@ function criarServico(options?: {
   signers?: Array<{ id: string; email: string; full_name: string }>;
   pendentesAssinafy?: Array<{ assinafyDocumentId: string; assinafyAssignmentId: string | null }>;
   documentStatus?: string;
+  assignmentStatus?: string;
+  relatorioStatus?: PmocRelatorioStatus;
   driveStorage?: {
     salvarPdfAssinadoPmoc: (input: {
       relatorioId: string;
@@ -29,7 +31,8 @@ function criarServico(options?: {
     relatorioData: undefined as unknown,
     updateWhere: undefined as unknown,
     updateData: undefined as unknown,
-    automacaoData: undefined as unknown
+    automacaoData: undefined as unknown,
+    findFirstStatus: options?.relatorioStatus ?? PmocRelatorioStatus.aguardando_assinatura_engenheiro
   };
 
   const http = {
@@ -64,7 +67,7 @@ function criarServico(options?: {
             data: {
               id: "doc-assinafy-1",
               status: options?.documentStatus ?? "certificated",
-              assignment: { id: "assignment-1" }
+              assignment: { id: "assignment-1", status: options?.assignmentStatus ?? "pending" }
             }
           }
         };
@@ -89,6 +92,7 @@ function criarServico(options?: {
         id: "relatorio-1",
         empresaId: "empresa-1",
         clienteId: "cliente-1",
+        status: chamadas.findFirstStatus,
         cliente: { nome: "Hospital Teste", email: "cliente@example.com" },
         engenheiroResponsavel: { nome: "Paulo Silva", email: "paulo@example.com", cpf: "12345678901", crea: "CREA-PR 12345" }
       }),
@@ -100,10 +104,11 @@ function criarServico(options?: {
       update: async ({ where, data }: { where: unknown; data: unknown }) => {
         chamadas.updateWhere = where;
         chamadas.updateData = data;
+        const updateData = data as { status?: PmocRelatorioStatus; assinafyStatus?: string };
         return {
           id: "relatorio-1",
-          status: PmocRelatorioStatus.assinado,
-          assinafyStatus: "completed",
+          status: updateData.status ?? PmocRelatorioStatus.assinado,
+          assinafyStatus: updateData.assinafyStatus ?? "completed",
           pdfStorageUrl: "/storage/pmoc/assinaturas/relatorio-1.pdf"
         };
       }
@@ -274,6 +279,45 @@ test("processarWebhook arquiva PDF assinado no Drive quando assinatura Assinafy 
   assert.equal(resposta.pdf_drive_url, "https://drive.google.com/file/d/pdf-drive-1/view");
 });
 
+test("processarWebhook cancela PMOC e agenda alerta interno quando Assinafy recusa assinatura", async () => {
+  const { service, chamadas } = criarServico();
+
+  const resposta = await service.processarWebhook({
+    document_id: "doc-assinafy-1",
+    assignment_id: "assignment-1",
+    status: "refused"
+  });
+
+  assert.deepEqual(chamadas.updateWhere, { id: "relatorio-1" });
+  assert.equal((chamadas.updateData as { status?: unknown }).status, PmocRelatorioStatus.cancelado);
+  assert.equal((chamadas.updateData as { assinafyStatus?: unknown }).assinafyStatus, "refused");
+  assert.ok((chamadas.updateData as { historicoFinalizadoEm?: unknown }).historicoFinalizadoEm instanceof Date);
+
+  const automacao = chamadas.automacaoData as { empresaId?: unknown; tipo?: unknown; payload?: Record<string, unknown> };
+  assert.equal(automacao.empresaId, "empresa-1");
+  assert.equal(automacao.tipo, AutomacaoTipo.enviar_email);
+  assert.equal(automacao.payload?.tipo, "pmoc_assinatura_negada");
+  assert.equal(automacao.payload?.relatorio_id, "relatorio-1");
+  assert.equal(automacao.payload?.cliente_nome, "Hospital Teste");
+  assert.equal(automacao.payload?.engenheiro_nome, "Paulo Silva");
+  assert.equal(automacao.payload?.assinafy_status, "refused");
+  assert.equal(resposta.status, PmocRelatorioStatus.cancelado);
+});
+
+test("processarWebhook nao duplica alerta interno quando PMOC ja esta cancelado", async () => {
+  const { service, chamadas } = criarServico({
+    relatorioStatus: PmocRelatorioStatus.cancelado
+  });
+
+  await service.processarWebhook({
+    document_id: "doc-assinafy-1",
+    assignment_id: "assignment-1",
+    status: "refused"
+  });
+
+  assert.equal(chamadas.automacaoData, undefined);
+});
+
 test("sincronizarPendentesAssinafy fecha PMOC certificado mesmo sem webhook cadastrado", async () => {
   const { service, chamadas } = criarServico({
     pendentesAssinafy: [{ assinafyDocumentId: "doc-assinafy-1", assinafyAssignmentId: "assignment-1" }],
@@ -286,5 +330,20 @@ test("sincronizarPendentesAssinafy fecha PMOC certificado mesmo sem webhook cada
   assert.equal(chamadas.gets[1].url, "/documents/doc-assinafy-1/download/certificated");
   assert.equal((chamadas.updateData as { status?: unknown }).status, PmocRelatorioStatus.assinado);
   assert.equal((chamadas.automacaoData as { payload?: Record<string, unknown> }).payload?.tipo, "pmoc_relatorio_assinado");
+  assert.deepEqual(resultado, { verificados: 1, sincronizados: 1, falhas: 0 });
+});
+
+test("sincronizarPendentesAssinafy cancela PMOC quando assignment vem recusado", async () => {
+  const { service, chamadas } = criarServico({
+    pendentesAssinafy: [{ assinafyDocumentId: "doc-assinafy-1", assinafyAssignmentId: "assignment-1" }],
+    documentStatus: "pending",
+    assignmentStatus: "refused"
+  });
+
+  const resultado = await service.sincronizarPendentesAssinafy();
+
+  assert.equal(chamadas.gets[0].url, "/documents/doc-assinafy-1");
+  assert.equal((chamadas.updateData as { status?: unknown }).status, PmocRelatorioStatus.cancelado);
+  assert.equal((chamadas.automacaoData as { payload?: Record<string, unknown> }).payload?.tipo, "pmoc_assinatura_negada");
   assert.deepEqual(resultado, { verificados: 1, sincronizados: 1, falhas: 0 });
 });

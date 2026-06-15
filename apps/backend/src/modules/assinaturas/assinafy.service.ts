@@ -159,6 +159,7 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
         id: true,
         empresaId: true,
         clienteId: true,
+        status: true,
         cliente: {
           select: {
             nome: true,
@@ -185,6 +186,55 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
       assinafyAssignmentId: this.stringOuNulo(payload.assignment_id),
       assinafyUltimoEvento: payload as Prisma.JsonObject
     };
+
+    if (this.statusRecusado(status)) {
+      const agora = new Date();
+      data.status = PmocRelatorioStatus.cancelado;
+      data.historicoFinalizadoEm = agora;
+
+      const atualizado = await this.prisma.$transaction(async (tx) => {
+        const salvo = await tx.pmocRelatorio.update({
+          where: {
+            id: relatorio.id
+          },
+          data,
+          select: {
+            id: true,
+            status: true,
+            assinafyStatus: true,
+            pdfStorageUrl: true
+          }
+        });
+
+        if (relatorio.status !== PmocRelatorioStatus.cancelado) {
+          await tx.automacaoAgendada.create({
+            data: {
+              empresaId: relatorio.empresaId,
+              tipo: AutomacaoTipo.enviar_email,
+              executarEm: agora,
+              payload: {
+                tipo: "pmoc_assinatura_negada",
+                relatorio_id: relatorio.id,
+                cliente_nome: relatorio.cliente.nome,
+                cliente_email: relatorio.cliente.email ?? "nao informado",
+                data_evento: agora.toISOString(),
+                engenheiro_nome: relatorio.engenheiroResponsavel.nome,
+                assinafy_status: status
+              } satisfies Prisma.JsonObject
+            }
+          });
+        }
+
+        return salvo;
+      });
+
+      return {
+        id: atualizado.id,
+        status: atualizado.status,
+        assinafy_status: atualizado.assinafyStatus,
+        pdf_storage_url: atualizado.pdfStorageUrl
+      };
+    }
 
     if (!this.statusConcluido(status)) {
       const atualizado = await this.prisma.pmocRelatorio.update({
@@ -321,8 +371,8 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
         try {
           const response = await this.getAssinafy(`/documents/${relatorio.assinafyDocumentId}`, this.assinafyRequestConfig());
           const documentPayload = this.extrairPayload(response.data);
-          const status = this.exigirString(documentPayload.status ?? "pending", "status Assinafy");
           const assignment = this.isRecord(documentPayload.assignment) ? documentPayload.assignment : {};
+          const status = this.escolherStatusAssinafy(documentPayload.status, assignment.status);
           const assignmentId = this.stringOuNulo(assignment.id) ?? relatorio.assinafyAssignmentId;
 
           await this.processarWebhook({
@@ -331,7 +381,7 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
             status
           });
 
-          if (this.statusConcluido(status)) {
+          if (this.statusFinalizado(status)) {
             sincronizados += 1;
           }
         } catch (error) {
@@ -379,6 +429,27 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
 
   private statusConcluido(status: string) {
     return ["completed", "signed", "assinado", "concluido", "certificated"].includes(status.toLowerCase());
+  }
+
+  private statusRecusado(status: string) {
+    return ["refused", "rejected", "declined", "denied", "canceled", "cancelled", "cancelado", "recusado", "negado", "reprovado"].includes(
+      status.toLowerCase()
+    );
+  }
+
+  private statusFinalizado(status: string) {
+    return this.statusConcluido(status) || this.statusRecusado(status);
+  }
+
+  private escolherStatusAssinafy(documentStatus: unknown, assignmentStatus: unknown) {
+    const documentStatusString = this.stringOuNulo(documentStatus) ?? "pending";
+    const assignmentStatusString = this.stringOuNulo(assignmentStatus);
+
+    if (assignmentStatusString && this.statusFinalizado(assignmentStatusString)) {
+      return assignmentStatusString;
+    }
+
+    return documentStatusString;
   }
 
   private assinafyRequestConfig() {

@@ -616,7 +616,10 @@ test("gerarPdfPmocCliente retorna PDF com nome de arquivo e conteudo oficial", a
           atualizadoEm: new Date("2026-06-12T10:00:00.000Z")
         },
         enderecos: [{ cidade: "Londrina", uf: "PR", bairro: "Centro" }],
-        equipamentos: []
+        equipamentos: [
+          criarEquipamentoPmocTeste("equipamento-1", "Sala 09", "CRIS-009", "SN-CRIS-0009", "2026-06-01T20:01:00.000Z"),
+          criarEquipamentoPmocTeste("equipamento-2", "Sala 19", "CRIS-019", "SN-CRIS-0019", "2026-06-11T20:01:00.000Z")
+        ]
       })
     },
     pmocRelatorio: {
@@ -632,9 +635,20 @@ test("gerarPdfPmocCliente retorna PDF com nome de arquivo e conteudo oficial", a
   assert.equal(resposta.buffer.subarray(0, 4).toString("utf8"), "%PDF");
   const pdf = resposta.buffer.toString("latin1");
   assert.match(pdf, /Maria Souza/);
-  assert.match(pdf, /FICHA TECNICA DA MAQUINA/);
-  assert.match(pdf, /DECLARACAO DE CONFORMIDADE/);
-  assert.match(pdf, /Engenheiro responsavel: Fabio Dias/);
+  assert.match(pdf, /AIRMOVEBR - RELATORIO PMOC/);
+  assert.match(pdf, /Campo\s+Informacao/);
+  assert.match(pdf, /Cliente\s+Maria Souza/);
+  assert.match(pdf, /Engenheiro Responsavel\s+Fabio Dias - CREA-PR 654321/);
+  assert.match(pdf, /MAQUINA N:001/);
+  assert.match(pdf, /MAQUINA N:002/);
+  assert.match(pdf, /DECLARACAO DE CONFORMIDADE TECNICA/);
+  assert.match(pdf, /Lei Federal n 13\.589\/2018/);
+  assert.match(pdf, /Portaria MS n 3\.523\/1998/);
+  assert.match(pdf, /Resolucao ANVISA RE n 09\/2003/);
+  assert.match(pdf, /\/Count 4/);
+  assert.ok(pdf.indexOf("(AIRMOVEBR - RELATORIO PMOC") < pdf.indexOf("(MAQUINA N:001"));
+  assert.ok(pdf.indexOf("(MAQUINA N:001") < pdf.indexOf("(MAQUINA N:002"));
+  assert.ok(pdf.indexOf("(MAQUINA N:002") < pdf.indexOf("(DECLARACAO DE CONFORMIDADE TECNICA"));
   const declaracao = pdf.slice(pdf.indexOf("(DECLARACAO DE CONFORMIDADE"));
   assert.doesNotMatch(declaracao, /Engenheiro Responsavel: Fabio Dias/);
   assert.doesNotMatch(declaracao, /CPF: 456789123-45/);
@@ -643,6 +657,95 @@ test("gerarPdfPmocCliente retorna PDF com nome de arquivo e conteudo oficial", a
   assert.doesNotMatch(declaracao, /______________________________________________/);
   assert.doesNotMatch(pdf, /Responsavel pelo Empreendimento/);
 });
+
+function criarEquipamentoPmocTeste(id: string, localInstalacao: string, patrimonio: string, numeroSerie: string, inicioIso: string) {
+  const inicio = new Date(inicioIso);
+  const fim = new Date(inicio.getTime() + 170 * 60000);
+  const sufixo = patrimonio.toLowerCase().replace(/\D/g, "") || id;
+
+  return {
+    id,
+    tipo: "Split",
+    patrimonio,
+    codigoBarras: `7890000000${sufixo}`,
+    marca: "Springer",
+    modelo: "Split Hi Wall",
+    capacidadeBtu: 21000,
+    gasRefrigerante: "R-410A",
+    numeroSerie,
+    localInstalacao,
+    atualizadoEm: new Date("2026-06-12T10:00:00.000Z"),
+    ordensServico: [
+      {
+        id: `os-${id}`,
+        titulo: "PMOC mensal",
+        problemaRelatado: "Rotina mensal",
+        status: OrdemServicoStatus.concluida,
+        agendadaPara: inicio,
+        concluidaEm: fim,
+        valorCobrado: new Prisma.Decimal(250),
+        tecnico: { id: "tecnico-1", nome: "Joao Tecnico", email: "joao@example.com" },
+        equipe: null,
+        eventos: [
+          {
+            id: `evento-${id}`,
+            acao: OrdemServicoEventoAcao.finalizar,
+            statusAnterior: OrdemServicoStatus.em_atendimento,
+            statusNovo: OrdemServicoStatus.concluida,
+            latitude: new Prisma.Decimal(-23.3047),
+            longitude: new Prisma.Decimal(-51.1697),
+            registradoEm: fim
+          }
+        ],
+        evidencias: [
+          {
+            id: `ev-antes-${id}`,
+            tipo: "antes",
+            descricao: "Evidencia antes da manutencao PMOC",
+            storageUrl: `/storage/demo/cris/pmoc-${sufixo}-antes.jpg`,
+            mimeType: "image/jpeg",
+            tamanhoBytes: 1000,
+            criadoEm: inicio
+          },
+          {
+            id: `ev-depois-${id}`,
+            tipo: "depois",
+            descricao: "Evidencia depois da manutencao PMOC",
+            storageUrl: `/storage/demo/cris/pmoc-${sufixo}-depois.jpg`,
+            mimeType: "image/jpeg",
+            tamanhoBytes: 1000,
+            criadoEm: fim
+          }
+        ],
+        checklist: {
+          id: `check-${id}`,
+          servicoRealizado: "Limpeza de filtros",
+          procedimentos: ["limpeza_filtro", "limpeza_evaporadora"],
+          custoTotalPecas: new Prisma.Decimal(0),
+          criadoEm: inicio,
+          atualizadoEm: fim,
+          pecas: []
+        },
+        assinatura: {
+          id: `assinatura-${id}`,
+          nomeResponsavel: "Maria Souza",
+          storageUrl: "/assinatura.png",
+          latitude: new Prisma.Decimal(-23.3047),
+          longitude: new Prisma.Decimal(-51.1697),
+          assinadoEm: fim
+        },
+        observacoes: [
+          {
+            id: `obs-${id}`,
+            texto: "Sem observacoes visiveis.",
+            visivelNoRelatorio: true,
+            criadoEm: fim
+          }
+        ]
+      }
+    ]
+  };
+}
 
 test("solicitarAssinaturaPmocEngenheiro cria relatorio com token e hash do PDF", async () => {
   const chamadas = {

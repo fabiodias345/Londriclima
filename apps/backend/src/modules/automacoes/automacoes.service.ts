@@ -15,6 +15,8 @@ type AutomacaoEmailPayload = {
   engenheiro_email?: unknown;
   engenheiro_nome?: unknown;
   engenheiro_crea?: unknown;
+  data_evento?: unknown;
+  assinafy_status?: unknown;
   link_assinatura?: unknown;
   pdf_hash?: unknown;
   pdf_filename?: unknown;
@@ -48,6 +50,16 @@ type PayloadRelatorioAssinado = {
   pdf_hash: string;
   pdf_filename: string;
   pdf_base64: string;
+};
+
+type PayloadAssinaturaNegada = {
+  tipo: "pmoc_assinatura_negada";
+  relatorio_id: string;
+  cliente_nome: string;
+  cliente_email: string;
+  data_evento: string;
+  engenheiro_nome: string;
+  assinafy_status: string;
 };
 
 @Injectable()
@@ -246,6 +258,26 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
       };
     }
 
+    if (dados.tipo === "pmoc_assinatura_negada") {
+      return {
+        from,
+        to: this.obterEmailAlertaPmoc(),
+        subject: `Assinatura PMOC negada - ${dados.cliente_nome}`,
+        text: [
+          "A assinatura do PMOC foi negada no Assinafy.",
+          "",
+          `Cliente: ${dados.cliente_nome}`,
+          `E-mail: ${dados.cliente_email}`,
+          `Engenheiro: ${dados.engenheiro_nome}`,
+          `Status Assinafy: ${dados.assinafy_status}`,
+          `Data: ${this.formatarDataEmail(dados.data_evento)}`,
+          `Relatorio: ${dados.relatorio_id}`,
+          "",
+          "Acesse o painel administrativo para revisar o PMOC e reenviar a assinatura se necessario."
+        ].join("\n")
+      };
+    }
+
     const internalCopyEmail = this.config.get<string>("PMOC_INTERNAL_COPY_EMAIL");
 
     return {
@@ -280,7 +312,7 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
-  private validarPayload(payload: Prisma.JsonValue): PayloadAssinaturaEngenheiro | PayloadRelatorioAssinado {
+  private validarPayload(payload: Prisma.JsonValue): PayloadAssinaturaEngenheiro | PayloadRelatorioAssinado | PayloadAssinaturaNegada {
     if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
       throw new Error("Payload de e-mail invalido.");
     }
@@ -320,7 +352,41 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
       };
     }
 
+    if (dados.tipo === "pmoc_assinatura_negada") {
+      return {
+        tipo: dados.tipo,
+        relatorio_id: this.exigirString(dados.relatorio_id, "relatorio_id"),
+        cliente_nome: this.exigirString(dados.cliente_nome, "cliente_nome"),
+        cliente_email: this.exigirString(dados.cliente_email, "cliente_email"),
+        data_evento: this.exigirString(dados.data_evento, "data_evento"),
+        engenheiro_nome: this.exigirString(dados.engenheiro_nome, "engenheiro_nome"),
+        assinafy_status: this.exigirString(dados.assinafy_status, "assinafy_status")
+      };
+    }
+
     throw new Error("Tipo de e-mail nao suportado.");
+  }
+
+  private obterEmailAlertaPmoc() {
+    const configurado =
+      this.config.get<string>("PMOC_SIGNATURE_ALERT_EMAIL") ||
+      this.config.get<string>("PMOC_INTERNAL_COPY_EMAIL") ||
+      this.config.get<string>("SMTP_USER") ||
+      this.extrairEmailFrom(this.config.get<string>("SMTP_FROM"));
+
+    if (!configurado?.trim()) {
+      throw new Error("E-mail de alerta PMOC nao configurado.");
+    }
+
+    return configurado.trim();
+  }
+
+  private extrairEmailFrom(valor?: string) {
+    if (!valor) {
+      return undefined;
+    }
+
+    return valor.match(/<([^>]+)>/)?.[1] ?? valor;
   }
 
   private exigirString(valor: unknown, campo: string) {

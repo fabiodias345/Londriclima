@@ -166,7 +166,7 @@ test("processarPendentes envia copia oculta interna no email final PMOC quando c
     emailSender,
     criarConfig({
       SMTP_FROM: "AIRMOVEBR <noreply@example.com>",
-      PMOC_INTERNAL_COPY_EMAIL: "AIRMOVRBR2@gmail.com"
+      PMOC_INTERNAL_COPY_EMAIL: "airmovebr2@gmail.com"
     }) as never
   );
 
@@ -174,7 +174,7 @@ test("processarPendentes envia copia oculta interna no email final PMOC quando c
 
   assert.equal(resultado.concluidas, 1);
   assert.equal((chamadas.email as { to?: unknown }).to, "maria@example.com");
-  assert.equal((chamadas.email as { bcc?: unknown }).bcc, "AIRMOVRBR2@gmail.com");
+  assert.equal((chamadas.email as { bcc?: unknown }).bcc, "airmovebr2@gmail.com");
 });
 
 test("processarPendentes envia link de assinatura PMOC para o engenheiro", async () => {
@@ -244,6 +244,72 @@ test("processarPendentes envia link de assinatura PMOC para o engenheiro", async
         contentBase64: Buffer.from("%PDF-1.4\npmoc").toString("base64")
       }
     ]
+  });
+});
+
+test("processarPendentes envia alerta interno quando assinatura PMOC e negada no Assinafy", async () => {
+  const chamadas = {
+    email: undefined as unknown
+  };
+  const prisma = {
+    automacaoAgendada: {
+      findMany: async () => [
+        {
+          id: "automacao-negada-1",
+          tipo: AutomacaoTipo.enviar_email,
+          payload: {
+            tipo: "pmoc_assinatura_negada",
+            relatorio_id: "relatorio-1",
+            cliente_nome: "Maria Souza",
+            cliente_email: "maria@example.com",
+            data_evento: "2026-06-12T12:00:00.000Z",
+            engenheiro_nome: "Paulo Londriclima",
+            assinafy_status: "refused"
+          },
+          tentativas: 0
+        }
+      ],
+      updateMany: async () => ({ count: 1 }),
+      update: async () => undefined
+    }
+  };
+  const emailSender: EmailSender = {
+    enviar: async (email) => {
+      chamadas.email = email;
+      return {
+        response: "250 2.0.0 OK smtp-id - gsmtp",
+        recipient: email.to
+      };
+    }
+  };
+  const service = new AutomacoesService(
+    prisma as never,
+    emailSender,
+    criarConfig({
+      SMTP_FROM: "AIRMOVEBR <noreply@example.com>",
+      PMOC_SIGNATURE_ALERT_EMAIL: "operacao@airmovebr.com.br"
+    }) as never
+  );
+
+  const resultado = await service.processarPendentes(new Date("2026-06-12T12:00:00.000Z"));
+
+  assert.equal(resultado.concluidas, 1);
+  assert.deepEqual(chamadas.email, {
+    from: "AIRMOVEBR <noreply@example.com>",
+    to: "operacao@airmovebr.com.br",
+    subject: "Assinatura PMOC negada - Maria Souza",
+    text: [
+      "A assinatura do PMOC foi negada no Assinafy.",
+      "",
+      "Cliente: Maria Souza",
+      "E-mail: maria@example.com",
+      "Engenheiro: Paulo Londriclima",
+      "Status Assinafy: refused",
+      "Data: 12/06/2026 09:00",
+      "Relatorio: relatorio-1",
+      "",
+      "Acesse o painel administrativo para revisar o PMOC e reenviar a assinatura se necessario."
+    ].join("\n")
   });
 });
 

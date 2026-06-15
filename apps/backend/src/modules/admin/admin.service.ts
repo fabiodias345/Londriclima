@@ -1946,32 +1946,11 @@ export class AdminService {
   }
 
   private gerarPdfBasicoPmoc(previa: PreviaPmocCliente) {
-    const paginas: string[][] = [
-      [
-        "AIRMOVEBR - RELATORIO PMOC",
-        "",
-        `Cliente: ${previa.cliente.nome}`,
-        `Documento: ${previa.cliente.documento || "nao informado"}`,
-        `Email: ${previa.cliente.email || "pendente"}`,
-        `Endereco: ${this.formatarEnderecoPmoc(previa.cliente.endereco)}`,
-        "",
-        `Engenheiro responsavel: ${previa.engenheiro_responsavel?.nome || "pendente"}`,
-        `CREA: ${previa.engenheiro_responsavel?.crea || "pendente"}`,
-        `Periodo: ${this.formatarDataPmoc(previa.periodo.inicio)} ate ${this.formatarDataPmoc(previa.periodo.fim)}`,
-        `Maquinas: ${previa.total_maquinas}`,
-        `OS concluidas: ${previa.total_os_concluidas}`,
-        `Status: ${previa.pronto_para_pdf ? "pronto para assinatura" : "com pendencias"}`,
-        "",
-        "Pendencias",
-        previa.pendencias.join(", ") || "Nenhuma pendencia encontrada.",
-        "",
-        "Este relatorio consolida maquinas, execucoes, checklist, evidencias, GPS e assinatura do cliente."
-      ]
-    ];
+    const paginas: string[][] = [this.montarCapaPmoc(previa)];
 
     if (!previa.maquinas.length) {
       paginas.push([
-        "FICHA TECNICA DA MAQUINA",
+        "MAQUINA N:001",
         "",
         "Nenhuma maquina cadastrada para este cliente.",
         "Cadastre maquinas antes de emitir o PMOC final."
@@ -1979,54 +1958,99 @@ export class AdminService {
     }
 
     for (const [indice, maquina] of previa.maquinas.entries()) {
-      const primeiraOs = maquina.os_concluidas[0] ?? null;
-      const inicio = primeiraOs?.eventos[0]?.registrado_em ?? primeiraOs?.agendada_para ?? null;
-      const fim = primeiraOs?.concluida_em ?? primeiraOs?.eventos.at(-1)?.registrado_em ?? null;
-      const linhas = [
-        "FICHA TECNICA DA MAQUINA",
-        `Maquina ${indice + 1} de ${previa.maquinas.length}`,
-        "",
-        `FLUIDO: ${maquina.gas_refrigerante || "pendente"}    LOCALIZACAO: ${maquina.local_instalacao || "nao informado"}`,
-        `MODELO: ${maquina.modelo || "nao informado"}    MARCA: ${maquina.marca || "nao informada"}    SERIE: ${maquina.numero_serie || "nao informada"}`,
-        `CAPACIDADE: ${maquina.capacidade_btu ? `${maquina.capacidade_btu} BTU` : "nao informada"}    PATRIMONIO: ${maquina.patrimonio || "nao informado"}`,
-        `CODIGO/QR: ${maquina.codigo_barras || "nao informado"}`,
-        "",
-        `EXECUCOES REGISTRADAS: ${maquina.os_concluidas.length}`,
-        `PENDENCIAS DA MAQUINA: ${maquina.pendencias.join(", ") || "nenhuma"}`,
-        "",
-        "LIMPEZA DE FILTROS - 1 execucao",
-        `EXECUCAO: #1    DATA: ${this.formatarDataPmoc(primeiraOs?.concluida_em ?? null)}    HORA INICIAL: ${this.formatarHoraPmoc(inicio)}    HORA FINAL: ${this.formatarHoraPmoc(fim)}`,
-        `TECNICO: ${primeiraOs?.tecnico?.nome || primeiraOs?.equipe?.nome || "nao informado"}    DURACAO: ${this.calcularDuracaoPmoc(inicio, fim)}`,
-        "",
-        "Verificacao / Atividade                                      Resultado"
-      ];
-
-      const verificacoes = this.obterLinhasChecklistPmoc(primeiraOs);
-      linhas.push(...verificacoes.map(([label, valor]) => `${label.padEnd(60, " ")} ${valor}`));
-      linhas.push(
-        "",
-        "Evidencias",
-        ...(primeiraOs?.evidencias.length
-          ? primeiraOs.evidencias.map((evidencia) => `${evidencia.tipo}: ${evidencia.descricao} - ${evidencia.storage_url}`)
-          : ["Nenhuma evidencia registrada."]),
-        "",
-        "Observacoes",
-        ...(primeiraOs?.observacoes.length ? primeiraOs.observacoes.map((item) => item.texto) : ["Sem observacoes visiveis."]),
-        "",
-        `Assinatura do cliente: ${primeiraOs?.assinatura?.nome_responsavel || "pendente"}`
-      );
-      paginas.push(linhas);
+      paginas.push(this.montarPaginaMaquinaPmoc(previa, maquina, indice));
     }
 
-    paginas.push([
-      `DECLARACAO DE CONFORMIDADE - ${this.formatarMesAnoPmoc(previa.periodo.fim)}`,
-      "",
-      "Declaro que os servicos de manutencao listados neste documento foram executados conforme o Programa de Manutencao, Operacao e Controle (PMOC), de acordo com a Resolucao ANVISA RE-09/2003.",
-      "",
-      "A validade da assinatura tecnica e registrada digitalmente pela plataforma de assinatura."
-    ]);
+    paginas.push(this.montarDeclaracaoPmoc(previa));
 
     return this.criarPdfTexto(paginas);
+  }
+
+  private montarCapaPmoc(previa: PreviaPmocCliente) {
+    const responsavel = previa.engenheiro_responsavel
+      ? `${previa.engenheiro_responsavel.nome} - ${previa.engenheiro_responsavel.crea || "CREA pendente"}`
+      : "pendente";
+
+    return [
+      "AIRMOVEBR - RELATORIO PMOC",
+      "",
+      "-----------------------------------------------------------------------",
+      this.formatarLinhaCampoPmoc("Campo", "Informacao"),
+      "----------------------------------- -----------------------------------",
+      this.formatarLinhaCampoPmoc("Empresa", "AIRMOVEBR"),
+      this.formatarLinhaCampoPmoc("Base operacional", "Londrina, PR"),
+      this.formatarLinhaCampoPmoc("Dominio", "airmovebr.com.br"),
+      "",
+      this.formatarLinhaCampoPmoc("Cliente", previa.cliente.nome),
+      this.formatarLinhaCampoPmoc("Documento", previa.cliente.documento || "nao informado"),
+      this.formatarLinhaCampoPmoc("E-mail", previa.cliente.email || "pendente"),
+      this.formatarLinhaCampoPmoc("Endereco", this.formatarEnderecoPmoc(previa.cliente.endereco)),
+      this.formatarLinhaCampoPmoc("Engenheiro Responsavel", responsavel),
+      this.formatarLinhaCampoPmoc(
+        "Periodo",
+        `${this.formatarDataPmoc(previa.periodo.inicio)} a ${this.formatarDataPmoc(previa.periodo.fim)}`
+      ),
+      this.formatarLinhaCampoPmoc(
+        "Maquinas",
+        `${previa.total_maquinas} - OS Concluidas: ${previa.total_os_concluidas} - Status: ${this.formatarStatusPmoc(previa)}`
+      ),
+      this.formatarLinhaCampoPmoc("Pendencias", previa.pendencias.join(", ") || "Nenhuma"),
+      "-----------------------------------------------------------------------",
+      "",
+      "Este relatorio consolida maquinas, execucoes, checklist, evidencias, GPS e assinatura do cliente."
+    ];
+  }
+
+  private montarPaginaMaquinaPmoc(
+    previa: PreviaPmocCliente,
+    maquina: PreviaPmocCliente["maquinas"][number],
+    indice: number
+  ) {
+    const primeiraOs = maquina.os_concluidas[0] ?? null;
+    const inicio = primeiraOs?.agendada_para ?? primeiraOs?.eventos[0]?.registrado_em ?? null;
+    const fim = primeiraOs?.concluida_em ?? primeiraOs?.eventos.at(-1)?.registrado_em ?? null;
+    const verificacoes = this.obterLinhasChecklistPmoc(primeiraOs);
+
+    return [
+      `MAQUINA N:${String(indice + 1).padStart(3, "0")}`,
+      "",
+      "--------------------------------------------------------------------------------------------------",
+      "Modelo              Marca        Serie          Fluido   Capacidade   Localizacao   Patrimonio   Codigo/QR",
+      "------------------  -----------  -------------  -------  -----------  ------------  -----------  -------------",
+      this.formatarLinhaMaquinaPmoc(maquina),
+      "--------------------------------------------------------------------------------------------------",
+      "",
+      `Execucao #1 - ${this.formatarDataPmoc(primeiraOs?.concluida_em ?? null)} - ${this.formatarHoraPmoc(inicio)} -> ${this.formatarHoraPmoc(fim)} (${this.calcularDuracaoPmoc(inicio, fim)}) - Tecnico: ${primeiraOs?.tecnico?.nome || primeiraOs?.equipe?.nome || "nao informado"}`,
+      "",
+      "-----------------------------------------------------------------------",
+      this.formatarLinhaCampoPmoc("Verificacao / Atividade", "Resultado"),
+      "----------------------------------- -----------------------------------",
+      ...verificacoes.map(([label, valor]) => this.formatarLinhaCampoPmoc(label, valor)),
+      "-----------------------------------------------------------------------",
+      "",
+      `Evidencias: ${this.formatarEvidenciasPmoc(primeiraOs)}`,
+      "",
+      `Observacoes: ${primeiraOs?.observacoes[0]?.texto || "Sem observacoes visiveis."}`,
+      "",
+      `Assinatura do Cliente: ${primeiraOs?.assinatura?.nome_responsavel || "pendente"}`,
+      `Pagina da maquina ${indice + 1} de ${previa.maquinas.length}`
+    ];
+  }
+
+  private montarDeclaracaoPmoc(previa: PreviaPmocCliente) {
+    return [
+      `DECLARACAO DE CONFORMIDADE TECNICA - ${this.formatarMesAnoPmoc(previa.periodo.fim)}`,
+      "",
+      "Declaro, para os devidos fins, que os servicos de manutencao preventiva registrados neste Relatorio PMOC",
+      "foram executados em conformidade com o Programa de Manutencao, Operacao e Controle (PMOC), instituido",
+      "pela Lei Federal n 13.589/2018 e regulamentado pela Portaria MS n 3.523/1998, observando os parametros",
+      "de qualidade do ar interior estabelecidos pela Resolucao ANVISA RE n 09/2003.",
+      "",
+      "Os procedimentos abrangem inspecao, limpeza e verificacao funcional dos equipamentos, com evidencias",
+      "fotograficas antes e apos cada intervencao, geolocalizacao do tecnico e assinatura digital do cliente.",
+      "A autenticidade e garantida por UUID da plataforma AirMove BR, com validade juridica nos termos da",
+      "Lei Federal n 14.063/2020 e da MP n 2.200-2/2001 (ICP-Brasil)."
+    ];
   }
 
   private criarPdfTexto(paginas: string[][]) {
@@ -2088,6 +2112,58 @@ export class AdminService {
       ["Observacao sobre o dreno/bandeja", ordem?.observacoes[0]?.texto || "Sem observacao"],
       ["Evidencia apos a limpeza", evidenciaDepois ? "Sim" : "Pendente"]
     ];
+  }
+
+  private formatarLinhaCampoPmoc(campo: string, valor: string) {
+    return `${campo.padEnd(35, " ")} ${valor || "nao informado"}`;
+  }
+
+  private formatarLinhaMaquinaPmoc(maquina: PreviaPmocCliente["maquinas"][number]) {
+    return [
+      this.limitarCampoPmoc(maquina.modelo || "nao informado", 18),
+      this.limitarCampoPmoc(maquina.marca || "nao informada", 11),
+      this.limitarCampoPmoc(maquina.numero_serie || "nao informada", 13),
+      this.limitarCampoPmoc(maquina.gas_refrigerante || "pendente", 7),
+      this.limitarCampoPmoc(this.formatarCapacidadePmoc(maquina.capacidade_btu), 11),
+      this.limitarCampoPmoc(maquina.local_instalacao || "nao informado", 12),
+      this.limitarCampoPmoc(maquina.patrimonio || "nao informado", 11),
+      maquina.codigo_barras || "nao informado"
+    ].join("  ");
+  }
+
+  private formatarCapacidadePmoc(capacidadeBtu: number | null) {
+    return capacidadeBtu ? `${new Intl.NumberFormat("pt-BR").format(capacidadeBtu)} BTU` : "nao informada";
+  }
+
+  private limitarCampoPmoc(valor: string, tamanho: number) {
+    const normalizado = this.normalizarTextoPdf(valor);
+    return normalizado.length > tamanho ? normalizado.slice(0, tamanho) : normalizado.padEnd(tamanho, " ");
+  }
+
+  private formatarStatusPmoc(previa: PreviaPmocCliente) {
+    return previa.pronto_para_pdf ? "Pronto para assinatura" : "Com pendencias";
+  }
+
+  private formatarEvidenciasPmoc(ordem: PreviaPmocCliente["maquinas"][number]["os_concluidas"][number] | null) {
+    if (!ordem?.evidencias.length) {
+      return "Nenhuma evidencia registrada.";
+    }
+
+    const antes = ordem.evidencias.find((evidencia) => evidencia.tipo === "antes");
+    const depois = ordem.evidencias.find((evidencia) => evidencia.tipo === "depois");
+
+    return [
+      `Antes --- ${this.obterNomeArquivoPmoc(antes?.storage_url)}`,
+      `Depois --- ${this.obterNomeArquivoPmoc(depois?.storage_url)}`
+    ].join(" - ");
+  }
+
+  private obterNomeArquivoPmoc(storageUrl?: string) {
+    if (!storageUrl) {
+      return "pendente";
+    }
+
+    return storageUrl.split(/[\\/]/).filter(Boolean).at(-1) || storageUrl;
   }
 
   private formatarEnderecoPmoc(endereco: PreviaPmocCliente["cliente"]["endereco"]) {
