@@ -19,5 +19,33 @@ export class CriarPreChamadoDto {
 
   @IsOptional()
   @IsString()
+  cep?: string;
+
+  @IsOptional()
+  @IsString()
+  logradouro?: string;
+
+  @IsOptional()
+  @IsString()
+  numero?: string;
+
+  @IsOptional()
+  @IsString()
+  complemento?: string;
+
+  @IsOptional()
+  @IsString()
+  bairro?: string;
+
+  @IsOptional()
+  @IsString()
+  cidade?: string;
+
+  @IsOptional()
+  @IsString()
+  uf?: string;
+
+  @IsOptional()
+  @IsString()
   detalhes?: string;
 }

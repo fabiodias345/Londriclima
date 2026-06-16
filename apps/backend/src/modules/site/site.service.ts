@@ -55,7 +55,7 @@ export class SiteService {
     }
 
     const telefone = this.normalizarTelefone(dto.telefone);
-    const local = this.parseLocal(dto.local);
+    const enderecoInformado = this.parseEndereco(dto);
 
     const clienteExistente = await this.prisma.cliente.findFirst({
       where: {
@@ -97,11 +97,14 @@ export class SiteService {
         data: {
           empresaId: empresa.id,
           clienteId: cliente.id,
-          nome: "Endereço informado no site",
-          logradouro: local.logradouro,
-          bairro: local.bairro,
-          cidade: local.cidade,
-          uf: "PR"
+          nome: "Endereco informado no site",
+          logradouro: enderecoInformado.logradouro,
+          numero: enderecoInformado.numero,
+          complemento: enderecoInformado.complemento,
+          bairro: enderecoInformado.bairro,
+          cidade: enderecoInformado.cidade,
+          uf: enderecoInformado.uf,
+          cep: enderecoInformado.cep
         },
         select: {
           id: true
@@ -140,7 +143,7 @@ export class SiteService {
     return {
       pre_chamado_id: resultado.id,
       status: resultado.status,
-      mensagem: "Pré-chamado registrado. A equipe AIRMOVEBR retornará pelo WhatsApp.",
+      mensagem: "Pre-chamado registrado. A equipe AIRMOVEBR acompanhara pelo painel de atendimento.",
       criado_em: resultado.criadaEm.toISOString()
     };
   }
@@ -405,6 +408,20 @@ export class SiteService {
     return telefone.replace(/\D/g, "");
   }
 
+  private parseEndereco(dto: CriarPreChamadoDto) {
+    const localFallback = this.parseLocal(dto.local);
+
+    return {
+      logradouro: dto.logradouro?.trim() || localFallback.logradouro,
+      numero: dto.numero?.trim() || null,
+      complemento: dto.complemento?.trim() || null,
+      bairro: dto.bairro?.trim() || localFallback.bairro,
+      cidade: dto.cidade?.trim() || localFallback.cidade,
+      uf: dto.uf?.trim().toUpperCase() || "PR",
+      cep: this.normalizarCep(dto.cep)
+    };
+  }
+
   private parseLocal(local: string) {
     const [bairro, cidade] = local.split(",").map((parte) => parte.trim());
 
@@ -413,6 +430,11 @@ export class SiteService {
       bairro: bairro || null,
       cidade: cidade || "Londrina"
     };
+  }
+
+  private normalizarCep(cep?: string) {
+    const digitos = cep?.replace(/\D/g, "") || "";
+    return digitos || null;
   }
 
   private mapearAssinaturaPmoc(relatorio: {

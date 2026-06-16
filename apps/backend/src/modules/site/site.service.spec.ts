@@ -114,6 +114,76 @@ test("criarPreChamado grava cliente, endereco, OS e evento na empresa piloto, ig
   assert.equal(resposta.criado_em, "2026-06-10T12:00:00.000Z");
 });
 
+test("criarPreChamado grava endereco estruturado enviado pelo formulario do site", async () => {
+  const chamadas = {
+    enderecoCreateData: undefined as unknown
+  };
+  const tx = {
+    cliente: {
+      create: async () => ({ id: "cliente-1" })
+    },
+    clienteEndereco: {
+      create: async ({ data }: { data: unknown }) => {
+        chamadas.enderecoCreateData = data;
+        return { id: "endereco-1" };
+      }
+    },
+    ordemServico: {
+      create: async () => ({
+        id: "os-1",
+        status: OrdemServicoStatus.pre_chamado,
+        criadaEm: new Date("2026-06-10T12:00:00.000Z")
+      })
+    },
+    ordemServicoEvento: {
+      create: async () => undefined
+    }
+  };
+  const prisma = {
+    empresa: {
+      findUnique: async () => ({ id: "empresa-piloto" })
+    },
+    cliente: {
+      findFirst: async () => null
+    },
+    $transaction: async (callback: (tx: unknown) => unknown) => callback(tx)
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.criarPreChamado({
+    ...dto,
+    local: "Centro, Londrina",
+    cep: "86010-000",
+    logradouro: "Rua Sergipe",
+    numero: "123",
+    complemento: "Sala 4",
+    bairro: "Centro",
+    cidade: "Londrina",
+    uf: "PR"
+  });
+
+  assert.deepEqual(
+    {
+      ...(chamadas.enderecoCreateData as Record<string, unknown>),
+      empresaId: "empresa-validada",
+      clienteId: "cliente-validado"
+    },
+    {
+      empresaId: "empresa-validada",
+      clienteId: "cliente-validado",
+      nome: "Endereco informado no site",
+      logradouro: "Rua Sergipe",
+      numero: "123",
+      complemento: "Sala 4",
+      bairro: "Centro",
+      cidade: "Londrina",
+      uf: "PR",
+      cep: "86010000"
+    }
+  );
+  assert.equal(resposta.mensagem, "Pre-chamado registrado. A equipe AIRMOVEBR acompanhara pelo painel de atendimento.");
+});
+
 test("criarPreChamado atualiza cliente existente somente dentro da empresa piloto", async () => {
   const chamadas = {
     clienteUpdateArgs: undefined as unknown

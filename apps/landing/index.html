@@ -362,6 +362,7 @@
             <select name="servico" required>
               <option value="">Selecione</option>
               <option>Instalação de ar-condicionado</option>
+              <option>Limpeza de ar-condicionado</option>
               <option>Manutenção preventiva e corretiva</option>
               <option>PMOC</option>
               <option>Locação de ar-condicionado</option>
@@ -370,9 +371,34 @@
             </select>
           </label>
           <label>
-            Bairro / cidade
-            <input name="local" type="text" autocomplete="address-level2" placeholder="Centro, Londrina" required />
+            CEP
+            <input name="cep" type="text" inputmode="numeric" maxlength="9" autocomplete="postal-code" placeholder="86000-000" required />
           </label>
+          <label>
+            Rua
+            <input name="logradouro" type="text" autocomplete="address-line1" placeholder="Rua, avenida ou travessa" required />
+          </label>
+          <label>
+            Número
+            <input name="numero" type="text" autocomplete="address-line2" placeholder="123" required />
+          </label>
+          <label>
+            Complemento
+            <input name="complemento" type="text" autocomplete="address-line3" placeholder="Apto, bloco, sala" />
+          </label>
+          <label>
+            Bairro
+            <input name="bairro" type="text" autocomplete="address-level3" placeholder="Centro" required />
+          </label>
+          <label>
+            Cidade
+            <input name="cidade" type="text" autocomplete="address-level2" placeholder="Londrina" required />
+          </label>
+          <label>
+            UF
+            <input name="uf" type="text" maxlength="2" autocomplete="address-level1" placeholder="PR" value="PR" required />
+          </label>
+          <p class="cep-status" id="bookingCepStatus" role="status" aria-live="polite"></p>
           <label class="full">
             Mensagem
             <textarea name="mensagem" rows="5" placeholder="Conte o que você precisa"></textarea>
@@ -404,6 +430,22 @@
       <small>Copyright AIRMOVEBR. Todos os direitos reservados.</small>
     </footer>
     <!-- End Footer -->
+
+    <div class="booking-modal" id="bookingSuccessModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="bookingSuccessTitle">
+      <div class="booking-modal-backdrop" data-booking-success-close></div>
+      <section class="booking-modal-panel" tabindex="-1">
+        <button class="booking-modal-close" type="button" aria-label="Fechar" data-booking-success-close>&times;</button>
+        <span class="section-tag">Solicitação recebida</span>
+        <h2 id="bookingSuccessTitle">Em breve, um de nossos especialistas entrará em contato.</h2>
+        <p>
+          Se preferir um atendimento imediato, clique abaixo e fale conosco pelo WhatsApp. Lá você poderá consultar nossos horários disponíveis e agendar sua data em poucos minutos.
+        </p>
+        <div class="booking-modal-actions">
+          <a class="whatsapp-link" id="bookingSuccessWhatsApp" href="https://wa.me/5543999990000" target="_blank" rel="noreferrer">Falar no WhatsApp</a>
+          <button type="button" class="secondary-modal-button" data-booking-success-close>Continuar no site</button>
+        </div>
+      </section>
+    </div>
 
     <a class="floating-whatsapp" href="https://wa.me/5543999990000" target="_blank" rel="noreferrer" aria-label="Chamar AIRMOVEBR no WhatsApp">
       <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>

@@ -3,9 +3,15 @@ const status = document.querySelector("#formStatus");
 const header = document.querySelector("[data-header]");
 const menuToggle = document.querySelector("[data-menu-toggle]");
 const mainNav = document.querySelector("[data-main-nav]");
+const bookingCepStatus = document.querySelector("#bookingCepStatus");
+const bookingSuccessModal = document.querySelector("#bookingSuccessModal");
+const bookingSuccessWhatsApp = document.querySelector("#bookingSuccessWhatsApp");
+const bookingSuccessCloseButtons = document.querySelectorAll("[data-booking-success-close]");
 const localHosts = ["localhost", "127.0.0.1", ""];
 const apiBaseUrl = localHosts.includes(window.location.hostname)
   ? "http://localhost:3000/api/v1"
+  : window.location.hostname === "191.252.226.11"
+    ? `${window.location.origin}/api/v1`
   : "https://api.airmovebr.com.br/api/v1";
 const apiUrl = `${apiBaseUrl}/site/pre-chamados`;
 const whatsappNumber = "5543999990000";
@@ -89,18 +95,117 @@ function moveTestimonial(direction) {
   renderTestimonial();
 }
 
-function buildWhatsAppMessage(payload) {
+function onlyDigits(value) {
+  return value.replace(/\D/g, "");
+}
+
+function formatCep(value) {
+  const digits = onlyDigits(value).slice(0, 8);
+  return digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
+}
+
+function setBookingCepStatus(message, state = "") {
+  if (!bookingCepStatus) {
+    return;
+  }
+
+  bookingCepStatus.textContent = message;
+  bookingCepStatus.dataset.state = state;
+}
+
+function buildLocalFromAddress(payload) {
+  return [
+    [payload.logradouro, payload.numero].filter(Boolean).join(", "),
+    payload.complemento,
+    payload.bairro,
+    [payload.cidade, payload.uf].filter(Boolean).join("/")
+  ]
+    .filter(Boolean)
+    .join(" - ");
+}
+
+function buildWhatsAppUrl(payload) {
   const lines = [
-    "Olá, quero agendar uma visita técnica pela AIRMOVEBR.",
+    "Olá, quero atendimento imediato pela AIRMOVEBR.",
     `Nome: ${payload.nome}`,
     `Telefone: ${payload.telefone}`,
     `Serviço: ${payload.servico}`,
-    `Local: ${payload.local}`,
-    payload.email ? `Email: ${payload.email}` : "",
-    payload.mensagem ? `Mensagem: ${payload.mensagem}` : ""
+    `Endereço: ${payload.local}`,
+    payload.detalhes ? `Detalhes: ${payload.detalhes}` : ""
   ].filter(Boolean);
 
   return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(lines.join("\n"))}`;
+}
+
+function openBookingSuccessModal(payload) {
+  if (!bookingSuccessModal) {
+    return;
+  }
+
+  if (bookingSuccessWhatsApp instanceof HTMLAnchorElement) {
+    bookingSuccessWhatsApp.href = buildWhatsAppUrl(payload);
+  }
+
+  bookingSuccessModal.classList.add("is-open");
+  bookingSuccessModal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modal-open");
+}
+
+function closeBookingSuccessModal() {
+  if (!bookingSuccessModal) {
+    return;
+  }
+
+  bookingSuccessModal.classList.remove("is-open");
+  bookingSuccessModal.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("modal-open");
+}
+
+async function lookupBookingCep() {
+  const cepInput = form?.elements.cep;
+
+  if (!(cepInput instanceof HTMLInputElement)) {
+    return;
+  }
+
+  cepInput.value = formatCep(cepInput.value);
+  const cep = onlyDigits(cepInput.value);
+
+  if (!cep) {
+    setBookingCepStatus("");
+    return;
+  }
+
+  if (cep.length < 8) {
+    setBookingCepStatus("Digite os 8 numeros do CEP.", "warning");
+    return;
+  }
+
+  setBookingCepStatus("Buscando endereco pelo CEP...", "loading");
+
+  try {
+    const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+
+    if (!response.ok) {
+      throw new Error("cep_lookup_failed");
+    }
+
+    const address = await response.json();
+
+    if (address.erro) {
+      setBookingCepStatus("CEP nao encontrado. Preencha o endereco manualmente.", "warning");
+      return;
+    }
+
+    form.elements.logradouro.value = address.logradouro || "";
+    form.elements.bairro.value = address.bairro || "";
+    form.elements.cidade.value = address.localidade || "Londrina";
+    form.elements.uf.value = address.uf || "PR";
+    setBookingCepStatus("Endereco preenchido pelo CEP. Informe apenas o numero.", "success");
+    form.elements.numero?.focus();
+  } catch {
+    setBookingCepStatus("Nao foi possivel buscar o CEP agora. Preencha manualmente.", "warning");
+  }
 }
 
 form?.addEventListener("submit", async (event) => {
@@ -110,11 +215,21 @@ form?.addEventListener("submit", async (event) => {
   const submitButton = form.querySelector("button[type='submit']");
   const email = String(data.get("email") || "").trim();
   const mensagem = String(data.get("mensagem") || "").trim();
+  const addressPayload = {
+    cep: onlyDigits(String(data.get("cep") || "")),
+    logradouro: String(data.get("logradouro") || "").trim(),
+    numero: String(data.get("numero") || "").trim(),
+    complemento: String(data.get("complemento") || "").trim(),
+    bairro: String(data.get("bairro") || "").trim(),
+    cidade: String(data.get("cidade") || "").trim(),
+    uf: String(data.get("uf") || "").trim().toUpperCase()
+  };
   const payload = {
     nome: String(data.get("nome") || "").trim(),
     telefone: String(data.get("telefone") || "").trim(),
     servico: String(data.get("servico") || "").trim(),
-    local: String(data.get("local") || "").trim(),
+    local: buildLocalFromAddress(addressPayload),
+    ...addressPayload,
     detalhes: [email ? `Email: ${email}` : "", mensagem].filter(Boolean).join("\n")
   };
 
@@ -139,15 +254,12 @@ form?.addEventListener("submit", async (event) => {
     const result = await response.json();
     status.classList.add("success");
     status.textContent = `${result.mensagem} Protocolo: ${result.pre_chamado_id.slice(0, 8)}.`;
+    openBookingSuccessModal(payload);
     form.reset();
+    setBookingCepStatus("");
   } catch {
-    const whatsappUrl = buildWhatsAppMessage({
-      ...payload,
-      email,
-      mensagem
-    });
     status.classList.add("error");
-    status.innerHTML = `Não foi possível conectar na API. <a href="${whatsappUrl}" target="_blank" rel="noreferrer">Enviar pelo WhatsApp</a>.`;
+    status.textContent = "Nao foi possivel registrar a solicitacao agora. Tente novamente em instantes.";
   } finally {
     submitButton.disabled = false;
     submitButton.textContent = "Enviar solicitação";
@@ -163,6 +275,13 @@ mainNav?.addEventListener("click", (event) => {
 window.addEventListener("scroll", updateHeaderState, { passive: true });
 document.querySelector("[data-testimonial-prev]")?.addEventListener("click", () => moveTestimonial(-1));
 document.querySelector("[data-testimonial-next]")?.addEventListener("click", () => moveTestimonial(1));
+bookingSuccessCloseButtons.forEach((button) => button.addEventListener("click", closeBookingSuccessModal));
+form?.elements.cep?.addEventListener("input", (event) => {
+  if (event.target instanceof HTMLInputElement) {
+    event.target.value = formatCep(event.target.value);
+  }
+});
+form?.elements.cep?.addEventListener("blur", lookupBookingCep);
 
 setInterval(() => moveTestimonial(1), 7000);
 updateHeaderState();

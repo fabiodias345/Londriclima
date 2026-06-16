@@ -740,6 +740,7 @@ h3 {
 
 .booking-form .full,
 .booking-form button,
+.booking-form .cep-status,
 .form-status {
   grid-column: 1 / -1;
 }
@@ -762,6 +763,27 @@ h3 {
 .booking-form button {
   min-height: 54px;
   font-size: 16px;
+}
+
+.cep-status {
+  min-height: 20px;
+  margin: -4px 0 2px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.cep-status[data-state="success"] {
+  color: #15803d;
+}
+
+.cep-status[data-state="warning"],
+.cep-status[data-state="error"] {
+  color: #b42318;
+}
+
+.cep-status[data-state="loading"] {
+  color: var(--blue);
 }
 
 .booking-form button:disabled {
@@ -840,6 +862,88 @@ h3 {
 
 .floating-whatsapp:hover {
   transform: translateY(-3px);
+}
+
+.booking-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: none;
+  place-items: center;
+  padding: 20px;
+}
+
+.booking-modal.is-open {
+  display: grid;
+}
+
+.booking-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 42, 74, 0.62);
+  backdrop-filter: blur(8px);
+}
+
+.booking-modal-panel {
+  position: relative;
+  width: min(620px, 100%);
+  padding: clamp(26px, 5vw, 42px);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--white);
+  box-shadow: var(--shadow);
+}
+
+.booking-modal-panel h2 {
+  margin-bottom: 16px;
+  color: var(--blue-2);
+  font-size: clamp(28px, 4vw, 42px);
+  line-height: 1.08;
+}
+
+.booking-modal-panel p {
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.7;
+}
+
+.booking-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--blue);
+  background: var(--white);
+  cursor: pointer;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.booking-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: 24px;
+}
+
+.booking-modal-actions .whatsapp-link {
+  margin-top: 0;
+}
+
+.secondary-modal-button {
+  min-height: 46px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--blue);
+  background: var(--white);
+  cursor: pointer;
+  font-weight: 900;
 }
 
 .reveal {
