@@ -1,13 +1,14 @@
 # Resumo AIRMOVEBR
 
-Atualizado em: 14/06/2026
+Atualizado em: 16/06/2026
 
 ## Estado Atual
 
 - Workspace: `C:\develop\LondriClima`
 - Branch atual: `dev`
-- Commit atual em `dev` e `main`: `7aeecb7 feat: integra assinatura PMOC com Assinafy e Drive`
-- Branches alinhadas no GitHub: `dev` e `main`
+- Commit atual em `dev`: `9d10f6c Atualiza landing e fluxo administrativo`
+- Commit atual em `main`: `be39dd1 Melhora fluxos PMOC e relatorios operacionais`
+- Branch `dev` esta na frente de `main` com a landing nova e ajustes administrativos.
 - Branch `seg`: ficou no commit anterior `afdcab9`
 - Produto: site, admin e API da AIRMOVEBR para pre-chamado, OS, tecnico, frota, PMOC e automacoes.
 
@@ -111,7 +112,13 @@ https://drive.google.com/drive/folders/1ar6WM_APajSPb85U1ffsc4uHMVSrw9Ih
 - Deploy: `/opt/airmovebr/repo`
 - Usuario operacional: `airmovebr`
 - Backend/PostgreSQL ja tinham sido validados internamente em Docker.
-- Bloqueador externo conhecido: DNS/publicacao HTTPS.
+- O dominio `airmovebr.com.br` ainda aponta para outro IP/site antigo.
+- Para nao derrubar o site antigo antes da aprovacao, o primeiro teste deve ser por IP:
+  - `http://191.252.226.11`
+  - `http://191.252.226.11/admin`
+  - `http://191.252.226.11/api/v1/health`
+- Bloqueador atual: chave SSH da VM esta salva em outra maquina. Tentativas locais em `airmovebr@191.252.226.11` e `root@191.252.226.11` retornaram `Permission denied (publickey,password)`.
+- Nao trocar a chave agora; subir a partir da outra maquina que ja possui acesso.
 
 Registros DNS desejados:
 
@@ -121,21 +128,35 @@ admin.airmovebr.com.br -> 191.252.226.11
 api.airmovebr.com.br   -> 191.252.226.11
 ```
 
-Depois do DNS correto:
+Para homologar por IP antes de mexer no Registro.br:
 
 ```text
 cd /opt/airmovebr/repo
-git pull
+git fetch origin
+git checkout dev
+git pull origin dev
 docker compose --env-file .env.production -f infra/docker-compose.prod.example.yml up -d --build
 docker compose --env-file .env.production -f infra/docker-compose.prod.example.yml exec backend npx prisma migrate deploy
+docker ps
 ```
 
 Validar:
 
 ```text
-https://airmovebr.com.br
-https://admin.airmovebr.com.br
-https://api.airmovebr.com.br/api/v1/health
+http://191.252.226.11
+http://191.252.226.11/admin
+http://191.252.226.11/api/v1/health
+```
+
+Se o Caddy estiver configurado apenas para `airmovebr.com.br`, ajustar o proxy para aceitar o IP temporariamente antes da homologacao.
+
+Depois da aprovacao, entrar no Registro.br e apontar:
+
+```text
+airmovebr.com.br       -> 191.252.226.11
+www.airmovebr.com.br   -> airmovebr.com.br
+admin.airmovebr.com.br -> 191.252.226.11
+api.airmovebr.com.br   -> 191.252.226.11
 ```
 
 ## Proximos Passos
@@ -148,23 +169,27 @@ https://api.airmovebr.com.br/api/v1/health
    - engenheiro assinar;
    - confirmar envio para cliente e copia interna;
    - confirmar arquivo salvo no Drive.
-5. [ ] Atualizar a VM com o commit `7aeecb7` da branch `main`.
-6. [ ] Rodar `prisma migrate deploy` em producao.
-7. [ ] Configurar `.env.production` com Assinafy, SMTP, copia interna e Google Drive.
+5. [ ] Na outra maquina com chave SSH, acessar `airmovebr@191.252.226.11`.
+6. [ ] Atualizar a VM com o commit `9d10f6c` da branch `dev`.
+7. [ ] Conferir `.env.production` real na VM sem commitar secrets.
 8. [ ] Subir/recriar containers de producao com `--build`.
-9. [ ] Validar HTTPS publico dos 3 dominios.
-10. [ ] Fazer teste PMOC completo em homologacao/producao.
-11. [ ] Evoluir PDF PMOC profissional:
+9. [ ] Rodar `prisma migrate deploy` em producao.
+10. [ ] Validar por IP: landing, admin e `api/v1/health`.
+11. [ ] Se o IP nao responder no Caddy, ajustar proxy temporario para homologacao por IP.
+12. [ ] Depois da aprovacao, alterar DNS no Registro.br para a VM Locaweb.
+13. [ ] Validar HTTPS publico dos 3 dominios.
+14. [ ] Fazer teste PMOC completo em homologacao/producao.
+15. [ ] Evoluir PDF PMOC profissional:
    - pagina por maquina;
    - ficha tecnica;
    - checklist;
    - evidencias;
    - declaracao;
    - assinatura digital validada.
-12. [ ] Revisar Agenda.
-13. [ ] Revisar Frota.
-14. [ ] Aplicar logo real quando o arquivo estiver no workspace.
-15. [ ] Preparar backup, logs e permissoes antes de cliente real.
+16. [ ] Revisar Agenda.
+17. [ ] Revisar Frota.
+18. [ ] Aplicar logo real quando o arquivo estiver no workspace.
+19. [ ] Preparar backup, logs e permissoes antes de cliente real.
 
 ## Seguranca
 
