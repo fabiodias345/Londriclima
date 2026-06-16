@@ -113,6 +113,8 @@ https://drive.google.com/drive/folders/1ar6WM_APajSPb85U1ffsc4uHMVSrw9Ih
 - Usuario operacional: `airmovebr`
 - Backend/PostgreSQL ja tinham sido validados internamente em Docker.
 - O dominio `airmovebr.com.br` ainda aponta para outro IP/site antigo.
+- Nota 2026-06-16: o cliente ainda nao passou o acesso/gestao do registro do dominio.
+- Enquanto o dominio nao apontar para `191.252.226.11`, testes pelo dominio podem falhar mesmo com a VM e a API funcionando por IP. O formulario de pre-chamado foi validado por IP, mas deve ser retestado pelo dominio depois do apontamento DNS.
 - Para nao derrubar o site antigo antes da aprovacao, o primeiro teste deve ser por IP:
   - `http://191.252.226.11`
   - `http://191.252.226.11/admin`
@@ -159,6 +161,16 @@ admin.airmovebr.com.br -> 191.252.226.11
 api.airmovebr.com.br   -> 191.252.226.11
 ```
 
+Depois que o DNS propagar, retestar obrigatoriamente:
+
+```text
+https://airmovebr.com.br
+https://airmovebr.com.br/api/v1/health
+https://airmovebr.com.br/admin
+Formulario publico de pre-chamado pelo dominio
+Painel admin > Pre-chamados recebidos
+```
+
 ## Proximos Passos
 
 1. [ ] Compartilhar a pasta do Drive com `drive-integracao@automacao-499404.iam.gserviceaccount.com` como `Editor`.
@@ -176,20 +188,22 @@ api.airmovebr.com.br   -> 191.252.226.11
 9. [ ] Rodar `prisma migrate deploy` em producao.
 10. [ ] Validar por IP: landing, admin e `api/v1/health`.
 11. [ ] Se o IP nao responder no Caddy, ajustar proxy temporario para homologacao por IP.
-12. [ ] Depois da aprovacao, alterar DNS no Registro.br para a VM Locaweb.
-13. [ ] Validar HTTPS publico dos 3 dominios.
-14. [ ] Fazer teste PMOC completo em homologacao/producao.
-15. [ ] Evoluir PDF PMOC profissional:
+12. [ ] Aguardar o cliente passar acesso/gestao do registro do dominio.
+13. [ ] Depois da aprovacao, alterar DNS no Registro.br para a VM Locaweb.
+14. [ ] Validar HTTPS publico dos 3 dominios.
+15. [ ] Retestar formulario publico de pre-chamado pelo dominio e confirmar entrada no painel.
+16. [ ] Fazer teste PMOC completo em homologacao/producao.
+17. [ ] Evoluir PDF PMOC profissional:
    - pagina por maquina;
    - ficha tecnica;
    - checklist;
    - evidencias;
    - declaracao;
    - assinatura digital validada.
-16. [ ] Revisar Agenda.
-17. [ ] Revisar Frota.
-18. [ ] Aplicar logo real quando o arquivo estiver no workspace.
-19. [ ] Preparar backup, logs e permissoes antes de cliente real.
+18. [ ] Revisar Agenda.
+19. [ ] Revisar Frota.
+20. [ ] Aplicar logo real quando o arquivo estiver no workspace.
+21. [ ] Preparar backup, logs e permissoes antes de cliente real.
 
 ## Seguranca
 

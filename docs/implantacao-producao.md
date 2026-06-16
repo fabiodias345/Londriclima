@@ -70,6 +70,8 @@ Antes do deploy, confirmar ou configurar:
 - rotina de snapshot ou backup na Locaweb Cloud;
 - usuario operacional sem uso diario de root.
 
+Nota operacional 2026-06-16: o cliente ainda nao passou o acesso/gestao do registro do dominio. Enquanto `airmovebr.com.br`, `admin.airmovebr.com.br` e `api.airmovebr.com.br` nao apontarem para `191.252.226.11`, a homologacao por dominio fica pendente. Validacoes por IP podem funcionar, mas o formulario publico de pre-chamado deve ser retestado pelo dominio depois da propagacao DNS.
+
 ## Plano tecnico recomendado
 
 1. Endurecer acesso inicial: atualizar sistema, criar usuario operacional e revisar SSH/firewall.
@@ -83,6 +85,24 @@ Antes do deploy, confirmar ou configurar:
 9. Rodar migrations Prisma.
 10. Criar usuario administrador real.
 11. Validar login, pre-chamado, aprovacao, agenda, clientes, relatorios e frota.
+
+Checklist apos liberacao do dominio:
+
+```text
+airmovebr.com.br       -> 191.252.226.11
+admin.airmovebr.com.br -> 191.252.226.11
+api.airmovebr.com.br   -> 191.252.226.11
+```
+
+Depois da propagacao, validar:
+
+```text
+https://airmovebr.com.br
+https://airmovebr.com.br/api/v1/health
+https://airmovebr.com.br/admin
+Formulario publico de pre-chamado pelo dominio
+Pre-chamado recebido no painel admin
+```
 
 ## Artefatos locais preparados
 

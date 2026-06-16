@@ -94,6 +94,8 @@ POST /api/v1/site/pmoc/assinaturas/:token/confirmar
 - Usuario operacional: `airmovebr`.
 - Backend/PostgreSQL ja validados internamente em Docker.
 - Bloqueador conhecido: DNS/publicacao HTTPS.
+- Nota 2026-06-16: o cliente ainda nao passou o acesso/gestao do registro do dominio. Ate isso acontecer, considerar o teste por dominio como pendente.
+- O pre-chamado publico foi validado por IP (`191.252.226.11`), mas deve ser retestado pelo dominio depois que `airmovebr.com.br` apontar para a VM.
 
 DNS desejado:
 
@@ -105,17 +107,16 @@ api.airmovebr.com.br   -> 191.252.226.11
 
 ## Proximos Passos
 
-1. Confirmar DNS no Registro.br para os 3 hosts.
-2. Atualizar VM com o commit `4f81335`.
-3. Rodar `prisma migrate deploy` em producao.
-4. Recriar containers com `--build`.
-5. Validar HTTPS publico.
-6. Configurar SMTP real em `.env.production`.
-7. Testar fluxo PMOC completo fora do local.
-8. Evoluir PDF PMOC profissional por maquina.
-9. Revisar Agenda e Frota.
-10. Aplicar logo real quando o arquivo estiver no workspace.
-11. Preparar backup, logs e permissoes antes de cliente real.
+1. Aguardar o cliente passar acesso/gestao do registro do dominio.
+2. Confirmar DNS no Registro.br para os 3 hosts.
+3. Validar HTTPS publico.
+4. Retestar formulario publico de pre-chamado pelo dominio e confirmar entrada no painel.
+5. Configurar SMTP real em `.env.production`.
+6. Testar fluxo PMOC completo fora do local.
+7. Evoluir PDF PMOC profissional por maquina.
+8. Revisar Agenda e Frota.
+9. Aplicar logo real quando o arquivo estiver no workspace.
+10. Preparar backup, logs e permissoes antes de cliente real.
 
 ## Regras de Negocio
 
