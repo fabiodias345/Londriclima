@@ -57,7 +57,9 @@ test("landing possui formulario de pre-chamado com CEP e limpeza de ar-condicion
 
   assert.match(html, /Limpeza de ar-condicionado/);
   assert.match(html, /\.\/assets\/services\/pmoc-plataforma\.png/);
+  assert.match(html, /\.\/assets\/services\/locacao-ar-condicionado\.png/);
   assert.doesNotMatch(html, /photo-1450101499163-c8848c66ca85/);
+  assert.doesNotMatch(html, /photo-1521791136064-7986c2920216/);
   assert.match(html, /name="cep"/);
   assert.match(html, /name="logradouro"/);
   assert.match(html, /name="numero"/);
