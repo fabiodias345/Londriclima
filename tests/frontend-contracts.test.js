@@ -38,6 +38,7 @@ test("landing mostra modal de sucesso com opcao imediata pelo WhatsApp", () => {
   const styles = read("apps/landing/css/style.css");
 
   assert.match(html, /id="bookingSuccessModal"/);
+  assert.match(html, /\.\/js\/main\.js\?v=/);
   assert.match(html, /Em breve, um de nossos especialistas entrará em contato/);
   assert.match(html, /Se preferir um atendimento imediato/);
   assert.match(html, /id="bookingSuccessWhatsApp"/);
