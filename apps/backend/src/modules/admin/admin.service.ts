@@ -682,7 +682,7 @@ export class AdminService {
               orderBy: {
                 concluidaEm: "desc"
               },
-              select: this.ordemPmocSelect()
+              select: this.ordemRelatorioTecnicoSelect()
             }
           }
         }
@@ -697,7 +697,7 @@ export class AdminService {
       throw new BadRequestException("Cliente nao possui PMOC ativo.");
     }
 
-    const maquinas = cliente.equipamentos.map((equipamento) => this.mapearMaquinaPreviaPmoc(equipamento));
+    const maquinas = cliente.equipamentos.map((equipamento) => this.mapearMaquinaRelatorioTecnico(equipamento));
     const pendencias = this.obterPendenciasPreviaPmoc(cliente, maquinas);
     const anoPmoc = this.obterAnoPmoc(maquinas);
     const relatoriosPmoc = await this.prisma.pmocRelatorio.findMany({
@@ -753,7 +753,7 @@ export class AdminService {
       engenheiro_responsavel: cliente.engenheiroResponsavel
         ? this.mapearEngenheiroResponsavel(cliente.engenheiroResponsavel)
         : null,
-      periodo: this.obterPeriodoPreviaPmoc(maquinas),
+      periodo: this.obterPeriodoRelatorioTecnico(maquinas),
       total_maquinas: maquinas.length,
       total_os_concluidas: maquinas.reduce((total, maquina) => total + maquina.os_concluidas.length, 0),
       pronto_para_pdf: pendencias.length === 0,
@@ -901,7 +901,7 @@ export class AdminService {
   async obterPreviaRelatorioAvulsoCliente(clienteId: string, usuario: AuthenticatedUser) {
     const cliente = await this.obterClienteRelatorioAvulso(clienteId, usuario);
     const maquinas = cliente.equipamentos
-      .map((equipamento) => this.mapearMaquinaPreviaPmoc(equipamento))
+      .map((equipamento) => this.mapearMaquinaRelatorioTecnico(equipamento))
       .filter((maquina) => maquina.os_concluidas.length > 0);
     const pendencias = this.obterPendenciasRelatorioAvulso(cliente, maquinas);
 
@@ -917,7 +917,7 @@ export class AdminService {
         pmoc_ativo: cliente.pmocAtivo,
         atualizado_em: cliente.atualizadoEm.toISOString()
       },
-      periodo: this.obterPeriodoPreviaPmoc(maquinas),
+      periodo: this.obterPeriodoRelatorioTecnico(maquinas),
       total_maquinas: maquinas.length,
       total_os_concluidas: maquinas.reduce((total, maquina) => total + maquina.os_concluidas.length, 0),
       pronto_para_envio: pendencias.length === 0,
@@ -1964,7 +1964,7 @@ export class AdminService {
     return `${valor.slice(0, 3)}.${valor.slice(3, 6)}.${valor.slice(6, 9)}-${valor.slice(9)}`;
   }
 
-  private ordemPmocSelect() {
+  private ordemRelatorioTecnicoSelect() {
     return {
       id: true,
       titulo: true,
@@ -2118,7 +2118,7 @@ export class AdminService {
               orderBy: {
                 concluidaEm: "desc"
               },
-              select: this.ordemPmocSelect()
+              select: this.ordemRelatorioTecnicoSelect()
             }
           }
         }
@@ -2136,7 +2136,7 @@ export class AdminService {
     return cliente;
   }
 
-  private mapearMaquinaPreviaPmoc(equipamento: {
+  private mapearMaquinaRelatorioTecnico(equipamento: {
     id: string;
     tipo: string | null;
     patrimonio: string | null;
@@ -2206,7 +2206,7 @@ export class AdminService {
       }>;
     }>;
   }) {
-    const osConcluidas = equipamento.ordensServico.map((ordem) => this.mapearOrdemPmoc(ordem));
+    const osConcluidas = equipamento.ordensServico.map((ordem) => this.mapearOrdemRelatorioTecnico(ordem));
 
     return {
       id: equipamento.id,
@@ -2220,12 +2220,12 @@ export class AdminService {
       numero_serie: equipamento.numeroSerie,
       local_instalacao: equipamento.localInstalacao,
       atualizado_em: equipamento.atualizadoEm.toISOString(),
-      pendencias: this.obterPendenciasMaquinaPreviaPmoc(equipamento, osConcluidas),
+      pendencias: this.obterPendenciasMaquinaRelatorioTecnico(equipamento, osConcluidas),
       os_concluidas: osConcluidas
     };
   }
 
-  private mapearOrdemPmoc(ordem: {
+  private mapearOrdemRelatorioTecnico(ordem: {
     id: string;
     titulo: string;
     problemaRelatado: string | null;
@@ -2346,7 +2346,7 @@ export class AdminService {
     };
   }
 
-  private obterPendenciasMaquinaPreviaPmoc(
+  private obterPendenciasMaquinaRelatorioTecnico(
     equipamento: { gasRefrigerante: string | null },
     osConcluidas: Array<{ evidencias: unknown[]; checklist: unknown; assinatura: unknown; eventos: Array<{ latitude: number | null; longitude: number | null }> }>
   ) {
@@ -2431,7 +2431,7 @@ export class AdminService {
     return Array.from(new Set(pendencias));
   }
 
-  private obterPeriodoPreviaPmoc(maquinas: Array<{ os_concluidas: Array<{ concluida_em: string | null }> }>) {
+  private obterPeriodoRelatorioTecnico(maquinas: Array<{ os_concluidas: Array<{ concluida_em: string | null }> }>) {
     const datas = maquinas
       .flatMap((maquina) => maquina.os_concluidas.map((ordem) => ordem.concluida_em))
       .filter((data): data is string => Boolean(data))
@@ -2444,7 +2444,7 @@ export class AdminService {
   }
 
   private obterAnoPmoc(maquinas: Array<{ os_concluidas: Array<{ concluida_em: string | null }> }>) {
-    const periodo = this.obterPeriodoPreviaPmoc(maquinas);
+    const periodo = this.obterPeriodoRelatorioTecnico(maquinas);
     const dataBase = periodo.fim ? new Date(periodo.fim) : new Date();
     return dataBase.getUTCFullYear();
   }

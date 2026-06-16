@@ -2,6 +2,29 @@
 	email admin@airmovebr.com.br
 }
 
+http://191.252.226.11 {
+	encode gzip
+
+	handle /api/v1/* {
+		reverse_proxy backend:3000
+	}
+
+	redir /admin /admin/
+
+	handle /admin/* {
+		root * /srv/admin
+		uri strip_prefix /admin
+		try_files {path} /index.html
+		file_server
+	}
+
+	handle {
+		root * /srv/landing
+		try_files {path} /index.html
+		file_server
+	}
+}
+
 airmovebr.com.br {
 	root * /srv/landing
 	file_server

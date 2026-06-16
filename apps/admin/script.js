@@ -1,7 +1,9 @@
 const localHosts = ["localhost", "127.0.0.1", ""];
 const apiBaseUrl = localHosts.includes(window.location.hostname)
   ? "http://localhost:3000/api/v1"
-  : "https://api.airmovebr.com.br/api/v1";
+  : window.location.hostname === "191.252.226.11"
+    ? `${window.location.origin}/api/v1`
+    : "https://api.airmovebr.com.br/api/v1";
 const AGENDA_LOOKAHEAD_DAYS = 180;
 const loginPanel = document.querySelector("#loginPanel");
 const dashboard = document.querySelector("#dashboard");

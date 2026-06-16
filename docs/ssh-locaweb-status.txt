@@ -1,0 +1,6 @@
+SSH OK
+host: 191.252.226.11
+user: airmovebr
+comando: ssh airmovebr@191.252.226.11
+alias VS Code: airmovebr-prod
+status: conectado
