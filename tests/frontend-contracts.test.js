@@ -13,10 +13,12 @@ test("landing envia pre-chamado publico para a API com JSON", () => {
   const script = read("apps/landing/script.js");
 
   assert.match(script, /http:\/\/localhost:3000\/api\/v1/);
-  assert.match(script, /https:\/\/api\.airmovebr\.com\.br\/api\/v1/);
-  assert.match(script, /window\.location\.hostname === "191\.252\.226\.11"/);
+  assert.match(script, /http:\/\/191\.252\.226\.11\/api\/v1/);
   assert.match(script, /`\$\{window\.location\.origin\}\/api\/v1`/);
-  assert.match(script, /const apiUrl = `\$\{apiBaseUrl\}\/site\/pre-chamados`/);
+  assert.match(script, /const apiBaseUrls = /);
+  assert.match(script, /async function postPreChamado/);
+  assert.match(script, /for \(const apiBaseUrl of apiBaseUrls\)/);
+  assert.match(script, /fetch\(`\$\{apiBaseUrl\}\/site\/pre-chamados`/);
   assert.match(script, /method:\s*"POST"/);
   assert.match(script, /"Content-Type":\s*"application\/json"/);
   assert.match(script, /nome:\s*String\(data\.get\("nome"\)/);

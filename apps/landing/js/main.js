@@ -8,12 +8,9 @@ const bookingSuccessModal = document.querySelector("#bookingSuccessModal");
 const bookingSuccessWhatsApp = document.querySelector("#bookingSuccessWhatsApp");
 const bookingSuccessCloseButtons = document.querySelectorAll("[data-booking-success-close]");
 const localHosts = ["localhost", "127.0.0.1", ""];
-const apiBaseUrl = localHosts.includes(window.location.hostname)
-  ? "http://localhost:3000/api/v1"
-  : window.location.hostname === "191.252.226.11"
-    ? `${window.location.origin}/api/v1`
-  : "https://api.airmovebr.com.br/api/v1";
-const apiUrl = `${apiBaseUrl}/site/pre-chamados`;
+const apiBaseUrls = localHosts.includes(window.location.hostname)
+  ? ["http://localhost:3000/api/v1"]
+  : Array.from(new Set([`${window.location.origin}/api/v1`, "http://191.252.226.11/api/v1"]));
 const whatsappNumber = "5543999990000";
 
 const testimonials = [
@@ -151,6 +148,32 @@ function openBookingSuccessModal(payload) {
   document.body.classList.add("modal-open");
 }
 
+async function postPreChamado(payload) {
+  let lastError = new Error("Falha ao registrar pre-chamado.");
+
+  for (const apiBaseUrl of apiBaseUrls) {
+    try {
+      const response = await fetch(`${apiBaseUrl}/site/pre-chamados`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        return response;
+      }
+
+      lastError = new Error(`Falha ao registrar pre-chamado: ${response.status}`);
+    } catch (error) {
+      lastError = error instanceof Error ? error : lastError;
+    }
+  }
+
+  throw lastError;
+}
+
 function closeBookingSuccessModal() {
   if (!bookingSuccessModal) {
     return;
@@ -239,18 +262,7 @@ form?.addEventListener("submit", async (event) => {
   submitButton.textContent = "Enviando...";
 
   try {
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) {
-      throw new Error("Falha ao registrar pre-chamado.");
-    }
-
+    const response = await postPreChamado(payload);
     const result = await response.json();
     status.classList.add("success");
     status.textContent = `${result.mensagem} Protocolo: ${result.pre_chamado_id.slice(0, 8)}.`;
