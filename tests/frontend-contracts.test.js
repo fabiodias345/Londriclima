@@ -55,6 +55,9 @@ test("landing possui formulario de pre-chamado com CEP e limpeza de ar-condicion
   const html = read("apps/landing/index.html");
   const script = read("apps/landing/script.js");
 
+  assert.doesNotMatch(html, /Londriclima/i);
+  assert.match(html, /AIRMOVEBR: climatiza/);
+  assert.match(html, /novo padr/);
   assert.match(html, /Limpeza de ar-condicionado/);
   assert.match(html, /\.\/assets\/services\/pmoc-plataforma\.png/);
   assert.match(html, /\.\/assets\/services\/locacao-ar-condicionado\.png/);
