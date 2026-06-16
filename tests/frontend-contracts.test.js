@@ -40,6 +40,7 @@ test("admin autentica, guarda token e protege chamadas administrativas", () => {
   assert.match(script, /\/admin\/relatorios-avulsos/);
   assert.match(script, /\/admin\/frota\/abastecimentos/);
   assert.match(script, /\/admin\/relatorios\/frota/);
+  assert.match(script, /\/admin\/engenheiros\/\$\{engineerId\}/);
   assert.match(script, /response\.status !== 401/);
 });
 
@@ -112,6 +113,8 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(script, /Telefone com DDD|Informe telefone com DDD/);
   assert.match(script, /tipo === "pj" \? "CNPJ" : "CPF ou RG"/);
   assert.match(script, /data-action="apagar-cliente"/);
+  assert.match(script, /data-action="apagar-engenheiro"/);
+  assert.match(script, /async function deleteEngineer/);
   assert.match(script, /method:\s*"DELETE"/);
   assert.match(script, /\/admin\/clientes\/\$\{selectedEquipmentClientId\}\/equipamentos/);
   assert.match(script, /gas_refrigerante:\s*String\(data\.get\("gas_refrigerante"\)/);

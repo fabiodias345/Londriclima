@@ -1010,6 +1010,57 @@ export class AdminService {
     return this.mapearEngenheiroResponsavel(engenheiro);
   }
 
+  async apagarEngenheiroResponsavel(engenheiroId: string, usuario: AuthenticatedUser) {
+    const engenheiro = await this.prisma.engenheiroResponsavel.findFirst({
+      where: {
+        id: engenheiroId,
+        empresaId: usuario.empresa_id,
+        ativo: true
+      },
+      select: {
+        id: true,
+        _count: {
+          select: {
+            clientes: true,
+            pmocRelatorios: true
+          }
+        }
+      }
+    });
+
+    if (!engenheiro) {
+      throw new NotFoundException("Engenheiro responsavel nao encontrado.");
+    }
+
+    if (engenheiro._count.pmocRelatorios > 0) {
+      throw new ConflictException("Engenheiro possui relatorios PMOC vinculados e nao pode ser apagado.");
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.cliente.updateMany({
+        where: {
+          empresaId: usuario.empresa_id,
+          engenheiroResponsavelId: engenheiroId
+        },
+        data: {
+          engenheiroResponsavelId: null
+        }
+      });
+
+      await tx.engenheiroResponsavel.delete({
+        where: {
+          id: engenheiroId
+        }
+      });
+    });
+
+    return {
+      id: engenheiro.id,
+      clientes_desvinculados: engenheiro._count.clientes,
+      apagado: true
+    };
+  }
+
   async criarCliente(dto: SalvarClienteDto, usuario: AuthenticatedUser) {
     this.validarCadastroCliente(dto);
     await this.validarVinculoPmoc(dto, usuario);

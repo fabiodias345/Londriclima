@@ -511,6 +511,75 @@ test("apagarCliente bloqueia cliente com historico operacional", async () => {
   await assert.rejects(() => service.apagarCliente("cliente-1", usuario), ConflictException);
 });
 
+test("apagarEngenheiroResponsavel desvincula clientes e remove engenheiro sem relatorio PMOC", async () => {
+  const chamadas = {
+    updateMany: undefined as unknown,
+    deleteWhere: undefined as unknown
+  };
+  const tx = {
+    cliente: {
+      updateMany: async ({ where, data }: { where: unknown; data: unknown }) => {
+        chamadas.updateMany = { where, data };
+      }
+    },
+    engenheiroResponsavel: {
+      delete: async ({ where }: { where: unknown }) => {
+        chamadas.deleteWhere = where;
+      }
+    }
+  };
+  const prisma = {
+    engenheiroResponsavel: {
+      findFirst: async () => ({
+        id: "engenheiro-1",
+        _count: {
+          clientes: 2,
+          pmocRelatorios: 0
+        }
+      })
+    },
+    $transaction: async (callback: (tx: unknown) => unknown) => callback(tx)
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.apagarEngenheiroResponsavel("engenheiro-1", usuario);
+
+  assert.deepEqual(chamadas.updateMany, {
+    where: {
+      empresaId: "empresa-1",
+      engenheiroResponsavelId: "engenheiro-1"
+    },
+    data: {
+      engenheiroResponsavelId: null
+    }
+  });
+  assert.deepEqual(chamadas.deleteWhere, {
+    id: "engenheiro-1"
+  });
+  assert.deepEqual(resposta, {
+    id: "engenheiro-1",
+    clientes_desvinculados: 2,
+    apagado: true
+  });
+});
+
+test("apagarEngenheiroResponsavel bloqueia engenheiro com relatorio PMOC", async () => {
+  const prisma = {
+    engenheiroResponsavel: {
+      findFirst: async () => ({
+        id: "engenheiro-1",
+        _count: {
+          clientes: 0,
+          pmocRelatorios: 1
+        }
+      })
+    }
+  };
+  const service = criarService(prisma);
+
+  await assert.rejects(() => service.apagarEngenheiroResponsavel("engenheiro-1", usuario), ConflictException);
+});
+
 test("listarEquipamentosCliente exige cliente da empresa e retorna links publicos", async () => {
   const prisma = {
     cliente: {

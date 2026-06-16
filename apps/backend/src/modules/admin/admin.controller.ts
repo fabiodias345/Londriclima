@@ -155,6 +155,14 @@ export class AdminController {
     return this.adminService.atualizarEngenheiroResponsavel(engenheiroId, dto, usuario);
   }
 
+  @Delete("engenheiros/:engenheiroId")
+  apagarEngenheiroResponsavel(
+    @Param("engenheiroId", new ParseUUIDPipe()) engenheiroId: string,
+    @CurrentUser() usuario: AuthenticatedUser
+  ) {
+    return this.adminService.apagarEngenheiroResponsavel(engenheiroId, usuario);
+  }
+
   @Post("clientes")
   criarCliente(@Body() dto: SalvarClienteDto, @CurrentUser() usuario: AuthenticatedUser) {
     return this.adminService.criarCliente(dto, usuario);

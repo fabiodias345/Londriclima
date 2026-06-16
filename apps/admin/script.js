@@ -1664,6 +1664,7 @@ function renderEngenheiros(items) {
       </div>
       <div class="data-row-actions">
         <button class="secondary-button compact-button" type="button" data-action="editar-engenheiro" data-id="${item.id}">Editar</button>
+        <button class="danger-button compact-button" type="button" data-action="apagar-engenheiro" data-id="${item.id}">Apagar</button>
       </div>
     `;
     engenheirosList.appendChild(row);
@@ -2655,6 +2656,41 @@ function resetEngineerForm() {
   engineerFormStatus.textContent = "";
 }
 
+async function deleteEngineer(engineerId) {
+  const engineer = latestEngineers.find((item) => item.id === engineerId);
+  const name = engineer?.nome || "este engenheiro";
+
+  if (!window.confirm(`Apagar ${name}? Clientes vinculados ficarao sem engenheiro responsavel.`)) {
+    return;
+  }
+
+  engenheirosStatus.textContent = "Apagando engenheiro...";
+
+  try {
+    const response = await fetch(`${apiBaseUrl}/admin/engenheiros/${engineerId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${getToken()}`
+      }
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || "Nao foi possivel apagar o engenheiro.");
+    }
+
+    if (engineerForm?.elements.id.value === engineerId) {
+      resetEngineerForm();
+    }
+
+    engenheirosStatus.textContent = "Engenheiro apagado.";
+    await loadEngenheiros();
+    await loadClientes(false);
+  } catch (error) {
+    engenheirosStatus.textContent = error.message || "API indisponivel.";
+  }
+}
+
 function openDeleteClientModal(clientId) {
   const client = latestClients.find((item) => item.id === clientId);
 
@@ -3079,6 +3115,10 @@ engenheirosList?.addEventListener("click", (event) => {
 
   if (target.dataset.action === "editar-engenheiro" && target.dataset.id) {
     fillEngineerForm(target.dataset.id);
+  }
+
+  if (target.dataset.action === "apagar-engenheiro" && target.dataset.id) {
+    void deleteEngineer(target.dataset.id);
   }
 });
 
