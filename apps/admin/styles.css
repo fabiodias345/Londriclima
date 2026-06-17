@@ -27,7 +27,8 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -239,6 +240,14 @@ select {
   padding: 13px 14px;
   color: var(--ink);
   background: var(--white);
+}
+
+textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 13px 14px;
+  resize: vertical;
 }
 
 form button,
@@ -881,6 +890,62 @@ form button,
 .agenda-unscheduled-list {
   display: grid;
   gap: 10px;
+}
+
+.recurrence-panel {
+  overflow: hidden;
+}
+
+.recurrence-form {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  padding: 22px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(238, 243, 241, 0.68);
+}
+
+.recurrence-form .form-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.recurrence-list {
+  display: grid;
+}
+
+.recurrence-card {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.2fr) minmax(180px, 0.7fr) minmax(180px, 0.7fr) auto;
+  gap: 18px;
+  align-items: center;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--line);
+  background: var(--white);
+}
+
+.recurrence-card:last-child {
+  border-bottom: 0;
+}
+
+.recurrence-card.due {
+  background: linear-gradient(90deg, rgba(255, 184, 77, 0.18), var(--white));
+}
+
+.recurrence-card div {
+  display: grid;
+  gap: 6px;
+}
+
+.recurrence-card strong {
+  font-family: "Archivo", sans-serif;
+}
+
+.recurrence-card span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .fleet-panel {
@@ -1702,6 +1767,8 @@ form button,
   .agenda-slot,
   .agenda-service-card,
   .agenda-os-modal form,
+  .recurrence-form,
+  .recurrence-card,
   .fleet-map-panel,
   .client-form,
   .dispatch-form,

@@ -77,6 +77,13 @@ enum PmocRelatorioStatus {
   cancelado
 }
 
+enum PlanoRecorrenciaFrequencia {
+  mensal
+  trimestral
+  semestral
+  anual
+}
+
 model Empresa {
   id        String   @id @default(uuid()) @db.Uuid
   nome      String
@@ -115,6 +122,7 @@ model Empresa {
   veiculoLocalizacoes VeiculoLocalizacao[]
   veiculoAbastecimentos VeiculoAbastecimento[]
   pmocRelatorios   PmocRelatorio[]
+  planosRecorrencia PlanoRecorrencia[]
 
   @@map("empresas")
 }
@@ -137,6 +145,7 @@ model Usuario {
   equipesMembro EquipeMembro[]
   ordensComoTecnico OrdemServico[] @relation("OrdemTecnico")
   ordensResponsavel OrdemServicoResponsavel[]
+  planosRecorrenciaTecnico PlanoRecorrencia[] @relation("PlanoRecorrenciaTecnico")
   eventos OrdemServicoEvento[]
   veiculoAbastecimentos VeiculoAbastecimento[]
   pmocRelatoriosCriados PmocRelatorio[] @relation("PmocRelatorioCriador")
@@ -162,6 +171,7 @@ model Equipe {
   clientes ClienteEquipe[]
   ordensServico OrdemServico[]
   ordensResponsavel OrdemServicoResponsavel[]
+  planosRecorrencia PlanoRecorrencia[]
 
   @@index([empresaId])
   @@map("equipes")
@@ -222,6 +232,7 @@ model Cliente {
   equipamentos Equipamento[]
   ordensServico OrdemServico[]
   pmocRelatorios PmocRelatorio[]
+  planosRecorrencia PlanoRecorrencia[]
 
   @@index([empresaId])
   @@index([empresaId, pmocAtivo])
@@ -347,6 +358,7 @@ model Equipamento {
   empresa Empresa @relation(fields: [empresaId], references: [id])
   cliente Cliente @relation(fields: [clienteId], references: [id])
   ordensServico OrdemServico[]
+  planosRecorrencia PlanoRecorrencia[]
 
   @@index([empresaId])
   @@index([clienteId])
@@ -385,11 +397,42 @@ model OrdemServico {
   assinatura OrdemServicoAssinatura?
   observacoes OrdemServicoObservacao[]
   automacoes AutomacaoAgendada[]
+  planosRecorrenciaGerada PlanoRecorrencia[] @relation("PlanoRecorrenciaUltimaOs")
 
   @@index([empresaId, status])
   @@index([empresaId, agendadaPara])
   @@index([clienteId])
   @@map("ordens_servico")
+}
+
+model PlanoRecorrencia {
+  id        String   @id @default(uuid()) @db.Uuid
+  empresaId String  @map("empresa_id") @db.Uuid
+  clienteId String  @map("cliente_id") @db.Uuid
+  equipamentoId String? @map("equipamento_id") @db.Uuid
+  equipeId  String? @map("equipe_id") @db.Uuid
+  tecnicoId String? @map("tecnico_id") @db.Uuid
+  ultimoOsId String? @map("ultimo_os_id") @db.Uuid
+  titulo    String
+  detalhes  String?
+  frequencia PlanoRecorrenciaFrequencia
+  proximaExecucao DateTime @map("proxima_execucao")
+  valorCobrado Decimal? @map("valor_cobrado") @db.Decimal(12, 2)
+  ativo     Boolean @default(true)
+  criadoEm  DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+  cliente Cliente @relation(fields: [clienteId], references: [id])
+  equipamento Equipamento? @relation(fields: [equipamentoId], references: [id])
+  equipe Equipe? @relation(fields: [equipeId], references: [id])
+  tecnico Usuario? @relation("PlanoRecorrenciaTecnico", fields: [tecnicoId], references: [id])
+  ultimoOs OrdemServico? @relation("PlanoRecorrenciaUltimaOs", fields: [ultimoOsId], references: [id])
+
+  @@index([empresaId, ativo, proximaExecucao])
+  @@index([clienteId])
+  @@index([equipamentoId])
+  @@map("planos_recorrencia")
 }
 
 model OrdemServicoResponsavel {

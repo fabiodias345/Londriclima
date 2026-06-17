@@ -10,6 +10,7 @@ import { SalvarEmpresaDto } from "./dto/salvar-empresa.dto";
 import { SalvarEngenheiroResponsavelDto } from "./dto/salvar-engenheiro-responsavel.dto";
 import { SalvarEquipeDto } from "./dto/salvar-equipe.dto";
 import { SalvarOsAgendaDto } from "./dto/salvar-os-agenda.dto";
+import { SalvarPlanoRecorrenciaDto } from "./dto/salvar-plano-recorrencia.dto";
 import { SalvarTecnicoDto } from "./dto/salvar-tecnico.dto";
 import { AdminService } from "./admin.service";
 
@@ -72,6 +73,33 @@ export class AdminController {
     @CurrentUser() usuario: AuthenticatedUser
   ) {
     return this.adminService.reprogramarOrdemAgenda(osId, dto, usuario);
+  }
+
+  @Get("planos-recorrencia")
+  listarPlanosRecorrencia(@CurrentUser() usuario: AuthenticatedUser) {
+    return this.adminService.listarPlanosRecorrencia(usuario);
+  }
+
+  @Post("planos-recorrencia")
+  criarPlanoRecorrencia(@Body() dto: SalvarPlanoRecorrenciaDto, @CurrentUser() usuario: AuthenticatedUser) {
+    return this.adminService.criarPlanoRecorrencia(dto, usuario);
+  }
+
+  @Patch("planos-recorrencia/:planoId")
+  atualizarPlanoRecorrencia(
+    @Param("planoId", new ParseUUIDPipe()) planoId: string,
+    @Body() dto: SalvarPlanoRecorrenciaDto,
+    @CurrentUser() usuario: AuthenticatedUser
+  ) {
+    return this.adminService.atualizarPlanoRecorrencia(planoId, dto, usuario);
+  }
+
+  @Post("planos-recorrencia/:planoId/gerar-os")
+  gerarOrdemPlanoRecorrencia(
+    @Param("planoId", new ParseUUIDPipe()) planoId: string,
+    @CurrentUser() usuario: AuthenticatedUser
+  ) {
+    return this.adminService.gerarOrdemPlanoRecorrencia(planoId, usuario);
   }
 
   @Get("clientes")

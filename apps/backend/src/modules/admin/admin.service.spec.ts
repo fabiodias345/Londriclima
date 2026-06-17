@@ -1,7 +1,15 @@
 ﻿import { test } from "node:test";
 import * as assert from "node:assert/strict";
 import { BadRequestException, ConflictException, NotFoundException } from "@nestjs/common";
-import { AutomacaoTipo, OrdemServicoEventoAcao, OrdemServicoStatus, PmocRelatorioStatus, Prisma, UsuarioRole } from "@prisma/client";
+import {
+  AutomacaoTipo,
+  OrdemServicoEventoAcao,
+  OrdemServicoStatus,
+  PlanoRecorrenciaFrequencia,
+  PmocRelatorioStatus,
+  Prisma,
+  UsuarioRole
+} from "@prisma/client";
 import { AdminService } from "./admin.service";
 
 const usuario = {
@@ -618,6 +626,117 @@ test("reprogramarOrdemAgenda atualiza horario e responsaveis de OS operacional",
     os_id: "os-1",
     status: OrdemServicoStatus.aberta,
     atualizado_em: "2026-06-18T12:00:00.000Z"
+  });
+});
+
+test("criarPlanoRecorrencia cadastra rotina operacional para cliente da empresa", async () => {
+  const chamadas = {
+    createData: undefined as unknown
+  };
+  const prisma = {
+    cliente: {
+      findFirst: async ({ where }: { where: unknown }) => {
+        assert.deepEqual(where, {
+          id: "cliente-1",
+          empresaId: "empresa-1"
+        });
+        return { id: "cliente-1" };
+      }
+    },
+    planoRecorrencia: {
+      create: async ({ data }: { data: unknown }) => {
+        chamadas.createData = data;
+        return {
+          id: "plano-1",
+          atualizadoEm: new Date("2026-06-18T10:00:00.000Z")
+        };
+      }
+    }
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.criarPlanoRecorrencia(
+    {
+      cliente_id: "cliente-1",
+      titulo: "PMOC mensal",
+      detalhes: "Limpeza preventiva",
+      frequencia: PlanoRecorrenciaFrequencia.mensal,
+      proxima_execucao: "2026-07-01T11:00:00.000Z",
+      valor_cobrado: 280
+    },
+    usuario
+  );
+
+  assert.equal((chamadas.createData as { empresaId: string }).empresaId, "empresa-1");
+  assert.equal((chamadas.createData as { clienteId: string }).clienteId, "cliente-1");
+  assert.equal((chamadas.createData as { titulo: string }).titulo, "PMOC mensal");
+  assert.equal((chamadas.createData as { frequencia: PlanoRecorrenciaFrequencia }).frequencia, PlanoRecorrenciaFrequencia.mensal);
+  assert.equal((chamadas.createData as { valorCobrado: Prisma.Decimal }).valorCobrado.toNumber(), 280);
+  assert.deepEqual(resposta, {
+    plano_id: "plano-1",
+    atualizado_em: "2026-06-18T10:00:00.000Z"
+  });
+});
+
+test("gerarOrdemPlanoRecorrencia cria OS e avanca proxima execucao", async () => {
+  const chamadas = {
+    osData: undefined as unknown,
+    planoUpdate: undefined as unknown
+  };
+  const tx = {
+    planoRecorrencia: {
+      findFirst: async () => ({
+        id: "plano-1",
+        empresaId: "empresa-1",
+        clienteId: "cliente-1",
+        equipamentoId: "equipamento-1",
+        equipeId: "equipe-1",
+        tecnicoId: "tecnico-1",
+        titulo: "PMOC mensal",
+        detalhes: "Limpeza preventiva",
+        frequencia: PlanoRecorrenciaFrequencia.mensal,
+        proximaExecucao: new Date("2026-07-01T11:00:00.000Z"),
+        valorCobrado: new Prisma.Decimal(280),
+        ativo: true,
+        cliente: {
+          enderecos: [{ id: "endereco-1" }]
+        }
+      }),
+      update: async ({ data }: { data: unknown }) => {
+        chamadas.planoUpdate = data;
+      }
+    },
+    ordemServico: {
+      create: async ({ data }: { data: unknown }) => {
+        chamadas.osData = data;
+        return {
+          id: "os-recorrente-1",
+          status: OrdemServicoStatus.aberta,
+          atualizadaEm: new Date("2026-06-18T12:00:00.000Z")
+        };
+      }
+    },
+    ordemServicoEvento: {
+      create: async () => undefined
+    }
+  };
+  const prisma = {
+    $transaction: async (callback: (tx: unknown) => unknown) => callback(tx)
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.gerarOrdemPlanoRecorrencia("plano-1", usuario);
+
+  assert.equal((chamadas.osData as { clienteId: string }).clienteId, "cliente-1");
+  assert.equal((chamadas.osData as { equipamentoId: string }).equipamentoId, "equipamento-1");
+  assert.equal((chamadas.osData as { status: OrdemServicoStatus }).status, OrdemServicoStatus.aberta);
+  assert.equal((chamadas.planoUpdate as { ultimoOsId: string }).ultimoOsId, "os-recorrente-1");
+  assert.equal((chamadas.planoUpdate as { proximaExecucao: Date }).proximaExecucao.toISOString(), "2026-08-01T11:00:00.000Z");
+  assert.deepEqual(resposta, {
+    os_id: "os-recorrente-1",
+    status: OrdemServicoStatus.aberta,
+    atualizado_em: "2026-06-18T12:00:00.000Z",
+    proxima_execucao: "2026-08-01T11:00:00.000Z"
   });
 });
 

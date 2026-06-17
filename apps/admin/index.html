@@ -27,6 +27,7 @@
           <span class="nav-group-title">Operacao</span>
           <button class="nav-link active" type="button" data-view="preChamados">Pre-chamados</button>
           <button class="nav-link" type="button" data-view="agenda">Agenda</button>
+          <button class="nav-link" type="button" data-view="recorrencias">Recorrencias</button>
           <button class="nav-link" type="button" data-view="frota">Frota</button>
         </section>
 
@@ -124,6 +125,21 @@
           <article>
             <span>Hoje</span>
             <strong id="todayCount">0</strong>
+          </article>
+        </section>
+
+        <section class="summary-grid hidden" id="recorrenciasSummary" aria-label="Resumo de recorrencias">
+          <article>
+            <span>Planos ativos</span>
+            <strong id="recurrenceActiveCount">0</strong>
+          </article>
+          <article>
+            <span>Vencidos</span>
+            <strong id="recurrenceDueCount">0</strong>
+          </article>
+          <article>
+            <span>Proxima acao</span>
+            <strong>Gerar OS</strong>
           </article>
         </section>
 
@@ -336,6 +352,69 @@
               <div class="agenda-slots" id="agendaList"></div>
             </section>
           </div>
+        </section>
+
+        <section class="worklist recurrence-panel hidden" id="recorrenciasView">
+          <div class="worklist-header">
+            <div>
+              <h2>Planos recorrentes</h2>
+              <p id="recurrenceStatus" role="status">Carregando...</p>
+            </div>
+          </div>
+          <form class="recurrence-form" id="recurrenceForm">
+            <label>
+              Cliente
+              <select name="cliente_id" id="recurrenceClientSelect" required></select>
+            </label>
+            <label>
+              Equipamento
+              <select name="equipamento_id" id="recurrenceEquipmentSelect">
+                <option value="">Sem equipamento definido</option>
+              </select>
+            </label>
+            <label>
+              Frequencia
+              <select name="frequencia" required>
+                <option value="mensal">Mensal</option>
+                <option value="trimestral">Trimestral</option>
+                <option value="semestral">Semestral</option>
+                <option value="anual">Anual</option>
+              </select>
+            </label>
+            <label>
+              Proxima data
+              <input name="proxima_execucao" type="datetime-local" required />
+            </label>
+            <label>
+              Equipe
+              <select name="equipe_id" id="recurrenceTeamSelect">
+                <option value="">Sem equipe</option>
+              </select>
+            </label>
+            <label>
+              Tecnico
+              <select name="tecnico_id" id="recurrenceTechnicianSelect">
+                <option value="">Sem tecnico</option>
+              </select>
+            </label>
+            <label>
+              Titulo da OS
+              <input name="titulo" type="text" value="PMOC preventivo" required />
+            </label>
+            <label>
+              Valor previsto
+              <input name="valor_cobrado" type="number" min="0" step="0.01" />
+            </label>
+            <label class="full-span">
+              Detalhes
+              <textarea name="detalhes" rows="3" placeholder="Rotina, observacoes e escopo da visita"></textarea>
+            </label>
+            <div class="form-actions full-span">
+              <button type="submit">Salvar plano</button>
+              <p class="status" id="recurrenceFormStatus" role="status"></p>
+            </div>
+          </form>
+          <div class="recurrence-list" id="recurrenceList"></div>
         </section>
 
         <section class="worklist hidden" id="clientesView">

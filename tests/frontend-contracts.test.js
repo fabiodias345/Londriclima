@@ -90,6 +90,7 @@ test("admin autentica, guarda token e protege chamadas administrativas", () => {
   assert.match(script, /\/admin\/pre-chamados/);
   assert.match(script, /\/admin\/frota\/localizacoes/);
   assert.match(script, /\/admin\/agenda/);
+  assert.match(script, /\/admin\/planos-recorrencia/);
   assert.match(script, /\/admin\/empresa/);
   assert.match(script, /\/admin\/clientes/);
   assert.match(script, /\/admin\/relatorios/);
@@ -105,6 +106,7 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   const script = read("apps/admin/script.js");
 
   assert.match(html, /data-view="agenda"/);
+  assert.match(html, /data-view="recorrencias"/);
   assert.match(html, /data-view="empresa"/);
   assert.match(html, /data-view="clientes"/);
   assert.match(html, /data-view="relatorios"/);
@@ -120,6 +122,11 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(html, /name="cliente_id"/);
   assert.match(html, /name="agendada_para"/);
   assert.match(html, /name="tecnico_id"/);
+  assert.match(html, /id="recorrenciasView"/);
+  assert.match(html, /id="recurrenceForm"/);
+  assert.match(html, /id="recurrenceList"/);
+  assert.match(html, /name="frequencia"/);
+  assert.match(html, /name="proxima_execucao"/);
   assert.match(html, /id="clientesView"/);
   assert.match(html, /id="empresaView"/);
   assert.match(html, /id="empresaForm"/);
@@ -157,6 +164,12 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(script, /function buildAgendaSlots/);
   assert.match(script, /\/admin\/agenda\/ordens/);
   assert.match(script, /\/admin\/agenda\/ordens\/\$\{agendaEditingOsId\}/);
+  assert.match(script, /async function loadRecorrencias/);
+  assert.match(script, /async function submitRecurrence/);
+  assert.match(script, /function renderRecorrencias/);
+  assert.match(script, /function renderRecurrenceCard/);
+  assert.match(script, /function generateRecurrenceOs/);
+  assert.match(script, /\/admin\/planos-recorrencia\/\$\{planId\}\/gerar-os/);
   assert.match(script, /const AGENDA_LOOKAHEAD_DAYS = 180/);
   assert.match(script, /offset <= AGENDA_LOOKAHEAD_DAYS/);
   assert.match(script, /selectedAgendaDate = button\.dataset\.agendaDate/);

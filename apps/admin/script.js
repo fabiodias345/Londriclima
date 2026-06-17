@@ -20,6 +20,7 @@ const viewTitle = document.querySelector("#viewTitle");
 const preChamadosSummary = document.querySelector("#preChamadosSummary");
 const frotaSummary = document.querySelector("#frotaSummary");
 const agendaSummary = document.querySelector("#agendaSummary");
+const recorrenciasSummary = document.querySelector("#recorrenciasSummary");
 const empresaSummary = document.querySelector("#empresaSummary");
 const clientesSummary = document.querySelector("#clientesSummary");
 const pmocSummary = document.querySelector("#pmocSummary");
@@ -28,6 +29,7 @@ const relatoriosAvulsosSummary = document.querySelector("#relatoriosAvulsosSumma
 const preChamadosView = document.querySelector("#preChamadosView");
 const frotaView = document.querySelector("#frotaView");
 const agendaView = document.querySelector("#agendaView");
+const recorrenciasView = document.querySelector("#recorrenciasView");
 const empresaView = document.querySelector("#empresaView");
 const clientesView = document.querySelector("#clientesView");
 const engenheirosView = document.querySelector("#engenheirosView");
@@ -72,6 +74,16 @@ const cancelAgendaOsButton = document.querySelector("#cancelAgendaOsButton");
 const agendaCount = document.querySelector("#agendaCount");
 const attendanceCount = document.querySelector("#attendanceCount");
 const todayCount = document.querySelector("#todayCount");
+const recurrenceActiveCount = document.querySelector("#recurrenceActiveCount");
+const recurrenceDueCount = document.querySelector("#recurrenceDueCount");
+const recurrenceStatus = document.querySelector("#recurrenceStatus");
+const recurrenceForm = document.querySelector("#recurrenceForm");
+const recurrenceFormStatus = document.querySelector("#recurrenceFormStatus");
+const recurrenceClientSelect = document.querySelector("#recurrenceClientSelect");
+const recurrenceEquipmentSelect = document.querySelector("#recurrenceEquipmentSelect");
+const recurrenceTeamSelect = document.querySelector("#recurrenceTeamSelect");
+const recurrenceTechnicianSelect = document.querySelector("#recurrenceTechnicianSelect");
+const recurrenceList = document.querySelector("#recurrenceList");
 const empresaStatus = document.querySelector("#empresaStatus");
 const empresaForm = document.querySelector("#empresaForm");
 const empresaFormStatus = document.querySelector("#empresaFormStatus");
@@ -172,6 +184,7 @@ let latestTecnicos = [];
 let latestEquipes = [];
 let latestAgendaItems = [];
 let latestAgendaEquipments = [];
+let latestRecurrenceItems = [];
 let latestReports = null;
 let selectedFleetVehicleId = "";
 let selectedAgendaDate = "";
@@ -271,6 +284,11 @@ async function loadActiveView() {
     return;
   }
 
+  if (activeView === "recorrencias") {
+    await loadRecorrencias();
+    return;
+  }
+
   if (activeView === "empresa") {
     await loadEmpresa();
     return;
@@ -325,6 +343,7 @@ function setActiveView(view) {
     preChamados: ["Operacao comercial", "Pre-chamados do site"],
     frota: ["Monitoramento operacional", "Localizacao da frota"],
     agenda: ["Despacho de servicos", "Agenda operacional"],
+    recorrencias: ["Planos de atividade", "Recorrencias"],
     empresa: ["Cadastro base", "Empresa"],
     clientes: ["Relacionamento", "Clientes e equipamentos"],
     tecnicos: ["Equipe de campo", "Tecnicos e auxiliares"],
@@ -340,6 +359,7 @@ function setActiveView(view) {
   preChamadosSummary.classList.toggle("hidden", view !== "preChamados");
   frotaSummary.classList.toggle("hidden", view !== "frota");
   agendaSummary.classList.toggle("hidden", view !== "agenda");
+  recorrenciasSummary.classList.toggle("hidden", view !== "recorrencias");
   empresaSummary.classList.toggle("hidden", view !== "empresa");
   clientesSummary.classList.toggle("hidden", view !== "clientes");
   pmocSummary.classList.toggle("hidden", view !== "pmoc");
@@ -348,6 +368,7 @@ function setActiveView(view) {
   preChamadosView.classList.toggle("hidden", view !== "preChamados");
   frotaView.classList.toggle("hidden", view !== "frota");
   agendaView.classList.toggle("hidden", view !== "agenda");
+  recorrenciasView.classList.toggle("hidden", view !== "recorrencias");
   empresaView.classList.toggle("hidden", view !== "empresa");
   clientesView.classList.toggle("hidden", view !== "clientes");
   engenheirosView.classList.toggle("hidden", view !== "engenheiros");
@@ -468,13 +489,39 @@ async function loadAgenda() {
 async function loadClientesForAgenda() {
   if (latestClients.length) {
     renderAgendaClientOptions();
+    renderRecurrenceClientOptions();
     return latestClients;
   }
 
   const result = await fetchAdminJson("/admin/clientes", agendaStatus);
   latestClients = result?.items || [];
   renderAgendaClientOptions();
+  renderRecurrenceClientOptions();
   return latestClients;
+}
+
+async function loadRecorrencias() {
+  recurrenceStatus.textContent = "Carregando...";
+  if (recurrenceForm instanceof HTMLFormElement && !recurrenceForm.elements.proxima_execucao.value) {
+    recurrenceForm.elements.proxima_execucao.value = `${getLocalDateKey(new Date())}T08:00`;
+  }
+  await Promise.all([
+    loadDispatchOptions(),
+    loadClientesForAgenda()
+  ]);
+  renderRecurrenceDispatchOptions();
+
+  const result = await fetchAdminJson("/admin/planos-recorrencia", recurrenceStatus);
+
+  if (!result) {
+    return;
+  }
+
+  latestRecurrenceItems = result.items || [];
+  recurrenceActiveCount.textContent = result.ativos || 0;
+  recurrenceDueCount.textContent = result.vencidos || 0;
+  recurrenceStatus.textContent = result.total === 1 ? "1 plano" : `${result.total} planos`;
+  renderRecorrencias(latestRecurrenceItems);
 }
 
 async function loadClientes() {
@@ -1208,6 +1255,81 @@ function renderAgendaServiceCard(item) {
       <button class="secondary-button compact-button" type="button" data-action="editar-agenda-os" data-id="${item.id}">Editar</button>
     </section>
   `;
+}
+
+function renderRecorrencias(items) {
+  if (!recurrenceList) {
+    return;
+  }
+
+  if (!items.length) {
+    recurrenceList.innerHTML = '<article class="agenda-empty"><strong>Nenhum plano recorrente.</strong><span>Cadastre uma rotina para gerar OS futuras com poucos cliques.</span></article>';
+    return;
+  }
+
+  recurrenceList.innerHTML = items.map(renderRecurrenceCard).join("");
+}
+
+function renderRecurrenceCard(item) {
+  const due = item.ativo && new Date(item.proxima_execucao).getTime() <= Date.now();
+
+  return `
+    <article class="recurrence-card ${due ? "due" : ""}">
+      <div>
+        <strong>${escapeHtml(item.titulo)}</strong>
+        <span>${escapeHtml(item.cliente?.nome || "Cliente nao informado")} - ${formatRecurrenceFrequency(item.frequencia)}</span>
+        <span>${escapeHtml(item.equipamento ? formatAgendaEquipment(item.equipamento) : "Todos os equipamentos do cliente")}</span>
+      </div>
+      <div>
+        <span>Proxima OS</span>
+        <strong>${formatDateTime(item.proxima_execucao)}</strong>
+      </div>
+      <div>
+        <span>Responsavel</span>
+        <strong>${escapeHtml(item.equipe?.nome || item.tecnico?.nome || "Definir na agenda")}</strong>
+      </div>
+      <button class="secondary-button compact-button" type="button" data-action="gerar-recorrencia-os" data-id="${item.id}">
+        Gerar OS
+      </button>
+    </article>
+  `;
+}
+
+function formatRecurrenceFrequency(value) {
+  return {
+    mensal: "Mensal",
+    trimestral: "Trimestral",
+    semestral: "Semestral",
+    anual: "Anual"
+  }[value] || value;
+}
+
+async function generateRecurrenceOs(planId) {
+  recurrenceStatus.textContent = "Gerando OS...";
+
+  try {
+    const response = await fetch(`${apiBaseUrl}/admin/planos-recorrencia/${planId}/gerar-os`, {
+      method: "POST",
+      headers: authHeaders()
+    });
+
+    if (await handleUnauthorized(response)) {
+      return;
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      recurrenceStatus.textContent = error.message || "Nao foi possivel gerar a OS.";
+      return;
+    }
+
+    await loadRecorrencias();
+    if (activeView === "agenda") {
+      await loadAgenda();
+    }
+  } catch {
+    recurrenceStatus.textContent = "API indisponivel.";
+  }
 }
 
 function getAgendaStatusClass(status) {
@@ -2429,6 +2551,14 @@ function renderAgendaClientOptions() {
   renderAgendaDispatchOptions();
 }
 
+function renderRecurrenceClientOptions() {
+  if (!recurrenceClientSelect) {
+    return;
+  }
+
+  recurrenceClientSelect.innerHTML = '<option value="">Selecione um cliente</option>' + renderOptions(latestClients);
+}
+
 function renderAgendaDispatchOptions() {
   if (agendaOsTeamSelect) {
     agendaOsTeamSelect.innerHTML = '<option value="">Sem equipe</option>' + renderOptions(dispatchOptions.equipes);
@@ -2436,6 +2566,16 @@ function renderAgendaDispatchOptions() {
 
   if (agendaOsTechnicianSelect) {
     agendaOsTechnicianSelect.innerHTML = '<option value="">Sem tecnico</option>' + renderOptions(dispatchOptions.tecnicos);
+  }
+}
+
+function renderRecurrenceDispatchOptions() {
+  if (recurrenceTeamSelect) {
+    recurrenceTeamSelect.innerHTML = '<option value="">Sem equipe</option>' + renderOptions(dispatchOptions.equipes);
+  }
+
+  if (recurrenceTechnicianSelect) {
+    recurrenceTechnicianSelect.innerHTML = '<option value="">Sem tecnico</option>' + renderOptions(dispatchOptions.tecnicos);
   }
 }
 
@@ -2460,6 +2600,26 @@ async function loadAgendaEquipments(clientId, selectedEquipmentId = "") {
       .map((item) => `<option value="${item.id}">${escapeHtml(formatAgendaEquipment(item))}</option>`)
       .join("");
   agendaOsEquipmentSelect.value = selectedEquipmentId;
+}
+
+async function loadRecurrenceEquipments(clientId) {
+  if (!recurrenceEquipmentSelect) {
+    return;
+  }
+
+  recurrenceEquipmentSelect.innerHTML = '<option value="">Carregando equipamentos...</option>';
+
+  if (!clientId) {
+    recurrenceEquipmentSelect.innerHTML = '<option value="">Sem equipamento definido</option>';
+    return;
+  }
+
+  const result = await fetchAdminJson(`/admin/clientes/${clientId}/equipamentos`, recurrenceFormStatus);
+  recurrenceEquipmentSelect.innerHTML =
+    '<option value="">Sem equipamento definido</option>' +
+    (result?.items || [])
+      .map((item) => `<option value="${item.id}">${escapeHtml(formatAgendaEquipment(item))}</option>`)
+      .join("");
 }
 
 async function openAgendaOsModal(osId = "") {
@@ -2550,6 +2710,65 @@ async function submitAgendaOs(event) {
     await loadAgenda();
   } catch {
     agendaOsFormStatus.textContent = "API indisponivel.";
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function submitRecurrence(event) {
+  event.preventDefault();
+
+  if (!(recurrenceForm instanceof HTMLFormElement)) {
+    return;
+  }
+
+  const button = recurrenceForm.querySelector("button[type='submit']");
+  const data = new FormData(recurrenceForm);
+  const payload = removeEmptyValues({
+    cliente_id: String(data.get("cliente_id") || ""),
+    equipamento_id: String(data.get("equipamento_id") || ""),
+    equipe_id: String(data.get("equipe_id") || ""),
+    tecnico_id: String(data.get("tecnico_id") || ""),
+    titulo: String(data.get("titulo") || ""),
+    detalhes: String(data.get("detalhes") || ""),
+    frequencia: String(data.get("frequencia") || "mensal"),
+    proxima_execucao: data.get("proxima_execucao")
+      ? new Date(String(data.get("proxima_execucao"))).toISOString()
+      : "",
+    valor_cobrado: data.get("valor_cobrado") ? Number(data.get("valor_cobrado")) : undefined,
+    ativo: true
+  });
+
+  button.disabled = true;
+  recurrenceFormStatus.textContent = "Salvando plano...";
+
+  try {
+    const response = await fetch(`${apiBaseUrl}/admin/planos-recorrencia`, {
+      method: "POST",
+      headers: {
+        ...authHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (await handleUnauthorized(response)) {
+      return;
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      recurrenceFormStatus.textContent = error.message || "Nao foi possivel salvar o plano.";
+      return;
+    }
+
+    recurrenceForm.reset();
+    recurrenceForm.elements.titulo.value = "PMOC preventivo";
+    recurrenceForm.elements.proxima_execucao.value = `${getLocalDateKey(new Date())}T08:00`;
+    await loadRecorrencias();
+    recurrenceFormStatus.textContent = "Plano salvo.";
+  } catch {
+    recurrenceFormStatus.textContent = "API indisponivel.";
   } finally {
     button.disabled = false;
   }
@@ -3637,6 +3856,7 @@ fleetReportExportButton?.addEventListener("click", openFleetReport);
 pmocBackToClientsButton?.addEventListener("click", closePmocDossier);
 pmocGenerateReportButton?.addEventListener("click", openPmocReportPreview);
 pmocRequestSignatureButton?.addEventListener("click", requestPmocEngineerSignature);
+recurrenceForm?.addEventListener("submit", submitRecurrence);
 refreshButton?.addEventListener("click", loadActiveView);
 logoutButton?.addEventListener("click", () => {
   clearToken();
@@ -3805,6 +4025,19 @@ cancelAgendaOsButton?.addEventListener("click", closeAgendaOsModal);
 agendaOsForm?.addEventListener("submit", submitAgendaOs);
 agendaOsClientSelect?.addEventListener("change", () => {
   void loadAgendaEquipments(agendaOsClientSelect.value);
+});
+recurrenceClientSelect?.addEventListener("change", () => {
+  void loadRecurrenceEquipments(recurrenceClientSelect.value);
+});
+recurrenceList?.addEventListener("click", (event) => {
+  const target = event.target;
+  const button = target instanceof Element ? target.closest("[data-action='gerar-recorrencia-os']") : null;
+
+  if (!(button instanceof HTMLButtonElement) || !button.dataset.id) {
+    return;
+  }
+
+  void generateRecurrenceOs(button.dataset.id);
 });
 
 requestList?.addEventListener("click", async (event) => {
