@@ -2,7 +2,9 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import {
   AutomacaoStatus,
   AutomacaoTipo,
+  EquipeMembroFuncao,
   OrdemServicoEventoAcao,
+  OrdemServicoResponsavelTipo,
   OrdemServicoStatus,
   PessoaTipo,
   PmocRelatorioStatus,
@@ -20,6 +22,8 @@ import { SalvarEquipamentoDto } from "./dto/salvar-equipamento.dto";
 import { SalvarClienteDto } from "./dto/salvar-cliente.dto";
 import { SalvarEmpresaDto } from "./dto/salvar-empresa.dto";
 import { SalvarEngenheiroResponsavelDto } from "./dto/salvar-engenheiro-responsavel.dto";
+import { SalvarEquipeDto } from "./dto/salvar-equipe.dto";
+import { SalvarTecnicoDto } from "./dto/salvar-tecnico.dto";
 
 const STATUS_OS_OPERACIONAIS: OrdemServicoStatus[] = [
   OrdemServicoStatus.aberta,
@@ -98,6 +102,22 @@ export class AdminService {
         select: {
           id: true,
           nome: true,
+          membros: {
+            where: {
+              ativo: true
+            },
+            select: {
+              funcao: true,
+              usuario: {
+                select: {
+                  id: true,
+                  nome: true,
+                  email: true,
+                  role: true
+                }
+              }
+            }
+          },
           tecnico: {
             select: {
               id: true,
@@ -111,7 +131,7 @@ export class AdminService {
           empresaId: usuario.empresa_id,
           ativo: true,
           role: {
-            in: [UsuarioRole.admin, UsuarioRole.supervisor, UsuarioRole.tecnico]
+            in: [UsuarioRole.admin, UsuarioRole.supervisor, UsuarioRole.tecnico, UsuarioRole.auxiliar]
           }
         },
         orderBy: {
@@ -129,7 +149,11 @@ export class AdminService {
       equipes: equipes.map((equipe) => ({
         id: equipe.id,
         nome: equipe.nome,
-        tecnico: equipe.tecnico
+        tecnico: equipe.tecnico,
+        membros: equipe.membros.map((membro) => ({
+          funcao: membro.funcao,
+          usuario: membro.usuario
+        }))
       })),
       tecnicos
     };
@@ -483,6 +507,17 @@ export class AdminService {
             email: true
           }
         },
+        equipes: {
+          select: {
+            equipe: {
+              select: {
+                id: true,
+                nome: true,
+                ativa: true
+              }
+            }
+          }
+        },
         atualizadoEm: true,
         enderecos: {
           orderBy: {
@@ -525,6 +560,7 @@ export class AdminService {
         email: cliente.email,
         pmoc_ativo: cliente.pmocAtivo,
         engenheiro_responsavel: cliente.engenheiroResponsavel,
+        equipes: (cliente.equipes || []).map((vinculo) => vinculo.equipe),
         atualizado_em: cliente.atualizadoEm.toISOString(),
         endereco: cliente.enderecos[0] ?? null,
         total_equipamentos: cliente.equipamentos.length,
@@ -609,6 +645,185 @@ export class AdminService {
     return {
       total: engenheiros.length,
       items: engenheiros.map((engenheiro) => this.mapearEngenheiroResponsavel(engenheiro))
+    };
+  }
+
+  async listarTecnicos(usuario: AuthenticatedUser) {
+    const tecnicos = await this.prisma.usuario.findMany({
+      where: {
+        empresaId: usuario.empresa_id,
+        ativo: true,
+        role: {
+          in: [UsuarioRole.tecnico, UsuarioRole.auxiliar]
+        }
+      },
+      orderBy: {
+        nome: "asc"
+      },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        telefone: true,
+        role: true,
+        ativo: true,
+        criadoEm: true,
+        atualizadoEm: true
+      }
+    });
+
+    return {
+      total: tecnicos.length,
+      items: tecnicos.map((tecnico) => this.mapearTecnico(tecnico))
+    };
+  }
+
+  async criarTecnico(dto: SalvarTecnicoDto, usuario: AuthenticatedUser) {
+    if (!dto.senha?.trim()) {
+      throw new BadRequestException("Senha inicial e obrigatoria.");
+    }
+
+    const tecnico = await this.prisma.usuario.create({
+      data: {
+        empresaId: usuario.empresa_id,
+        nome: dto.nome.trim(),
+        email: dto.email.trim().toLowerCase(),
+        telefone: this.digitosOuNulo(dto.telefone),
+        senhaHash: await this.passwordHash.hash(dto.senha),
+        role: this.normalizarRoleTecnico(dto.role),
+        ativo: true
+      },
+      select: this.tecnicoSelect()
+    });
+
+    return this.mapearTecnico(tecnico);
+  }
+
+  async atualizarTecnico(tecnicoId: string, dto: SalvarTecnicoDto, usuario: AuthenticatedUser) {
+    await this.garantirTecnicoDaEmpresa(tecnicoId, usuario);
+
+    const data: Prisma.UsuarioUpdateInput = {
+      nome: dto.nome.trim(),
+      email: dto.email.trim().toLowerCase(),
+      telefone: this.digitosOuNulo(dto.telefone),
+      role: this.normalizarRoleTecnico(dto.role)
+    };
+
+    if (dto.senha?.trim()) {
+      data.senhaHash = await this.passwordHash.hash(dto.senha);
+    }
+
+    const tecnico = await this.prisma.usuario.update({
+      where: {
+        id: tecnicoId
+      },
+      data,
+      select: this.tecnicoSelect()
+    });
+
+    return this.mapearTecnico(tecnico);
+  }
+
+  async apagarTecnico(tecnicoId: string, usuario: AuthenticatedUser) {
+    await this.garantirTecnicoDaEmpresa(tecnicoId, usuario);
+
+    const tecnico = await this.prisma.usuario.update({
+      where: {
+        id: tecnicoId
+      },
+      data: {
+        ativo: false
+      },
+      select: {
+        id: true
+      }
+    });
+
+    return {
+      id: tecnico.id,
+      apagado: true
+    };
+  }
+
+  async listarEquipes(usuario: AuthenticatedUser) {
+    const equipes = await this.prisma.equipe.findMany({
+      where: {
+        empresaId: usuario.empresa_id,
+        ativa: true
+      },
+      orderBy: {
+        nome: "asc"
+      },
+      select: this.equipeSelect()
+    });
+
+    return {
+      total: equipes.length,
+      items: equipes.map((equipe) => this.mapearEquipe(equipe))
+    };
+  }
+
+  async criarEquipe(dto: SalvarEquipeDto, usuario: AuthenticatedUser) {
+    await this.validarEquipePayload(dto, usuario);
+
+    const equipe = await this.prisma.$transaction(async (tx) => {
+      const criada = await tx.equipe.create({
+        data: {
+          empresaId: usuario.empresa_id,
+          nome: dto.nome.trim(),
+          ativa: dto.ativa !== false
+        },
+        select: {
+          id: true
+        }
+      });
+
+      await this.sincronizarEquipeRelacionamentos(tx, criada.id, dto, usuario);
+      return criada;
+    });
+
+    return this.obterEquipePorId(equipe.id, usuario);
+  }
+
+  async atualizarEquipe(equipeId: string, dto: SalvarEquipeDto, usuario: AuthenticatedUser) {
+    await this.garantirEquipeDaEmpresa(equipeId, usuario);
+    await this.validarEquipePayload(dto, usuario);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.equipe.update({
+        where: {
+          id: equipeId
+        },
+        data: {
+          nome: dto.nome.trim(),
+          ativa: dto.ativa !== false
+        }
+      });
+
+      await this.sincronizarEquipeRelacionamentos(tx, equipeId, dto, usuario);
+    });
+
+    return this.obterEquipePorId(equipeId, usuario);
+  }
+
+  async apagarEquipe(equipeId: string, usuario: AuthenticatedUser) {
+    await this.garantirEquipeDaEmpresa(equipeId, usuario);
+
+    const equipe = await this.prisma.equipe.update({
+      where: {
+        id: equipeId
+      },
+      data: {
+        ativa: false
+      },
+      select: {
+        id: true
+      }
+    });
+
+    return {
+      id: equipe.id,
+      apagado: true
     };
   }
 
@@ -1064,6 +1279,7 @@ export class AdminService {
   async criarCliente(dto: SalvarClienteDto, usuario: AuthenticatedUser) {
     this.validarCadastroCliente(dto);
     await this.validarVinculoPmoc(dto, usuario);
+    await this.validarEquipesDaEmpresa(dto.equipe_ids, usuario);
 
     const cliente = await this.prisma.$transaction(async (tx) => {
       const criado = await tx.cliente.create({
@@ -1079,6 +1295,8 @@ export class AdminService {
         });
       }
 
+      await this.sincronizarEquipesCliente(tx, criado.id, dto.equipe_ids || [], usuario);
+
       return criado;
     });
 
@@ -1088,6 +1306,7 @@ export class AdminService {
   async atualizarCliente(clienteId: string, dto: SalvarClienteDto, usuario: AuthenticatedUser) {
     this.validarCadastroCliente(dto);
     await this.validarVinculoPmoc(dto, usuario);
+    await this.validarEquipesDaEmpresa(dto.equipe_ids, usuario);
 
     const clienteExiste = await this.prisma.cliente.findFirst({
       where: {
@@ -1136,6 +1355,8 @@ export class AdminService {
           });
         }
       }
+
+      await this.sincronizarEquipesCliente(tx, clienteId, dto.equipe_ids || [], usuario);
     });
 
     return this.obterClientePorId(clienteId, usuario);
@@ -1600,10 +1821,15 @@ export class AdminService {
         throw new ConflictException("Somente pré-chamados pendentes podem ser atualizados.");
       }
 
-      if (input.dto?.equipe_id) {
+      const equipeIds = this.obterIdsUnicos([...(input.dto?.equipe_ids || []), input.dto?.equipe_id].filter(Boolean));
+      const usuarioIds = this.obterIdsUnicos([...(input.dto?.usuario_ids || []), input.dto?.tecnico_id].filter(Boolean));
+
+      if (equipeIds.length > 0) {
         const equipe = await tx.equipe.findFirst({
           where: {
-            id: input.dto.equipe_id,
+            id: {
+              in: equipeIds
+            },
             empresaId: input.usuario.empresa_id,
             ativa: true
           },
@@ -1612,24 +1838,48 @@ export class AdminService {
           }
         });
 
-        if (!equipe) {
+        if (!equipe || equipeIds.length !== await tx.equipe.count({
+          where: {
+            id: {
+              in: equipeIds
+            },
+            empresaId: input.usuario.empresa_id,
+            ativa: true
+          }
+        })) {
           throw new NotFoundException("Equipe nao encontrada.");
         }
       }
 
-      if (input.dto?.tecnico_id) {
+      if (usuarioIds.length > 0) {
         const tecnico = await tx.usuario.findFirst({
           where: {
-            id: input.dto.tecnico_id,
+            id: {
+              in: usuarioIds
+            },
             empresaId: input.usuario.empresa_id,
-            ativo: true
+            ativo: true,
+            role: {
+              in: [UsuarioRole.tecnico, UsuarioRole.auxiliar]
+            }
           },
           select: {
             id: true
           }
         });
 
-        if (!tecnico) {
+        if (!tecnico || usuarioIds.length !== await tx.usuario.count({
+          where: {
+            id: {
+              in: usuarioIds
+            },
+            empresaId: input.usuario.empresa_id,
+            ativo: true,
+            role: {
+              in: [UsuarioRole.tecnico, UsuarioRole.auxiliar]
+            }
+          }
+        })) {
           throw new NotFoundException("Tecnico nao encontrado.");
         }
       }
@@ -1642,12 +1892,12 @@ export class AdminService {
         updateData.agendadaPara = new Date(input.dto.agendada_para);
       }
 
-      if (input.dto?.equipe_id) {
-        updateData.equipeId = input.dto.equipe_id;
+      if (equipeIds[0]) {
+        updateData.equipeId = equipeIds[0];
       }
 
-      if (input.dto?.tecnico_id) {
-        updateData.tecnicoId = input.dto.tecnico_id;
+      if (usuarioIds[0]) {
+        updateData.tecnicoId = usuarioIds[0];
       }
 
       if (input.dto?.valor_cobrado !== undefined) {
@@ -1677,6 +1927,34 @@ export class AdminService {
           registradoEm: new Date()
         }
       });
+
+      if (tx.ordemServicoResponsavel) {
+        await tx.ordemServicoResponsavel.deleteMany({
+          where: {
+            ordemServicoId: ordem.id
+          }
+        });
+
+        if (input.statusNovo === OrdemServicoStatus.aberta && (usuarioIds.length > 0 || equipeIds.length > 0)) {
+          await tx.ordemServicoResponsavel.createMany({
+            data: [
+              ...usuarioIds.map((usuarioId) => ({
+                empresaId: ordem.empresaId,
+                ordemServicoId: ordem.id,
+                tipo: OrdemServicoResponsavelTipo.usuario,
+                usuarioId
+              })),
+              ...equipeIds.map((equipeId) => ({
+                empresaId: ordem.empresaId,
+                ordemServicoId: ordem.id,
+                tipo: OrdemServicoResponsavelTipo.equipe,
+                equipeId
+              }))
+            ],
+            skipDuplicates: true
+          });
+        }
+      }
 
       return ordemAtualizada;
     });
@@ -1775,6 +2053,326 @@ export class AdminService {
     if (!engenheiro) {
       throw new NotFoundException("Engenheiro responsavel nao encontrado.");
     }
+  }
+
+  private async garantirTecnicoDaEmpresa(tecnicoId: string, usuario: AuthenticatedUser) {
+    const tecnico = await this.prisma.usuario.findFirst({
+      where: {
+        id: tecnicoId,
+        empresaId: usuario.empresa_id,
+        role: {
+          in: [UsuarioRole.tecnico, UsuarioRole.auxiliar]
+        }
+      },
+      select: {
+        id: true
+      }
+    });
+
+    if (!tecnico) {
+      throw new NotFoundException("Tecnico nao encontrado.");
+    }
+  }
+
+  private async garantirEquipeDaEmpresa(equipeId: string, usuario: AuthenticatedUser) {
+    const equipe = await this.prisma.equipe.findFirst({
+      where: {
+        id: equipeId,
+        empresaId: usuario.empresa_id,
+        ativa: true
+      },
+      select: {
+        id: true
+      }
+    });
+
+    if (!equipe) {
+      throw new NotFoundException("Equipe nao encontrada.");
+    }
+  }
+
+  private async obterEquipePorId(equipeId: string, usuario: AuthenticatedUser) {
+    const equipe = await this.prisma.equipe.findFirst({
+      where: {
+        id: equipeId,
+        empresaId: usuario.empresa_id
+      },
+      select: this.equipeSelect()
+    });
+
+    if (!equipe) {
+      throw new NotFoundException("Equipe nao encontrada.");
+    }
+
+    return this.mapearEquipe(equipe);
+  }
+
+  private async validarEquipesDaEmpresa(equipeIds: string[] | undefined, usuario: AuthenticatedUser) {
+    const ids = this.obterIdsUnicos(equipeIds || []);
+
+    if (!ids.length) {
+      return;
+    }
+
+    const total = await this.prisma.equipe.count({
+      where: {
+        id: {
+          in: ids
+        },
+        empresaId: usuario.empresa_id,
+        ativa: true
+      }
+    });
+
+    if (total !== ids.length) {
+      throw new NotFoundException("Equipe nao encontrada.");
+    }
+  }
+
+  private async validarEquipePayload(dto: SalvarEquipeDto, usuario: AuthenticatedUser) {
+    const clienteIds = this.obterIdsUnicos(dto.cliente_ids || []);
+    const usuarioIds = this.obterIdsUnicos((dto.membros || []).map((membro) => membro.usuario_id));
+
+    if (clienteIds.length > 0) {
+      const totalClientes = await this.prisma.cliente.count({
+        where: {
+          id: {
+            in: clienteIds
+          },
+          empresaId: usuario.empresa_id
+        }
+      });
+
+      if (totalClientes !== clienteIds.length) {
+        throw new NotFoundException("Cliente nao encontrado.");
+      }
+    }
+
+    if (usuarioIds.length > 0) {
+      const totalUsuarios = await this.prisma.usuario.count({
+        where: {
+          id: {
+            in: usuarioIds
+          },
+          empresaId: usuario.empresa_id,
+          ativo: true,
+          role: {
+            in: [UsuarioRole.tecnico, UsuarioRole.auxiliar]
+          }
+        }
+      });
+
+      if (totalUsuarios !== usuarioIds.length) {
+        throw new NotFoundException("Tecnico nao encontrado.");
+      }
+    }
+  }
+
+  private async sincronizarEquipeRelacionamentos(
+    tx: Prisma.TransactionClient,
+    equipeId: string,
+    dto: SalvarEquipeDto,
+    usuario: AuthenticatedUser
+  ) {
+    await tx.clienteEquipe.deleteMany({
+      where: {
+        equipeId,
+        empresaId: usuario.empresa_id
+      }
+    });
+
+    await tx.equipeMembro.deleteMany({
+      where: {
+        equipeId,
+        empresaId: usuario.empresa_id
+      }
+    });
+
+    const clienteIds = this.obterIdsUnicos(dto.cliente_ids || []);
+    const membros = this.deduplicarMembrosEquipe(dto.membros || []);
+
+    if (clienteIds.length > 0) {
+      await tx.clienteEquipe.createMany({
+        data: clienteIds.map((clienteId, index) => ({
+          empresaId: usuario.empresa_id,
+          clienteId,
+          equipeId,
+          principal: index === 0
+        })),
+        skipDuplicates: true
+      });
+    }
+
+    if (membros.length > 0) {
+      await tx.equipeMembro.createMany({
+        data: membros.map((membro) => ({
+          empresaId: usuario.empresa_id,
+          equipeId,
+          usuarioId: membro.usuario_id,
+          funcao: membro.funcao
+        })),
+        skipDuplicates: true
+      });
+    }
+  }
+
+  private async sincronizarEquipesCliente(
+    tx: Prisma.TransactionClient,
+    clienteId: string,
+    equipeIds: string[],
+    usuario: AuthenticatedUser
+  ) {
+    await tx.clienteEquipe.deleteMany({
+      where: {
+        clienteId,
+        empresaId: usuario.empresa_id
+      }
+    });
+
+    const ids = this.obterIdsUnicos(equipeIds);
+
+    if (!ids.length) {
+      return;
+    }
+
+    await tx.clienteEquipe.createMany({
+      data: ids.map((equipeId, index) => ({
+        empresaId: usuario.empresa_id,
+        clienteId,
+        equipeId,
+        principal: index === 0
+      })),
+      skipDuplicates: true
+    });
+  }
+
+  private obterIdsUnicos(ids: Array<string | undefined>) {
+    return [...new Set(ids.map((id) => id?.trim()).filter((id): id is string => Boolean(id)))];
+  }
+
+  private deduplicarMembrosEquipe(membros: Array<{ usuario_id: string; funcao: "lider" | "tecnico" | "auxiliar" }>) {
+    const vistos = new Set<string>();
+
+    return membros.filter((membro) => {
+      if (vistos.has(membro.usuario_id)) {
+        return false;
+      }
+
+      vistos.add(membro.usuario_id);
+      return true;
+    });
+  }
+
+  private normalizarRoleTecnico(role?: "tecnico" | "auxiliar") {
+    return role === "auxiliar" ? UsuarioRole.auxiliar : UsuarioRole.tecnico;
+  }
+
+  private tecnicoSelect() {
+    return {
+      id: true,
+      nome: true,
+      email: true,
+      telefone: true,
+      role: true,
+      ativo: true,
+      criadoEm: true,
+      atualizadoEm: true
+    } satisfies Prisma.UsuarioSelect;
+  }
+
+  private mapearTecnico(tecnico: {
+    id: string;
+    nome: string;
+    email: string;
+    telefone: string | null;
+    role: UsuarioRole;
+    ativo: boolean;
+    criadoEm: Date;
+    atualizadoEm: Date;
+  }) {
+    return {
+      id: tecnico.id,
+      nome: tecnico.nome,
+      email: tecnico.email,
+      telefone: tecnico.telefone,
+      role: tecnico.role,
+      ativo: tecnico.ativo,
+      criado_em: tecnico.criadoEm.toISOString(),
+      atualizado_em: tecnico.atualizadoEm.toISOString()
+    };
+  }
+
+  private equipeSelect() {
+    return {
+      id: true,
+      nome: true,
+      ativa: true,
+      criadoEm: true,
+      atualizadoEm: true,
+      clientes: {
+        select: {
+          cliente: {
+            select: {
+              id: true,
+              nome: true
+            }
+          }
+        }
+      },
+      membros: {
+        where: {
+          ativo: true
+        },
+        orderBy: {
+          criadoEm: "asc"
+        },
+        select: {
+          id: true,
+          funcao: true,
+          usuario: {
+            select: {
+              id: true,
+              nome: true,
+              email: true,
+              role: true
+            }
+          }
+        }
+      }
+    } satisfies Prisma.EquipeSelect;
+  }
+
+  private mapearEquipe(equipe: {
+    id: string;
+    nome: string;
+    ativa: boolean;
+    criadoEm: Date;
+    atualizadoEm: Date;
+    clientes: Array<{ cliente: { id: string; nome: string } }>;
+    membros: Array<{
+      id: string;
+      funcao: EquipeMembroFuncao;
+      usuario: {
+        id: string;
+        nome: string;
+        email: string;
+        role: UsuarioRole;
+      };
+    }>;
+  }) {
+    return {
+      id: equipe.id,
+      nome: equipe.nome,
+      ativa: equipe.ativa,
+      clientes: equipe.clientes.map((vinculo) => vinculo.cliente),
+      membros: equipe.membros.map((membro) => ({
+        id: membro.id,
+        funcao: membro.funcao,
+        usuario: membro.usuario
+      })),
+      criado_em: equipe.criadoEm.toISOString(),
+      atualizado_em: equipe.atualizadoEm.toISOString()
+    };
   }
 
   private async validarVinculoPmoc(dto: SalvarClienteDto, usuario: AuthenticatedUser) {

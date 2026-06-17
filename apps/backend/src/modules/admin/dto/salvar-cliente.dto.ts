@@ -1,4 +1,4 @@
-import { IsBoolean, IsEmail, IsIn, IsNotEmpty, IsOptional, IsString, IsUUID, Length } from "class-validator";
+import { IsArray, IsBoolean, IsEmail, IsIn, IsNotEmpty, IsOptional, IsString, IsUUID, Length } from "class-validator";
 
 export class SalvarClienteDto {
   @IsOptional()
@@ -28,6 +28,11 @@ export class SalvarClienteDto {
   @IsOptional()
   @IsUUID()
   engenheiro_responsavel_id?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID("4", { each: true })
+  equipe_ids?: string[];
 
   @IsOptional()
   @IsString()

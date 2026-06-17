@@ -8,6 +8,8 @@ import { SalvarEquipamentoDto } from "./dto/salvar-equipamento.dto";
 import { SalvarClienteDto } from "./dto/salvar-cliente.dto";
 import { SalvarEmpresaDto } from "./dto/salvar-empresa.dto";
 import { SalvarEngenheiroResponsavelDto } from "./dto/salvar-engenheiro-responsavel.dto";
+import { SalvarEquipeDto } from "./dto/salvar-equipe.dto";
+import { SalvarTecnicoDto } from "./dto/salvar-tecnico.dto";
 import { AdminService } from "./admin.service";
 
 type HeaderResponse = {
@@ -136,6 +138,60 @@ export class AdminController {
   @Get("engenheiros")
   listarEngenheirosResponsaveis(@CurrentUser() usuario: AuthenticatedUser) {
     return this.adminService.listarEngenheirosResponsaveis(usuario);
+  }
+
+  @Get("tecnicos")
+  listarTecnicos(@CurrentUser() usuario: AuthenticatedUser) {
+    return this.adminService.listarTecnicos(usuario);
+  }
+
+  @Post("tecnicos")
+  criarTecnico(@Body() dto: SalvarTecnicoDto, @CurrentUser() usuario: AuthenticatedUser) {
+    return this.adminService.criarTecnico(dto, usuario);
+  }
+
+  @Patch("tecnicos/:tecnicoId")
+  atualizarTecnico(
+    @Param("tecnicoId", new ParseUUIDPipe()) tecnicoId: string,
+    @Body() dto: SalvarTecnicoDto,
+    @CurrentUser() usuario: AuthenticatedUser
+  ) {
+    return this.adminService.atualizarTecnico(tecnicoId, dto, usuario);
+  }
+
+  @Delete("tecnicos/:tecnicoId")
+  apagarTecnico(
+    @Param("tecnicoId", new ParseUUIDPipe()) tecnicoId: string,
+    @CurrentUser() usuario: AuthenticatedUser
+  ) {
+    return this.adminService.apagarTecnico(tecnicoId, usuario);
+  }
+
+  @Get("equipes")
+  listarEquipes(@CurrentUser() usuario: AuthenticatedUser) {
+    return this.adminService.listarEquipes(usuario);
+  }
+
+  @Post("equipes")
+  criarEquipe(@Body() dto: SalvarEquipeDto, @CurrentUser() usuario: AuthenticatedUser) {
+    return this.adminService.criarEquipe(dto, usuario);
+  }
+
+  @Patch("equipes/:equipeId")
+  atualizarEquipe(
+    @Param("equipeId", new ParseUUIDPipe()) equipeId: string,
+    @Body() dto: SalvarEquipeDto,
+    @CurrentUser() usuario: AuthenticatedUser
+  ) {
+    return this.adminService.atualizarEquipe(equipeId, dto, usuario);
+  }
+
+  @Delete("equipes/:equipeId")
+  apagarEquipe(
+    @Param("equipeId", new ParseUUIDPipe()) equipeId: string,
+    @CurrentUser() usuario: AuthenticatedUser
+  ) {
+    return this.adminService.apagarEquipe(equipeId, usuario);
   }
 
   @Post("engenheiros")

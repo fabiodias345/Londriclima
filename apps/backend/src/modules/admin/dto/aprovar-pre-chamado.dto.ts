@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsDateString, IsNumber, IsOptional, IsUUID, Min } from "class-validator";
+import { IsArray, IsDateString, IsNumber, IsOptional, IsUUID, Min } from "class-validator";
 
 export class AprovarPreChamadoDto {
   @IsOptional()
@@ -13,6 +13,16 @@ export class AprovarPreChamadoDto {
   @IsOptional()
   @IsUUID()
   tecnico_id?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID("4", { each: true })
+  equipe_ids?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID("4", { each: true })
+  usuario_ids?: string[];
 
   @IsOptional()
   @Type(() => Number)

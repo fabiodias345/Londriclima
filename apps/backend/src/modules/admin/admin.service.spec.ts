@@ -233,6 +233,98 @@ test("obterEmpresa retorna cadastro completo da empresa do usuario", async () =>
   assert.equal(resposta.status, "ativa");
 });
 
+test("listarTecnicos retorna usuarios tecnicos e auxiliares ativos da empresa", async () => {
+  const chamadas = {
+    where: undefined as unknown
+  };
+  const prisma = {
+    usuario: {
+      findMany: async ({ where }: { where: unknown }) => {
+        chamadas.where = where;
+        return [
+          {
+            id: "tecnico-1",
+            nome: "Joao Tecnico",
+            email: "joao@airmovebr.local",
+            telefone: "43999999999",
+            role: UsuarioRole.tecnico,
+            ativo: true,
+            criadoEm: new Date("2026-06-17T10:00:00.000Z"),
+            atualizadoEm: new Date("2026-06-17T10:00:00.000Z")
+          }
+        ];
+      }
+    }
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.listarTecnicos(usuario);
+
+  assert.deepEqual(chamadas.where, {
+    empresaId: "empresa-1",
+    ativo: true,
+    role: {
+      in: [UsuarioRole.tecnico, "auxiliar"]
+    }
+  });
+  assert.equal(resposta.total, 1);
+  assert.equal(resposta.items[0].email, "joao@airmovebr.local");
+});
+
+test("listarEquipes retorna equipes por cliente com membros ilimitados", async () => {
+  const prisma = {
+    equipe: {
+      findMany: async () => [
+        {
+          id: "equipe-1",
+          nome: "Equipe 01 HU",
+          ativa: true,
+          criadoEm: new Date("2026-06-17T10:00:00.000Z"),
+          atualizadoEm: new Date("2026-06-17T10:00:00.000Z"),
+          clientes: [
+            {
+              cliente: {
+                id: "cliente-1",
+                nome: "HU"
+              }
+            }
+          ],
+          membros: [
+            {
+              id: "membro-1",
+              funcao: "tecnico",
+              usuario: {
+                id: "usuario-1",
+                nome: "Joao",
+                email: "joao@airmovebr.local",
+                role: UsuarioRole.tecnico
+              }
+            },
+            {
+              id: "membro-2",
+              funcao: "auxiliar",
+              usuario: {
+                id: "usuario-2",
+                nome: "Maria",
+                email: "maria@airmovebr.local",
+                role: "auxiliar"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.listarEquipes(usuario);
+
+  assert.equal(resposta.total, 1);
+  assert.equal(resposta.items[0].clientes[0].nome, "HU");
+  assert.equal(resposta.items[0].membros.length, 2);
+  assert.equal(resposta.items[0].membros[1].funcao, "auxiliar");
+});
+
 test("atualizarEmpresa normaliza cadastro fiscal e status da empresa do usuario", async () => {
   const chamadas = {
     updateWhere: undefined as unknown,

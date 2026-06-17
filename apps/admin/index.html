@@ -34,6 +34,8 @@
           <span class="nav-group-title">Cadastros</span>
           <button class="nav-link" type="button" data-view="empresa">Empresa</button>
           <button class="nav-link" type="button" data-view="clientes">Clientes</button>
+          <button class="nav-link" type="button" data-view="tecnicos">Tecnicos</button>
+          <button class="nav-link" type="button" data-view="equipes">Equipes</button>
           <button class="nav-link" type="button" data-view="engenheiros">Engenheiros</button>
         </section>
 
@@ -365,6 +367,12 @@
                 <option value="">Cadastre ou selecione um engenheiro</option>
               </select>
             </label>
+            <label>
+              Equipes vinculadas
+              <select name="equipe_ids" id="clientTeamsSelect" multiple size="4">
+                <option value="">Cadastre uma equipe</option>
+              </select>
+            </label>
             <div class="form-actions">
               <button type="submit">Salvar cliente</button>
               <button class="secondary-button hidden" id="backToClientsButton" type="button">Voltar para clientes</button>
@@ -594,6 +602,73 @@
             <p class="status" id="engineerFormStatus" role="status"></p>
           </form>
           <div class="data-list" id="engenheirosList"></div>
+        </section>
+
+        <section class="worklist hidden" id="tecnicosView">
+          <div class="worklist-header">
+            <h2>Tecnicos e auxiliares</h2>
+            <p id="tecnicosStatus" role="status">Carregando...</p>
+          </div>
+          <form class="client-form" id="tecnicoForm">
+            <input name="id" type="hidden" />
+            <label>
+              Nome
+              <input name="nome" type="text" required />
+            </label>
+            <label>
+              Email / login
+              <input name="email" type="email" required />
+            </label>
+            <label>
+              Telefone
+              <input name="telefone" type="tel" inputmode="tel" />
+            </label>
+            <label>
+              Funcao
+              <select name="role">
+                <option value="tecnico">Tecnico</option>
+                <option value="auxiliar">Auxiliar</option>
+              </select>
+            </label>
+            <label>
+              Senha
+              <input name="senha" type="password" minlength="6" autocomplete="new-password" />
+            </label>
+            <div class="form-actions">
+              <button type="submit">Salvar tecnico</button>
+              <button class="secondary-button" id="resetTecnicoFormButton" type="button">Novo</button>
+            </div>
+            <p class="status" id="tecnicoFormStatus" role="status"></p>
+          </form>
+          <div class="data-list" id="tecnicosList"></div>
+        </section>
+
+        <section class="worklist hidden" id="equipesView">
+          <div class="worklist-header">
+            <h2>Equipes por cliente</h2>
+            <p id="equipesStatus" role="status">Carregando...</p>
+          </div>
+          <form class="client-form" id="equipeForm">
+            <input name="id" type="hidden" />
+            <label>
+              Nome da equipe
+              <input name="nome" type="text" placeholder="Equipe 01 HU" required />
+            </label>
+            <label>
+              Clientes vinculados
+              <select name="cliente_ids" id="equipeClientsSelect" multiple size="4"></select>
+            </label>
+            <fieldset class="form-fieldset">
+              <legend>Membros</legend>
+              <div class="checkbox-list" id="equipeMembersList"></div>
+            </fieldset>
+            <div class="form-actions">
+              <button type="submit">Salvar equipe</button>
+              <button class="secondary-button" id="resetEquipeFormButton" type="button">Nova</button>
+            </div>
+            <p class="status" id="equipeFormStatus" role="status"></p>
+          </form>
+          <div class="data-list" id="equipesList"></div>
         </section>
 
         <section class="worklist pmoc-workspace hidden" id="pmocView">

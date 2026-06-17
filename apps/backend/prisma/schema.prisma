@@ -11,6 +11,18 @@ enum UsuarioRole {
   admin
   supervisor
   tecnico
+  auxiliar
+}
+
+enum EquipeMembroFuncao {
+  lider
+  tecnico
+  auxiliar
+}
+
+enum OrdemServicoResponsavelTipo {
+  usuario
+  equipe
 }
 
 enum PessoaTipo {
@@ -112,6 +124,7 @@ model Usuario {
   empresaId String     @map("empresa_id") @db.Uuid
   nome      String
   email     String
+  telefone  String?
   senhaHash String     @map("senha_hash")
   role      UsuarioRole
   ativo     Boolean    @default(true)
@@ -121,7 +134,9 @@ model Usuario {
 
   empresa Empresa @relation(fields: [empresaId], references: [id])
   equipesTecnico Equipe[] @relation("EquipeTecnico")
+  equipesMembro EquipeMembro[]
   ordensComoTecnico OrdemServico[] @relation("OrdemTecnico")
+  ordensResponsavel OrdemServicoResponsavel[]
   eventos OrdemServicoEvento[]
   veiculoAbastecimentos VeiculoAbastecimento[]
   pmocRelatoriosCriados PmocRelatorio[] @relation("PmocRelatorioCriador")
@@ -143,10 +158,32 @@ model Equipe {
   empresa Empresa @relation(fields: [empresaId], references: [id])
   tecnico Usuario? @relation("EquipeTecnico", fields: [tecnicoId], references: [id])
   auxiliares EquipeAuxiliar[]
+  membros EquipeMembro[]
+  clientes ClienteEquipe[]
   ordensServico OrdemServico[]
+  ordensResponsavel OrdemServicoResponsavel[]
 
   @@index([empresaId])
   @@map("equipes")
+}
+
+model EquipeMembro {
+  id        String   @id @default(uuid()) @db.Uuid
+  empresaId String  @map("empresa_id") @db.Uuid
+  equipeId  String  @map("equipe_id") @db.Uuid
+  usuarioId String  @map("usuario_id") @db.Uuid
+  funcao    EquipeMembroFuncao
+  ativo     Boolean @default(true)
+  criadoEm  DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  equipe Equipe @relation(fields: [equipeId], references: [id])
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@unique([equipeId, usuarioId])
+  @@index([empresaId])
+  @@index([usuarioId])
+  @@map("equipe_membros")
 }
 
 model EquipeAuxiliar {
@@ -180,6 +217,7 @@ model Cliente {
 
   empresa Empresa @relation(fields: [empresaId], references: [id])
   engenheiroResponsavel EngenheiroResponsavel? @relation(fields: [engenheiroResponsavelId], references: [id])
+  equipes ClienteEquipe[]
   enderecos ClienteEndereco[]
   equipamentos Equipamento[]
   ordensServico OrdemServico[]
@@ -189,6 +227,23 @@ model Cliente {
   @@index([empresaId, pmocAtivo])
   @@index([empresaId, documento])
   @@map("clientes")
+}
+
+model ClienteEquipe {
+  id        String   @id @default(uuid()) @db.Uuid
+  empresaId String  @map("empresa_id") @db.Uuid
+  clienteId String  @map("cliente_id") @db.Uuid
+  equipeId  String  @map("equipe_id") @db.Uuid
+  principal Boolean @default(false)
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  cliente Cliente @relation(fields: [clienteId], references: [id])
+  equipe Equipe @relation(fields: [equipeId], references: [id])
+
+  @@unique([clienteId, equipeId])
+  @@index([empresaId])
+  @@index([equipeId])
+  @@map("cliente_equipes")
 }
 
 model EngenheiroResponsavel {
@@ -323,6 +378,7 @@ model OrdemServico {
   equipamento Equipamento? @relation(fields: [equipamentoId], references: [id])
   equipe Equipe? @relation(fields: [equipeId], references: [id])
   tecnico Usuario? @relation("OrdemTecnico", fields: [tecnicoId], references: [id])
+  responsaveis OrdemServicoResponsavel[]
   eventos OrdemServicoEvento[]
   evidencias OrdemServicoEvidencia[]
   checklist OrdemServicoChecklist?
@@ -334,6 +390,27 @@ model OrdemServico {
   @@index([empresaId, agendadaPara])
   @@index([clienteId])
   @@map("ordens_servico")
+}
+
+model OrdemServicoResponsavel {
+  id        String   @id @default(uuid()) @db.Uuid
+  empresaId String  @map("empresa_id") @db.Uuid
+  ordemServicoId String @map("ordem_servico_id") @db.Uuid
+  tipo      OrdemServicoResponsavelTipo
+  usuarioId String? @map("usuario_id") @db.Uuid
+  equipeId  String? @map("equipe_id") @db.Uuid
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  ordemServico OrdemServico @relation(fields: [ordemServicoId], references: [id])
+  usuario Usuario? @relation(fields: [usuarioId], references: [id])
+  equipe Equipe? @relation(fields: [equipeId], references: [id])
+
+  @@unique([ordemServicoId, usuarioId])
+  @@unique([ordemServicoId, equipeId])
+  @@index([empresaId])
+  @@index([usuarioId])
+  @@index([equipeId])
+  @@map("ordem_servico_responsaveis")
 }
 
 model OrdemServicoEvento {

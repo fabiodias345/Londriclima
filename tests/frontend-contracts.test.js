@@ -189,6 +189,28 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(script, /clientesList\.classList\.remove\("hidden"\)/);
 });
 
+test("admin gerencia tecnicos equipes e responsaveis flexiveis por OS", () => {
+  const html = read("apps/admin/index.html");
+  const script = read("apps/admin/script.js");
+
+  assert.match(html, /data-view="tecnicos"/);
+  assert.match(html, /data-view="equipes"/);
+  assert.match(html, /id="tecnicosView"/);
+  assert.match(html, /id="tecnicoForm"/);
+  assert.match(html, /name="senha"/);
+  assert.match(html, /id="equipesView"/);
+  assert.match(html, /id="equipeForm"/);
+  assert.match(html, /id="equipeMembersList"/);
+  assert.match(html, /name="equipe_ids"[^>]*multiple/);
+  assert.match(script, /async function loadTecnicos/);
+  assert.match(script, /\/admin\/tecnicos/);
+  assert.match(script, /async function loadEquipes/);
+  assert.match(script, /\/admin\/equipes/);
+  assert.match(script, /function renderEquipeMembersList/);
+  assert.match(script, /usuario_ids:\s*data\.getAll\("usuario_ids"\)/);
+  assert.match(script, /equipe_ids:\s*data\.getAll\("equipe_ids"\)/);
+});
+
 test("landing possui consulta publica de equipamento protegida por senha", () => {
   const html = read("apps/landing/equipamento.html");
   const script = read("apps/landing/equipamento.js");

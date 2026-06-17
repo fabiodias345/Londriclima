@@ -31,6 +31,8 @@ const agendaView = document.querySelector("#agendaView");
 const empresaView = document.querySelector("#empresaView");
 const clientesView = document.querySelector("#clientesView");
 const engenheirosView = document.querySelector("#engenheirosView");
+const tecnicosView = document.querySelector("#tecnicosView");
+const equipesView = document.querySelector("#equipesView");
 const pmocView = document.querySelector("#pmocView");
 const relatoriosView = document.querySelector("#relatoriosView");
 const relatoriosAvulsosView = document.querySelector("#relatoriosAvulsosView");
@@ -70,11 +72,24 @@ const backToClientsButton = document.querySelector("#backToClientsButton");
 const clientDocumentLabel = document.querySelector("#clientDocumentLabel");
 const clientDocumentHelp = document.querySelector("#clientDocumentHelp");
 const clientEngineerSelect = document.querySelector("#clientEngineerSelect");
+const clientTeamsSelect = document.querySelector("#clientTeamsSelect");
 const engenheirosStatus = document.querySelector("#engenheirosStatus");
 const engenheirosList = document.querySelector("#engenheirosList");
 const engineerForm = document.querySelector("#engineerForm");
 const engineerFormStatus = document.querySelector("#engineerFormStatus");
 const resetEngineerFormButton = document.querySelector("#resetEngineerFormButton");
+const tecnicosStatus = document.querySelector("#tecnicosStatus");
+const tecnicosList = document.querySelector("#tecnicosList");
+const tecnicoForm = document.querySelector("#tecnicoForm");
+const tecnicoFormStatus = document.querySelector("#tecnicoFormStatus");
+const resetTecnicoFormButton = document.querySelector("#resetTecnicoFormButton");
+const equipesStatus = document.querySelector("#equipesStatus");
+const equipesList = document.querySelector("#equipesList");
+const equipeForm = document.querySelector("#equipeForm");
+const equipeFormStatus = document.querySelector("#equipeFormStatus");
+const resetEquipeFormButton = document.querySelector("#resetEquipeFormButton");
+const equipeClientsSelect = document.querySelector("#equipeClientsSelect");
+const equipeMembersList = document.querySelector("#equipeMembersList");
 const deleteClientModal = document.querySelector("#deleteClientModal");
 const deleteClientMessage = document.querySelector("#deleteClientMessage");
 const confirmDeleteClientButton = document.querySelector("#confirmDeleteClientButton");
@@ -137,6 +152,8 @@ let activeView = "preChamados";
 let latestFleetItems = [];
 let latestClients = [];
 let latestEngineers = [];
+let latestTecnicos = [];
+let latestEquipes = [];
 let latestAgendaItems = [];
 let latestReports = null;
 let selectedFleetVehicleId = "";
@@ -250,6 +267,16 @@ async function loadActiveView() {
     return;
   }
 
+  if (activeView === "tecnicos") {
+    await loadTecnicos();
+    return;
+  }
+
+  if (activeView === "equipes") {
+    await loadEquipes();
+    return;
+  }
+
   if (activeView === "pmoc") {
     await loadPmoc();
     return;
@@ -281,6 +308,8 @@ function setActiveView(view) {
     agenda: ["Despacho de servicos", "Agenda operacional"],
     empresa: ["Cadastro base", "Empresa"],
     clientes: ["Relacionamento", "Clientes e equipamentos"],
+    tecnicos: ["Equipe de campo", "Tecnicos e auxiliares"],
+    equipes: ["Despacho flexivel", "Equipes por cliente"],
     engenheiros: ["Responsabilidade tecnica", "Engenheiros responsaveis"],
     pmoc: ["Conformidade tecnica", "PMOC"],
     relatoriosAvulsos: ["Atendimento avulso", "Relatorios diretos ao cliente"],
@@ -303,6 +332,8 @@ function setActiveView(view) {
   empresaView.classList.toggle("hidden", view !== "empresa");
   clientesView.classList.toggle("hidden", view !== "clientes");
   engenheirosView.classList.toggle("hidden", view !== "engenheiros");
+  tecnicosView.classList.toggle("hidden", view !== "tecnicos");
+  equipesView.classList.toggle("hidden", view !== "equipes");
   pmocView.classList.toggle("hidden", view !== "pmoc");
   relatoriosView.classList.toggle("hidden", view !== "relatorios");
   relatoriosAvulsosView.classList.toggle("hidden", view !== "relatoriosAvulsos");
@@ -414,6 +445,7 @@ async function loadAgenda() {
 async function loadClientes() {
   clientesStatus.textContent = "Carregando...";
   await loadEngenheiros(false);
+  await loadEquipes(false);
 
   const result = await fetchAdminJson("/admin/clientes", clientesStatus);
 
@@ -429,6 +461,7 @@ async function loadClientes() {
   equipmentCount.textContent = items.reduce((total, item) => total + (item.total_equipamentos || 0), 0);
   clientesStatus.textContent = result.total === 1 ? "1 cliente" : `${result.total} clientes`;
   renderClientes(items);
+  renderClientTeamOptions();
 }
 
 async function loadEmpresa() {
@@ -554,6 +587,59 @@ async function loadEngenheiros(renderList = true) {
   return latestEngineers;
 }
 
+async function loadTecnicos(renderList = true) {
+  if (renderList) {
+    tecnicosStatus.textContent = "Carregando...";
+  }
+
+  const result = await fetchAdminJson("/admin/tecnicos", renderList ? tecnicosStatus : null);
+
+  if (!result) {
+    latestTecnicos = [];
+    return [];
+  }
+
+  latestTecnicos = result.items || [];
+
+  if (renderList) {
+    tecnicosStatus.textContent = result.total === 1 ? "1 tecnico" : `${result.total} tecnicos e auxiliares`;
+    renderTecnicos(latestTecnicos);
+  }
+
+  renderEquipeMembersList();
+  return latestTecnicos;
+}
+
+async function loadEquipes(renderList = true) {
+  if (renderList) {
+    equipesStatus.textContent = "Carregando...";
+    await loadTecnicos(false);
+    if (!latestClients.length) {
+      const clientsResult = await fetchAdminJson("/admin/clientes", equipesStatus);
+      latestClients = clientsResult?.items || [];
+    }
+  }
+
+  const result = await fetchAdminJson("/admin/equipes", renderList ? equipesStatus : null);
+
+  if (!result) {
+    latestEquipes = [];
+    return [];
+  }
+
+  latestEquipes = result.items || [];
+
+  if (renderList) {
+    equipesStatus.textContent = result.total === 1 ? "1 equipe" : `${result.total} equipes`;
+    renderEquipeClientOptions();
+    renderEquipeMembersList();
+    renderEquipes(latestEquipes);
+  }
+
+  renderClientTeamOptions();
+  return latestEquipes;
+}
+
 async function loadClientEquipments(clientId) {
   if (!clientId || !clientEquipmentStatus || !clientEquipmentList) {
     return;
@@ -636,7 +722,9 @@ async function fetchAdminJson(path, statusElement) {
       headers: authHeaders()
     });
   } catch {
-    statusElement.textContent = "API indisponivel.";
+    if (statusElement) {
+      statusElement.textContent = "API indisponivel.";
+    }
     return null;
   }
 
@@ -645,7 +733,9 @@ async function fetchAdminJson(path, statusElement) {
   }
 
   if (!response.ok) {
-    statusElement.textContent = "Nao foi possivel carregar os dados.";
+    if (statusElement) {
+      statusElement.textContent = "Nao foi possivel carregar os dados.";
+    }
     return null;
   }
 
@@ -689,16 +779,14 @@ function renderPreChamados(items) {
           <input name="agendada_para" type="datetime-local" />
         </label>
         <label>
-          Equipe
-          <select name="equipe_id">
-            <option value="">Sem equipe</option>
+          Equipes
+          <select name="equipe_ids" multiple size="3">
             ${renderOptions(dispatchOptions.equipes)}
           </select>
         </label>
         <label>
-          Tecnico
-          <select name="tecnico_id">
-            <option value="">Sem tecnico</option>
+          Tecnicos / auxiliares
+          <select name="usuario_ids" multiple size="3">
             ${renderOptions(dispatchOptions.tecnicos)}
           </select>
         </label>
@@ -1673,6 +1761,121 @@ function renderEngenheiros(items) {
   }
 }
 
+function renderTecnicos(items) {
+  tecnicosList.innerHTML = "";
+
+  if (!items.length) {
+    tecnicosList.innerHTML = '<article class="data-row"><strong>Nenhum tecnico cadastrado.</strong><span>Cadastre tecnicos e auxiliares para liberar login no app.</span></article>';
+    return;
+  }
+
+  for (const item of items) {
+    const row = document.createElement("article");
+    row.className = "data-row";
+    row.innerHTML = `
+      <div>
+        <strong>${escapeHtml(item.nome)}</strong>
+        <span>${escapeHtml(item.role === "auxiliar" ? "Auxiliar" : "Tecnico")}</span>
+      </div>
+      <div>
+        <span>${escapeHtml(item.email)}</span>
+        <span>${formatPhone(item.telefone)}</span>
+      </div>
+      <div class="data-row-actions">
+        <button class="secondary-button compact-button" type="button" data-action="editar-tecnico" data-id="${item.id}">Editar</button>
+        <button class="danger-button compact-button" type="button" data-action="apagar-tecnico" data-id="${item.id}">Apagar</button>
+      </div>
+    `;
+    tecnicosList.appendChild(row);
+  }
+}
+
+function renderEquipes(items) {
+  equipesList.innerHTML = "";
+
+  if (!items.length) {
+    equipesList.innerHTML = '<article class="data-row"><strong>Nenhuma equipe cadastrada.</strong><span>Crie equipes por cliente ou use responsaveis avulsos na OS.</span></article>';
+    return;
+  }
+
+  for (const item of items) {
+    const row = document.createElement("article");
+    row.className = "data-row";
+    const membros = item.membros.map((membro) => `${membro.usuario.nome} (${formatTeamRole(membro.funcao)})`).join(", ");
+    const clientes = item.clientes.map((cliente) => cliente.nome).join(", ");
+    row.innerHTML = `
+      <div>
+        <strong>${escapeHtml(item.nome)}</strong>
+        <span>${escapeHtml(clientes || "sem cliente fixo")}</span>
+      </div>
+      <div>
+        <span>${escapeHtml(membros || "sem membros")}</span>
+      </div>
+      <div class="data-row-actions">
+        <button class="secondary-button compact-button" type="button" data-action="editar-equipe" data-id="${item.id}">Editar</button>
+        <button class="danger-button compact-button" type="button" data-action="apagar-equipe" data-id="${item.id}">Apagar</button>
+      </div>
+    `;
+    equipesList.appendChild(row);
+  }
+}
+
+function renderClientTeamOptions(selectedIds = getSelectedValues(clientTeamsSelect)) {
+  if (!clientTeamsSelect) {
+    return;
+  }
+
+  clientTeamsSelect.innerHTML = latestEquipes
+    .map((item) => `<option value="${item.id}" ${selectedIds.includes(item.id) ? "selected" : ""}>${escapeHtml(item.nome)}</option>`)
+    .join("");
+}
+
+function renderEquipeClientOptions(selectedIds = getSelectedValues(equipeClientsSelect)) {
+  if (!equipeClientsSelect) {
+    return;
+  }
+
+  equipeClientsSelect.innerHTML = latestClients
+    .map((item) => `<option value="${item.id}" ${selectedIds.includes(item.id) ? "selected" : ""}>${escapeHtml(item.nome)}</option>`)
+    .join("");
+}
+
+function renderEquipeMembersList(selectedMembers = []) {
+  if (!equipeMembersList) {
+    return;
+  }
+
+  if (!latestTecnicos.length) {
+    equipeMembersList.innerHTML = '<span>Cadastre tecnicos e auxiliares antes de montar equipes.</span>';
+    return;
+  }
+
+  equipeMembersList.innerHTML = latestTecnicos.map((tecnico) => {
+    const selected = selectedMembers.find((membro) => membro.usuario_id === tecnico.id);
+    const funcao = selected?.funcao || (tecnico.role === "auxiliar" ? "auxiliar" : "tecnico");
+
+    return `
+      <label class="team-member-option">
+        <input name="membro_usuario_id" type="checkbox" value="${tecnico.id}" ${selected ? "checked" : ""} />
+        <span>${escapeHtml(tecnico.nome)} - ${escapeHtml(tecnico.role === "auxiliar" ? "Auxiliar" : "Tecnico")}</span>
+        <select name="membro_funcao_${tecnico.id}">
+          <option value="lider" ${funcao === "lider" ? "selected" : ""}>Lider</option>
+          <option value="tecnico" ${funcao === "tecnico" ? "selected" : ""}>Tecnico</option>
+          <option value="auxiliar" ${funcao === "auxiliar" ? "selected" : ""}>Auxiliar</option>
+        </select>
+      </label>
+    `;
+  }).join("");
+}
+
+function formatTeamRole(role) {
+  return {
+    lider: "lider",
+    tecnico: "tecnico",
+    auxiliar: "auxiliar"
+  }[role] || "tecnico";
+}
+
 function renderEngineerOptions(selectedId = clientEngineerSelect?.value || "") {
   if (!clientEngineerSelect) {
     return;
@@ -2113,6 +2316,7 @@ async function submitClient(event) {
     documento,
     pmoc_ativo: data.get("pmoc_ativo") === "on",
     engenheiro_responsavel_id: data.get("pmoc_ativo") === "on" ? String(data.get("engenheiro_responsavel_id") || "") : "",
+    equipe_ids: data.getAll("equipe_ids").map(String).filter(Boolean),
     cep: onlyDigits(String(data.get("cep") || "")),
     logradouro: String(data.get("logradouro") || ""),
     numero: String(data.get("numero") || ""),
@@ -2153,6 +2357,104 @@ async function submitClient(event) {
   } finally {
     button.disabled = false;
     button.textContent = "Salvar cliente";
+  }
+}
+
+async function submitTecnico(event) {
+  event.preventDefault();
+  const button = tecnicoForm.querySelector("button[type='submit']");
+  const data = new FormData(tecnicoForm);
+  const tecnicoId = String(data.get("id") || "");
+  const payload = removeEmptyValues({
+    nome: String(data.get("nome") || ""),
+    email: String(data.get("email") || ""),
+    telefone: onlyDigits(String(data.get("telefone") || "")),
+    role: String(data.get("role") || "tecnico"),
+    senha: String(data.get("senha") || "")
+  });
+
+  button.disabled = true;
+  button.textContent = "Salvando...";
+  tecnicoFormStatus.textContent = "";
+
+  try {
+    const response = await fetch(`${apiBaseUrl}/admin/tecnicos${tecnicoId ? `/${tecnicoId}` : ""}`, {
+      method: tecnicoId ? "PATCH" : "POST",
+      headers: {
+        ...authHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (await handleUnauthorized(response)) {
+      return;
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      tecnicoFormStatus.textContent = error.message || "Nao foi possivel salvar o tecnico.";
+      return;
+    }
+
+    resetTecnicoForm();
+    tecnicoFormStatus.textContent = "Tecnico salvo.";
+    await loadTecnicos();
+  } catch {
+    tecnicoFormStatus.textContent = "API indisponivel.";
+  } finally {
+    button.disabled = false;
+    button.textContent = "Salvar tecnico";
+  }
+}
+
+async function submitEquipe(event) {
+  event.preventDefault();
+  const button = equipeForm.querySelector("button[type='submit']");
+  const data = new FormData(equipeForm);
+  const equipeId = String(data.get("id") || "");
+  const membros = data.getAll("membro_usuario_id").map(String).map((usuarioId) => ({
+    usuario_id: usuarioId,
+    funcao: String(data.get(`membro_funcao_${usuarioId}`) || "tecnico")
+  }));
+  const payload = {
+    nome: String(data.get("nome") || ""),
+    cliente_ids: data.getAll("cliente_ids").map(String).filter(Boolean),
+    membros
+  };
+
+  button.disabled = true;
+  button.textContent = "Salvando...";
+  equipeFormStatus.textContent = "";
+
+  try {
+    const response = await fetch(`${apiBaseUrl}/admin/equipes${equipeId ? `/${equipeId}` : ""}`, {
+      method: equipeId ? "PATCH" : "POST",
+      headers: {
+        ...authHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (await handleUnauthorized(response)) {
+      return;
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      equipeFormStatus.textContent = error.message || "Nao foi possivel salvar a equipe.";
+      return;
+    }
+
+    resetEquipeForm();
+    equipeFormStatus.textContent = "Equipe salva.";
+    await loadEquipes();
+  } catch {
+    equipeFormStatus.textContent = "API indisponivel.";
+  } finally {
+    button.disabled = false;
+    button.textContent = "Salvar equipe";
   }
 }
 
@@ -2602,6 +2904,7 @@ function fillClientForm(clientId) {
   clientForm.elements.uf.value = address.uf || "PR";
   clientForm.elements.pmoc_ativo.checked = Boolean(client.pmoc_ativo);
   renderEngineerOptions(client.engenheiro_responsavel?.id || "");
+  renderClientTeamOptions((client.equipes || []).map((equipe) => equipe.id));
   lastCepLookup = onlyDigits(address.cep || "");
   setClientCepStatus("");
   clientFormStatus.textContent = "Editando cliente selecionado.";
@@ -2625,6 +2928,7 @@ function resetClientForm() {
   clientForm.elements.uf.value = "PR";
   clientForm.elements.pmoc_ativo.checked = false;
   renderEngineerOptions("");
+  renderClientTeamOptions([]);
   lastCepLookup = "";
   updateClientDocumentCopy();
   setClientCepStatus("");
@@ -2634,6 +2938,54 @@ function resetClientForm() {
   clientesList.classList.remove("hidden");
   clientEquipmentList.innerHTML = "";
   clientFormStatus.textContent = "";
+}
+
+function fillTecnicoForm(tecnicoId) {
+  const tecnico = latestTecnicos.find((item) => item.id === tecnicoId);
+
+  if (!tecnico) {
+    return;
+  }
+
+  tecnicoForm.elements.id.value = tecnico.id;
+  tecnicoForm.elements.nome.value = tecnico.nome || "";
+  tecnicoForm.elements.email.value = tecnico.email || "";
+  tecnicoForm.elements.telefone.value = tecnico.telefone || "";
+  tecnicoForm.elements.role.value = tecnico.role || "tecnico";
+  tecnicoForm.elements.senha.value = "";
+  tecnicoFormStatus.textContent = "Editando tecnico selecionado.";
+}
+
+function resetTecnicoForm() {
+  tecnicoForm.reset();
+  tecnicoForm.elements.id.value = "";
+  tecnicoForm.elements.role.value = "tecnico";
+  tecnicoFormStatus.textContent = "";
+}
+
+function fillEquipeForm(equipeId) {
+  const equipe = latestEquipes.find((item) => item.id === equipeId);
+
+  if (!equipe) {
+    return;
+  }
+
+  equipeForm.elements.id.value = equipe.id;
+  equipeForm.elements.nome.value = equipe.nome || "";
+  renderEquipeClientOptions((equipe.clientes || []).map((cliente) => cliente.id));
+  renderEquipeMembersList((equipe.membros || []).map((membro) => ({
+    usuario_id: membro.usuario.id,
+    funcao: membro.funcao
+  })));
+  equipeFormStatus.textContent = "Editando equipe selecionada.";
+}
+
+function resetEquipeForm() {
+  equipeForm.reset();
+  equipeForm.elements.id.value = "";
+  renderEquipeClientOptions([]);
+  renderEquipeMembersList([]);
+  equipeFormStatus.textContent = "";
 }
 
 function fillEngineerForm(engineerId) {
@@ -2787,6 +3139,74 @@ function renderOptions(items) {
     .join("");
 }
 
+async function deleteTecnico(tecnicoId) {
+  tecnicoFormStatus.textContent = "Removendo tecnico...";
+
+  try {
+    const response = await fetch(`${apiBaseUrl}/admin/tecnicos/${tecnicoId}`, {
+      method: "DELETE",
+      headers: authHeaders()
+    });
+
+    if (await handleUnauthorized(response)) {
+      return;
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      tecnicoFormStatus.textContent = error.message || "Nao foi possivel apagar o tecnico.";
+      return;
+    }
+
+    if (tecnicoForm.elements.id.value === tecnicoId) {
+      resetTecnicoForm();
+    }
+
+    tecnicoFormStatus.textContent = "Tecnico removido.";
+    await loadTecnicos();
+  } catch {
+    tecnicoFormStatus.textContent = "API indisponivel.";
+  }
+}
+
+async function deleteEquipe(equipeId) {
+  equipeFormStatus.textContent = "Removendo equipe...";
+
+  try {
+    const response = await fetch(`${apiBaseUrl}/admin/equipes/${equipeId}`, {
+      method: "DELETE",
+      headers: authHeaders()
+    });
+
+    if (await handleUnauthorized(response)) {
+      return;
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      equipeFormStatus.textContent = error.message || "Nao foi possivel apagar a equipe.";
+      return;
+    }
+
+    if (equipeForm.elements.id.value === equipeId) {
+      resetEquipeForm();
+    }
+
+    equipeFormStatus.textContent = "Equipe removida.";
+    await loadEquipes();
+  } catch {
+    equipeFormStatus.textContent = "API indisponivel.";
+  }
+}
+
+function getSelectedValues(select) {
+  if (!select) {
+    return [];
+  }
+
+  return [...select.selectedOptions].map((option) => option.value).filter(Boolean);
+}
+
 function removeEmptyValues(payload) {
   return Object.fromEntries(
     Object.entries(payload).filter(([, value]) => String(value ?? "").trim() !== "")
@@ -2926,11 +3346,15 @@ loginForm?.addEventListener("submit", login);
 fuelForm?.addEventListener("submit", submitFuel);
 empresaForm?.addEventListener("submit", submitEmpresa);
 clientForm?.addEventListener("submit", submitClient);
+tecnicoForm?.addEventListener("submit", submitTecnico);
+equipeForm?.addEventListener("submit", submitEquipe);
 engineerForm?.addEventListener("submit", submitEngineer);
 equipmentForm?.addEventListener("submit", submitEquipment);
 pmocConversionForm?.addEventListener("submit", activatePmocClient);
 resetClientFormButton?.addEventListener("click", resetClientForm);
 backToClientsButton?.addEventListener("click", resetClientForm);
+resetTecnicoFormButton?.addEventListener("click", resetTecnicoForm);
+resetEquipeFormButton?.addEventListener("click", resetEquipeForm);
 resetEngineerFormButton?.addEventListener("click", resetEngineerForm);
 printReportsButton?.addEventListener("click", openReportsPrint);
 fleetReportExportButton?.addEventListener("click", openFleetReport);
@@ -3082,8 +3506,8 @@ requestList?.addEventListener("submit", async (event) => {
     agendada_para: data.get("agendada_para")
       ? new Date(String(data.get("agendada_para"))).toISOString()
       : undefined,
-    equipe_id: String(data.get("equipe_id") || "") || undefined,
-    tecnico_id: String(data.get("tecnico_id") || "") || undefined,
+    equipe_ids: data.getAll("equipe_ids").map(String).filter(Boolean),
+    usuario_ids: data.getAll("usuario_ids").map(String).filter(Boolean),
     valor_cobrado: data.get("valor_cobrado") ? Number(data.get("valor_cobrado")) : undefined
   };
   const button = form.querySelector("button[type='submit']");
@@ -3121,6 +3545,38 @@ engenheirosList?.addEventListener("click", (event) => {
 
   if (target.dataset.action === "apagar-engenheiro" && target.dataset.id) {
     void deleteEngineer(target.dataset.id);
+  }
+});
+
+tecnicosList?.addEventListener("click", (event) => {
+  const target = event.target;
+
+  if (!(target instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  if (target.dataset.action === "editar-tecnico" && target.dataset.id) {
+    fillTecnicoForm(target.dataset.id);
+  }
+
+  if (target.dataset.action === "apagar-tecnico" && target.dataset.id) {
+    void deleteTecnico(target.dataset.id);
+  }
+});
+
+equipesList?.addEventListener("click", (event) => {
+  const target = event.target;
+
+  if (!(target instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  if (target.dataset.action === "editar-equipe" && target.dataset.id) {
+    fillEquipeForm(target.dataset.id);
+  }
+
+  if (target.dataset.action === "apagar-equipe" && target.dataset.id) {
+    void deleteEquipe(target.dataset.id);
   }
 });
 

@@ -896,6 +896,30 @@ form button,
   align-items: center;
 }
 
+.form-fieldset {
+  grid-column: 1 / -1;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.form-fieldset legend {
+  padding: 0 6px;
+  font-weight: 800;
+}
+
+.checkbox-list {
+  display: grid;
+  gap: 10px;
+}
+
+.team-member-option {
+  display: grid;
+  grid-template-columns: auto 1fr minmax(120px, 160px);
+  align-items: center;
+  gap: 10px;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
