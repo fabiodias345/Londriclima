@@ -514,25 +514,34 @@ form button,
 
 .agenda-board {
   display: grid;
+  grid-template-columns: 260px minmax(620px, 1fr);
   gap: 18px;
   padding: 22px;
   background: rgba(238, 243, 241, 0.74);
 }
 
+.agenda-side-panel {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
 .agenda-calendar {
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(108px, 124px);
-  gap: 10px;
-  overflow-x: auto;
-  padding-bottom: 4px;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--white);
 }
 
 .agenda-date-button {
   display: grid;
-  gap: 5px;
-  min-height: 118px;
-  padding: 13px;
+  place-items: center;
+  gap: 2px;
+  min-height: 58px;
+  padding: 7px 4px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   color: var(--ink);
@@ -544,10 +553,13 @@ form button,
 .agenda-date-button span,
 .agenda-date-button small,
 .agenda-date-button em,
+.agenda-month-cell em,
 .agenda-day-header p,
 .agenda-free,
 .agenda-empty span,
 .agenda-unscheduled span,
+.agenda-pending-panel span,
+.agenda-pending-card span,
 .agenda-service-card span {
   color: var(--muted);
 }
@@ -555,14 +567,14 @@ form button,
 .agenda-date-button span,
 .agenda-date-button small,
 .agenda-date-button em {
-  font-size: 12px;
+  font-size: 10px;
   font-style: normal;
   font-weight: 900;
 }
 
 .agenda-date-button strong {
   font-family: "Archivo", sans-serif;
-  font-size: 32px;
+  font-size: 18px;
   line-height: 1;
 }
 
@@ -574,7 +586,163 @@ form button,
     0 16px 38px rgba(7, 21, 29, 0.1);
 }
 
+.agenda-pending-panel,
+.agenda-month-panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--white);
+  overflow: hidden;
+}
+
+.agenda-pending-panel {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.agenda-pending-panel > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.agenda-pending-card,
+.agenda-pending-empty {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 184, 77, 0.12);
+  color: inherit;
+  text-align: left;
+}
+
+.agenda-pending-card strong {
+  font-size: 13px;
+}
+
+.agenda-month-panel {
+  min-width: 0;
+}
+
+.agenda-month-header {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.agenda-month-header h3 {
+  margin: 4px 0 0;
+  font-family: "Archivo", sans-serif;
+  font-size: 28px;
+}
+
+.icon-button {
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+}
+
+.agenda-weekdays,
+.agenda-month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.agenda-weekdays span {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.agenda-month-cell {
+  min-height: 112px;
+  padding: 8px;
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: #fbfcfc;
+  text-align: left;
+}
+
+.agenda-month-cell:nth-child(7n) {
+  border-right: 0;
+}
+
+.agenda-month-cell:hover,
+.agenda-month-cell.active {
+  outline: 0;
+  background: rgba(0, 140, 149, 0.09);
+  box-shadow: inset 0 0 0 2px rgba(0, 140, 149, 0.36);
+}
+
+.agenda-month-cell.outside {
+  background: rgba(238, 243, 241, 0.48);
+}
+
+.agenda-month-day {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--navy);
+  font-family: "Archivo", sans-serif;
+  font-weight: 800;
+}
+
+.agenda-month-services {
+  display: grid;
+  gap: 4px;
+}
+
+.agenda-month-services strong {
+  display: block;
+  overflow: hidden;
+  padding: 4px 6px;
+  border-radius: 5px;
+  color: var(--white);
+  font-size: 11px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agenda-month-services em {
+  padding: 2px 0;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.agenda-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 12px 16px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.agenda-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.agenda-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+}
+
 .agenda-day-panel {
+  grid-column: 1 / -1;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--white);
@@ -639,13 +807,47 @@ form button,
 
 .agenda-service-card {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(150px, 0.44fr) minmax(150px, 0.44fr);
+  grid-template-columns: minmax(220px, 1fr) minmax(150px, 0.38fr) minmax(160px, 0.46fr) auto;
   gap: 14px;
   align-items: center;
   padding: 14px;
   border: 1px solid rgba(0, 140, 149, 0.16);
   border-radius: var(--radius);
   background: rgba(0, 140, 149, 0.08);
+}
+
+.agenda-service-card.status-aberta,
+.status-aberta {
+  background-color: #0f8f74;
+}
+
+.agenda-service-card.status-em_deslocamento,
+.status-em_deslocamento {
+  background-color: #2563eb;
+}
+
+.agenda-service-card.status-em_atendimento,
+.status-em_atendimento {
+  background-color: #d97706;
+}
+
+.agenda-service-card.status-cancelada,
+.status-cancelada {
+  background-color: #b91c1c;
+}
+
+.agenda-service-card.status-aberta,
+.agenda-service-card.status-em_deslocamento,
+.agenda-service-card.status-em_atendimento,
+.agenda-service-card.status-cancelada {
+  color: var(--white);
+}
+
+.agenda-service-card.status-aberta span,
+.agenda-service-card.status-em_deslocamento span,
+.agenda-service-card.status-em_atendimento span,
+.agenda-service-card.status-cancelada span {
+  color: rgba(255, 255, 255, 0.86);
 }
 
 .agenda-service-card div {
@@ -938,6 +1140,34 @@ form button,
   border-radius: var(--radius);
   background: var(--white);
   box-shadow: var(--shadow);
+}
+
+.agenda-os-modal {
+  width: min(920px, 100%);
+}
+
+.agenda-os-modal form {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.agenda-os-modal textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 13px 14px;
+  resize: vertical;
+  font: inherit;
+}
+
+.modal-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.full-span {
+  grid-column: 1 / -1;
 }
 
 .confirm-modal h2 {
@@ -1468,8 +1698,10 @@ form button,
 
   .login-panel,
   .summary-grid,
+  .agenda-board,
   .agenda-slot,
   .agenda-service-card,
+  .agenda-os-modal form,
   .fleet-map-panel,
   .client-form,
   .dispatch-form,
@@ -1514,5 +1746,18 @@ form button,
   .agenda-slot time {
     border-right: 0;
     border-bottom: 1px solid var(--line);
+  }
+
+  .agenda-month-header {
+    grid-template-columns: 40px 1fr 40px;
+  }
+
+  .agenda-month-cell {
+    min-height: 92px;
+    padding: 6px;
+  }
+
+  .agenda-month-services strong {
+    font-size: 10px;
   }
 }

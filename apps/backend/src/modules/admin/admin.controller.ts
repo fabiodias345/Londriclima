@@ -9,6 +9,7 @@ import { SalvarClienteDto } from "./dto/salvar-cliente.dto";
 import { SalvarEmpresaDto } from "./dto/salvar-empresa.dto";
 import { SalvarEngenheiroResponsavelDto } from "./dto/salvar-engenheiro-responsavel.dto";
 import { SalvarEquipeDto } from "./dto/salvar-equipe.dto";
+import { SalvarOsAgendaDto } from "./dto/salvar-os-agenda.dto";
 import { SalvarTecnicoDto } from "./dto/salvar-tecnico.dto";
 import { AdminService } from "./admin.service";
 
@@ -57,6 +58,20 @@ export class AdminController {
   @Get("agenda")
   listarAgenda(@CurrentUser() usuario: AuthenticatedUser) {
     return this.adminService.listarAgenda(usuario);
+  }
+
+  @Post("agenda/ordens")
+  criarOrdemAgenda(@Body() dto: SalvarOsAgendaDto, @CurrentUser() usuario: AuthenticatedUser) {
+    return this.adminService.criarOrdemAgenda(dto, usuario);
+  }
+
+  @Patch("agenda/ordens/:osId")
+  reprogramarOrdemAgenda(
+    @Param("osId", new ParseUUIDPipe()) osId: string,
+    @Body() dto: SalvarOsAgendaDto,
+    @CurrentUser() usuario: AuthenticatedUser
+  ) {
+    return this.adminService.reprogramarOrdemAgenda(osId, dto, usuario);
   }
 
   @Get("clientes")

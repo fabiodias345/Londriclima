@@ -286,9 +286,45 @@
               <h2>Agenda operacional</h2>
               <p id="agendaStatus" role="status">Carregando...</p>
             </div>
+            <button class="secondary-button compact-button" id="newAgendaOsButton" type="button">Nova OS</button>
           </div>
           <div class="agenda-board">
-            <div class="agenda-calendar" id="agendaCalendar" aria-label="Calendario da agenda"></div>
+            <aside class="agenda-side-panel" aria-label="Pendencias da agenda">
+              <div class="agenda-calendar agenda-mini-calendar" id="agendaCalendar" aria-label="Calendario da agenda"></div>
+              <section class="agenda-pending-panel">
+                <div>
+                  <strong>Pendencias</strong>
+                  <span>OS sem horario ou equipe</span>
+                </div>
+                <div id="agendaPendingList"></div>
+              </section>
+            </aside>
+            <section class="agenda-month-panel" aria-label="Calendario mensal">
+              <div class="agenda-month-header">
+                <button class="secondary-button icon-button" id="agendaPrevMonthButton" type="button" aria-label="Mes anterior">&lt;</button>
+                <div>
+                  <span class="kicker">Calendario</span>
+                  <h3 id="agendaMonthTitle">Mes atual</h3>
+                </div>
+                <button class="secondary-button icon-button" id="agendaNextMonthButton" type="button" aria-label="Proximo mes">&gt;</button>
+              </div>
+              <div class="agenda-weekdays" aria-hidden="true">
+                <span>Dom.</span>
+                <span>Seg.</span>
+                <span>Ter.</span>
+                <span>Qua.</span>
+                <span>Qui.</span>
+                <span>Sex.</span>
+                <span>Sab.</span>
+              </div>
+              <div class="agenda-month-grid" id="agendaMonthGrid"></div>
+              <div class="agenda-legend" aria-label="Legenda de status">
+                <span><i class="agenda-dot status-aberta"></i>Agendada</span>
+                <span><i class="agenda-dot status-em_deslocamento"></i>Em deslocamento</span>
+                <span><i class="agenda-dot status-em_atendimento"></i>Em atendimento</span>
+                <span><i class="agenda-dot status-cancelada"></i>Cancelada</span>
+              </div>
+            </section>
             <section class="agenda-day-panel" aria-label="Horarios do dia selecionado">
               <div class="agenda-day-header">
                 <div>
@@ -781,6 +817,63 @@
           <button class="reject-button" id="confirmDeleteClientButton" type="button">Sim, apagar</button>
           <button class="secondary-button" id="cancelDeleteClientButton" type="button">Nao</button>
         </div>
+      </section>
+    </div>
+
+    <div class="modal-backdrop hidden" id="agendaOsModal" role="dialog" aria-modal="true" aria-labelledby="agendaOsTitle">
+      <section class="confirm-modal agenda-os-modal">
+        <div class="modal-heading">
+          <div>
+            <span class="kicker">Agenda</span>
+            <h2 id="agendaOsTitle">Nova OS</h2>
+          </div>
+          <button class="secondary-button icon-button" id="closeAgendaOsModalButton" type="button" aria-label="Fechar">x</button>
+        </div>
+        <form id="agendaOsForm">
+          <label>
+            Cliente
+            <select name="cliente_id" id="agendaOsClientSelect" required></select>
+          </label>
+          <label>
+            Equipamento
+            <select name="equipamento_id" id="agendaOsEquipmentSelect">
+              <option value="">Sem equipamento definido</option>
+            </select>
+          </label>
+          <label>
+            Titulo
+            <input name="titulo" type="text" required />
+          </label>
+          <label>
+            Data e hora
+            <input name="agendada_para" type="datetime-local" />
+          </label>
+          <label>
+            Equipe
+            <select name="equipe_id" id="agendaOsTeamSelect">
+              <option value="">Sem equipe</option>
+            </select>
+          </label>
+          <label>
+            Tecnico
+            <select name="tecnico_id" id="agendaOsTechnicianSelect">
+              <option value="">Sem tecnico</option>
+            </select>
+          </label>
+          <label>
+            Valor previsto
+            <input name="valor_cobrado" type="number" min="0" step="0.01" />
+          </label>
+          <label class="full-span">
+            Detalhes
+            <textarea name="detalhes" rows="4"></textarea>
+          </label>
+          <div class="modal-actions full-span">
+            <button type="submit">Salvar OS</button>
+            <button class="secondary-button" id="cancelAgendaOsButton" type="button">Cancelar</button>
+          </div>
+          <p class="status full-span" id="agendaOsFormStatus" role="status"></p>
+        </form>
       </section>
     </div>
 

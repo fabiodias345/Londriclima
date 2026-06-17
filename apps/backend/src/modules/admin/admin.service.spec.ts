@@ -502,6 +502,125 @@ test("aprovarPreChamado atualiza status e registra evento com empresa e usuario 
   });
 });
 
+test("criarOrdemAgenda cria OS aberta para cliente da empresa e registra evento", async () => {
+  const chamadas = {
+    createData: undefined as unknown,
+    eventoData: undefined as unknown
+  };
+  const tx = {
+    cliente: {
+      findFirst: async ({ where }: { where: unknown }) => {
+        assert.deepEqual(where, {
+          id: "cliente-1",
+          empresaId: "empresa-1"
+        });
+        return {
+          id: "cliente-1",
+          enderecos: [{ id: "endereco-1" }]
+        };
+      }
+    },
+    ordemServico: {
+      create: async ({ data }: { data: unknown }) => {
+        chamadas.createData = data;
+        return {
+          id: "os-agenda-1",
+          status: OrdemServicoStatus.aberta,
+          atualizadaEm: new Date("2026-06-18T11:00:00.000Z")
+        };
+      }
+    },
+    ordemServicoEvento: {
+      create: async ({ data }: { data: unknown }) => {
+        chamadas.eventoData = data;
+      }
+    }
+  };
+  const prisma = {
+    $transaction: async (callback: (tx: unknown) => unknown) => callback(tx)
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.criarOrdemAgenda(
+    {
+      cliente_id: "cliente-1",
+      titulo: "Manutencao preventiva",
+      detalhes: "Limpeza e revisao",
+      agendada_para: "2026-06-18T08:00:00.000Z",
+      valor_cobrado: 350
+    },
+    usuario
+  );
+
+  assert.equal((chamadas.createData as { empresaId: string }).empresaId, "empresa-1");
+  assert.equal((chamadas.createData as { clienteId: string }).clienteId, "cliente-1");
+  assert.equal((chamadas.createData as { enderecoId: string }).enderecoId, "endereco-1");
+  assert.equal((chamadas.createData as { status: OrdemServicoStatus }).status, OrdemServicoStatus.aberta);
+  assert.equal((chamadas.createData as { titulo: string }).titulo, "Manutencao preventiva");
+  assert.equal((chamadas.createData as { problemaRelatado: string }).problemaRelatado, "Limpeza e revisao");
+  assert.equal((chamadas.createData as { valorCobrado: Prisma.Decimal }).valorCobrado.toNumber(), 350);
+  assert.equal((chamadas.eventoData as { acao: OrdemServicoEventoAcao }).acao, OrdemServicoEventoAcao.aprovar);
+  assert.deepEqual(resposta, {
+    os_id: "os-agenda-1",
+    status: OrdemServicoStatus.aberta,
+    atualizado_em: "2026-06-18T11:00:00.000Z"
+  });
+});
+
+test("reprogramarOrdemAgenda atualiza horario e responsaveis de OS operacional", async () => {
+  const chamadas = {
+    updateData: undefined as unknown
+  };
+  const tx = {
+    ordemServico: {
+      findUnique: async () => ({
+        id: "os-1",
+        empresaId: "empresa-1",
+        status: OrdemServicoStatus.aberta,
+        clienteId: "cliente-antigo"
+      }),
+      update: async ({ data }: { data: unknown }) => {
+        chamadas.updateData = data;
+        return {
+          id: "os-1",
+          status: OrdemServicoStatus.aberta,
+          atualizadaEm: new Date("2026-06-18T12:00:00.000Z")
+        };
+      }
+    },
+    cliente: {
+      findFirst: async () => ({
+        id: "cliente-1",
+        enderecos: [{ id: "endereco-1" }]
+      })
+    }
+  };
+  const prisma = {
+    $transaction: async (callback: (tx: unknown) => unknown) => callback(tx)
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.reprogramarOrdemAgenda(
+    "os-1",
+    {
+      cliente_id: "cliente-1",
+      titulo: "Revisao remarcada",
+      agendada_para: "2026-06-18T13:30:00.000Z"
+    },
+    usuario
+  );
+
+  assert.equal((chamadas.updateData as { titulo: string }).titulo, "Revisao remarcada");
+  assert.equal((chamadas.updateData as { clienteId: string }).clienteId, "cliente-1");
+  assert.equal((chamadas.updateData as { enderecoId: string }).enderecoId, "endereco-1");
+  assert.equal((chamadas.updateData as { agendadaPara: Date }).agendadaPara.toISOString(), "2026-06-18T13:30:00.000Z");
+  assert.deepEqual(resposta, {
+    os_id: "os-1",
+    status: OrdemServicoStatus.aberta,
+    atualizado_em: "2026-06-18T12:00:00.000Z"
+  });
+});
+
 test("criarCliente exige telefone com DDD", async () => {
   const service = criarService({});
 

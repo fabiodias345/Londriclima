@@ -50,9 +50,25 @@ const fuelHistoryStatus = document.querySelector("#fuelHistoryStatus");
 const fuelHistoryList = document.querySelector("#fuelHistoryList");
 const agendaStatus = document.querySelector("#agendaStatus");
 const agendaCalendar = document.querySelector("#agendaCalendar");
+const agendaMonthGrid = document.querySelector("#agendaMonthGrid");
+const agendaMonthTitle = document.querySelector("#agendaMonthTitle");
 const agendaList = document.querySelector("#agendaList");
 const agendaSelectedDateTitle = document.querySelector("#agendaSelectedDateTitle");
 const agendaSelectedDateMeta = document.querySelector("#agendaSelectedDateMeta");
+const agendaPendingList = document.querySelector("#agendaPendingList");
+const agendaPrevMonthButton = document.querySelector("#agendaPrevMonthButton");
+const agendaNextMonthButton = document.querySelector("#agendaNextMonthButton");
+const newAgendaOsButton = document.querySelector("#newAgendaOsButton");
+const agendaOsModal = document.querySelector("#agendaOsModal");
+const agendaOsForm = document.querySelector("#agendaOsForm");
+const agendaOsFormStatus = document.querySelector("#agendaOsFormStatus");
+const agendaOsTitle = document.querySelector("#agendaOsTitle");
+const agendaOsClientSelect = document.querySelector("#agendaOsClientSelect");
+const agendaOsEquipmentSelect = document.querySelector("#agendaOsEquipmentSelect");
+const agendaOsTeamSelect = document.querySelector("#agendaOsTeamSelect");
+const agendaOsTechnicianSelect = document.querySelector("#agendaOsTechnicianSelect");
+const closeAgendaOsModalButton = document.querySelector("#closeAgendaOsModalButton");
+const cancelAgendaOsButton = document.querySelector("#cancelAgendaOsButton");
 const agendaCount = document.querySelector("#agendaCount");
 const attendanceCount = document.querySelector("#attendanceCount");
 const todayCount = document.querySelector("#todayCount");
@@ -155,9 +171,12 @@ let latestEngineers = [];
 let latestTecnicos = [];
 let latestEquipes = [];
 let latestAgendaItems = [];
+let latestAgendaEquipments = [];
 let latestReports = null;
 let selectedFleetVehicleId = "";
 let selectedAgendaDate = "";
+let agendaVisibleMonth = getLocalDateKey(new Date()).slice(0, 7);
+let agendaEditingOsId = "";
 let lastCepLookup = "";
 let clientPendingDeleteId = "";
 let selectedEquipmentClientId = "";
@@ -424,6 +443,10 @@ async function loadDispatchOptions() {
 
 async function loadAgenda() {
   agendaStatus.textContent = "Carregando...";
+  await Promise.all([
+    loadDispatchOptions(),
+    loadClientesForAgenda()
+  ]);
 
   const result = await fetchAdminJson("/admin/agenda", agendaStatus);
 
@@ -437,9 +460,21 @@ async function loadAgenda() {
   latestAgendaItems = items;
   agendaCount.textContent = result.total;
   attendanceCount.textContent = items.filter((item) => item.status === "em_atendimento").length;
-  todayCount.textContent = items.filter((item) => getAgendaItemDateKey(item) === today).length;
+  todayCount.textContent = items.filter((item) => item.agendada_para && getAgendaItemDateKey(item) === today).length;
   agendaStatus.textContent = result.total === 1 ? "1 OS aberta" : `${result.total} OS abertas`;
   renderAgenda(items);
+}
+
+async function loadClientesForAgenda() {
+  if (latestClients.length) {
+    renderAgendaClientOptions();
+    return latestClients;
+  }
+
+  const result = await fetchAdminJson("/admin/clientes", agendaStatus);
+  latestClients = result?.items || [];
+  renderAgendaClientOptions();
+  return latestClients;
 }
 
 async function loadClientes() {
@@ -957,7 +992,10 @@ function renderAgenda(items) {
     selectedAgendaDate = preferredDate;
   }
 
+  agendaVisibleMonth = selectedAgendaDate.slice(0, 7);
   renderAgendaCalendar(calendarDays, selectedAgendaDate);
+  renderAgendaMonthGrid(items, selectedAgendaDate);
+  renderAgendaPendingList(items);
   renderAgendaDay(items, selectedAgendaDate);
 }
 
@@ -966,7 +1004,7 @@ function buildAgendaCalendarDays(items) {
   const dateKeys = new Set([todayKey]);
 
   for (const item of items) {
-    const dateKey = getAgendaItemDateKey(item);
+    const dateKey = item.agendada_para ? getAgendaItemDateKey(item) : "";
 
     if (dateKey) {
       dateKeys.add(dateKey);
@@ -984,7 +1022,7 @@ function buildAgendaCalendarDays(items) {
     .map((dateKey) => ({
       key: dateKey,
       date: parseLocalDateKey(dateKey),
-      total: items.filter((item) => getAgendaItemDateKey(item) === dateKey).length
+      total: items.filter((item) => item.agendada_para && getAgendaItemDateKey(item) === dateKey).length
     }));
 }
 
@@ -1003,7 +1041,7 @@ function pickAgendaDate(days) {
 function renderAgendaCalendar(days, activeDateKey) {
   agendaCalendar.innerHTML = "";
 
-  for (const day of days) {
+  for (const day of days.filter((item) => item.key.slice(0, 7) === agendaVisibleMonth)) {
     const button = document.createElement("button");
     button.className = "agenda-date-button";
     button.type = "button";
@@ -1017,6 +1055,79 @@ function renderAgendaCalendar(days, activeDateKey) {
     `;
     agendaCalendar.appendChild(button);
   }
+}
+
+function renderAgendaMonthGrid(items, activeDateKey) {
+  if (!agendaMonthGrid) {
+    return;
+  }
+
+  agendaMonthGrid.innerHTML = "";
+  const [year, month] = agendaVisibleMonth.split("-").map(Number);
+  const firstDay = new Date(year, month - 1, 1);
+  const start = new Date(firstDay);
+  start.setDate(firstDay.getDate() - firstDay.getDay());
+  const monthLabel = firstDay.toLocaleDateString("pt-BR", {
+    month: "long",
+    year: "numeric"
+  });
+
+  if (agendaMonthTitle) {
+    agendaMonthTitle.textContent = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+  }
+
+  for (let index = 0; index < 42; index += 1) {
+    const date = new Date(start);
+    date.setDate(start.getDate() + index);
+    const dateKey = getLocalDateKey(date);
+    const dayItems = items
+      .filter((item) => item.agendada_para && getAgendaItemDateKey(item) === dateKey)
+      .sort((a, b) => (a.agendada_para || "").localeCompare(b.agendada_para || ""));
+    const cell = document.createElement("button");
+    cell.type = "button";
+    cell.className = "agenda-month-cell";
+    cell.dataset.agendaDate = dateKey;
+    cell.classList.toggle("outside", date.getMonth() !== month - 1);
+    cell.classList.toggle("active", dateKey === activeDateKey);
+    cell.innerHTML = `
+      <span class="agenda-month-day">${date.getDate()}</span>
+      <div class="agenda-month-services">
+        ${dayItems.slice(0, 3).map(renderAgendaMonthCard).join("")}
+        ${dayItems.length > 3 ? `<em>Ver mais (+${dayItems.length - 3})</em>` : ""}
+      </div>
+    `;
+    agendaMonthGrid.appendChild(cell);
+  }
+}
+
+function renderAgendaMonthCard(item) {
+  return `
+    <strong class="${getAgendaStatusClass(item.status)}">
+      ${item.agendada_para ? formatAgendaTime(item.agendada_para) : "--:--"} - ${escapeHtml(item.cliente?.nome || item.titulo)}
+    </strong>
+  `;
+}
+
+function renderAgendaPendingList(items) {
+  if (!agendaPendingList) {
+    return;
+  }
+
+  const pendingItems = items
+    .filter((item) => !item.agendada_para || !item.equipe && !item.tecnico)
+    .slice(0, 8);
+
+  if (!pendingItems.length) {
+    agendaPendingList.innerHTML = '<article class="agenda-pending-empty">Nenhuma pendencia operacional.</article>';
+    return;
+  }
+
+  agendaPendingList.innerHTML = pendingItems.map((item) => `
+    <button class="agenda-pending-card" type="button" data-action="editar-agenda-os" data-id="${item.id}">
+      <strong>${escapeHtml(item.titulo)}</strong>
+      <span>${item.agendada_para ? "Sem equipe" : "Sem horario"}</span>
+    </button>
+  `).join("");
 }
 
 function renderAgendaDay(items, dateKey) {
@@ -1081,7 +1192,7 @@ function buildAgendaSlots(items) {
 
 function renderAgendaServiceCard(item) {
   return `
-    <section class="agenda-service-card">
+    <section class="agenda-service-card ${getAgendaStatusClass(item.status)}">
       <div>
         <strong>${escapeHtml(item.titulo)}</strong>
         <span>${escapeHtml(item.cliente?.nome || "Cliente nao informado")} - ${escapeHtml(formatAddress(item.endereco))}</span>
@@ -1090,9 +1201,25 @@ function renderAgendaServiceCard(item) {
         <span class="status-pill">${formatStatus(item.status)}</span>
         <span>${item.agendada_para ? formatAgendaTime(item.agendada_para) : "Definir horario"}</span>
       </div>
-      <span>${escapeHtml(item.equipe?.nome || item.tecnico?.nome || "Equipe nao atribuida")}</span>
+      <div>
+        <span>${escapeHtml(item.equipamento ? formatAgendaEquipment(item.equipamento) : "Equipamento nao definido")}</span>
+        <span>${escapeHtml(item.equipe?.nome || item.tecnico?.nome || "Equipe nao atribuida")}</span>
+      </div>
+      <button class="secondary-button compact-button" type="button" data-action="editar-agenda-os" data-id="${item.id}">Editar</button>
     </section>
   `;
+}
+
+function getAgendaStatusClass(status) {
+  return `status-${String(status || "aberta").replace(/[^a-z_]/g, "")}`;
+}
+
+function formatAgendaEquipment(equipment) {
+  return [
+    equipment.patrimonio,
+    equipment.local_instalacao || equipment.localInstalacao,
+    equipment.marca && equipment.modelo ? `${equipment.marca} ${equipment.modelo}` : equipment.marca || equipment.modelo
+  ].filter(Boolean).join(" - ");
 }
 
 
@@ -2293,6 +2420,141 @@ async function updatePreChamado(osId, action, payload = null) {
   await loadPreChamados();
 }
 
+function renderAgendaClientOptions() {
+  if (!agendaOsClientSelect) {
+    return;
+  }
+
+  agendaOsClientSelect.innerHTML = '<option value="">Selecione um cliente</option>' + renderOptions(latestClients);
+  renderAgendaDispatchOptions();
+}
+
+function renderAgendaDispatchOptions() {
+  if (agendaOsTeamSelect) {
+    agendaOsTeamSelect.innerHTML = '<option value="">Sem equipe</option>' + renderOptions(dispatchOptions.equipes);
+  }
+
+  if (agendaOsTechnicianSelect) {
+    agendaOsTechnicianSelect.innerHTML = '<option value="">Sem tecnico</option>' + renderOptions(dispatchOptions.tecnicos);
+  }
+}
+
+async function loadAgendaEquipments(clientId, selectedEquipmentId = "") {
+  if (!agendaOsEquipmentSelect) {
+    return;
+  }
+
+  agendaOsEquipmentSelect.innerHTML = '<option value="">Carregando equipamentos...</option>';
+  latestAgendaEquipments = [];
+
+  if (!clientId) {
+    agendaOsEquipmentSelect.innerHTML = '<option value="">Sem equipamento definido</option>';
+    return;
+  }
+
+  const result = await fetchAdminJson(`/admin/clientes/${clientId}/equipamentos`, agendaOsFormStatus);
+  latestAgendaEquipments = result?.items || [];
+  agendaOsEquipmentSelect.innerHTML =
+    '<option value="">Sem equipamento definido</option>' +
+    latestAgendaEquipments
+      .map((item) => `<option value="${item.id}">${escapeHtml(formatAgendaEquipment(item))}</option>`)
+      .join("");
+  agendaOsEquipmentSelect.value = selectedEquipmentId;
+}
+
+async function openAgendaOsModal(osId = "") {
+  agendaEditingOsId = osId;
+  agendaOsForm?.reset();
+  agendaOsFormStatus.textContent = "";
+  await loadClientesForAgenda();
+  renderAgendaDispatchOptions();
+
+  const item = latestAgendaItems.find((agendaItem) => agendaItem.id === osId);
+
+  if (agendaOsTitle) {
+    agendaOsTitle.textContent = item ? `Editar ${item.titulo}` : "Nova OS";
+  }
+
+  if (item) {
+    agendaOsForm.elements.cliente_id.value = item.cliente?.id || "";
+    agendaOsForm.elements.titulo.value = item.titulo || "";
+    agendaOsForm.elements.detalhes.value = item.detalhes || "";
+    agendaOsForm.elements.agendada_para.value = formatInputDateTime(item.agendada_para);
+    agendaOsForm.elements.equipe_id.value = item.equipe?.id || "";
+    agendaOsForm.elements.tecnico_id.value = item.tecnico?.id || "";
+    agendaOsForm.elements.valor_cobrado.value = item.valor_cobrado || "";
+    await loadAgendaEquipments(item.cliente?.id || "", item.equipamento?.id || "");
+  } else {
+    agendaOsForm.elements.agendada_para.value = `${selectedAgendaDate || getLocalDateKey(new Date())}T08:00`;
+    await loadAgendaEquipments("");
+  }
+
+  agendaOsModal?.classList.remove("hidden");
+}
+
+function closeAgendaOsModal() {
+  agendaEditingOsId = "";
+  agendaOsModal?.classList.add("hidden");
+}
+
+async function submitAgendaOs(event) {
+  event.preventDefault();
+
+  if (!(agendaOsForm instanceof HTMLFormElement)) {
+    return;
+  }
+
+  const button = agendaOsForm.querySelector("button[type='submit']");
+  const data = new FormData(agendaOsForm);
+  const payload = removeEmptyValues({
+    cliente_id: String(data.get("cliente_id") || ""),
+    equipamento_id: String(data.get("equipamento_id") || ""),
+    equipe_id: String(data.get("equipe_id") || ""),
+    tecnico_id: String(data.get("tecnico_id") || ""),
+    titulo: String(data.get("titulo") || ""),
+    detalhes: String(data.get("detalhes") || ""),
+    agendada_para: data.get("agendada_para")
+      ? new Date(String(data.get("agendada_para"))).toISOString()
+      : "",
+    valor_cobrado: data.get("valor_cobrado") ? Number(data.get("valor_cobrado")) : undefined
+  });
+  const path = agendaEditingOsId
+    ? `/admin/agenda/ordens/${agendaEditingOsId}`
+    : "/admin/agenda/ordens";
+  const method = agendaEditingOsId ? "PATCH" : "POST";
+
+  button.disabled = true;
+  agendaOsFormStatus.textContent = "Salvando OS...";
+
+  try {
+    const response = await fetch(`${apiBaseUrl}${path}`, {
+      method,
+      headers: {
+        ...authHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (await handleUnauthorized(response)) {
+      return;
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      agendaOsFormStatus.textContent = error.message || "Nao foi possivel salvar a OS.";
+      return;
+    }
+
+    closeAgendaOsModal();
+    await loadAgenda();
+  } catch {
+    agendaOsFormStatus.textContent = "API indisponivel.";
+  } finally {
+    button.disabled = false;
+  }
+}
+
 async function submitClient(event) {
   event.preventDefault();
   const button = clientForm.querySelector("button[type='submit']");
@@ -3289,6 +3551,20 @@ function formatAgendaTime(value) {
   }).format(new Date(value));
 }
 
+function formatInputDateTime(value) {
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(value);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hour = String(date.getHours()).padStart(2, "0");
+  const minute = String(date.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hour}:${minute}`;
+}
+
 function formatDate(value) {
   return new Intl.DateTimeFormat("pt-BR", {
     hour: "2-digit",
@@ -3467,6 +3743,68 @@ agendaCalendar?.addEventListener("click", (event) => {
 
   selectedAgendaDate = button.dataset.agendaDate;
   renderAgenda(latestAgendaItems);
+});
+
+agendaMonthGrid?.addEventListener("click", (event) => {
+  const target = event.target;
+  const button = target instanceof Element ? target.closest(".agenda-month-cell") : null;
+
+  if (!(button instanceof HTMLButtonElement) || !button.dataset.agendaDate) {
+    return;
+  }
+
+  selectedAgendaDate = button.dataset.agendaDate;
+  agendaVisibleMonth = selectedAgendaDate.slice(0, 7);
+  renderAgenda(latestAgendaItems);
+});
+
+agendaPendingList?.addEventListener("click", (event) => {
+  const target = event.target;
+  const button = target instanceof Element ? target.closest("[data-action='editar-agenda-os']") : null;
+
+  if (!(button instanceof HTMLButtonElement) || !button.dataset.id) {
+    return;
+  }
+
+  void openAgendaOsModal(button.dataset.id);
+});
+
+agendaList?.addEventListener("click", (event) => {
+  const target = event.target;
+  const button = target instanceof Element ? target.closest("[data-action='editar-agenda-os']") : null;
+
+  if (!(button instanceof HTMLButtonElement) || !button.dataset.id) {
+    return;
+  }
+
+  void openAgendaOsModal(button.dataset.id);
+});
+
+agendaPrevMonthButton?.addEventListener("click", () => {
+  const [year, month] = agendaVisibleMonth.split("-").map(Number);
+  const date = new Date(year, month - 2, 1);
+  agendaVisibleMonth = getLocalDateKey(date).slice(0, 7);
+  selectedAgendaDate = getLocalDateKey(date);
+  renderAgenda(latestAgendaItems);
+});
+
+agendaNextMonthButton?.addEventListener("click", () => {
+  const [year, month] = agendaVisibleMonth.split("-").map(Number);
+  const date = new Date(year, month, 1);
+  agendaVisibleMonth = getLocalDateKey(date).slice(0, 7);
+  selectedAgendaDate = getLocalDateKey(date);
+  renderAgenda(latestAgendaItems);
+});
+
+newAgendaOsButton?.addEventListener("click", () => {
+  void openAgendaOsModal();
+});
+
+closeAgendaOsModalButton?.addEventListener("click", closeAgendaOsModal);
+cancelAgendaOsButton?.addEventListener("click", closeAgendaOsModal);
+agendaOsForm?.addEventListener("submit", submitAgendaOs);
+agendaOsClientSelect?.addEventListener("change", () => {
+  void loadAgendaEquipments(agendaOsClientSelect.value);
 });
 
 requestList?.addEventListener("click", async (event) => {
