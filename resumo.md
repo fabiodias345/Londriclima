@@ -1,16 +1,17 @@
 # Resumo AIRMOVEBR
 
-Atualizado em: 16/06/2026
+Atualizado em: 17/06/2026
 
 ## Estado Atual
 
 - Workspace: `C:\develop\LondriClima`
-- Branch atual: `dev`
-- Commit atual em `dev`: `9d10f6c Atualiza landing e fluxo administrativo`
-- Commit atual em `main`: `be39dd1 Melhora fluxos PMOC e relatorios operacionais`
-- Branch `dev` esta na frente de `main` com a landing nova e ajustes administrativos.
-- Branch `seg`: ficou no commit anterior `afdcab9`
-- Produto: site, admin e API da AIRMOVEBR para pre-chamado, OS, tecnico, frota, PMOC e automacoes.
+- Branch atual: `main`
+- Commit atual em `main`: `595b23a Adiciona app mobile AIRMOVEBR`
+- Commit atual em `dev`: `595b23a Adiciona app mobile AIRMOVEBR`
+- Branches `main` e `dev` estao alinhadas no GitHub.
+- Branch `seg`: ficou no commit anterior `afdcab9` e o remoto `origin/seg` nao existe mais.
+- Produto: site, admin, API e app Android inicial da AIRMOVEBR para pre-chamado, OS, tecnico, frota, PMOC e automacoes.
+- App mobile Flutter Android criado em `apps/mobile`.
 
 ## Acessos Locais
 
@@ -20,7 +21,8 @@ Admin:           http://127.0.0.1:5174/admin/
 Landing:         http://127.0.0.1:5174/landing/
 Assinatura PMOC: http://127.0.0.1:5174/landing/assinatura-pmoc.html?token=:token
 Adminer:         http://127.0.0.1:8080
-Login seed:      tecnico@airmovebr.local / 123456
+Login seed API:  tecnico@airmovebr.local / 123456
+Login app local: teste / 123456
 ```
 
 ## Feito
@@ -50,17 +52,31 @@ Login seed:      tecnico@airmovebr.local / 123456
 - Excecao de teste para `Cris Magnani`:
   - mesmo com PMOC assinado ou pendente, o botao continua liberado para solicitar nova assinatura.
 - `apps/backend/storage/` ignorado no Git para nao commitar PDFs locais.
-- Commit enviado para GitHub em `dev` e `main`.
+- Landing nova e ajustes administrativos enviados para `dev` e depois alinhados em `main`.
+- App mobile Android inicial criado em `apps/mobile`:
+  - login local de teste `teste / 123456`;
+  - logo nova da AIRMOVEBR mantida apenas na tela de login;
+  - dashboard sem logo, com atalhos `Cliente` e `Carro`;
+  - APK rodou no celular depois da troca do cabo USB.
+- Commit `595b23a Adiciona app mobile AIRMOVEBR` enviado para GitHub em `dev` e `main`.
 
 ## Validacoes
 
-Ultima rodada local antes do commit:
+Ultima rodada ampla local antes dos commits PMOC/landing:
 
 ```text
 npm.cmd run backend:test  -> 88/88 OK
 npm.cmd run frontend:test -> 8/8 OK
 npm.cmd run backend:build -> OK
 npm.cmd run backend:lint  -> OK
+```
+
+Validacao mobile:
+
+```text
+flutter analyze -> No issues found
+flutter run     -> APK buildou, instalou e rodou no celular apos trocar o cabo USB
+flutter test    -> nao concluido; runner local travou e foi interrompido
 ```
 
 Health local depois do restart:
@@ -135,8 +151,8 @@ Para homologar por IP antes de mexer no Registro.br:
 ```text
 cd /opt/airmovebr/repo
 git fetch origin
-git checkout dev
-git pull origin dev
+git checkout main
+git pull origin main
 docker compose --env-file .env.production -f infra/docker-compose.prod.example.yml up -d --build
 docker compose --env-file .env.production -f infra/docker-compose.prod.example.yml exec backend npx prisma migrate deploy
 docker ps
@@ -182,7 +198,7 @@ Painel admin > Pre-chamados recebidos
    - confirmar envio para cliente e copia interna;
    - confirmar arquivo salvo no Drive.
 5. [ ] Na outra maquina com chave SSH, acessar `airmovebr@191.252.226.11`.
-6. [ ] Atualizar a VM com o commit `9d10f6c` da branch `dev`.
+6. [ ] Atualizar a VM com o commit `595b23a` da branch `main`.
 7. [ ] Conferir `.env.production` real na VM sem commitar secrets.
 8. [ ] Subir/recriar containers de producao com `--build`.
 9. [ ] Rodar `prisma migrate deploy` em producao.
@@ -202,8 +218,21 @@ Painel admin > Pre-chamados recebidos
    - assinatura digital validada.
 18. [ ] Revisar Agenda.
 19. [ ] Revisar Frota.
-20. [ ] Aplicar logo real quando o arquivo estiver no workspace.
-21. [ ] Preparar backup, logs e permissoes antes de cliente real.
+20. [ ] Preparar backup, logs e permissoes antes de cliente real.
+21. [ ] Pensar melhor antes de implementar o fluxo de tecnicos no admin e OS no APK.
+
+## Plano Pausado: Tecnicos no Admin e OS no APK
+
+Nao implementar ainda sem nova confirmacao.
+
+Rascunho discutido:
+
+- Admin tera cadastro de tecnicos com nome, login curto, senha e telefone WhatsApp.
+- Admin atribui OS ao tecnico.
+- APK tera tela `Meus servicos` por tecnico logado.
+- Tecnico abre o cliente/OS no APK e entra no checklist do servico.
+- Notificacao v1 sera dentro do app, sem push real.
+- WhatsApp fica preparado para depois; sem API do WhatsApp por enquanto.
 
 ## Seguranca
 
@@ -216,3 +245,4 @@ Painel admin > Pre-chamados recebidos
 ## Anotacao para depois
 
 - Remover a copia interna/BCC (`PMOC_INTERNAL_COPY_EMAIL`) do fluxo PMOC. Ela ficou redundante porque a AIRMOVEBR ja recebe/guarda o envio na propria caixa de e-mail, e o Drive sera o arquivo oficial quando a permissao da pasta estiver corrigida.
+- Retomar o plano de tecnicos/OS/checklist no APK somente depois de confirmar o desenho operacional com calma.
