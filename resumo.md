@@ -1,14 +1,14 @@
 # Resumo AIRMOVEBR
 
-Atualizado em: 17/06/2026
+Atualizado em: 18/06/2026
 
 ## Estado Atual
 
 - Workspace: `C:\develop\LondriClima`
 - Branch atual: `main`
-- Commit atual em `main`: `595b23a Adiciona app mobile AIRMOVEBR`
+- Commit atual em `main`: `2bbe740 feat: adiciona planos recorrentes`
 - Commit atual em `dev`: `595b23a Adiciona app mobile AIRMOVEBR`
-- Branches `main` e `dev` estao alinhadas no GitHub.
+- Branch `main` esta a frente de `dev` com agenda operacional, equipes tecnicas flexiveis e planos recorrentes.
 - Branch `seg`: ficou no commit anterior `afdcab9` e o remoto `origin/seg` nao existe mais.
 - Produto: site, admin, API e app Android inicial da AIRMOVEBR para pre-chamado, OS, tecnico, frota, PMOC e automacoes.
 - App mobile Flutter Android criado em `apps/mobile`.
@@ -59,6 +59,21 @@ Login app local: teste / 123456
   - dashboard sem logo, com atalhos `Cliente` e `Carro`;
   - APK rodou no celular depois da troca do cabo USB.
 - Commit `595b23a Adiciona app mobile AIRMOVEBR` enviado para GitHub em `dev` e `main`.
+- Agenda operacional adicionada no admin:
+  - calendario mensal;
+  - lista de pendencias sem horario/equipe;
+  - criacao e edicao de OS;
+  - despacho por equipe ou tecnico.
+- Equipes tecnicas flexiveis adicionadas:
+  - tecnico/auxiliar;
+  - membros ilimitados por equipe;
+  - equipe vinculada a clientes e OS.
+- Planos recorrentes adicionados:
+  - cadastro de rotina por cliente/equipamento;
+  - frequencias mensal, bimestral, trimestral, semestral e anual;
+  - geracao manual de OS recorrente;
+  - avanco automatico da proxima execucao.
+- Commit atual de producao desejado: `2bbe740 feat: adiciona planos recorrentes`.
 
 ## Validacoes
 
@@ -94,6 +109,15 @@ Validacao da Cris pela API:
   "junho_status": "assinado",
   "junho_assinafy": "certificated"
 }
+```
+
+Validacao local em 18/06/2026 no commit `2bbe740`:
+
+```text
+npm.cmd run frontend:test -> 11/11 OK
+npm.cmd run backend:test  -> 108/108 OK
+npm.cmd run backend:build -> OK
+npm.cmd run backend:lint  -> OK
 ```
 
 ## Bloqueio Atual
@@ -189,6 +213,121 @@ Painel admin > Pre-chamados recebidos
 
 ## Proximos Passos
 
+## Plano 01: Refatoracao Incremental Segura
+
+Objetivo: reduzir arquivos gigantes, diminuir consumo de token e melhorar manutencao sem reescrever o sistema.
+
+Regra principal: PMOC fica por ultimo. Nada de mexer no fluxo PMOC enquanto agenda, recorrencia, frota, clientes e usuarios nao estiverem estabilizados.
+
+### Fase 0: Rede de Seguranca
+
+- [x] Rodar testes atuais antes de extrair codigo.
+- [x] Criar smoke test de fachada para garantir que `AdminService` delega agenda/recorrencias.
+- [ ] Ampliar smoke tests quando cada novo dominio for extraido.
+- [ ] Nao criar feature nova dentro de `admin.service.ts`.
+- [ ] Nao aumentar arquivos acima de 500 linhas sem justificativa.
+
+### Fase 1: Agenda + Planos Recorrentes
+
+- [x] Criar `apps/backend/src/modules/admin/services/admin-agenda.service.ts`.
+- [x] Criar `apps/backend/src/modules/admin/services/admin-recorrencia.service.ts`.
+- [x] Mover agenda e planos recorrentes sem mudar regra de negocio.
+- [x] Manter `AdminService` como fachada/delegacao.
+- [x] Registrar novo service em `AdminModule`.
+- [x] Validar com `backend:test`.
+- [x] Validar com `frontend:test`, `backend:build` e `backend:lint`.
+
+Escopo movido:
+
+- `listarAgenda`
+- `criarOrdemAgenda`
+- `reprogramarOrdemAgenda`
+- `listarPlanosRecorrencia`
+- `criarPlanoRecorrencia`
+- `atualizarPlanoRecorrencia`
+- `gerarOrdemPlanoRecorrencia`
+- helpers internos de agenda/recorrencia
+
+Resultado da Fase 1:
+
+```text
+admin.service.ts              -> 3381 linhas
+admin-agenda.service.ts       -> 317 linhas
+admin-recorrencia.service.ts  -> 376 linhas
+```
+
+### Fase 2: Frota
+
+- [x] Criar `apps/backend/src/modules/admin/services/admin-frota.service.ts`.
+- [x] Mover localizacoes, abastecimentos e relatorios de frota.
+- [x] `AdminService` delega.
+- [x] Rodar testes antes e depois.
+
+Resultado da Fase 2:
+
+```text
+admin.service.ts        -> 3156 linhas
+admin-frota.service.ts  -> 268 linhas
+```
+
+### Fase 3: Clientes + Equipamentos
+
+- [ ] Criar `admin-clientes.service.ts`.
+- [ ] Criar `admin-equipamentos.service.ts`.
+- [ ] Mover CRUD de clientes, equipamentos e links publicos.
+- [ ] `AdminService` delega.
+- [ ] Rodar testes antes e depois.
+
+### Fase 4: Tecnicos + Equipes + Engenheiros
+
+- [ ] Criar `admin-tecnicos.service.ts`.
+- [ ] Criar `admin-equipes.service.ts`.
+- [ ] Criar `admin-engenheiros.service.ts`.
+- [ ] Mover cadastro, edicao, exclusao e validacoes desses dominios.
+- [ ] `AdminService` delega.
+- [ ] Rodar testes antes e depois.
+
+### Fase 5: Pre-chamados
+
+- [ ] Criar `admin-pre-chamados.service.ts`.
+- [ ] Mover listagem, aprovacao, rejeicao e conversao para OS.
+- [ ] `AdminService` delega.
+- [ ] Rodar testes antes e depois.
+
+### Fase 6: Relatorios Nao-PMOC
+
+- [ ] Criar `admin-relatorios.service.ts`.
+- [ ] Mover indicadores operacionais, receitas, automacoes pendentes e relatorios avulsos que nao dependem diretamente de PMOC.
+- [ ] `AdminService` delega.
+- [ ] Rodar testes antes e depois.
+
+### Fase 7: PMOC Por Ultimo
+
+- [ ] Criar `admin-pmoc.service.ts`.
+- [ ] Criar `admin-pmoc-pdf.service.ts`.
+- [ ] Mover PMOC somente depois das fases anteriores estabilizadas.
+- [ ] Validar assinatura, webhook Assinafy, Drive e email final.
+
+### Fase 8: Frontend Admin JS
+
+- [ ] Migrar progressivamente para `type="module"`.
+- [ ] Criar `apps/admin/js/main.js`.
+- [ ] Criar modulos por area: `agenda`, `recorrencias`, `frota`, `clientes`, `pmoc`.
+- [ ] Migrar agenda/recorrencias/frota antes de PMOC.
+
+### Fase 9: CSS/HTML
+
+- [ ] Separar CSS por area: base, layout, agenda, frota, clientes, PMOC.
+- [ ] Manter `index.html` por enquanto.
+- [ ] Avaliar partials/templates so depois do JS estabilizado.
+
+### Fase 10: Regra Permanente
+
+- [ ] Cada fase vira commit separado.
+- [ ] Primeiro mover, depois melhorar.
+- [ ] Testar antes e depois de cada corte.
+- [ ] PMOC nao entra em refactor ate existir seguranca suficiente.
+
 1. [ ] Compartilhar a pasta do Drive com `drive-integracao@automacao-499404.iam.gserviceaccount.com` como `Editor`.
 2. [ ] Repetir teste de upload no Drive.
 3. [ ] Fazer backfill dos PDFs PMOC ja assinados para a pasta do Drive e preencher `pdf_drive_url`.
@@ -198,10 +337,12 @@ Painel admin > Pre-chamados recebidos
    - confirmar envio para cliente e copia interna;
    - confirmar arquivo salvo no Drive.
 5. [ ] Na outra maquina com chave SSH, acessar `airmovebr@191.252.226.11`.
-6. [ ] Atualizar a VM com o commit `595b23a` da branch `main`.
+6. [ ] Atualizar a VM com o commit `2bbe740` da branch `main`.
 7. [ ] Conferir `.env.production` real na VM sem commitar secrets.
 8. [ ] Subir/recriar containers de producao com `--build`.
-9. [ ] Rodar `prisma migrate deploy` em producao.
+9. [ ] Rodar `prisma migrate deploy` em producao, incluindo:
+   - `20260617073000_flexible_technical_teams`
+   - `20260617210000_planos_recorrencia`
 10. [ ] Validar por IP: landing, admin e `api/v1/health`.
 11. [ ] Se o IP nao responder no Caddy, ajustar proxy temporario para homologacao por IP.
 12. [ ] Aguardar o cliente passar acesso/gestao do registro do dominio.
@@ -216,7 +357,7 @@ Painel admin > Pre-chamados recebidos
    - evidencias;
    - declaracao;
    - assinatura digital validada.
-18. [ ] Revisar Agenda.
+18. [ ] Revisar Agenda em uso real com OS criadas por pre-chamado, OS manual e plano recorrente.
 19. [ ] Revisar Frota.
 20. [ ] Preparar backup, logs e permissoes antes de cliente real.
 21. [ ] Pensar melhor antes de implementar o fluxo de tecnicos no admin e OS no APK.

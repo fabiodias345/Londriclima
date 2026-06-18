@@ -11,6 +11,9 @@ import {
   UsuarioRole
 } from "@prisma/client";
 import { AdminService } from "./admin.service";
+import { AdminAgendaService } from "./services/admin-agenda.service";
+import { AdminRecorrenciaService } from "./services/admin-recorrencia.service";
+import { AdminFrotaService } from "./services/admin-frota.service";
 
 const usuario = {
   id: "admin-1",
@@ -22,6 +25,67 @@ const usuario = {
 function criarService(prisma: unknown) {
   return new AdminService(prisma as never);
 }
+
+test("AdminService delega agenda e recorrencias para services especializados", async () => {
+  const agendaService = {
+    listarAgenda: async (user: typeof usuario) => ({ metodo: "listarAgenda", user }),
+    criarOrdemAgenda: async (dto: unknown, user: typeof usuario) => ({ metodo: "criarOrdemAgenda", dto, user }),
+    reprogramarOrdemAgenda: async (osId: string, dto: unknown, user: typeof usuario) => ({ metodo: "reprogramarOrdemAgenda", osId, dto, user })
+  } as unknown as AdminAgendaService;
+  const recorrenciaService = {
+    listarPlanosRecorrencia: async (user: typeof usuario) => ({ metodo: "listarPlanosRecorrencia", user }),
+    criarPlanoRecorrencia: async (dto: unknown, user: typeof usuario) => ({ metodo: "criarPlanoRecorrencia", dto, user }),
+    atualizarPlanoRecorrencia: async (planoId: string, dto: unknown, user: typeof usuario) => ({ metodo: "atualizarPlanoRecorrencia", planoId, dto, user }),
+    gerarOrdemPlanoRecorrencia: async (planoId: string, user: typeof usuario) => ({ metodo: "gerarOrdemPlanoRecorrencia", planoId, user })
+  } as unknown as AdminRecorrenciaService;
+  const service = new AdminService({} as never, undefined, agendaService, recorrenciaService);
+
+  assert.deepEqual(await service.listarAgenda(usuario), { metodo: "listarAgenda", user: usuario });
+  assert.deepEqual(await service.criarOrdemAgenda({ titulo: "OS" } as never, usuario), { metodo: "criarOrdemAgenda", dto: { titulo: "OS" }, user: usuario });
+  assert.deepEqual(await service.reprogramarOrdemAgenda("os-1", { titulo: "OS" } as never, usuario), {
+    metodo: "reprogramarOrdemAgenda",
+    osId: "os-1",
+    dto: { titulo: "OS" },
+    user: usuario
+  });
+  assert.deepEqual(await service.listarPlanosRecorrencia(usuario), { metodo: "listarPlanosRecorrencia", user: usuario });
+  assert.deepEqual(await service.criarPlanoRecorrencia({ titulo: "Plano" } as never, usuario), { metodo: "criarPlanoRecorrencia", dto: { titulo: "Plano" }, user: usuario });
+  assert.deepEqual(await service.atualizarPlanoRecorrencia("plano-1", { titulo: "Plano" } as never, usuario), {
+    metodo: "atualizarPlanoRecorrencia",
+    planoId: "plano-1",
+    dto: { titulo: "Plano" },
+    user: usuario
+  });
+  assert.deepEqual(await service.gerarOrdemPlanoRecorrencia("plano-1", usuario), {
+    metodo: "gerarOrdemPlanoRecorrencia",
+    planoId: "plano-1",
+    user: usuario
+  });
+});
+
+test("AdminService delega frota para service especializado", async () => {
+  const frotaService = {
+    listarLocalizacoesFrota: async (user: typeof usuario) => ({ metodo: "listarLocalizacoesFrota", user }),
+    listarAbastecimentos: async (user: typeof usuario) => ({ metodo: "listarAbastecimentos", user }),
+    criarAbastecimento: async (dto: unknown, user: typeof usuario) => ({ metodo: "criarAbastecimento", dto, user }),
+    obterRelatorioFrota: async (user: typeof usuario, referencia?: Date) => ({ metodo: "obterRelatorioFrota", user, referencia })
+  } as unknown as AdminFrotaService;
+  const service = new AdminService({} as never, undefined, undefined, undefined, frotaService);
+  const referencia = new Date("2026-06-18T10:00:00.000Z");
+
+  assert.deepEqual(await service.listarLocalizacoesFrota(usuario), { metodo: "listarLocalizacoesFrota", user: usuario });
+  assert.deepEqual(await service.listarAbastecimentos(usuario), { metodo: "listarAbastecimentos", user: usuario });
+  assert.deepEqual(await service.criarAbastecimento({ veiculo_id: "veiculo-1" } as never, usuario), {
+    metodo: "criarAbastecimento",
+    dto: { veiculo_id: "veiculo-1" },
+    user: usuario
+  });
+  assert.deepEqual(await service.obterRelatorioFrota(usuario, referencia), {
+    metodo: "obterRelatorioFrota",
+    user: usuario,
+    referencia
+  });
+});
 
 test("listarPreChamados filtra exclusivamente por empresa do usuario e status pre_chamado", async () => {
   const chamadas = {
