@@ -115,3 +115,37 @@
   line-height: 1.5;
 }
 
+.vehicle-admin-panel {
+  overflow: hidden;
+}
+
+.vehicle-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(0, 140, 149, 0.05);
+}
+
+.vehicle-form .form-actions,
+.vehicle-form .status {
+  grid-column: 1 / -1;
+}
+
+.vehicle-actions {
+  display: flex !important;
+  grid-template-columns: repeat(2, max-content);
+  justify-content: flex-end;
+}
+
+.vehicle-actions button {
+  border-radius: var(--radius);
+  padding: 0 12px;
+  font-weight: 900;
+}
+
+.vehicle-empty {
+  grid-template-columns: 1fr;
+}
+

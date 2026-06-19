@@ -295,6 +295,7 @@ function escapeHtml(value) {
 }
 
 loginForm?.addEventListener("submit", login);
+vehicleForm?.addEventListener("submit", submitVehicle);
 fuelForm?.addEventListener("submit", submitFuel);
 empresaForm?.addEventListener("submit", submitEmpresa);
 clientForm?.addEventListener("submit", submitClient);
@@ -308,6 +309,7 @@ backToClientsButton?.addEventListener("click", resetClientForm);
 resetTecnicoFormButton?.addEventListener("click", resetTecnicoForm);
 resetEquipeFormButton?.addEventListener("click", resetEquipeForm);
 resetEngineerFormButton?.addEventListener("click", resetEngineerForm);
+resetVehicleFormButton?.addEventListener("click", resetVehicleForm);
 printReportsButton?.addEventListener("click", openReportsPrint);
 fleetReportExportButton?.addEventListener("click", openFleetReport);
 pmocBackToClientsButton?.addEventListener("click", closePmocDossier);
@@ -332,6 +334,25 @@ for (const button of fleetTabButtons) {
     setFleetTab(button.dataset.fleetTab || "mapa");
   });
 }
+
+vehicleList?.addEventListener("click", (event) => {
+  const target = event.target;
+  const button = target instanceof Element ? target.closest("[data-action]") : null;
+
+  if (!button) {
+    return;
+  }
+
+  const vehicleId = button.dataset.id || "";
+
+  if (button.dataset.action === "editar-veiculo") {
+    fillVehicleForm(vehicleId);
+  }
+
+  if (button.dataset.action === "apagar-veiculo") {
+    void deleteVehicle(vehicleId);
+  }
+});
 
 pmocSearchForm?.addEventListener("submit", (event) => {
   event.preventDefault();

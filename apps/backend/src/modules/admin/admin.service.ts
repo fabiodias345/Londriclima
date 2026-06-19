@@ -17,6 +17,7 @@ import { SalvarEquipeDto } from "./dto/salvar-equipe.dto";
 import { SalvarOsAgendaDto } from "./dto/salvar-os-agenda.dto";
 import { SalvarPlanoRecorrenciaDto } from "./dto/salvar-plano-recorrencia.dto";
 import { SalvarTecnicoDto } from "./dto/salvar-tecnico.dto";
+import { SalvarVeiculoDto } from "./dto/salvar-veiculo.dto";
 import { AdminAgendaService } from "./services/admin-agenda.service";
 import { AdminClientesService } from "./services/admin-clientes.service";
 import { AdminEquipamentosService } from "./services/admin-equipamentos.service";
@@ -151,6 +152,22 @@ export class AdminService {
 
   async listarLocalizacoesFrota(usuario: AuthenticatedUser) {
     return this.frotaService.listarLocalizacoesFrota(usuario);
+  }
+
+  async listarVeiculosFrota(usuario: AuthenticatedUser) {
+    return this.frotaService.listarVeiculos(usuario);
+  }
+
+  async criarVeiculoFrota(dto: SalvarVeiculoDto, usuario: AuthenticatedUser) {
+    return this.frotaService.criarVeiculo(dto, usuario);
+  }
+
+  async atualizarVeiculoFrota(veiculoId: string, dto: SalvarVeiculoDto, usuario: AuthenticatedUser) {
+    return this.frotaService.atualizarVeiculo(veiculoId, dto, usuario);
+  }
+
+  async apagarVeiculoFrota(veiculoId: string, usuario: AuthenticatedUser) {
+    return this.frotaService.apagarVeiculo(veiculoId, usuario);
   }
 
   async listarAbastecimentos(usuario: AuthenticatedUser) {

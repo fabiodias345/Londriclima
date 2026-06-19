@@ -218,6 +218,161 @@ function highlightFleetVehicle(vehicleId) {
   }
 }
 
+async function loadFleetVehicles() {
+  vehicleStatus.textContent = "Carregando...";
+  const result = await fetchAdminJson("/admin/frota/veiculos", vehicleStatus);
+
+  if (!result) {
+    return;
+  }
+
+  latestVehicleRecords = result.items || [];
+  vehicleStatus.textContent = result.total === 1 ? "1 veiculo cadastrado" : \`\${result.total} veiculos cadastrados\`;
+  renderVehicleList(latestVehicleRecords);
+  renderFuelVehicleOptions(latestVehicleRecords);
+}
+
+function renderVehicleList(items) {
+  vehicleList.innerHTML = "";
+
+  if (!items.length) {
+    vehicleList.innerHTML = '<article class="data-row vehicle-empty"><span>Nenhum veiculo cadastrado.</span></article>';
+    return;
+  }
+
+  for (const item of items) {
+    const row = document.createElement("article");
+    row.className = "data-row vehicle-row";
+    row.innerHTML = \`
+      <div>
+        <strong>\${escapeHtml(item.nome)}</strong>
+        <span>\${escapeHtml(item.placa || "Sem placa")}</span>
+      </div>
+      <div>
+        <span>Rastreador</span>
+        <strong>\${escapeHtml(item.rastreador_imei || "Nao informado")}</strong>
+      </div>
+      <div class="vehicle-actions">
+        <button class="secondary-button compact-button" type="button" data-action="editar-veiculo" data-id="\${item.id}">Editar</button>
+        <button class="danger-button compact-button" type="button" data-action="apagar-veiculo" data-id="\${item.id}">Excluir</button>
+      </div>
+    \`;
+    vehicleList.appendChild(row);
+  }
+}
+
+function fillVehicleForm(vehicleId) {
+  const vehicle = latestVehicleRecords.find((item) => item.id === vehicleId);
+
+  if (!vehicle) {
+    return;
+  }
+
+  vehicleForm.elements.id.value = vehicle.id;
+  vehicleForm.elements.nome.value = vehicle.nome || "";
+  vehicleForm.elements.placa.value = vehicle.placa || "";
+  vehicleForm.elements.rastreador_imei.value = vehicle.rastreador_imei || "";
+  vehicleForm.querySelector("button[type='submit']").textContent = "Salvar veiculo";
+  resetVehicleFormButton.classList.remove("hidden");
+  vehicleFormStatus.textContent = "Editando veiculo selecionado.";
+  vehicleForm.elements.nome.focus();
+}
+
+function resetVehicleForm() {
+  vehicleForm.reset();
+  vehicleForm.elements.id.value = "";
+  vehicleForm.querySelector("button[type='submit']").textContent = "Cadastrar veiculo";
+  resetVehicleFormButton.classList.add("hidden");
+  vehicleFormStatus.textContent = "";
+}
+
+async function submitVehicle(event) {
+  event.preventDefault();
+  const data = new FormData(vehicleForm);
+  const vehicleId = String(data.get("id") || "");
+  const button = vehicleForm.querySelector("button[type='submit']");
+  const payload = {
+    nome: String(data.get("nome") || "").trim(),
+    placa: String(data.get("placa") || "").trim(),
+    rastreador_imei: String(data.get("rastreador_imei") || "").trim()
+  };
+
+  button.disabled = true;
+  button.textContent = vehicleId ? "Salvando..." : "Cadastrando...";
+  vehicleFormStatus.textContent = "";
+
+  try {
+    const response = await fetch(
+      vehicleId
+        ? \`\${apiBaseUrl}/admin/frota/veiculos/\${vehicleId}\`
+        : \`\${apiBaseUrl}/admin/frota/veiculos\`,
+      {
+        method: vehicleId ? "PATCH" : "POST",
+        headers: {
+          ...authHeaders(),
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      }
+    );
+
+    if (await handleUnauthorized(response)) {
+      return;
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      vehicleFormStatus.textContent = error.message || "Nao foi possivel salvar o veiculo.";
+      return;
+    }
+
+    resetVehicleForm();
+    await loadFrota();
+    vehicleFormStatus.textContent = vehicleId ? "Veiculo atualizado." : "Veiculo cadastrado.";
+  } catch {
+    vehicleFormStatus.textContent = "API indisponivel.";
+  } finally {
+    button.disabled = false;
+    button.textContent = vehicleForm.elements.id.value ? "Salvar veiculo" : "Cadastrar veiculo";
+  }
+}
+
+async function deleteVehicle(vehicleId) {
+  const vehicle = latestVehicleRecords.find((item) => item.id === vehicleId);
+
+  if (!vehicle || !window.confirm(\`Excluir \${vehicle.nome} da frota?\`)) {
+    return;
+  }
+
+  vehicleFormStatus.textContent = "Excluindo veiculo...";
+
+  try {
+    const response = await fetch(\`\${apiBaseUrl}/admin/frota/veiculos/\${vehicleId}\`, {
+      method: "DELETE",
+      headers: authHeaders()
+    });
+
+    if (await handleUnauthorized(response)) {
+      return;
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      vehicleFormStatus.textContent = error.message || "Nao foi possivel excluir o veiculo.";
+      return;
+    }
+
+    if (vehicleForm.elements.id.value === vehicleId) {
+      resetVehicleForm();
+    }
+
+    await loadFrota();
+    vehicleFormStatus.textContent = "Veiculo excluido.";
+  } catch {
+    vehicleFormStatus.textContent = "API indisponivel.";
+  }
+}
+
 function renderAgenda(items) {
   const calendarDays = buildAgendaCalendarDays(items);
   const preferredDate = pickAgendaDate(calendarDays);

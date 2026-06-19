@@ -17,9 +17,11 @@ export const authRoot = `
   movingCount.textContent = moving;
   fleetStatus.textContent = result.total === 1 ? "1 veiculo" : \`\${result.total} veiculos\`;
   renderFrota(result.items);
-  renderFuelVehicleOptions(result.items);
-  await loadRelatorioFrota();
-  await loadFuelHistory();
+  await Promise.all([
+    loadFleetVehicles(),
+    loadRelatorioFrota(),
+    loadFuelHistory()
+  ]);
 }
 
 async function loadDispatchOptions() {

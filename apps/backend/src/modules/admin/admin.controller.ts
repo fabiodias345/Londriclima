@@ -12,6 +12,7 @@ import { SalvarEquipeDto } from "./dto/salvar-equipe.dto";
 import { SalvarOsAgendaDto } from "./dto/salvar-os-agenda.dto";
 import { SalvarPlanoRecorrenciaDto } from "./dto/salvar-plano-recorrencia.dto";
 import { SalvarTecnicoDto } from "./dto/salvar-tecnico.dto";
+import { SalvarVeiculoDto } from "./dto/salvar-veiculo.dto";
 import { AdminService } from "./admin.service";
 
 type HeaderResponse = {
@@ -36,6 +37,33 @@ export class AdminController {
   @Get("frota/localizacoes")
   listarLocalizacoesFrota(@CurrentUser() usuario: AuthenticatedUser) {
     return this.adminService.listarLocalizacoesFrota(usuario);
+  }
+
+  @Get("frota/veiculos")
+  listarVeiculosFrota(@CurrentUser() usuario: AuthenticatedUser) {
+    return this.adminService.listarVeiculosFrota(usuario);
+  }
+
+  @Post("frota/veiculos")
+  criarVeiculoFrota(@Body() dto: SalvarVeiculoDto, @CurrentUser() usuario: AuthenticatedUser) {
+    return this.adminService.criarVeiculoFrota(dto, usuario);
+  }
+
+  @Patch("frota/veiculos/:veiculoId")
+  atualizarVeiculoFrota(
+    @Param("veiculoId", new ParseUUIDPipe()) veiculoId: string,
+    @Body() dto: SalvarVeiculoDto,
+    @CurrentUser() usuario: AuthenticatedUser
+  ) {
+    return this.adminService.atualizarVeiculoFrota(veiculoId, dto, usuario);
+  }
+
+  @Delete("frota/veiculos/:veiculoId")
+  apagarVeiculoFrota(
+    @Param("veiculoId", new ParseUUIDPipe()) veiculoId: string,
+    @CurrentUser() usuario: AuthenticatedUser
+  ) {
+    return this.adminService.apagarVeiculoFrota(veiculoId, usuario);
   }
 
   @Get("frota/abastecimentos")

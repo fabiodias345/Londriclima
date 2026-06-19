@@ -233,6 +233,7 @@
         <section class="fleet-panel hidden" id="frotaView">
           <div class="subnav" role="tablist" aria-label="Secoes da frota">
             <button class="subnav-button active" type="button" data-fleet-tab="mapa">Mapa</button>
+            <button class="subnav-button" type="button" data-fleet-tab="veiculos">Veiculos</button>
             <button class="subnav-button" type="button" data-fleet-tab="consumo">Consumo</button>
             <button class="subnav-button" type="button" data-fleet-tab="abastecimentos">Abastecimentos</button>
           </div>
@@ -246,6 +247,38 @@
               </div>
               <div id="fleetList"></div>
             </div>
+          </div>
+
+          <div class="fleet-tab-panel hidden" data-fleet-panel="veiculos">
+            <section class="worklist vehicle-admin-panel">
+              <div class="worklist-header">
+                <div>
+                  <h2>Cadastro de veiculos</h2>
+                  <p id="vehicleStatus" role="status">Carregando...</p>
+                </div>
+              </div>
+              <form class="vehicle-form" id="vehicleForm">
+                <input name="id" type="hidden" />
+                <label>
+                  Nome
+                  <input name="nome" type="text" placeholder="Carro 1" required />
+                </label>
+                <label>
+                  Placa
+                  <input name="placa" type="text" maxlength="8" placeholder="ABC1D23" />
+                </label>
+                <label>
+                  IMEI do rastreador
+                  <input name="rastreador_imei" type="text" inputmode="numeric" placeholder="Opcional" />
+                </label>
+                <div class="form-actions">
+                  <button type="submit">Cadastrar veiculo</button>
+                  <button class="secondary-button hidden" id="resetVehicleFormButton" type="button">Cancelar edicao</button>
+                </div>
+                <p class="status" id="vehicleFormStatus" role="status"></p>
+              </form>
+              <div class="data-list vehicle-list" id="vehicleList"></div>
+            </section>
           </div>
 
           <div class="fleet-tab-panel hidden" data-fleet-panel="consumo">
