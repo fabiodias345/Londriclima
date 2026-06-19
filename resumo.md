@@ -1,6 +1,6 @@
 # Resumo AIRMOVEBR
 
-Atualizado em: 18/06/2026
+Atualizado em: 19/06/2026
 
 ## Estado Atual
 
@@ -272,27 +272,55 @@ admin-frota.service.ts  -> 268 linhas
 
 ### Fase 3: Clientes + Equipamentos
 
-- [ ] Criar `admin-clientes.service.ts`.
-- [ ] Criar `admin-equipamentos.service.ts`.
-- [ ] Mover CRUD de clientes, equipamentos e links publicos.
-- [ ] `AdminService` delega.
-- [ ] Rodar testes antes e depois.
+- [x] Criar `admin-clientes.service.ts`.
+- [x] Criar `admin-equipamentos.service.ts`.
+- [x] Mover CRUD de clientes, equipamentos e links publicos.
+- [x] `AdminService` delega.
+- [x] Rodar testes antes e depois.
+
+Resultado local da Fase 3:
+
+```text
+admin.service.ts             -> 2534 linhas
+admin-clientes.service.ts    -> 401 linhas
+admin-equipamentos.service.ts -> 311 linhas
+```
 
 ### Fase 4: Tecnicos + Equipes + Engenheiros
 
-- [ ] Criar `admin-tecnicos.service.ts`.
-- [ ] Criar `admin-equipes.service.ts`.
-- [ ] Criar `admin-engenheiros.service.ts`.
-- [ ] Mover cadastro, edicao, exclusao e validacoes desses dominios.
-- [ ] `AdminService` delega.
-- [ ] Rodar testes antes e depois.
+- [x] Criar `admin-tecnicos.service.ts`.
+- [x] Criar `admin-equipes.service.ts`.
+- [x] Criar `admin-engenheiros.service.ts`.
+- [x] Mover cadastro, edicao, exclusao e validacoes desses dominios.
+- [x] `AdminService` delega.
+- [x] Rodar testes antes e depois.
+
+Resultado local da Fase 4:
+
+```text
+admin.service.ts              -> 2059 linhas
+admin-tecnicos.service.ts     -> 143 linhas
+admin-equipes.service.ts      -> 267 linhas
+admin-engenheiros.service.ts  -> 160 linhas
+```
+
+Observacao: Fase 4 ficou apenas local, junto com a Fase 3 ainda sem commit/deploy. Validado com backend:test, frontend:test, backend:build e backend:lint.
 
 ### Fase 5: Pre-chamados
 
-- [ ] Criar `admin-pre-chamados.service.ts`.
-- [ ] Mover listagem, aprovacao, rejeicao e conversao para OS.
-- [ ] `AdminService` delega.
-- [ ] Rodar testes antes e depois.
+- [x] Criar `admin-pre-chamados.service.ts`.
+- [x] Mover listagem, aprovacao, rejeicao e conversao para OS.
+- [x] `AdminService` delega.
+- [x] Rodar testes antes e depois.
+
+Resultado local da Fase 5:
+
+```text
+admin.service.ts              -> 1835 linhas
+admin-pre-chamados.service.ts -> 224 linhas
+```
+
+Observacao: Fase 5 ficou apenas local, junto com as Fases 3 e 4 ainda sem commit/deploy. Validado com backend:test, frontend:test, backend:build e backend:lint.
 
 ### Fase 6: Relatorios Nao-PMOC
 

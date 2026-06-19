@@ -14,6 +14,12 @@ import { AdminService } from "./admin.service";
 import { AdminAgendaService } from "./services/admin-agenda.service";
 import { AdminRecorrenciaService } from "./services/admin-recorrencia.service";
 import { AdminFrotaService } from "./services/admin-frota.service";
+import { AdminClientesService } from "./services/admin-clientes.service";
+import { AdminEquipamentosService } from "./services/admin-equipamentos.service";
+import { AdminTecnicosService } from "./services/admin-tecnicos.service";
+import { AdminEquipesService } from "./services/admin-equipes.service";
+import { AdminEngenheirosService } from "./services/admin-engenheiros.service";
+import { AdminPreChamadosService } from "./services/admin-pre-chamados.service";
 
 const usuario = {
   id: "admin-1",
@@ -84,6 +90,200 @@ test("AdminService delega frota para service especializado", async () => {
     metodo: "obterRelatorioFrota",
     user: usuario,
     referencia
+  });
+});
+
+test("AdminService delega clientes e equipamentos para services especializados", async () => {
+  const clientesService = {
+    listarClientes: async (user: typeof usuario) => ({ metodo: "listarClientes", user }),
+    criarCliente: async (dto: unknown, user: typeof usuario) => ({ metodo: "criarCliente", dto, user }),
+    atualizarCliente: async (clienteId: string, dto: unknown, user: typeof usuario) => ({ metodo: "atualizarCliente", clienteId, dto, user }),
+    apagarCliente: async (clienteId: string, user: typeof usuario) => ({ metodo: "apagarCliente", clienteId, user })
+  } as unknown as AdminClientesService;
+  const equipamentosService = {
+    listarEquipamentosCliente: async (clienteId: string, user: typeof usuario) => ({ metodo: "listarEquipamentosCliente", clienteId, user }),
+    criarEquipamentoCliente: async (clienteId: string, dto: unknown, user: typeof usuario) => ({ metodo: "criarEquipamentoCliente", clienteId, dto, user }),
+    renovarAcessoPublicoEquipamento: async (equipamentoId: string, user: typeof usuario) => ({ metodo: "renovarAcessoPublicoEquipamento", equipamentoId, user }),
+    apagarEquipamento: async (equipamentoId: string, user: typeof usuario) => ({ metodo: "apagarEquipamento", equipamentoId, user })
+  } as unknown as AdminEquipamentosService;
+  const service = new AdminService(
+    {} as never,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    clientesService,
+    equipamentosService
+  );
+
+  assert.deepEqual(await service.listarClientes(usuario), { metodo: "listarClientes", user: usuario });
+  assert.deepEqual(await service.criarCliente({ nome: "Cliente" } as never, usuario), {
+    metodo: "criarCliente",
+    dto: { nome: "Cliente" },
+    user: usuario
+  });
+  assert.deepEqual(await service.atualizarCliente("cliente-1", { nome: "Cliente" } as never, usuario), {
+    metodo: "atualizarCliente",
+    clienteId: "cliente-1",
+    dto: { nome: "Cliente" },
+    user: usuario
+  });
+  assert.deepEqual(await service.apagarCliente("cliente-1", usuario), {
+    metodo: "apagarCliente",
+    clienteId: "cliente-1",
+    user: usuario
+  });
+  assert.deepEqual(await service.listarEquipamentosCliente("cliente-1", usuario), {
+    metodo: "listarEquipamentosCliente",
+    clienteId: "cliente-1",
+    user: usuario
+  });
+  assert.deepEqual(await service.criarEquipamentoCliente("cliente-1", { marca: "Marca" } as never, usuario), {
+    metodo: "criarEquipamentoCliente",
+    clienteId: "cliente-1",
+    dto: { marca: "Marca" },
+    user: usuario
+  });
+  assert.deepEqual(await service.renovarAcessoPublicoEquipamento("equipamento-1", usuario), {
+    metodo: "renovarAcessoPublicoEquipamento",
+    equipamentoId: "equipamento-1",
+    user: usuario
+  });
+  assert.deepEqual(await service.apagarEquipamento("equipamento-1", usuario), {
+    metodo: "apagarEquipamento",
+    equipamentoId: "equipamento-1",
+    user: usuario
+  });
+});
+
+test("AdminService delega tecnicos, equipes e engenheiros para services especializados", async () => {
+  const tecnicosService = {
+    listarTecnicos: async (user: typeof usuario) => ({ metodo: "listarTecnicos", user }),
+    criarTecnico: async (dto: unknown, user: typeof usuario) => ({ metodo: "criarTecnico", dto, user }),
+    atualizarTecnico: async (tecnicoId: string, dto: unknown, user: typeof usuario) => ({ metodo: "atualizarTecnico", tecnicoId, dto, user }),
+    apagarTecnico: async (tecnicoId: string, user: typeof usuario) => ({ metodo: "apagarTecnico", tecnicoId, user })
+  } as unknown as AdminTecnicosService;
+  const equipesService = {
+    listarEquipes: async (user: typeof usuario) => ({ metodo: "listarEquipes", user }),
+    criarEquipe: async (dto: unknown, user: typeof usuario) => ({ metodo: "criarEquipe", dto, user }),
+    atualizarEquipe: async (equipeId: string, dto: unknown, user: typeof usuario) => ({ metodo: "atualizarEquipe", equipeId, dto, user }),
+    apagarEquipe: async (equipeId: string, user: typeof usuario) => ({ metodo: "apagarEquipe", equipeId, user })
+  } as unknown as AdminEquipesService;
+  const engenheirosService = {
+    listarEngenheirosResponsaveis: async (user: typeof usuario) => ({ metodo: "listarEngenheirosResponsaveis", user }),
+    criarEngenheiroResponsavel: async (dto: unknown, user: typeof usuario) => ({ metodo: "criarEngenheiroResponsavel", dto, user }),
+    atualizarEngenheiroResponsavel: async (engenheiroId: string, dto: unknown, user: typeof usuario) => ({ metodo: "atualizarEngenheiroResponsavel", engenheiroId, dto, user }),
+    apagarEngenheiroResponsavel: async (engenheiroId: string, user: typeof usuario) => ({ metodo: "apagarEngenheiroResponsavel", engenheiroId, user })
+  } as unknown as AdminEngenheirosService;
+  const service = new AdminService(
+    {} as never,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    tecnicosService,
+    equipesService,
+    engenheirosService
+  );
+
+  assert.deepEqual(await service.listarTecnicos(usuario), { metodo: "listarTecnicos", user: usuario });
+  assert.deepEqual(await service.criarTecnico({ nome: "Tecnico" } as never, usuario), {
+    metodo: "criarTecnico",
+    dto: { nome: "Tecnico" },
+    user: usuario
+  });
+  assert.deepEqual(await service.atualizarTecnico("tecnico-1", { nome: "Tecnico" } as never, usuario), {
+    metodo: "atualizarTecnico",
+    tecnicoId: "tecnico-1",
+    dto: { nome: "Tecnico" },
+    user: usuario
+  });
+  assert.deepEqual(await service.apagarTecnico("tecnico-1", usuario), {
+    metodo: "apagarTecnico",
+    tecnicoId: "tecnico-1",
+    user: usuario
+  });
+  assert.deepEqual(await service.listarEquipes(usuario), { metodo: "listarEquipes", user: usuario });
+  assert.deepEqual(await service.criarEquipe({ nome: "Equipe" } as never, usuario), {
+    metodo: "criarEquipe",
+    dto: { nome: "Equipe" },
+    user: usuario
+  });
+  assert.deepEqual(await service.atualizarEquipe("equipe-1", { nome: "Equipe" } as never, usuario), {
+    metodo: "atualizarEquipe",
+    equipeId: "equipe-1",
+    dto: { nome: "Equipe" },
+    user: usuario
+  });
+  assert.deepEqual(await service.apagarEquipe("equipe-1", usuario), {
+    metodo: "apagarEquipe",
+    equipeId: "equipe-1",
+    user: usuario
+  });
+  assert.deepEqual(await service.listarEngenheirosResponsaveis(usuario), {
+    metodo: "listarEngenheirosResponsaveis",
+    user: usuario
+  });
+  assert.deepEqual(await service.criarEngenheiroResponsavel({ nome: "Eng" } as never, usuario), {
+    metodo: "criarEngenheiroResponsavel",
+    dto: { nome: "Eng" },
+    user: usuario
+  });
+  assert.deepEqual(await service.atualizarEngenheiroResponsavel("eng-1", { nome: "Eng" } as never, usuario), {
+    metodo: "atualizarEngenheiroResponsavel",
+    engenheiroId: "eng-1",
+    dto: { nome: "Eng" },
+    user: usuario
+  });
+  assert.deepEqual(await service.apagarEngenheiroResponsavel("eng-1", usuario), {
+    metodo: "apagarEngenheiroResponsavel",
+    engenheiroId: "eng-1",
+    user: usuario
+  });
+});
+
+test("AdminService delega pre-chamados para service especializado", async () => {
+  const preChamadosService = {
+    listarPreChamados: async (user: typeof usuario) => ({ metodo: "listarPreChamados", user }),
+    aprovarPreChamado: async (osId: string, user: typeof usuario, dto: unknown) => ({
+      metodo: "aprovarPreChamado",
+      osId,
+      user,
+      dto
+    }),
+    rejeitarPreChamado: async (osId: string, user: typeof usuario) => ({
+      metodo: "rejeitarPreChamado",
+      osId,
+      user
+    })
+  } as unknown as AdminPreChamadosService;
+  const service = new AdminService(
+    {} as never,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    preChamadosService
+  );
+
+  assert.deepEqual(await service.listarPreChamados(usuario), { metodo: "listarPreChamados", user: usuario });
+  assert.deepEqual(await service.aprovarPreChamado("os-1", usuario, { equipe_id: "equipe-1" }), {
+    metodo: "aprovarPreChamado",
+    osId: "os-1",
+    user: usuario,
+    dto: { equipe_id: "equipe-1" }
+  });
+  assert.deepEqual(await service.rejeitarPreChamado("os-1", usuario), {
+    metodo: "rejeitarPreChamado",
+    osId: "os-1",
+    user: usuario
   });
 });
 
