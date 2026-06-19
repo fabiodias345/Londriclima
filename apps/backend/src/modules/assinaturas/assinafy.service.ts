@@ -8,6 +8,20 @@ import { dirname, join } from "node:path";
 import { PrismaService } from "../../database/prisma.service";
 import { AdminService } from "../admin/admin.service";
 import { AuthenticatedUser } from "../auth/auth-user";
+import {
+  AssinafySigner,
+  escolherStatusAssinafy,
+  exigirString,
+  extrairAccounts,
+  extrairLista,
+  extrairMensagemErroAssinafy,
+  extrairPayload,
+  isRecord,
+  statusConcluidoAssinafy,
+  statusFinalizadoAssinafy,
+  statusRecusadoAssinafy,
+  stringOuNulo
+} from "./assinafy.helpers";
 
 type AssinafyHttpClient = Pick<AxiosInstance, "post" | "get">;
 
@@ -15,15 +29,6 @@ type AssinafyWebhookPayload = {
   document_id?: unknown;
   assignment_id?: unknown;
   status?: unknown;
-};
-
-type AssinafyAccount = {
-  id?: unknown;
-};
-
-type AssinafySigner = {
-  id?: unknown;
-  email?: unknown;
 };
 
 @Injectable()
@@ -92,8 +97,8 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
         maxBodyLength: Infinity
       }
     );
-    const documentPayload = this.extrairPayload(documento.data);
-    const documentId = this.exigirString(documentPayload.id, "documento Assinafy");
+    const documentPayload = extrairPayload(documento.data);
+    const documentId = exigirString(documentPayload.id, "documento Assinafy");
 
     const signerId = await this.obterOuCriarSignerId(accountId, {
       nome: previa.engenheiro_responsavel.nome,
@@ -107,9 +112,9 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
       },
       this.assinafyRequestConfig()
     );
-    const assignmentPayload = this.extrairPayload(assignment.data);
-    const assignmentId = this.exigirString(assignmentPayload.id, "signatario Assinafy");
-    const assinafyStatus = this.exigirString(assignmentPayload.status ?? "pending", "status Assinafy");
+    const assignmentPayload = extrairPayload(assignment.data);
+    const assignmentId = exigirString(assignmentPayload.id, "signatario Assinafy");
+    const assinafyStatus = exigirString(assignmentPayload.status ?? "pending", "status Assinafy");
 
     const relatorio = await this.prisma.pmocRelatorio.create({
       data: {
@@ -144,8 +149,8 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
   }
 
   async processarWebhook(payload: AssinafyWebhookPayload) {
-    const documentId = this.exigirString(payload.document_id, "document_id");
-    const status = this.exigirString(payload.status, "status");
+    const documentId = exigirString(payload.document_id, "document_id");
+    const status = exigirString(payload.status, "status");
 
     const relatorio = await this.prisma.pmocRelatorio.findFirst({
       where: {
@@ -179,11 +184,11 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
 
     const data: Prisma.PmocRelatorioUpdateInput = {
       assinafyStatus: status,
-      assinafyAssignmentId: this.stringOuNulo(payload.assignment_id),
+      assinafyAssignmentId: stringOuNulo(payload.assignment_id),
       assinafyUltimoEvento: payload as Prisma.JsonObject
     };
 
-    if (this.statusRecusado(status)) {
+    if (statusRecusadoAssinafy(status)) {
       const agora = new Date();
       data.status = PmocRelatorioStatus.cancelado;
       data.historicoFinalizadoEm = agora;
@@ -232,7 +237,7 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
       };
     }
 
-    if (!this.statusConcluido(status)) {
+    if (!statusConcluidoAssinafy(status)) {
       const atualizado = await this.prisma.pmocRelatorio.update({
         where: {
           id: relatorio.id
@@ -357,10 +362,10 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
 
         try {
           const response = await this.getAssinafy(`/documents/${relatorio.assinafyDocumentId}`, this.assinafyRequestConfig());
-          const documentPayload = this.extrairPayload(response.data);
-          const assignment = this.isRecord(documentPayload.assignment) ? documentPayload.assignment : {};
-          const status = this.escolherStatusAssinafy(documentPayload.status, assignment.status);
-          const assignmentId = this.stringOuNulo(assignment.id) ?? relatorio.assinafyAssignmentId;
+          const documentPayload = extrairPayload(response.data);
+          const assignment = isRecord(documentPayload.assignment) ? documentPayload.assignment : {};
+          const status = escolherStatusAssinafy(documentPayload.status, assignment.status);
+          const assignmentId = stringOuNulo(assignment.id) ?? relatorio.assinafyAssignmentId;
 
           await this.processarWebhook({
             document_id: relatorio.assinafyDocumentId,
@@ -368,7 +373,7 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
             status
           });
 
-          if (this.statusFinalizado(status)) {
+          if (statusFinalizadoAssinafy(status)) {
             sincronizados += 1;
           }
         } catch (error) {
@@ -400,41 +405,6 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
     return `/storage/${relativePath.replace(/\\/g, "/")}`;
   }
 
-  private statusConcluido(status: string) {
-    return ["completed", "signed", "assinado", "concluido", "certificated"].includes(status.toLowerCase());
-  }
-
-  private statusRecusado(status: string) {
-    return [
-      "refused",
-      "rejected",
-      "rejected_by_signer",
-      "declined",
-      "denied",
-      "canceled",
-      "cancelled",
-      "cancelado",
-      "recusado",
-      "negado",
-      "reprovado"
-    ].includes(status.toLowerCase());
-  }
-
-  private statusFinalizado(status: string) {
-    return this.statusConcluido(status) || this.statusRecusado(status);
-  }
-
-  private escolherStatusAssinafy(documentStatus: unknown, assignmentStatus: unknown) {
-    const documentStatusString = this.stringOuNulo(documentStatus) ?? "pending";
-    const assignmentStatusString = this.stringOuNulo(assignmentStatus);
-
-    if (assignmentStatusString && this.statusFinalizado(assignmentStatusString)) {
-      return assignmentStatusString;
-    }
-
-    return documentStatusString;
-  }
-
   private assinafyRequestConfig() {
     return {
       headers: {
@@ -445,9 +415,9 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
 
   private async obterAccountId() {
     const response = await this.getAssinafy("/accounts", this.assinafyRequestConfig());
-    const accounts = this.extrairAccounts(response.data);
+    const accounts = extrairAccounts(response.data);
     const accountId = accounts.find((account) => typeof account.id === "string" && account.id.trim())?.id;
-    return this.exigirString(accountId, "conta Assinafy");
+    return exigirString(accountId, "conta Assinafy");
   }
 
   private async obterOuCriarSignerId(accountId: string, signer: { nome: string; email: string }) {
@@ -464,13 +434,13 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
       },
       this.assinafyRequestConfig()
     );
-    const signerPayload = this.extrairPayload(criado.data);
-    return this.exigirString(signerPayload.id, "signatario Assinafy");
+    const signerPayload = extrairPayload(criado.data);
+    return exigirString(signerPayload.id, "signatario Assinafy");
   }
 
   private async buscarSignerPorEmail(accountId: string, email: string) {
     const response = await this.getAssinafy(`/accounts/${accountId}/signers`, this.assinafyRequestConfig());
-    const signers = this.extrairLista<AssinafySigner>(response.data);
+    const signers = extrairLista<AssinafySigner>(response.data);
     const alvo = email.trim().toLowerCase();
     const signer = signers.find((item) => typeof item.email === "string" && item.email.trim().toLowerCase() === alvo);
     return typeof signer?.id === "string" && signer.id.trim() ? signer.id : null;
@@ -495,56 +465,10 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
   private tratarErroAssinafy(error: unknown): never {
     if (axios.isAxiosError(error)) {
       const responseData = error.response?.data;
-      const message = this.extrairMensagemErroAssinafy(responseData) ?? error.message;
+      const message = extrairMensagemErroAssinafy(responseData) ?? error.message;
       throw new BadRequestException(`Assinafy: ${message}`);
     }
     throw error;
-  }
-
-  private extrairMensagemErroAssinafy(data: unknown) {
-    if (this.isRecord(data) && typeof data.message === "string" && data.message.trim()) {
-      return data.message;
-    }
-    return null;
-  }
-
-  private extrairAccounts(data: unknown): AssinafyAccount[] {
-    return this.extrairLista<AssinafyAccount>(data);
-  }
-
-  private extrairLista<T>(data: unknown): T[] {
-    if (Array.isArray(data)) {
-      return data as T[];
-    }
-    if (this.isRecord(data) && Array.isArray(data.data)) {
-      return data.data as T[];
-    }
-    if (this.isRecord(data) && this.isRecord(data.data)) {
-      return [data.data as T];
-    }
-    return [];
-  }
-
-  private extrairPayload(data: unknown): Record<string, unknown> {
-    if (this.isRecord(data) && this.isRecord(data.data)) {
-      return data.data;
-    }
-    return this.isRecord(data) ? data : {};
-  }
-
-  private exigirString(value: unknown, campo: string) {
-    if (typeof value !== "string" || !value.trim()) {
-      throw new BadRequestException(`${campo} ausente.`);
-    }
-    return value;
-  }
-
-  private stringOuNulo(value: unknown) {
-    return typeof value === "string" && value.trim() ? value : null;
-  }
-
-  private isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === "object" && value !== null;
   }
 
   private syncAtivo() {

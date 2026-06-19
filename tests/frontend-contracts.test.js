@@ -1,12 +1,35 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { readFileSync } = require("node:fs");
+const { readdirSync, readFileSync } = require("node:fs");
 const { join } = require("node:path");
 
 const root = join(__dirname, "..");
 
 function read(relativePath) {
   return readFileSync(join(root, relativePath), "utf8");
+}
+
+function readAdminJs() {
+  const modulesRoot = join(root, "apps/admin/js/modules");
+  const files = [
+    "apps/admin/script.js",
+    "apps/admin/js/main.js",
+    ...readdirSync(modulesRoot, { recursive: true })
+      .filter((file) => String(file).endsWith(".js"))
+      .map((file) => `apps/admin/js/modules/${String(file).replace(/\\/g, "/")}`)
+      .sort()
+  ];
+
+  return files
+    .map((file) => read(file).replace(/\\`/g, "`").replace(/\\\$\{/g, "${"))
+    .join("\n");
+}
+
+function readAdminCss() {
+  const styles = read("apps/admin/styles.css");
+  const imports = [...styles.matchAll(/@import "\.\/([^"]+)";/g)].map((match) => `apps/admin/${match[1]}`);
+
+  return [styles, ...imports.map((file) => read(file))].join("\n");
 }
 
 function assertFileExists(relativePath) {
@@ -84,13 +107,16 @@ test("landing possui formulario de pre-chamado com CEP e limpeza de ar-condicion
 });
 
 test("admin autentica, guarda token e protege chamadas administrativas", () => {
-  const script = read("apps/admin/script.js");
+  const script = readAdminJs();
   const html = read("apps/admin/index.html");
   const main = read("apps/admin/js/main.js");
 
   assert.match(html, /<script type="module" src="\.\/js\/main\.js"><\/script>/);
-  assert.match(main, /import "\.\.\/script\.js"/);
+  assert.doesNotMatch(main, /import "\.\.\/script\.js"/);
   assert.match(main, /adminModules/);
+  assertFileExists("apps/admin/js/modules/api.js");
+  assertFileExists("apps/admin/js/modules/ui/dom.js");
+  assertFileExists("apps/admin/js/modules/auth.js");
   assertFileExists("apps/admin/js/modules/agenda.js");
   assertFileExists("apps/admin/js/modules/recorrencias.js");
   assertFileExists("apps/admin/js/modules/frota.js");
@@ -118,7 +144,7 @@ test("admin autentica, guarda token e protege chamadas administrativas", () => {
 
 test("admin possui views funcionais para agenda clientes e relatorios", () => {
   const html = read("apps/admin/index.html");
-  const script = read("apps/admin/script.js");
+  const script = readAdminJs();
   const agendaModule = read("apps/admin/js/modules/agenda.js");
   const recorrenciasModule = read("apps/admin/js/modules/recorrencias.js");
   const clientesModule = read("apps/admin/js/modules/clientes.js");
@@ -240,7 +266,7 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
 
 test("admin gerencia tecnicos equipes e responsaveis flexiveis por OS", () => {
   const html = read("apps/admin/index.html");
-  const script = read("apps/admin/script.js");
+  const script = readAdminJs();
 
   assert.match(html, /data-view="tecnicos"/);
   assert.match(html, /data-view="equipes"/);
@@ -294,8 +320,8 @@ test("landing possui assinatura publica de PMOC por token", () => {
 
 test("admin possui triagem PMOC por cliente e conversao com engenheiro", () => {
   const html = read("apps/admin/index.html");
-  const script = read("apps/admin/script.js");
-  const styles = read("apps/admin/styles.css");
+  const script = readAdminJs();
+  const styles = readAdminCss();
   const pmocModule = read("apps/admin/js/modules/pmoc.js");
 
   assert.match(html, /data-view="pmoc"/);
@@ -383,7 +409,7 @@ test("admin possui triagem PMOC por cliente e conversao com engenheiro", () => {
 
 test("admin separa frota em mapa consumo e abastecimentos", () => {
   const html = read("apps/admin/index.html");
-  const script = read("apps/admin/script.js");
+  const script = readAdminJs();
   const frotaModule = read("apps/admin/js/modules/frota.js");
 
   assert.match(html, /data-fleet-tab="mapa"/);
@@ -403,8 +429,8 @@ test("admin separa frota em mapa consumo e abastecimentos", () => {
 
 test("admin mostra todos os veiculos no Leaflet e permite zoom por carro", () => {
   const html = read("apps/admin/index.html");
-  const script = read("apps/admin/script.js");
-  const styles = read("apps/admin/styles.css");
+  const script = readAdminJs();
+  const styles = readAdminCss();
 
   assert.match(html, /\.\/vendor\/leaflet\/leaflet\.css/);
   assert.match(html, /\.\/vendor\/leaflet\/leaflet\.js/);
@@ -413,13 +439,17 @@ test("admin mostra todos os veiculos no Leaflet e permite zoom por carro", () =>
   assert.match(styles, /@import "\.\/css\/agenda\.css"/);
   assert.match(styles, /@import "\.\/css\/frota\.css"/);
   assert.match(styles, /@import "\.\/css\/clientes\.css"/);
+  assert.match(styles, /@import "\.\/css\/relatorios\.css"/);
   assert.match(styles, /@import "\.\/css\/pmoc\.css"/);
+  assert.match(styles, /@import "\.\/css\/responsive\.css"/);
   assertFileExists("apps/admin/css/base.css");
   assertFileExists("apps/admin/css/layout.css");
   assertFileExists("apps/admin/css/agenda.css");
   assertFileExists("apps/admin/css/frota.css");
   assertFileExists("apps/admin/css/clientes.css");
+  assertFileExists("apps/admin/css/relatorios.css");
   assertFileExists("apps/admin/css/pmoc.css");
+  assertFileExists("apps/admin/css/responsive.css");
   assert.doesNotMatch(html, /openstreetmap\.org\/export\/embed\.html/);
   assert.match(script, /L\.map\(fleetMap/);
   assert.match(script, /L\.tileLayer\("https:\/\/\{s\}\.tile\.openstreetmap\.org/);

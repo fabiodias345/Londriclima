@@ -2,85 +2,8 @@ import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nest
 import { ConfigService } from "@nestjs/config";
 import { AutomacaoStatus, AutomacaoTipo, Prisma } from "@prisma/client";
 import { PrismaService } from "../../database/prisma.service";
+import { validarPayloadAutomacaoEmail } from "./automacoes-email-payload";
 import { EmailDeliveryResult, EmailSender, SmtpEmailService } from "./smtp-email.service";
-
-type AutomacaoEmailPayload = {
-  tipo?: unknown;
-  relatorio_id?: unknown;
-  cliente_id?: unknown;
-  cliente_nome?: unknown;
-  cliente_email?: unknown;
-  data_envio?: unknown;
-  engenheiro_cpf?: unknown;
-  engenheiro_email?: unknown;
-  engenheiro_nome?: unknown;
-  engenheiro_crea?: unknown;
-  data_evento?: unknown;
-  assinafy_status?: unknown;
-  periodo_inicio?: unknown;
-  periodo_fim?: unknown;
-  total_maquinas?: unknown;
-  total_os_concluidas?: unknown;
-  os_ids?: unknown;
-  link_assinatura?: unknown;
-  pdf_hash?: unknown;
-  pdf_filename?: unknown;
-  pdf_base64?: unknown;
-};
-
-type PayloadAssinaturaEngenheiro = {
-  tipo: "pmoc_assinatura_engenheiro";
-  relatorio_id: string;
-  cliente_nome: string;
-  cliente_email: string;
-  data_envio: string;
-  engenheiro_email: string;
-  engenheiro_nome: string;
-  link_assinatura: string;
-  pdf_hash: string;
-  pdf_filename: string;
-  pdf_base64: string;
-};
-
-type PayloadRelatorioAssinado = {
-  tipo: "pmoc_relatorio_assinado";
-  relatorio_id: string;
-  cliente_id: string;
-  cliente_nome: string;
-  cliente_email: string;
-  data_envio: string;
-  engenheiro_nome: string;
-  engenheiro_cpf: string;
-  engenheiro_crea: string;
-  pdf_hash: string;
-  pdf_filename: string;
-  pdf_base64: string;
-};
-
-type PayloadAssinaturaNegada = {
-  tipo: "pmoc_assinatura_negada";
-  relatorio_id: string;
-  cliente_nome: string;
-  cliente_email: string;
-  data_evento: string;
-  engenheiro_nome: string;
-  assinafy_status: string;
-};
-
-type PayloadRelatorioTecnicoAvulso = {
-  tipo: "relatorio_tecnico_avulso";
-  cliente_id: string;
-  cliente_nome: string;
-  cliente_email: string;
-  data_envio: string;
-  periodo_inicio: string | null;
-  periodo_fim: string | null;
-  total_maquinas: number;
-  total_os_concluidas: number;
-  os_ids: string[];
-  pdf_filename: string;
-  pdf_base64: string;
-};
 
 @Injectable()
 export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
@@ -248,7 +171,7 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
   }
 
   private montarEmail(payload: Prisma.JsonValue) {
-    const dados = this.validarPayload(payload);
+    const dados = validarPayloadAutomacaoEmail(payload);
     const from = this.config.get<string>("SMTP_FROM", "AIRMOVEBR <noreply@airmovebr.com.br>");
 
     if (dados.tipo === "pmoc_assinatura_engenheiro") {
@@ -365,80 +288,6 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
-  private validarPayload(
-    payload: Prisma.JsonValue
-  ): PayloadAssinaturaEngenheiro | PayloadRelatorioAssinado | PayloadAssinaturaNegada | PayloadRelatorioTecnicoAvulso {
-    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
-      throw new Error("Payload de e-mail invalido.");
-    }
-
-    const dados = payload as AutomacaoEmailPayload;
-
-    if (dados.tipo === "pmoc_assinatura_engenheiro") {
-      return {
-        tipo: dados.tipo,
-        relatorio_id: this.exigirString(dados.relatorio_id, "relatorio_id"),
-        cliente_nome: this.exigirString(dados.cliente_nome, "cliente_nome"),
-        cliente_email: this.exigirString(dados.cliente_email, "cliente_email"),
-        data_envio: this.exigirString(dados.data_envio, "data_envio"),
-        engenheiro_email: this.exigirString(dados.engenheiro_email, "engenheiro_email"),
-        engenheiro_nome: this.exigirString(dados.engenheiro_nome, "engenheiro_nome"),
-        link_assinatura: this.exigirString(dados.link_assinatura, "link_assinatura"),
-        pdf_hash: this.exigirString(dados.pdf_hash, "pdf_hash"),
-        pdf_filename: this.exigirString(dados.pdf_filename, "pdf_filename"),
-        pdf_base64: this.exigirString(dados.pdf_base64, "pdf_base64")
-      };
-    }
-
-    if (dados.tipo === "pmoc_relatorio_assinado") {
-      return {
-        tipo: dados.tipo,
-        relatorio_id: this.exigirString(dados.relatorio_id, "relatorio_id"),
-        cliente_id: this.exigirString(dados.cliente_id, "cliente_id"),
-        cliente_nome: this.exigirString(dados.cliente_nome, "cliente_nome"),
-        cliente_email: this.exigirString(dados.cliente_email, "cliente_email"),
-        data_envio: this.exigirString(dados.data_envio, "data_envio"),
-        engenheiro_nome: this.exigirString(dados.engenheiro_nome, "engenheiro_nome"),
-        engenheiro_cpf: this.exigirString(dados.engenheiro_cpf, "engenheiro_cpf"),
-        engenheiro_crea: this.exigirString(dados.engenheiro_crea, "engenheiro_crea"),
-        pdf_hash: this.exigirString(dados.pdf_hash, "pdf_hash"),
-        pdf_filename: this.exigirString(dados.pdf_filename, "pdf_filename"),
-        pdf_base64: this.exigirString(dados.pdf_base64, "pdf_base64")
-      };
-    }
-
-    if (dados.tipo === "relatorio_tecnico_avulso") {
-      return {
-        tipo: dados.tipo,
-        cliente_id: this.exigirString(dados.cliente_id, "cliente_id"),
-        cliente_nome: this.exigirString(dados.cliente_nome, "cliente_nome"),
-        cliente_email: this.exigirString(dados.cliente_email, "cliente_email"),
-        data_envio: this.exigirString(dados.data_envio, "data_envio"),
-        periodo_inicio: this.stringOuNulo(dados.periodo_inicio),
-        periodo_fim: this.stringOuNulo(dados.periodo_fim),
-        total_maquinas: this.exigirNumero(dados.total_maquinas, "total_maquinas"),
-        total_os_concluidas: this.exigirNumero(dados.total_os_concluidas, "total_os_concluidas"),
-        os_ids: this.exigirListaStrings(dados.os_ids, "os_ids"),
-        pdf_filename: this.exigirString(dados.pdf_filename, "pdf_filename"),
-        pdf_base64: this.exigirString(dados.pdf_base64, "pdf_base64")
-      };
-    }
-
-    if (dados.tipo === "pmoc_assinatura_negada") {
-      return {
-        tipo: dados.tipo,
-        relatorio_id: this.exigirString(dados.relatorio_id, "relatorio_id"),
-        cliente_nome: this.exigirString(dados.cliente_nome, "cliente_nome"),
-        cliente_email: this.exigirString(dados.cliente_email, "cliente_email"),
-        data_evento: this.exigirString(dados.data_evento, "data_evento"),
-        engenheiro_nome: this.exigirString(dados.engenheiro_nome, "engenheiro_nome"),
-        assinafy_status: this.exigirString(dados.assinafy_status, "assinafy_status")
-      };
-    }
-
-    throw new Error("Tipo de e-mail nao suportado.");
-  }
-
   private obterEmailAlertaPmoc() {
     const configurado =
       this.config.get<string>("PMOC_SIGNATURE_ALERT_EMAIL") ||
@@ -467,34 +316,6 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
     }
 
     return valor.match(/<([^>]+)>/)?.[1] ?? valor;
-  }
-
-  private exigirString(valor: unknown, campo: string) {
-    if (typeof valor !== "string" || !valor.trim()) {
-      throw new Error(`Payload de e-mail sem ${campo}.`);
-    }
-
-    return valor.trim();
-  }
-
-  private stringOuNulo(valor: unknown) {
-    return typeof valor === "string" && valor.trim() ? valor.trim() : null;
-  }
-
-  private exigirNumero(valor: unknown, campo: string) {
-    if (typeof valor !== "number" || !Number.isFinite(valor)) {
-      throw new Error(`Payload de e-mail sem ${campo}.`);
-    }
-
-    return valor;
-  }
-
-  private exigirListaStrings(valor: unknown, campo: string) {
-    if (!Array.isArray(valor) || valor.some((item) => typeof item !== "string" || !item.trim())) {
-      throw new Error(`Payload de e-mail sem ${campo}.`);
-    }
-
-    return valor.map((item) => item.trim());
   }
 
   private formatarPeriodoRelatorioAvulso(inicio: string | null, fim: string | null) {

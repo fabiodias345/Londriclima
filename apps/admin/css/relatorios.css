@@ -1,0 +1,87 @@
+.split-header {
+  border-top: 1px solid var(--line);
+}
+
+.compact-header {
+  padding: 16px 20px;
+}
+
+.compact-header h2 {
+  font-size: 18px;
+}
+
+.compact-list .data-row {
+  grid-template-columns: minmax(180px, 1fr) minmax(170px, 0.8fr) minmax(130px, 0.6fr);
+  padding: 14px 20px;
+}
+
+.fuel-row strong {
+  color: var(--navy);
+}
+
+.report-grid + .worklist-header {
+  border-top: 1px solid var(--line);
+}
+
+.report-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+}
+
+.report-grid article {
+  display: grid;
+  gap: 10px;
+  min-height: 150px;
+  padding: 22px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.report-grid article:nth-child(4n) {
+  border-right: 0;
+}
+
+.report-grid span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.report-grid strong {
+  font-family: "Archivo", sans-serif;
+  font-size: 36px;
+}
+
+.report-period-card {
+  align-content: space-between;
+}
+
+.period-metric {
+  display: grid;
+  gap: 2px;
+}
+
+.period-metric small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.period-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.period-breakdown span {
+  padding: 7px 9px;
+  border-radius: var(--radius);
+  background: rgba(238, 243, 241, 0.84);
+}
+
+.period-breakdown b {
+  color: var(--ink);
+}
+

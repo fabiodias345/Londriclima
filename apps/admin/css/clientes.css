@@ -1,1 +1,196 @@
-/* Client, equipment, technician and team rules stay in styles.css during the progressive split. */
+.client-form {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(238, 243, 241, 0.64);
+}
+
+.equipment-panel {
+  border-bottom: 1px solid var(--line);
+  background: var(--white);
+}
+
+.equipment-form {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  padding: 18px 22px;
+  border-top: 1px solid var(--line);
+  background: rgba(0, 140, 149, 0.05);
+}
+
+.equipment-form .form-actions,
+.equipment-form .status {
+  grid-column: 1 / -1;
+}
+
+.toggle-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+}
+
+.toggle-field input {
+  width: 18px;
+  height: 18px;
+}
+
+.scanner-panel {
+  display: grid;
+  gap: 12px;
+  padding: 18px 22px;
+  border-top: 1px solid var(--line);
+  background: var(--navy);
+}
+
+.scanner-panel video {
+  width: min(520px, 100%);
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius);
+  background: #000;
+}
+
+.equipment-secret {
+  color: var(--danger) !important;
+  font-weight: 900;
+}
+
+.equipment-link {
+  color: var(--teal) !important;
+  font-weight: 900;
+  word-break: break-all;
+}
+
+.client-form .form-actions,
+.client-form .status,
+.client-form .cep-status {
+  grid-column: 1 / -1;
+}
+
+.cep-status {
+  min-height: 18px;
+  margin: -4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.cep-status[data-state="success"] {
+  color: var(--teal);
+}
+
+.cep-status[data-state="warning"] {
+  color: var(--danger);
+}
+
+.cep-status[data-state="loading"] {
+  color: var(--navy);
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.form-fieldset {
+  grid-column: 1 / -1;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.form-fieldset legend {
+  padding: 0 6px;
+  font-weight: 800;
+}
+
+.checkbox-list {
+  display: grid;
+  gap: 10px;
+}
+
+.team-member-option {
+  display: grid;
+  grid-template-columns: auto 1fr minmax(120px, 160px);
+  align-items: center;
+  gap: 10px;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(7, 21, 29, 0.48);
+}
+
+.confirm-modal {
+  width: min(440px, 100%);
+  display: grid;
+  gap: 14px;
+  padding: 24px;
+  border-radius: var(--radius);
+  background: var(--white);
+  box-shadow: var(--shadow);
+}
+
+.agenda-os-modal {
+  width: min(920px, 100%);
+}
+
+.agenda-os-modal form {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.agenda-os-modal textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 13px 14px;
+  resize: vertical;
+  font: inherit;
+}
+
+.modal-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.full-span {
+  grid-column: 1 / -1;
+}
+
+.confirm-modal h2 {
+  font-family: "Archivo", sans-serif;
+  font-size: 28px;
+}
+
+.confirm-modal p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.modal-actions button {
+  border: 0;
+  border-radius: var(--radius);
+  min-height: 44px;
+  padding: 0 14px;
+  font-weight: 900;
+}
+

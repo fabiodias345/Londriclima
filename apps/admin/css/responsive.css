@@ -1,0 +1,86 @@
+@media (max-width: 940px) {
+  .sidebar {
+    position: static;
+    width: auto;
+  }
+
+  .side-nav {
+    gap: 12px;
+  }
+
+  .nav-group {
+    padding-bottom: 12px;
+  }
+
+  .app-shell {
+    margin-left: 0;
+    padding: 20px;
+  }
+
+  .login-panel,
+  .summary-grid,
+  .agenda-board,
+  .agenda-slot,
+  .agenda-service-card,
+  .agenda-os-modal form,
+  .recurrence-form,
+  .recurrence-card,
+  .fleet-map-panel,
+  .client-form,
+  .dispatch-form,
+  .pmoc-hero,
+  .pmoc-grid,
+  .pmoc-detail-header,
+  .pmoc-alerts,
+  .pmoc-client-card,
+  .pmoc-dossier-row,
+  .pmoc-machine-card,
+  .request-card,
+  .data-row,
+  .report-grid {
+    grid-template-columns: 1fr;
+  }
+
+  #relatoriosSummary {
+    grid-template-columns: 1fr;
+  }
+
+  .report-grid article {
+    border-right: 0;
+  }
+
+  .pmoc-results-panel {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .pmoc-month-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .request-actions {
+    justify-content: stretch;
+  }
+
+  .request-actions button {
+    flex: 1;
+  }
+
+  .agenda-slot time {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .agenda-month-header {
+    grid-template-columns: 40px 1fr 40px;
+  }
+
+  .agenda-month-cell {
+    min-height: 92px;
+    padding: 6px;
+  }
+
+  .agenda-month-services strong {
+    font-size: 10px;
+  }
+}
