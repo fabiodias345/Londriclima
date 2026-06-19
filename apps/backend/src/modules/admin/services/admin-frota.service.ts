@@ -3,10 +3,76 @@ import { Prisma } from "@prisma/client";
 import { PrismaService } from "../../../database/prisma.service";
 import { AuthenticatedUser } from "../../auth/auth-user";
 import { CriarAbastecimentoDto } from "../dto/criar-abastecimento.dto";
+import { SalvarVeiculoDto } from "../dto/salvar-veiculo.dto";
 
 @Injectable()
 export class AdminFrotaService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async listarVeiculos(usuario: AuthenticatedUser) {
+    const veiculos = await this.prisma.veiculo.findMany({
+      where: {
+        empresaId: usuario.empresa_id,
+        ativo: true
+      },
+      orderBy: {
+        nome: "asc"
+      },
+      select: this.veiculoSelect()
+    });
+
+    return {
+      total: veiculos.length,
+      items: veiculos.map((veiculo) => this.mapearVeiculo(veiculo))
+    };
+  }
+
+  async criarVeiculo(dto: SalvarVeiculoDto, usuario: AuthenticatedUser) {
+    const veiculo = await this.prisma.veiculo.create({
+      data: {
+        empresaId: usuario.empresa_id,
+        ...this.normalizarVeiculoPayload(dto)
+      },
+      select: this.veiculoSelect()
+    });
+
+    return this.mapearVeiculo(veiculo);
+  }
+
+  async atualizarVeiculo(veiculoId: string, dto: SalvarVeiculoDto, usuario: AuthenticatedUser) {
+    await this.garantirVeiculoDaEmpresa(veiculoId, usuario);
+
+    const veiculo = await this.prisma.veiculo.update({
+      where: {
+        id: veiculoId
+      },
+      data: this.normalizarVeiculoPayload(dto),
+      select: this.veiculoSelect()
+    });
+
+    return this.mapearVeiculo(veiculo);
+  }
+
+  async apagarVeiculo(veiculoId: string, usuario: AuthenticatedUser) {
+    await this.garantirVeiculoDaEmpresa(veiculoId, usuario);
+
+    const veiculo = await this.prisma.veiculo.update({
+      where: {
+        id: veiculoId
+      },
+      data: {
+        ativo: false
+      },
+      select: {
+        id: true
+      }
+    });
+
+    return {
+      id: veiculo.id,
+      apagado: true
+    };
+  }
 
   async listarLocalizacoesFrota(usuario: AuthenticatedUser) {
     const veiculos = await this.prisma.veiculo.findMany({
@@ -288,5 +354,63 @@ export class AdminFrotaService {
 
   private estaNoPeriodo(data: Date | null | undefined, periodo: { inicio: Date; fim: Date }) {
     return Boolean(data && data >= periodo.inicio && data < periodo.fim);
+  }
+
+  private async garantirVeiculoDaEmpresa(veiculoId: string, usuario: AuthenticatedUser) {
+    const veiculo = await this.prisma.veiculo.findFirst({
+      where: {
+        id: veiculoId,
+        empresaId: usuario.empresa_id,
+        ativo: true
+      },
+      select: {
+        id: true
+      }
+    });
+
+    if (!veiculo) {
+      throw new NotFoundException("Veiculo nao encontrado.");
+    }
+  }
+
+  private normalizarVeiculoPayload(dto: SalvarVeiculoDto) {
+    return {
+      nome: dto.nome.trim(),
+      placa: dto.placa?.trim().toUpperCase() || null,
+      rastreadorImei: dto.rastreador_imei?.trim() || null,
+      ativo: dto.ativo !== false
+    };
+  }
+
+  private veiculoSelect() {
+    return {
+      id: true,
+      nome: true,
+      placa: true,
+      rastreadorImei: true,
+      ativo: true,
+      criadoEm: true,
+      atualizadoEm: true
+    };
+  }
+
+  private mapearVeiculo(veiculo: {
+    id: string;
+    nome: string;
+    placa: string | null;
+    rastreadorImei: string | null;
+    ativo: boolean;
+    criadoEm: Date;
+    atualizadoEm: Date;
+  }) {
+    return {
+      id: veiculo.id,
+      nome: veiculo.nome,
+      placa: veiculo.placa,
+      rastreador_imei: veiculo.rastreadorImei,
+      ativo: veiculo.ativo,
+      criado_em: veiculo.criadoEm.toISOString(),
+      atualizado_em: veiculo.atualizadoEm.toISOString()
+    };
   }
 }

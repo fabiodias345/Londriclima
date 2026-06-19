@@ -10,7 +10,7 @@ Atualizado em: 19/06/2026
 - Produto: site, admin, API e app Android inicial da AIRMOVEBR.
 - Fluxos principais ja existem: pre-chamado, OS, agenda, recorrencia, frota, tecnicos/equipes, PMOC com Assinafy e envio SMTP.
 - Google Drive esta fora do fluxo PMOC nesta fase.
-- Fase atual: fases 14 e 15 concluidas localmente; pendente deploy.
+- Fase atual: fases 14 e 15 concluidas. Commit e deploy passam a ser manuais pelo usuario.
 
 ## Regra de Manutencao
 
@@ -110,6 +110,7 @@ Excecoes/pendencias restantes acima de 500 linhas:
 - Dominio: `airmovebr.com.br`
 - IP esperado: `191.252.226.11`
 - Deploy real: `/opt/airmovebr/repo`
+- Regra atual: Codex nao deve fazer commit, push ou deploy automaticamente. O usuario fara manualmente usando `docs/deploy_git.md` e `docs/deploy_ssh.md`.
 - Bloqueio conhecido: dominio ainda depende de apontamento DNS/gestao no Registro.br.
 - Antes de trocar DNS, validar por IP:
 

@@ -59,6 +59,103 @@ test("listarLocalizacoesFrota filtra veiculos ativos pela empresa do usuario", a
   assert.equal(resposta.items[0].localizacao?.velocidade_kmh, 42.5);
 });
 
+test("gerencia veiculos da frota por empresa e apaga por inativacao", async () => {
+  const chamadas = {
+    findManyWhere: undefined as unknown,
+    createData: undefined as unknown,
+    updateWhere: undefined as unknown,
+    updateData: undefined as unknown,
+    deleteWhere: undefined as unknown,
+    deleteData: undefined as unknown
+  };
+  const prisma = {
+    veiculo: {
+      findMany: async ({ where }: { where: unknown }) => {
+        chamadas.findManyWhere = where;
+        return [
+          {
+            id: "veiculo-1",
+            nome: "Carro 1",
+            placa: "ABC1D23",
+            rastreadorImei: "123456789",
+            ativo: true,
+            criadoEm: new Date("2026-06-10T10:00:00.000Z"),
+            atualizadoEm: new Date("2026-06-11T10:00:00.000Z")
+          }
+        ];
+      },
+      findFirst: async ({ where }: { where: { id?: string } }) =>
+        where.id === "veiculo-1" ? { id: "veiculo-1" } : null,
+      create: async ({ data }: { data: unknown }) => {
+        chamadas.createData = data;
+        return {
+          id: "veiculo-2",
+          nome: "Carro 2",
+          placa: "DEF2E34",
+          rastreadorImei: null,
+          ativo: true,
+          criadoEm: new Date("2026-06-12T10:00:00.000Z"),
+          atualizadoEm: new Date("2026-06-12T10:00:00.000Z")
+        };
+      },
+      update: async ({ where, data }: { where: unknown; data: unknown }) => {
+        if ((data as { ativo?: boolean }).ativo === false) {
+          chamadas.deleteWhere = where;
+          chamadas.deleteData = data;
+          return { id: "veiculo-1" };
+        }
+
+        chamadas.updateWhere = where;
+        chamadas.updateData = data;
+        return {
+          id: "veiculo-1",
+          nome: (data as { nome: string }).nome,
+          placa: (data as { placa?: string | null }).placa,
+          rastreadorImei: (data as { rastreadorImei?: string | null }).rastreadorImei,
+          ativo: (data as { ativo?: boolean }).ativo,
+          criadoEm: new Date("2026-06-10T10:00:00.000Z"),
+          atualizadoEm: new Date("2026-06-12T10:00:00.000Z")
+        };
+      }
+    }
+  };
+  const service = criarService(prisma);
+
+  const lista = await service.listarVeiculosFrota(usuario);
+  const criado = await service.criarVeiculoFrota(
+    { nome: " Carro 2 ", placa: " def2e34 ", rastreador_imei: "" },
+    usuario
+  );
+  const atualizado = await service.atualizarVeiculoFrota(
+    "veiculo-1",
+    { nome: " Carro 1 ", placa: " abc1d23 ", rastreador_imei: " 123456789 ", ativo: true },
+    usuario
+  );
+  const apagado = await service.apagarVeiculoFrota("veiculo-1", usuario);
+
+  assert.deepEqual(chamadas.findManyWhere, { empresaId: "empresa-1", ativo: true });
+  assert.deepEqual(chamadas.createData, {
+    empresaId: "empresa-1",
+    nome: "Carro 2",
+    placa: "DEF2E34",
+    rastreadorImei: null,
+    ativo: true
+  });
+  assert.deepEqual(chamadas.updateWhere, { id: "veiculo-1" });
+  assert.deepEqual(chamadas.updateData, {
+    nome: "Carro 1",
+    placa: "ABC1D23",
+    rastreadorImei: "123456789",
+    ativo: true
+  });
+  assert.deepEqual(chamadas.deleteWhere, { id: "veiculo-1" });
+  assert.deepEqual(chamadas.deleteData, { ativo: false });
+  assert.equal(lista.total, 1);
+  assert.equal(criado.placa, "DEF2E34");
+  assert.equal(atualizado.placa, "ABC1D23");
+  assert.deepEqual(apagado, { id: "veiculo-1", apagado: true });
+});
+
 test("obterRelatorios consolida clientes, OS, frota, receitas e automacoes por dia mes e ano", async () => {
   const prisma = {
     ordemServico: {

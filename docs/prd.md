@@ -128,6 +128,11 @@ e motor de recorrência para lembretes preventivos de manutenção.
 
 ## Decisões Arquiteturais Importantes
 
+**Commit e deploy manuais.**
+A partir de 19/06/2026, Codex nao deve executar commit, push ou deploy
+automaticamente neste projeto. O usuario fara essas etapas manualmente
+usando os roteiros `docs/deploy_git.md` e `docs/deploy_ssh.md`.
+
 **GPS por eventos, não contínuo.**
 O app não rastreia o técnico em segundo plano. A geolocalização é
 capturada apenas nos três gatilhos manuais da OS: Iniciar Rota,

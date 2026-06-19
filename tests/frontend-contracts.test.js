@@ -413,8 +413,12 @@ test("admin separa frota em mapa consumo e abastecimentos", () => {
   const frotaModule = read("apps/admin/js/modules/frota.js");
 
   assert.match(html, /data-fleet-tab="mapa"/);
+  assert.match(html, /data-fleet-tab="veiculos"/);
   assert.match(html, /data-fleet-tab="consumo"/);
   assert.match(html, /data-fleet-tab="abastecimentos"/);
+  assert.match(html, /id="vehicleForm"/);
+  assert.match(html, /id="vehicleList"/);
+  assert.match(html, /Cadastrar veiculo/);
   assert.match(html, /id="fleetReportExportButton"/);
   assert.match(html, /id="fleetReportList"/);
   assert.match(html, /id="fuelHistoryList"/);
@@ -422,6 +426,10 @@ test("admin separa frota em mapa consumo e abastecimentos", () => {
   assert.match(html, /Registrar abastecimento manual/);
   assert.match(script, /function setFleetTab/);
   assert.match(frotaModule, /view:\s*"frota"/);
+  assert.match(script, /async function loadFleetVehicles/);
+  assert.match(script, /async function submitVehicle/);
+  assert.match(script, /async function deleteVehicle/);
+  assert.match(script, /\/admin\/frota\/veiculos/);
   assert.match(script, /async function loadRelatorioFrota/);
   assert.match(script, /async function submitFuel/);
   assert.match(script, /function openFleetReport/);
