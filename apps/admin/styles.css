@@ -1,3 +1,10 @@
+@import "./css/base.css";
+@import "./css/layout.css";
+@import "./css/agenda.css";
+@import "./css/frota.css";
+@import "./css/clientes.css";
+@import "./css/pmoc.css";
+
 :root {
   --ink: #07151d;
   --muted: #66747b;

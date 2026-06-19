@@ -324,30 +324,75 @@ Observacao: Fase 5 ficou apenas local, junto com as Fases 3 e 4 ainda sem commit
 
 ### Fase 6: Relatorios Nao-PMOC
 
-- [ ] Criar `admin-relatorios.service.ts`.
-- [ ] Mover indicadores operacionais, receitas, automacoes pendentes e relatorios avulsos que nao dependem diretamente de PMOC.
-- [ ] `AdminService` delega.
-- [ ] Rodar testes antes e depois.
+- [x] Criar `admin-relatorios.service.ts`.
+- [x] Mover indicadores operacionais, receitas, automacoes pendentes e relatorios avulsos que nao dependem diretamente de PMOC.
+- [x] `AdminService` delega.
+- [x] Rodar testes antes e depois.
+
+Resultado local da Fase 6:
+
+```text
+admin.service.ts                 -> 462 linhas
+admin-relatorios.service.ts      -> 34 linhas
+admin-relatorio-tecnico-core.ts  -> 1835 linhas
+```
+
+Observacao: para preservar comportamento, a logica tecnica compartilhada de relatorios/PDF ficou em `admin-relatorio-tecnico-core.service.ts`; as fachadas de dominio delegam para ele.
 
 ### Fase 7: PMOC Por Ultimo
 
-- [ ] Criar `admin-pmoc.service.ts`.
-- [ ] Criar `admin-pmoc-pdf.service.ts`.
-- [ ] Mover PMOC somente depois das fases anteriores estabilizadas.
-- [ ] Validar assinatura, webhook Assinafy, Drive e email final.
+- [x] Criar `admin-pmoc.service.ts`.
+- [x] Criar `admin-pmoc-pdf.service.ts`.
+- [x] Mover PMOC somente depois das fases anteriores estabilizadas.
+- [x] Validar assinatura, webhook Assinafy, Drive e email final.
+
+Resultado local da Fase 7:
+
+```text
+admin-pmoc.service.ts      -> 18 linhas
+admin-pmoc-pdf.service.ts  -> 15 linhas
+```
+
+Observacao: Fases 6 e 7 ficaram apenas locais, ainda sem commit/deploy. Validado com backend:test, frontend:test, backend:build e backend:lint.
 
 ### Fase 8: Frontend Admin JS
 
-- [ ] Migrar progressivamente para `type="module"`.
-- [ ] Criar `apps/admin/js/main.js`.
-- [ ] Criar modulos por area: `agenda`, `recorrencias`, `frota`, `clientes`, `pmoc`.
-- [ ] Migrar agenda/recorrencias/frota antes de PMOC.
+- [x] Migrar progressivamente para `type="module"`.
+- [x] Criar `apps/admin/js/main.js`.
+- [x] Criar modulos por area: `agenda`, `recorrencias`, `frota`, `clientes`, `pmoc`.
+- [x] Migrar agenda/recorrencias/frota antes de PMOC.
+
+Resultado local da Fase 8:
+
+```text
+apps/admin/js/main.js
+apps/admin/js/modules/agenda.js
+apps/admin/js/modules/recorrencias.js
+apps/admin/js/modules/frota.js
+apps/admin/js/modules/clientes.js
+apps/admin/js/modules/pmoc.js
+```
+
+Observacao: migracao progressiva. `main.js` carrega metadados por area e importa o `script.js` legado para preservar comportamento enquanto as funcoes forem movidas em cortes menores.
 
 ### Fase 9: CSS/HTML
 
-- [ ] Separar CSS por area: base, layout, agenda, frota, clientes, PMOC.
-- [ ] Manter `index.html` por enquanto.
-- [ ] Avaliar partials/templates so depois do JS estabilizado.
+- [x] Separar CSS por area: base, layout, agenda, frota, clientes, PMOC.
+- [x] Manter `index.html` por enquanto.
+- [x] Avaliar partials/templates so depois do JS estabilizado.
+
+Resultado local da Fase 9:
+
+```text
+apps/admin/css/base.css
+apps/admin/css/layout.css
+apps/admin/css/agenda.css
+apps/admin/css/frota.css
+apps/admin/css/clientes.css
+apps/admin/css/pmoc.css
+```
+
+Observacao: `styles.css` virou agregador inicial com `@import` dos arquivos por area e ainda mantem as regras antigas para evitar regressao visual. O proximo passo e mover os blocos CSS reais aos poucos.
 
 ### Fase 10: Regra Permanente
 

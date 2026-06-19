@@ -9,6 +9,10 @@ function read(relativePath) {
   return readFileSync(join(root, relativePath), "utf8");
 }
 
+function assertFileExists(relativePath) {
+  assert.doesNotThrow(() => read(relativePath), `${relativePath} deve existir`);
+}
+
 test("landing envia pre-chamado publico para a API com JSON", () => {
   const script = read("apps/landing/script.js");
 
@@ -81,6 +85,17 @@ test("landing possui formulario de pre-chamado com CEP e limpeza de ar-condicion
 
 test("admin autentica, guarda token e protege chamadas administrativas", () => {
   const script = read("apps/admin/script.js");
+  const html = read("apps/admin/index.html");
+  const main = read("apps/admin/js/main.js");
+
+  assert.match(html, /<script type="module" src="\.\/js\/main\.js"><\/script>/);
+  assert.match(main, /import "\.\.\/script\.js"/);
+  assert.match(main, /adminModules/);
+  assertFileExists("apps/admin/js/modules/agenda.js");
+  assertFileExists("apps/admin/js/modules/recorrencias.js");
+  assertFileExists("apps/admin/js/modules/frota.js");
+  assertFileExists("apps/admin/js/modules/clientes.js");
+  assertFileExists("apps/admin/js/modules/pmoc.js");
 
   assert.match(script, /http:\/\/localhost:3000\/api\/v1/);
   assert.match(script, /https:\/\/api\.airmovebr\.com\.br\/api\/v1/);
@@ -104,6 +119,9 @@ test("admin autentica, guarda token e protege chamadas administrativas", () => {
 test("admin possui views funcionais para agenda clientes e relatorios", () => {
   const html = read("apps/admin/index.html");
   const script = read("apps/admin/script.js");
+  const agendaModule = read("apps/admin/js/modules/agenda.js");
+  const recorrenciasModule = read("apps/admin/js/modules/recorrencias.js");
+  const clientesModule = read("apps/admin/js/modules/clientes.js");
 
   assert.match(html, /data-view="agenda"/);
   assert.match(html, /data-view="recorrencias"/);
@@ -154,6 +172,8 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(html, /id="relatoriosAvulsosView"/);
   assert.match(html, /id="relatoriosAvulsosList"/);
   assert.match(script, /async function loadAgenda/);
+  assert.match(agendaModule, /view:\s*"agenda"/);
+  assert.match(agendaModule, /summaryId:\s*"agendaSummary"/);
   assert.match(script, /async function submitAgendaOs/);
   assert.match(script, /function openAgendaOsModal/);
   assert.match(script, /function renderAgendaMonthGrid/);
@@ -165,6 +185,7 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(script, /\/admin\/agenda\/ordens/);
   assert.match(script, /\/admin\/agenda\/ordens\/\$\{agendaEditingOsId\}/);
   assert.match(script, /async function loadRecorrencias/);
+  assert.match(recorrenciasModule, /view:\s*"recorrencias"/);
   assert.match(script, /async function submitRecurrence/);
   assert.match(script, /function renderRecorrencias/);
   assert.match(script, /function renderRecurrenceCard/);
@@ -177,6 +198,7 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(script, /async function submitEmpresa/);
   assert.match(script, /fetch\(`\$\{apiBaseUrl\}\/admin\/empresa`/);
   assert.match(script, /async function loadClientes/);
+  assert.match(clientesModule, /view:\s*"clientes"/);
   assert.match(script, /async function loadRelatorios/);
   assert.match(script, /function renderPeriodMetric/);
   assert.match(script, /function openReportsPrint/);
@@ -274,6 +296,7 @@ test("admin possui triagem PMOC por cliente e conversao com engenheiro", () => {
   const html = read("apps/admin/index.html");
   const script = read("apps/admin/script.js");
   const styles = read("apps/admin/styles.css");
+  const pmocModule = read("apps/admin/js/modules/pmoc.js");
 
   assert.match(html, /data-view="pmoc"/);
   assert.match(html, /id="pmocView"/);
@@ -295,6 +318,8 @@ test("admin possui triagem PMOC por cliente e conversao com engenheiro", () => {
   assert.match(html, /id="pmocGenerateReportButton"[^>]*disabled/);
   assert.match(html, /id="pmocRequestSignatureButton"[^>]*disabled/);
   assert.match(script, /function loadPmoc/);
+  assert.match(pmocModule, /view:\s*"pmoc"/);
+  assert.match(pmocModule, /summaryId:\s*"pmocSummary"/);
   assert.match(script, /function searchPmocClients/);
   assert.match(script, /function resetPmocSearchResults/);
   assert.match(script, /function openPmocConversion/);
@@ -359,6 +384,7 @@ test("admin possui triagem PMOC por cliente e conversao com engenheiro", () => {
 test("admin separa frota em mapa consumo e abastecimentos", () => {
   const html = read("apps/admin/index.html");
   const script = read("apps/admin/script.js");
+  const frotaModule = read("apps/admin/js/modules/frota.js");
 
   assert.match(html, /data-fleet-tab="mapa"/);
   assert.match(html, /data-fleet-tab="consumo"/);
@@ -369,6 +395,7 @@ test("admin separa frota em mapa consumo e abastecimentos", () => {
   assert.match(html, /id="fuelForm"/);
   assert.match(html, /Registrar abastecimento manual/);
   assert.match(script, /function setFleetTab/);
+  assert.match(frotaModule, /view:\s*"frota"/);
   assert.match(script, /async function loadRelatorioFrota/);
   assert.match(script, /async function submitFuel/);
   assert.match(script, /function openFleetReport/);
@@ -381,6 +408,18 @@ test("admin mostra todos os veiculos no Leaflet e permite zoom por carro", () =>
 
   assert.match(html, /\.\/vendor\/leaflet\/leaflet\.css/);
   assert.match(html, /\.\/vendor\/leaflet\/leaflet\.js/);
+  assert.match(styles, /@import "\.\/css\/base\.css"/);
+  assert.match(styles, /@import "\.\/css\/layout\.css"/);
+  assert.match(styles, /@import "\.\/css\/agenda\.css"/);
+  assert.match(styles, /@import "\.\/css\/frota\.css"/);
+  assert.match(styles, /@import "\.\/css\/clientes\.css"/);
+  assert.match(styles, /@import "\.\/css\/pmoc\.css"/);
+  assertFileExists("apps/admin/css/base.css");
+  assertFileExists("apps/admin/css/layout.css");
+  assertFileExists("apps/admin/css/agenda.css");
+  assertFileExists("apps/admin/css/frota.css");
+  assertFileExists("apps/admin/css/clientes.css");
+  assertFileExists("apps/admin/css/pmoc.css");
   assert.doesNotMatch(html, /openstreetmap\.org\/export\/embed\.html/);
   assert.match(script, /L\.map\(fleetMap/);
   assert.match(script, /L\.tileLayer\("https:\/\/\{s\}\.tile\.openstreetmap\.org/);

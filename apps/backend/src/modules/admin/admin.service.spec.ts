@@ -20,6 +20,9 @@ import { AdminTecnicosService } from "./services/admin-tecnicos.service";
 import { AdminEquipesService } from "./services/admin-equipes.service";
 import { AdminEngenheirosService } from "./services/admin-engenheiros.service";
 import { AdminPreChamadosService } from "./services/admin-pre-chamados.service";
+import { AdminRelatoriosService } from "./services/admin-relatorios.service";
+import { AdminPmocService } from "./services/admin-pmoc.service";
+import { AdminPmocPdfService } from "./services/admin-pmoc-pdf.service";
 
 const usuario = {
   id: "admin-1",
@@ -283,6 +286,122 @@ test("AdminService delega pre-chamados para service especializado", async () => 
   assert.deepEqual(await service.rejeitarPreChamado("os-1", usuario), {
     metodo: "rejeitarPreChamado",
     osId: "os-1",
+    user: usuario
+  });
+});
+
+test("AdminService delega relatorios nao-PMOC para service especializado", async () => {
+  const referencia = new Date("2026-06-19T10:00:00.000Z");
+  const relatoriosService = {
+    listarRelatoriosAvulsos: async (user: typeof usuario) => ({ metodo: "listarRelatoriosAvulsos", user }),
+    obterPreviaRelatorioAvulsoCliente: async (clienteId: string, user: typeof usuario) => ({
+      metodo: "obterPreviaRelatorioAvulsoCliente",
+      clienteId,
+      user
+    }),
+    gerarPdfRelatorioAvulsoCliente: async (clienteId: string, user: typeof usuario) => ({
+      metodo: "gerarPdfRelatorioAvulsoCliente",
+      clienteId,
+      user
+    }),
+    enviarRelatorioAvulsoCliente: async (clienteId: string, user: typeof usuario) => ({
+      metodo: "enviarRelatorioAvulsoCliente",
+      clienteId,
+      user
+    }),
+    obterRelatorios: async (user: typeof usuario, data: Date) => ({ metodo: "obterRelatorios", user, data })
+  } as unknown as AdminRelatoriosService;
+  const service = new AdminService(
+    {} as never,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    relatoriosService
+  );
+
+  assert.deepEqual(await service.listarRelatoriosAvulsos(usuario), {
+    metodo: "listarRelatoriosAvulsos",
+    user: usuario
+  });
+  assert.deepEqual(await service.obterPreviaRelatorioAvulsoCliente("cliente-1", usuario), {
+    metodo: "obterPreviaRelatorioAvulsoCliente",
+    clienteId: "cliente-1",
+    user: usuario
+  });
+  assert.deepEqual(await service.gerarPdfRelatorioAvulsoCliente("cliente-1", usuario), {
+    metodo: "gerarPdfRelatorioAvulsoCliente",
+    clienteId: "cliente-1",
+    user: usuario
+  });
+  assert.deepEqual(await service.enviarRelatorioAvulsoCliente("cliente-1", usuario), {
+    metodo: "enviarRelatorioAvulsoCliente",
+    clienteId: "cliente-1",
+    user: usuario
+  });
+  assert.deepEqual(await service.obterRelatorios(usuario, referencia), {
+    metodo: "obterRelatorios",
+    user: usuario,
+    data: referencia
+  });
+});
+
+test("AdminService delega PMOC para services especializados", async () => {
+  const pmocService = {
+    obterPreviaPmocCliente: async (clienteId: string, user: typeof usuario) => ({
+      metodo: "obterPreviaPmocCliente",
+      clienteId,
+      user
+    }),
+    solicitarAssinaturaPmocEngenheiro: async (clienteId: string, user: typeof usuario) => ({
+      metodo: "solicitarAssinaturaPmocEngenheiro",
+      clienteId,
+      user
+    })
+  } as unknown as AdminPmocService;
+  const pmocPdfService = {
+    gerarPdfPmocCliente: async (clienteId: string, user: typeof usuario) => ({
+      metodo: "gerarPdfPmocCliente",
+      clienteId,
+      user
+    })
+  } as unknown as AdminPmocPdfService;
+  const service = new AdminService(
+    {} as never,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    pmocService,
+    pmocPdfService
+  );
+
+  assert.deepEqual(await service.obterPreviaPmocCliente("cliente-1", usuario), {
+    metodo: "obterPreviaPmocCliente",
+    clienteId: "cliente-1",
+    user: usuario
+  });
+  assert.deepEqual(await service.gerarPdfPmocCliente("cliente-1", usuario), {
+    metodo: "gerarPdfPmocCliente",
+    clienteId: "cliente-1",
+    user: usuario
+  });
+  assert.deepEqual(await service.solicitarAssinaturaPmocEngenheiro("cliente-1", usuario), {
+    metodo: "solicitarAssinaturaPmocEngenheiro",
+    clienteId: "cliente-1",
     user: usuario
   });
 });

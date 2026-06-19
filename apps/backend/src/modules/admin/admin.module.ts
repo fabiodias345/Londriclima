@@ -8,8 +8,12 @@ import { AdminEquipamentosService } from "./services/admin-equipamentos.service"
 import { AdminEngenheirosService } from "./services/admin-engenheiros.service";
 import { AdminEquipesService } from "./services/admin-equipes.service";
 import { AdminFrotaService } from "./services/admin-frota.service";
+import { AdminPmocPdfService } from "./services/admin-pmoc-pdf.service";
+import { AdminPmocService } from "./services/admin-pmoc.service";
 import { AdminPreChamadosService } from "./services/admin-pre-chamados.service";
 import { AdminRecorrenciaService } from "./services/admin-recorrencia.service";
+import { AdminRelatorioTecnicoCoreService } from "./services/admin-relatorio-tecnico-core.service";
+import { AdminRelatoriosService } from "./services/admin-relatorios.service";
 import { AdminTecnicosService } from "./services/admin-tecnicos.service";
 
 @Module({
@@ -25,7 +29,11 @@ import { AdminTecnicosService } from "./services/admin-tecnicos.service";
     AdminTecnicosService,
     AdminEquipesService,
     AdminEngenheirosService,
-    AdminPreChamadosService
+    AdminPreChamadosService,
+    AdminRelatorioTecnicoCoreService,
+    AdminRelatoriosService,
+    AdminPmocService,
+    AdminPmocPdfService
   ],
   exports: [AdminService]
 })
