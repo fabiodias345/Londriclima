@@ -15,8 +15,8 @@ const dto = {
   empresa_id: "empresa-maliciosa"
 };
 
-function criarService(prisma: unknown, adminService?: unknown, driveStorage?: unknown) {
-  return new SiteService(prisma as never, adminService as never, driveStorage as never);
+function criarService(prisma: unknown, adminService?: unknown) {
+  return new SiteService(prisma as never, adminService as never);
 }
 
 test("criarPreChamado sempre busca empresa piloto por CNPJ fixo", async () => {
@@ -455,11 +455,11 @@ test("confirmarAssinaturaPmoc exige PDF assinado no Gov.br e agenda envio de ema
   assert.equal(resposta.historico_finalizado, true);
 });
 
-test("confirmarAssinaturaPmoc arquiva PDF assinado no Drive", async () => {
+test("confirmarAssinaturaPmoc nao arquiva PDF assinado no Drive", async () => {
   const pdfAssinado = Buffer.from("%PDF-1.7\nassinado-govbr");
   const chamadas = {
     updateData: undefined as unknown,
-    drive: undefined as unknown
+    driveChamado: false
   };
   const tx = {
     pmocRelatorio: {
@@ -469,7 +469,6 @@ test("confirmarAssinaturaPmoc arquiva PDF assinado no Drive", async () => {
           id: "relatorio-1",
           status: PmocRelatorioStatus.assinado,
           pdfHash: (data as { pdfHash: string }).pdfHash,
-          pdfDriveUrl: (data as { pdfDriveUrl: string }).pdfDriveUrl,
           assinadoEm: new Date("2026-06-12T12:00:00.000Z"),
           emailCliente: "maria@example.com",
           emailAgendadoEm: new Date("2026-06-12T12:00:00.000Z"),
@@ -505,26 +504,22 @@ test("confirmarAssinaturaPmoc arquiva PDF assinado no Drive", async () => {
     $transaction: async (callback: (tx: unknown) => unknown) => callback(tx)
   };
   const driveStorage = {
-    salvarPdfAssinadoPmoc: async (input: unknown) => {
-      chamadas.drive = input;
+    salvarPdfAssinadoPmoc: async () => {
+      chamadas.driveChamado = true;
       return "https://drive.google.com/file/d/pdf-drive-1/view";
     }
   };
-  const service = criarService(prisma, undefined, driveStorage);
+  void driveStorage;
+  const service = criarService(prisma);
 
   const resposta = await service.confirmarAssinaturaPmoc("token-assinatura", {
     pdf_assinado_base64: pdfAssinado.toString("base64"),
     pdf_assinado_filename: "pmoc-maria-souza-assinado-govbr.pdf"
   });
 
-  assert.deepEqual(chamadas.drive, {
-    relatorioId: "relatorio-1",
-    clienteNome: "Maria Souza",
-    filename: "pmoc-maria-souza-assinado-govbr.pdf",
-    pdf: pdfAssinado
-  });
-  assert.equal((chamadas.updateData as { pdfDriveUrl?: unknown }).pdfDriveUrl, "https://drive.google.com/file/d/pdf-drive-1/view");
-  assert.equal(resposta.pdf_drive_url, "https://drive.google.com/file/d/pdf-drive-1/view");
+  assert.equal(chamadas.driveChamado, false);
+  assert.equal("pdfDriveUrl" in (chamadas.updateData as Record<string, unknown>), false);
+  assert.equal("pdf_drive_url" in resposta, false);
 });
 
 test("confirmarAssinaturaPmoc rejeita confirmacao sem PDF assinado valido", async () => {

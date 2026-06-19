@@ -8,7 +8,6 @@ import { AutomacoesModule } from "./modules/automacoes/automacoes.module";
 import { HealthModule } from "./modules/health/health.module";
 import { OrdensServicoModule } from "./modules/ordens-servico/ordens-servico.module";
 import { SiteModule } from "./modules/site/site.module";
-import { StorageModule } from "./modules/storage/storage.module";
 
 @Module({
   imports: [
@@ -23,8 +22,7 @@ import { StorageModule } from "./modules/storage/storage.module";
     AutomacoesModule,
     HealthModule,
     OrdensServicoModule,
-    SiteModule,
-    StorageModule
+    SiteModule
   ]
 })
 export class AppModule {}

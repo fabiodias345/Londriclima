@@ -161,8 +161,7 @@ function criarServico(options?: {
     config as never,
     prisma as never,
     admin as never,
-    http as never,
-    options?.driveStorage as never
+    http as never
   );
 
   return { service, chamadas };
@@ -250,14 +249,14 @@ test("processarWebhook agenda envio do PMOC assinado para o cliente quando Assin
   assert.equal(resposta.status, PmocRelatorioStatus.assinado);
 });
 
-test("processarWebhook arquiva PDF assinado no Drive quando assinatura Assinafy conclui", async () => {
+test("processarWebhook nao arquiva PDF assinado no Drive quando assinatura Assinafy conclui", async () => {
   const chamadas = {
-    drive: undefined as unknown
+    driveChamado: false
   };
   const { service, chamadas: chamadasServico } = criarServico({
     driveStorage: {
-      salvarPdfAssinadoPmoc: async (input) => {
-        chamadas.drive = input;
+      salvarPdfAssinadoPmoc: async () => {
+        chamadas.driveChamado = true;
         return "https://drive.google.com/file/d/pdf-drive-1/view";
       }
     }
@@ -269,14 +268,9 @@ test("processarWebhook arquiva PDF assinado no Drive quando assinatura Assinafy 
     status: "certificated"
   });
 
-  assert.deepEqual(chamadas.drive, {
-    relatorioId: "relatorio-1",
-    clienteNome: "Hospital Teste",
-    filename: "pmoc-relatorio-1-assinado-assinafy.pdf",
-    pdf: Buffer.from("%PDF-assinado")
-  });
-  assert.equal((chamadasServico.updateData as { pdfDriveUrl?: unknown }).pdfDriveUrl, "https://drive.google.com/file/d/pdf-drive-1/view");
-  assert.equal(resposta.pdf_drive_url, "https://drive.google.com/file/d/pdf-drive-1/view");
+  assert.equal(chamadas.driveChamado, false);
+  assert.equal("pdfDriveUrl" in (chamadasServico.updateData as Record<string, unknown>), false);
+  assert.equal("pdf_drive_url" in resposta, false);
 });
 
 test("processarWebhook cancela PMOC e agenda alerta interno quando Assinafy recusa assinatura", async () => {

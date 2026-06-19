@@ -5,10 +5,10 @@ Atualizado em: 19/06/2026
 ## Estado Atual
 
 - Workspace: `C:\develop\LondriClima`
-- Branch atual: `main`
-- Commit atual em `main`: `2bbe740 feat: adiciona planos recorrentes`
-- Commit atual em `dev`: `595b23a Adiciona app mobile AIRMOVEBR`
-- Branch `main` esta a frente de `dev` com agenda operacional, equipes tecnicas flexiveis e planos recorrentes.
+- Branch atual: `dev`
+- Commit atual em `main`: `ddcafa7 refactor admin services and shell modules`
+- Commit atual em `dev`: `ddcafa7 refactor admin services and shell modules`
+- Branches `main` e `dev` alinhadas no GitHub e na base de producao.
 - Branch `seg`: ficou no commit anterior `afdcab9` e o remoto `origin/seg` nao existe mais.
 - Produto: site, admin, API e app Android inicial da AIRMOVEBR para pre-chamado, OS, tecnico, frota, PMOC e automacoes.
 - App mobile Flutter Android criado em `apps/mobile`.
@@ -36,13 +36,11 @@ Login app local: teste / 123456
   - falha definitiva so ocorre no limite de tentativas;
   - automacao so conclui com comprovante SMTP.
 - Limpeza de automacao antiga falhada sem PDF.
-- Arquivamento de PDF assinado no Google Drive:
-  - variaveis criadas em `.env.example` e `.env.production.example`;
-  - service account configurada em `.env.local`;
-  - campo `pdf_drive_url` criado no banco.
-- Drive virou best effort:
-  - se o Drive falhar, assinatura e e-mail continuam;
-  - erro fica registrado no log.
+- Fase 10: arquivamento PMOC no Google Drive removido por enquanto.
+  - decisao: muita exigencia/risco operacional do Google para pouco ganho nesta fase;
+  - PMOC assinado segue por e-mail ao cliente e fica no payload da automacao;
+  - webhook Assinafy continua salvando copia local em `storage/pmoc/assinaturas/`;
+  - campo legado `pdf_drive_url` pode permanecer no banco sem uso ate uma limpeza futura.
 - Corrigido controle mensal PMOC:
   - vermelho: falta solicitar;
   - amarelo: aguardando assinatura;
@@ -122,27 +120,7 @@ npm.cmd run backend:lint  -> OK
 
 ## Bloqueio Atual
 
-O Google Drive ainda nao salvou na pasta porque a API respondeu:
-
-```text
-Drive 404: File not found: 1ar6WM_APajSPb85U1ffsc4uHMVSrw9Ih
-```
-
-Diagnostico: a pasta existe para o usuario, mas a service account ainda nao tem acesso.
-
-Conta que precisa ser compartilhada na pasta do Drive:
-
-```text
-drive-integracao@automacao-499404.iam.gserviceaccount.com
-```
-
-Permissao necessaria: `Editor`.
-
-Pasta alvo:
-
-```text
-https://drive.google.com/drive/folders/1ar6WM_APajSPb85U1ffsc4uHMVSrw9Ih
-```
+Google Drive saiu do fluxo PMOC por decisao operacional. Nao compartilhar pasta, nao repetir upload e nao fazer backfill no Drive nesta fase.
 
 ## Producao
 
@@ -344,7 +322,7 @@ Observacao: para preservar comportamento, a logica tecnica compartilhada de rela
 - [x] Criar `admin-pmoc.service.ts`.
 - [x] Criar `admin-pmoc-pdf.service.ts`.
 - [x] Mover PMOC somente depois das fases anteriores estabilizadas.
-- [x] Validar assinatura, webhook Assinafy, Drive e email final.
+- [x] Validar assinatura, webhook Assinafy e email final.
 
 Resultado local da Fase 7:
 
@@ -396,44 +374,50 @@ Observacao: `styles.css` virou agregador inicial com `@import` dos arquivos por 
 
 ### Fase 10: Regra Permanente
 
-- [ ] Cada fase vira commit separado.
-- [ ] Primeiro mover, depois melhorar.
-- [ ] Testar antes e depois de cada corte.
-- [ ] PMOC nao entra em refactor ate existir seguranca suficiente.
+- [x] Cada fase vira commit separado a partir daqui.
+- [x] Primeiro mover, depois melhorar.
+- [x] Testar antes e depois de cada corte.
+- [x] PMOC so muda com teste explicito antes.
+- [x] Remover Google Drive do fluxo PMOC por enquanto.
 
-1. [ ] Compartilhar a pasta do Drive com `drive-integracao@automacao-499404.iam.gserviceaccount.com` como `Editor`.
-2. [ ] Repetir teste de upload no Drive.
-3. [ ] Fazer backfill dos PDFs PMOC ja assinados para a pasta do Drive e preencher `pdf_drive_url`.
-4. [ ] Testar novamente com a cliente de teste `Cris Magnani`:
+Resultado local da Fase 10:
+
+```text
+SiteService.confirmarAssinaturaPmoc nao chama Google Drive.
+AssinafyService.processarWebhook nao chama Google Drive.
+AppModule nao carrega StorageModule.
+Testes garantem que `pdfDriveUrl` nao e gravado e `pdf_drive_url` nao volta na resposta.
+```
+
+Pendencias PMOC sem Drive:
+
+1. [ ] Testar novamente com a cliente de teste `Cris Magnani`:
    - solicitar assinatura;
    - engenheiro assinar;
-   - confirmar envio para cliente e copia interna;
-   - confirmar arquivo salvo no Drive.
-5. [ ] Na outra maquina com chave SSH, acessar `airmovebr@191.252.226.11`.
-6. [ ] Atualizar a VM com o commit `2bbe740` da branch `main`.
-7. [ ] Conferir `.env.production` real na VM sem commitar secrets.
-8. [ ] Subir/recriar containers de producao com `--build`.
-9. [ ] Rodar `prisma migrate deploy` em producao, incluindo:
+   - confirmar envio para cliente e copia interna.
+2. [ ] Conferir `.env.production` real na VM sem commitar secrets.
+3. [ ] Subir/recriar containers de producao com `--build`.
+4. [ ] Rodar `prisma migrate deploy` em producao, incluindo:
    - `20260617073000_flexible_technical_teams`
    - `20260617210000_planos_recorrencia`
-10. [ ] Validar por IP: landing, admin e `api/v1/health`.
-11. [ ] Se o IP nao responder no Caddy, ajustar proxy temporario para homologacao por IP.
-12. [ ] Aguardar o cliente passar acesso/gestao do registro do dominio.
-13. [ ] Depois da aprovacao, alterar DNS no Registro.br para a VM Locaweb.
-14. [ ] Validar HTTPS publico dos 3 dominios.
-15. [ ] Retestar formulario publico de pre-chamado pelo dominio e confirmar entrada no painel.
-16. [ ] Fazer teste PMOC completo em homologacao/producao.
-17. [ ] Evoluir PDF PMOC profissional:
+5. [ ] Validar por IP: landing, admin e `api/v1/health`.
+6. [ ] Se o IP nao responder no Caddy, ajustar proxy temporario para homologacao por IP.
+7. [ ] Aguardar o cliente passar acesso/gestao do registro do dominio.
+8. [ ] Depois da aprovacao, alterar DNS no Registro.br para a VM Locaweb.
+9. [ ] Validar HTTPS publico dos 3 dominios.
+10. [ ] Retestar formulario publico de pre-chamado pelo dominio e confirmar entrada no painel.
+11. [ ] Fazer teste PMOC completo em homologacao/producao.
+12. [ ] Evoluir PDF PMOC profissional:
    - pagina por maquina;
    - ficha tecnica;
    - checklist;
    - evidencias;
    - declaracao;
    - assinatura digital validada.
-18. [ ] Revisar Agenda em uso real com OS criadas por pre-chamado, OS manual e plano recorrente.
-19. [ ] Revisar Frota.
-20. [ ] Preparar backup, logs e permissoes antes de cliente real.
-21. [ ] Pensar melhor antes de implementar o fluxo de tecnicos no admin e OS no APK.
+13. [ ] Revisar Agenda em uso real com OS criadas por pre-chamado, OS manual e plano recorrente.
+14. [ ] Revisar Frota.
+15. [ ] Preparar backup, logs e permissoes antes de cliente real.
+16. [ ] Pensar melhor antes de implementar o fluxo de tecnicos no admin e OS no APK.
 
 ## Plano Pausado: Tecnicos no Admin e OS no APK
 
@@ -458,5 +442,5 @@ Rascunho discutido:
 
 ## Anotacao para depois
 
-- Remover a copia interna/BCC (`PMOC_INTERNAL_COPY_EMAIL`) do fluxo PMOC. Ela ficou redundante porque a AIRMOVEBR ja recebe/guarda o envio na propria caixa de e-mail, e o Drive sera o arquivo oficial quando a permissao da pasta estiver corrigida.
+- Reavaliar a copia interna/BCC (`PMOC_INTERNAL_COPY_EMAIL`) do fluxo PMOC depois do teste real. Sem Drive, ela ainda pode ser util como trilha operacional temporaria.
 - Retomar o plano de tecnicos/OS/checklist no APK somente depois de confirmar o desenho operacional com calma.

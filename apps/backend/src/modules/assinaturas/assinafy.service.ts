@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException, OnModuleDestroy, OnModuleInit, Optional } from "@nestjs/common";
+import { BadRequestException, Injectable, Logger, NotFoundException, OnModuleDestroy, OnModuleInit, Optional } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { AutomacaoTipo, PmocRelatorioStatus, Prisma } from "@prisma/client";
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
@@ -8,7 +8,6 @@ import { dirname, join } from "node:path";
 import { PrismaService } from "../../database/prisma.service";
 import { AdminService } from "../admin/admin.service";
 import { AuthenticatedUser } from "../auth/auth-user";
-import { GoogleDriveStorageService } from "../storage/google-drive-storage.service";
 
 type AssinafyHttpClient = Pick<AxiosInstance, "post" | "get">;
 
@@ -39,10 +38,7 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
     private readonly prisma: PrismaService,
     private readonly adminService: AdminService,
     @Optional()
-    http?: AssinafyHttpClient,
-    @Optional()
-    @Inject(GoogleDriveStorageService)
-    private readonly driveStorage?: Pick<GoogleDriveStorageService, "salvarPdfAssinadoPmoc">
+    http?: AssinafyHttpClient
   ) {
     this.http =
       http ??
@@ -267,12 +263,6 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
     const pdfHash = createHash("sha256").update(pdf).digest("hex");
     const pdfFilename = `pmoc-${relatorio.id}-assinado-assinafy.pdf`;
     const storageUrl = await this.salvarPdfAssinado(relatorio.id, pdf);
-    const driveUrl = await this.salvarPdfAssinadoDrive({
-      relatorioId: relatorio.id,
-      clienteNome: relatorio.cliente.nome,
-      filename: pdfFilename,
-      pdf
-    });
     const payloadEmail: Prisma.JsonObject = {
       tipo: "pmoc_relatorio_assinado",
       relatorio_id: relatorio.id,
@@ -291,7 +281,6 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
     data.status = PmocRelatorioStatus.assinado;
     data.pdfHash = pdfHash;
     data.pdfStorageUrl = storageUrl;
-    (data as Prisma.PmocRelatorioUpdateInput & { pdfDriveUrl?: string | null }).pdfDriveUrl = driveUrl;
     data.assinadoEm = agora;
     data.emailCliente = relatorio.cliente.email;
     data.historicoFinalizadoEm = agora;
@@ -307,8 +296,7 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
           id: true,
           status: true,
           assinafyStatus: true,
-          pdfStorageUrl: true,
-          ...({ pdfDriveUrl: true } as Record<string, boolean>)
+          pdfStorageUrl: true
         }
       });
 
@@ -330,8 +318,7 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
       id: atualizado.id,
       status: atualizado.status,
       assinafy_status: atualizado.assinafyStatus,
-      pdf_storage_url: atualizado.pdfStorageUrl,
-      pdf_drive_url: driveUrl
+      pdf_storage_url: atualizado.pdfStorageUrl
     };
   }
 
@@ -411,20 +398,6 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
     await mkdir(dirname(absolutePath), { recursive: true });
     await writeFile(absolutePath, pdf);
     return `/storage/${relativePath.replace(/\\/g, "/")}`;
-  }
-
-  private async salvarPdfAssinadoDrive(input: {
-    relatorioId: string;
-    clienteNome: string;
-    filename: string;
-    pdf: Buffer;
-  }) {
-    try {
-      return await (this.driveStorage?.salvarPdfAssinadoPmoc(input) ?? null);
-    } catch (error) {
-      this.logger.error(`Falha ao arquivar PMOC assinado no Drive: ${this.obterMensagemErro(error)}`);
-      return null;
-    }
   }
 
   private statusConcluido(status: string) {
