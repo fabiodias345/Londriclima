@@ -1,9 +1,9 @@
-﻿import { after, before, test } from "node:test";
-import * as assert from "node:assert/strict";
+﻿import type { INestApplication } from "@nestjs/common";
 import { ValidationPipe } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
-import type { INestApplication } from "@nestjs/common";
-import { EvidenciaTipo, OrdemServicoEventoAcao, OrdemServicoStatus, PmocRelatorioStatus, Prisma, UsuarioRole } from "@prisma/client";
+import { EvidenciaTipo,OrdemServicoEventoAcao,OrdemServicoStatus,PmocRelatorioStatus,Prisma,UsuarioRole } from "@prisma/client";
+import * as assert from "node:assert/strict";
+import { after,before,test } from "node:test";
 import { AppModule } from "./app.module";
 import { PrismaService } from "./database/prisma.service";
 import { PasswordHashService } from "./modules/auth/password-hash.service";
@@ -19,7 +19,6 @@ const veiculo2Id = "77777777-7777-4777-8777-777777777777";
 let app: INestApplication;
 let baseUrl = "";
 let senhaHash = "";
-let accessToken = "";
 let assinaturaPmocToken = "token-assinatura";
 let assinaturaPmocStatus: PmocRelatorioStatus = PmocRelatorioStatus.aguardando_assinatura_engenheiro;
 
@@ -441,151 +440,6 @@ after(async () => {
   await app.close();
 });
 
-test("GET /api/v1/health responde status ok", async () => {
-  const response = await fetch(`${baseUrl}/api/v1/health`);
-  const body = await lerJson(response);
-
-  assert.equal(response.status, 200);
-  assert.equal(body.status, "ok");
-});
-
-test("POST /api/v1/auth/login autentica com credenciais validas", async () => {
-  const response = await fetch(`${baseUrl}/api/v1/auth/login`, {
-    method: "POST",
-    headers: jsonHeaders(),
-    body: JSON.stringify({
-      email: "tecnico@airmovebr.local",
-      senha: "123456"
-    })
-  });
-  const body = await lerJson(response);
-
-  assert.equal(response.status, 201);
-  assert.equal(body.token_type, "Bearer");
-  assert.equal(typeof body.access_token, "string");
-  assert.equal(typeof body.refresh_token, "string");
-  accessToken = body.access_token as string;
-});
-
-test("POST /api/v1/auth/refresh renova tokens com refresh valido", async () => {
-  const login = await fetch(`${baseUrl}/api/v1/auth/login`, {
-    method: "POST",
-    headers: jsonHeaders(),
-    body: JSON.stringify({
-      email: "tecnico@airmovebr.local",
-      senha: "123456"
-    })
-  });
-  const loginBody = await lerJson(login);
-  const response = await fetch(`${baseUrl}/api/v1/auth/refresh`, {
-    method: "POST",
-    headers: jsonHeaders(),
-    body: JSON.stringify({
-      refresh_token: loginBody.refresh_token
-    })
-  });
-  const body = await lerJson(response);
-
-  assert.equal(response.status, 201);
-  assert.equal(body.token_type, "Bearer");
-  assert.equal(typeof body.access_token, "string");
-});
-
-test("rotas protegidas rejeitam token ausente e invalido", async () => {
-  const semToken = await fetch(`${baseUrl}/api/v1/admin/pre-chamados`);
-  const tokenInvalido = await fetch(`${baseUrl}/api/v1/admin/pre-chamados`, {
-    headers: {
-      authorization: "Bearer token-invalido"
-    }
-  });
-
-  assert.equal(semToken.status, 401);
-  assert.equal(tokenInvalido.status, 401);
-});
-
-test("GET /api/v1/admin/pre-chamados responde lista autenticada", async () => {
-  const response = await fetch(`${baseUrl}/api/v1/admin/pre-chamados`, {
-    headers: jsonHeaders(accessToken)
-  });
-  const body = await lerJson(response);
-
-  assert.equal(response.status, 200);
-  assert.equal(body.total, 1);
-});
-
-test("GET /api/v1/admin/agenda responde agenda autenticada", async () => {
-  const response = await fetch(`${baseUrl}/api/v1/admin/agenda`, {
-    headers: jsonHeaders(accessToken)
-  });
-  const body = await lerJson(response);
-
-  assert.equal(response.status, 200);
-  assert.equal(body.total, 1);
-});
-
-test("GET /api/v1/admin/clientes responde clientes autenticados", async () => {
-  const response = await fetch(`${baseUrl}/api/v1/admin/clientes`, {
-    headers: jsonHeaders(accessToken)
-  });
-  const body = await lerJson(response);
-
-  assert.equal(response.status, 200);
-  assert.equal(body.total, 1);
-});
-
-test("GET /api/v1/admin/pmoc/clientes/:clienteId/previa responde dossie PMOC", async () => {
-  const response = await fetch(`${baseUrl}/api/v1/admin/pmoc/clientes/${clienteId}/previa`, {
-    headers: jsonHeaders(accessToken)
-  });
-  const body = await lerJson(response);
-
-  assert.equal(response.status, 200);
-  assert.equal((body.cliente as { nome: string }).nome, "Maria Souza");
-  assert.equal((body.engenheiro_responsavel as { crea: string }).crea, "CREA-PR 123456");
-  assert.equal(body.total_maquinas, 1);
-  assert.equal(body.total_os_concluidas, 1);
-  assert.equal(Array.isArray(body.maquinas), true);
-});
-
-test("GET /api/v1/admin/pmoc/clientes/:clienteId/pdf baixa PDF PMOC autenticado", async () => {
-  const response = await fetch(`${baseUrl}/api/v1/admin/pmoc/clientes/${clienteId}/pdf`, {
-    headers: jsonHeaders(accessToken)
-  });
-  const body = Buffer.from(await response.arrayBuffer());
-
-  assert.equal(response.status, 200);
-  assert.match(response.headers.get("content-type") || "", /application\/pdf/);
-  assert.match(response.headers.get("content-disposition") || "", /pmoc-maria-souza\.pdf/);
-  assert.equal(body.subarray(0, 4).toString("utf8"), "%PDF");
-  assert.match(body.toString("latin1"), /AIRMOVEBR/);
-});
-
-test("POST /api/v1/admin/pmoc/clientes/:clienteId/assinatura-engenheiro inicia fluxo de assinatura", async () => {
-  const response = await fetch(`${baseUrl}/api/v1/admin/pmoc/clientes/${clienteId}/assinatura-engenheiro`, {
-    method: "POST",
-    headers: jsonHeaders(accessToken)
-  });
-  const body = await lerJson(response);
-
-  assert.equal(response.status, 201, JSON.stringify(body));
-  assert.equal(body.status, "aguardando_assinatura_engenheiro");
-  assert.equal((body.engenheiro_responsavel as { crea: string }).crea, "CREA-PR 123456");
-  assert.equal(body.email_engenheiro_agendado, true);
-  assert.equal("token_assinatura" in body, false);
-  assert.equal(typeof body.pdf_hash, "string");
-  assinaturaPmocStatus = PmocRelatorioStatus.aguardando_assinatura_engenheiro;
-});
-
-test("GET /api/v1/site/pmoc/assinaturas/:token consulta relatorio para engenheiro", async () => {
-  const response = await fetch(`${baseUrl}/api/v1/site/pmoc/assinaturas/${assinaturaPmocToken}`);
-  const body = await lerJson(response);
-
-  assert.equal(response.status, 200);
-  assert.equal(body.status, PmocRelatorioStatus.aguardando_assinatura_engenheiro);
-  assert.equal((body.cliente as { nome: string }).nome, "Maria Souza");
-  assert.equal((body.engenheiro_responsavel as { crea: string }).crea, "CREA-PR 123456");
-});
-
 test("POST /api/v1/site/pmoc/assinaturas/:token/confirmar assina e agenda email ao cliente", async () => {
   const response = await fetch(`${baseUrl}/api/v1/site/pmoc/assinaturas/${assinaturaPmocToken}/confirmar`, {
     method: "POST",
@@ -602,80 +456,3 @@ test("POST /api/v1/site/pmoc/assinaturas/:token/confirmar assina e agenda email 
   assert.equal(body.email_agendado, true);
   assert.equal(body.historico_finalizado, true);
 });
-
-test("GET /api/v1/admin/relatorios responde indicadores autenticados", async () => {
-  const response = await fetch(`${baseUrl}/api/v1/admin/relatorios`, {
-    headers: jsonHeaders(accessToken)
-  });
-  const body = await lerJson(response);
-
-  assert.equal(response.status, 200);
-  assert.equal(body.total_os, 1);
-  assert.equal(body.clientes, 1);
-});
-
-test("GET /api/v1/admin/relatorios/frota responde consumo da frota", async () => {
-  const response = await fetch(`${baseUrl}/api/v1/admin/relatorios/frota`, {
-    headers: jsonHeaders(accessToken)
-  });
-  const body = await lerJson(response);
-
-  assert.equal(response.status, 200);
-  assert.equal(body.total_veiculos, 2);
-  assert.equal(body.km_rodados, 773);
-});
-
-test("POST /api/v1/admin/frota/abastecimentos registra abastecimento autenticado", async () => {
-  const response = await fetch(`${baseUrl}/api/v1/admin/frota/abastecimentos`, {
-    method: "POST",
-    headers: jsonHeaders(accessToken),
-    body: JSON.stringify({
-      veiculo_id: veiculo1Id,
-      odometro_km: 51700,
-      litros: 20,
-      valor_total: 118,
-      abastecido_em: "2026-06-10T12:00:00.000Z",
-      posto: "Posto Centro"
-    })
-  });
-  const body = await lerJson(response);
-
-  assert.equal(response.status, 201);
-  assert.equal(body.preco_por_litro, 5.9);
-});
-
-test("POST /api/v1/site/pre-chamados cria pre-chamado publico com DTO validado", async () => {
-  const response = await fetch(`${baseUrl}/api/v1/site/pre-chamados`, {
-    method: "POST",
-    headers: jsonHeaders(),
-    body: JSON.stringify({
-      nome: "Maria Souza",
-      telefone: "(43) 99999-9999",
-      servico: "Limpeza",
-      local: "Centro, Londrina"
-    })
-  });
-  const body = await lerJson(response);
-
-  assert.equal(response.status, 201);
-  assert.equal(body.pre_chamado_id, osId);
-});
-
-test("PATCH /api/v1/os/:osId/status executa fluxo autenticado do controller", async () => {
-  const response = await fetch(`${baseUrl}/api/v1/os/${osId}/status`, {
-    method: "PATCH",
-    headers: jsonHeaders(accessToken),
-    body: JSON.stringify({
-      acao: OrdemServicoEventoAcao.iniciar_rota,
-      latitude: -23.3045,
-      longitude: -51.1696,
-      registrado_em: "2026-06-10T08:45:00-03:00"
-    })
-  });
-  const body = await lerJson(response);
-
-  assert.equal(response.status, 200);
-  assert.equal(body.os_id, osId);
-  assert.equal(body.status, OrdemServicoStatus.em_deslocamento);
-});
-

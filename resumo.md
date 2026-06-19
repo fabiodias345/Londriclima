@@ -6,11 +6,11 @@ Atualizado em: 19/06/2026
 
 - Workspace: `C:\develop\LondriClima`
 - Branch atual: `dev`
-- Commit local atual: `b5b8b84`
+- Commit local atual: topo de `dev` com fases 14 e 15.
 - Produto: site, admin, API e app Android inicial da AIRMOVEBR.
 - Fluxos principais ja existem: pre-chamado, OS, agenda, recorrencia, frota, tecnicos/equipes, PMOC com Assinafy e envio SMTP.
 - Google Drive esta fora do fluxo PMOC nesta fase.
-- Proximo trabalho: reduzir arquivos grandes sem mudar regra de negocio.
+- Fase atual: fases 14 e 15 concluidas localmente; pendente deploy.
 
 ## Regra de Manutencao
 
@@ -21,28 +21,16 @@ Atualizado em: 19/06/2026
 
 ## Arquivos Acima de 500 Linhas
 
-Levantamento em 19/06/2026, ignorando `node_modules`, `.git`, `dist`, `build`, `coverage`, `uploads`, `tmp` e binarios:
+Recontagem em 19/06/2026 apos divisao dos specs, ignorando `node_modules`, `.git`, `dist`, `build`, `coverage`, `uploads`, `tmp` e binarios:
 
 ```text
 6332  package-lock.json
-4244  apps/admin/script.js
-2066  apps/backend/src/modules/admin/admin.service.spec.ts
-2045  apps/backend/src/modules/admin/services/admin-relatorio-tecnico-core.service.ts
-1837  apps/admin/styles.css
-1060  apps/landing/css/style.css
- 964  apps/admin/index.html
- 732  apps/backend/src/modules/ordens-servico/ordens-servico.service.ts
- 681  apps/backend/src/app.http.spec.ts
- 661  apps/admin/vendor/leaflet/leaflet.css
- 642  apps/backend/prisma/schema.prisma
- 634  apps/backend/src/modules/ordens-servico/ordens-servico.service.spec.ts
- 620  apps/backend/prisma/seed.ts
- 588  apps/backend/src/modules/automacoes/automacoes.service.ts
- 564  apps/backend/src/modules/site/site.service.spec.ts
- 559  apps/backend/src/modules/automacoes/automacoes.service.spec.ts
- 558  apps/backend/src/modules/assinaturas/assinafy.service.ts
- 529  apps/backend/src/modules/admin/admin.service.ts
- 512  apps/backend/src/modules/site/site.service.ts
+1835  apps/backend/src/modules/admin/services/admin-relatorio-tecnico-core.service.ts
+ 926  apps/admin/index.html
+ 910  apps/landing/css/style.css
+ 636  apps/backend/src/modules/ordens-servico/ordens-servico.service.ts
+ 605  apps/admin/vendor/leaflet/leaflet.css
+ 588  apps/backend/prisma/seed.ts
 ```
 
 ## Novas Fases
@@ -85,17 +73,20 @@ Levantamento em 19/06/2026, ignorando `node_modules`, `.git`, `dist`, `build`, `
 
 ### Fase 14: Testes Grandes
 
-- [ ] Dividir `admin.service.spec.ts` por dominio.
-- [ ] Dividir `app.http.spec.ts` por fluxo.
-- [ ] Dividir specs de OS, automacoes e site.
-- [ ] Criar fixtures/factories compartilhadas quando reduzir duplicacao real.
-- [ ] Validar com `npm.cmd run backend:test`.
+- [x] Dividir `admin.service.spec.ts` por dominio.
+- [x] Dividir `app.http.spec.ts` por fluxo.
+- [x] Dividir specs de OS, automacoes e site.
+- [x] Criar fixtures/factories compartilhadas somente quando reduzir duplicacao real.
+- [x] Validar com `npm.cmd run backend:test`.
+
+Arquivos criados: `*.part-XX.spec.ts` nos mesmos diretorios dos specs originais.
+Observacao: `app.http` agora autentica no `before` de cada parte para evitar dependencia de ordem entre arquivos.
 
 ### Fase 15: Revisao Final de Limite
 
-- [ ] Recontar linhas de todos os arquivos.
-- [ ] Justificar qualquer excecao restante acima de 500 linhas.
-- [ ] Rodar validacao completa:
+- [x] Recontar linhas de todos os arquivos.
+- [x] Justificar qualquer excecao restante acima de 500 linhas.
+- [x] Rodar validacao completa:
 
 ```text
 npm.cmd run frontend:test
@@ -103,6 +94,16 @@ npm.cmd run backend:test
 npm.cmd run backend:build
 npm.cmd run backend:lint
 ```
+
+Excecoes/pendencias restantes acima de 500 linhas:
+
+- `package-lock.json`: lockfile gerado.
+- `apps/admin/vendor/leaflet/leaflet.css`: vendor externo.
+- `apps/backend/src/modules/admin/services/admin-relatorio-tecnico-core.service.ts`: pendencia herdada da fase 13.
+- `apps/backend/src/modules/ordens-servico/ordens-servico.service.ts`: pendencia herdada da fase 13.
+- `apps/backend/prisma/seed.ts`: seed operacional, deve ser quebrado em proxima rodada.
+- `apps/admin/index.html`: pendencia herdada da fase 12.
+- `apps/landing/css/style.css`: pendencia de CSS da landing.
 
 ## Producao
 
