@@ -82,10 +82,11 @@ const ENGENHEIRO_PADRAO_PMOC = {
 export class AdminPmocPdfRendererService {
   gerar(previa: PreviaPmoc) {
     const paginas: string[][] = [
-      this.montarCapa(previa),
-      this.montarIdentificacao(previa),
-      this.montarEscopoNormativo(previa),
-      this.montarResumoMaquinas(previa)
+      this.montarCabecalhoProfissional(previa),
+      this.montarObjetivo(previa),
+      this.montarDadosContratante(previa),
+      this.montarDadosContratada(previa),
+      this.montarAtividadesManutencao()
     ];
 
     if (!previa.maquinas.length) {
@@ -101,102 +102,187 @@ export class AdminPmocPdfRendererService {
       paginas.push(this.montarPaginaMaquina(previa, maquina, indice));
     }
 
-    paginas.push(this.montarDeclaracao(previa));
+    paginas.push(this.montarConsideracoesFinais(previa));
+    paginas.push(this.montarReferenciaDeclaracao(previa));
 
     return this.criarPdfTexto(paginas);
   }
 
-  private montarCapa(previa: PreviaPmoc) {
+  private montarCabecalhoProfissional(previa: PreviaPmoc) {
+    const mesAno = this.formatarMesAnoReferencia(previa.periodo.inicio);
+    const ano = new Date(previa.periodo.inicio || new Date()).getUTCFullYear();
+
     return [
-      "AIRMOVEBR",
-      "PLANO DE MANUTENCAO, OPERACAO E CONTROLE - PMOC",
+      "PMOC — Plano de Manutenção, Operação e Controle",
+      `N° Documento: ${this.numeroPmoc(previa)}`,
+      `Emissão: ${mesAno} / ${ano}`,
+      `Renovação: ${this.formatarMesAnoReferencia(previa.periodo.fim)} / ${ano + 1}`,
       "",
-      this.campo("Documento", this.numeroPmoc(previa)),
-      this.campo("Cliente", previa.cliente.nome),
-      this.campo("CNPJ/CPF", previa.cliente.documento || "Nao informado"),
-      this.campo("Endereco", this.formatarEndereco(previa.cliente.endereco)),
-      this.campo("Emissao", this.formatarMesAnoReferencia(previa.periodo.inicio)),
-      this.campo("Renovacao", this.formatarMesAnoReferencia(previa.periodo.fim)),
-      this.campo("Total de maquinas", String(previa.total_maquinas)),
-      this.campo("Status", previa.pronto_para_pdf ? "Pronto para assinatura" : "Com pendencias"),
+      "Empresa: M. LIMA MANUTENÇÕES PREDIAIS E INDUSTRIAIS LTDA",
       "",
-      "Documento tecnico individual do cliente. As maquinas listadas pertencem exclusivamente ao cliente acima.",
-      "Campos nao cadastrados aparecem como Nao informado para preservar rastreabilidade sem inventar dados."
+      "Controle de Revisões",
+      "Alterações                              Revisão    Data             Elaborado    Aprovado",
+      "─────────────────────────────────────  ─────────  ──────────────  ───────────  ──────────",
+      "Emissão inicial                        00         15/01/2024      André        Paulo"
     ];
   }
 
-  private montarIdentificacao(previa: PreviaPmoc) {
-    const engenheiro = previa.engenheiro_responsavel;
-
+  private montarObjetivo(previa: PreviaPmoc) {
     return [
-      "IDENTIFICACAO DO CLIENTE, CONTRATADA E RESPONSAVEL TECNICO",
+      "1. Objetivo",
       "",
-      "CLIENTE",
-      this.campo("Razao/Nome", previa.cliente.nome),
-      this.campo("Documento", previa.cliente.documento || "Nao informado"),
-      this.campo("Telefone", previa.cliente.telefone || "Nao informado"),
-      this.campo("E-mail", previa.cliente.email || "Nao informado"),
-      this.campo("Endereco", this.formatarEndereco(previa.cliente.endereco)),
-      "",
-      "EMPRESA CONTRATADA",
-      this.campo("Razao social", CONTRATADA_PMOC.razaoSocial),
-      this.campo("Nome fantasia", CONTRATADA_PMOC.nomeFantasia),
-      this.campo("CNPJ", CONTRATADA_PMOC.cnpj),
-      this.campo("Endereco", CONTRATADA_PMOC.endereco),
-      this.campo("Telefone", CONTRATADA_PMOC.telefone),
-      this.campo("E-mail", CONTRATADA_PMOC.email),
-      "",
-      "RESPONSAVEL TECNICO",
-      this.campo("Nome", engenheiro?.nome || ENGENHEIRO_PADRAO_PMOC.nome),
-      this.campo("Titulo", ENGENHEIRO_PADRAO_PMOC.titulo),
-      this.campo("CREA/Carteira", engenheiro?.crea || ENGENHEIRO_PADRAO_PMOC.crea),
-      this.campo("Registro/Visto", ENGENHEIRO_PADRAO_PMOC.registro),
-      this.campo("RNP", ENGENHEIRO_PADRAO_PMOC.rnp),
-      this.campo("ART", "Nao informado")
+      "O objetivo do PMOC é estabelecer as atividades preventivas a serem desenvolvidas, como",
+      "limpeza e manutenção, a periodicidade das mesmas, as recomendações a serem adotadas em",
+      "situações de falha dos equipamentos e de emergência, para garantia de segurança do",
+      "sistema de climatização. O presente programa é estabelecido por lei visando garantir a",
+      "qualidade do ambiente, preservando a saúde das pessoas."
     ];
   }
 
-  private montarEscopoNormativo(previa: PreviaPmoc) {
+  private montarDadosContratante(previa: PreviaPmoc) {
     return [
-      "OBJETIVO, RESPONSABILIDADES, LIMITACOES E REFERENCIAS",
+      "2. Dados do Contratante / Proprietário / Edificação",
       "",
-      "Objetivo: consolidar o controle de manutencao preventiva dos sistemas de climatizacao do cliente.",
-      "Responsabilidade da contratada: executar e registrar atividades, evidencias, ocorrencias e controle tecnico.",
-      "Responsabilidade do cliente: permitir acesso aos equipamentos e informar alteracoes de uso, area ou ocupacao.",
-      "Limitacoes: este documento reflete dados cadastrados e OS concluidas na plataforma ate a data de emissao.",
-      "",
-      "Referencias normativas:",
-      "- Lei Federal n 13.589/2018",
-      "- Portaria MS n 3.523/1998",
-      "- Resolucao ANVISA RE n 09/2003",
-      "- Lei Federal n 14.063/2020 e MP n 2.200-2/2001 para evidencias e assinatura digital",
-      "",
-      this.campo("Periodo apurado", `${this.formatarData(previa.periodo.inicio)} a ${this.formatarData(previa.periodo.fim)}`),
-      this.campo("Pendencias", previa.pendencias.join(", ") || "Nenhuma")
+      "Campo                                  Informação",
+      "─────────────────────────────────────  ────────────────────────────────────────────────",
+      `Razão Social                           ${previa.cliente.nome}`,
+      `CNPJ                                   ${previa.cliente.documento || "Não informado"}`,
+      `Município/UF                           ${this.obterMunicipioUf(previa.cliente.endereco)}`,
+      `Contato                                ${previa.cliente.telefone || "Não informado"}`,
+      `Endereço                               ${this.formatarEndereco(previa.cliente.endereco)}`
     ];
   }
 
-  private montarResumoMaquinas(previa: PreviaPmoc) {
-    const linhas = previa.maquinas.slice(0, 34).map((maquina, indice) => {
-      const tag = this.valor(maquina.patrimonio);
-      const local = this.valor(maquina.local_instalacao);
-      const capacidade = this.formatarCapacidade(maquina.capacidade_btu);
-      const gas = this.valor(maquina.gas_refrigerante);
-      return `${String(indice + 1).padStart(2, "0")}  ${this.limitar(tag, 12)}  ${this.limitar(local, 22)}  ${this.limitar(capacidade, 13)}  ${this.limitar(gas, 12)}`;
-    });
+  private montarDadosContratada(previa: PreviaPmoc) {
+    const engenheiro = previa.engenheiro_responsavel || ENGENHEIRO_PADRAO_PMOC;
 
     return [
-      "RESUMO DAS MAQUINAS DO CLIENTE",
+      "3. Dados da Contratada",
       "",
-      "N   TAG           Local instalado          Carga termica  Gas",
-      "--  ------------  ----------------------  -------------  ------------",
-      ...(linhas.length ? linhas : ["Nenhuma maquina cadastrada."]),
-      "",
-      this.campo("Total de maquinas", String(previa.total_maquinas)),
-      this.campo("Total de OS concluidas", String(previa.total_os_concluidas)),
-      "Cada maquina possui uma pagina exclusiva a seguir."
+      "Campo                                  Informação",
+      "─────────────────────────────────────  ────────────────────────────────────────────────",
+      `Razão Social                           ${CONTRATADA_PMOC.razaoSocial}`,
+      `CNPJ                                   ${CONTRATADA_PMOC.cnpj}`,
+      `Município/UF                           Maringá / PR`,
+      `Contato                                ${CONTRATADA_PMOC.telefone}`,
+      `Registro CREA                          CREA-PR ${ENGENHEIRO_PADRAO_PMOC.registro} — Resp. Téc. ${engenheiro.nome}`,
+      `Número da ART                          Não informado`
     ];
   }
+
+  private montarAtividadesManutencao() {
+    return [
+      "4. PMOC — Plano de Manutenção, Operação e Controle",
+      "",
+      "Os procedimentos devem seguir o plano descrito no Anexo II, considerando-se as",
+      "orientações do fabricante e a legislação vigente. Qualquer procedimento fora do comum",
+      "deve ser comunicado ao responsável técnico e registrado no Registro de Ocorrências.",
+      "",
+      "A empresa contratada deverá preencher o Anexo I (declaração de execução) uma única",
+      "vez e o Anexo II (plano de manutenção) de cada máquina mensalmente.",
+      "",
+      "Atividades de Manutenção",
+      "",
+      "Nº   Atividade                                          Mensal  Trimestral  Semestral",
+      "───  ───────────────────────────────────────────────────  ──────  ─────────  ────────",
+      "4.1  Limpeza dos filtros de ar e/ou substituição          X       X          X",
+      "4.2  Limpeza externa do gabinete do evaporador            X       X          X",
+      "4.3  Verificar operação de drenagem                       X       X          X",
+      "4.4  Verificar e corrigir ruídos e vibrações anormais     X       X          X",
+      "4.5  Verificar termostatos, controles e sensores          X       X          X",
+      "4.6  Higienizar evaporadores com bactericida              X       X          X",
+      "4.7  Verificar e eliminar odores desagradáveis            X       X          X",
+      "4.8  Limpeza das serpentinas do evaporador                        X          X",
+      "4.9  Limpeza do ventilador/rotor do evaporador                    X          X",
+      "4.10 Limpeza da bandeja de condensado                             X          X",
+      "4.11 Reaperto de terminais/conexões elétricas                     X          X",
+      "4.12 Verificar corrente/pressão/tensão                                      X",
+      "4.13 Limpeza do condensador                                                  X",
+      "4.14 Verificar estado dos compressores                                       X",
+      "4.15 Lubrificação geral do equipamento                                       X",
+      "4.16 Verificar estado dos suportes/coxins                                    X",
+      "4.17 Verificar e corrigir focos de corrosão                                  X",
+      "4.18 Verificar isolantes térmicos das linhas                                 X"
+    ];
+  }
+
+  private montarConsideracoesFinais(previa: PreviaPmoc) {
+    return [
+      "5. Limitação do Plano",
+      "",
+      "Esta análise de riscos está limitada às fases de elaboração e supervisão. Não foram",
+      "contemplados a execução da manutenção e o projeto. O Engenheiro responsável não assume",
+      "responsabilidade por julgamentos baseados em informações incorretas ou imprecisas.",
+      "",
+      "Erros humanos e mau uso — alimentação incorreta da máquina, uso incorreto de materiais",
+      "ou inabilidade dos operadores — não fazem parte deste Plano.",
+      "",
+      "6. Considerações Finais",
+      "",
+      "O PMOC tem importância fundamental na proteção dos ocupantes do imóvel, minimizando ou",
+      "eliminando potenciais problemas de saúde relacionados à qualidade do ar, proporcionando",
+      "maior bem-estar, conforto e produtividade, e reduzindo o absenteísmo.",
+      "",
+      "Além de garantir um ambiente livre de contaminação, o plano aumenta a vida útil dos",
+      "equipamentos. Equipamentos bem mantidos consomem menos energia e apresentam menos",
+      "falhas, resultando em economia.",
+      "",
+      "Fica sob responsabilidade do proprietário/responsável executar este PMOC, avaliando a",
+      "necessidade de intervenções e manutenções preventivas adicionais.",
+      "",
+      "Requisitos obrigatórios:",
+      "• Realizar Análise da Qualidade do Ar (RE/09) 2 vezes ao ano",
+      "• Inspecionar (e limpar, se necessário) os dutos de ar 1 vez ao ano"
+    ];
+  }
+
+  private montarReferenciaDeclaracao(previa: PreviaPmoc) {
+    const engenheiro = previa.engenheiro_responsavel || ENGENHEIRO_PADRAO_PMOC;
+    const dataAtual = new Date();
+    const dataFormatada = new Intl.DateTimeFormat("pt-BR", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).format(dataAtual);
+
+    return [
+      "7. Referência Normativa",
+      "",
+      "Portaria 3.523 de 28/08/1998 — Ministério da Saúde",
+      "Exige a manutenção dos aparelhos de ar-condicionado e determina procedimentos de",
+      "limpeza e manutenção dos sistemas de climatização.",
+      "",
+      "Resolução nº 9 de 16/01/2003 — ANVISA",
+      "Atualiza os padrões referenciais de qualidade do ar interior em ambientes climatizados",
+      "artificialmente de uso público e coletivo.",
+      "",
+      "Lei Federal 13.589 de 04/01/2018",
+      "Atualização da Portaria 3.523. Dispõe sobre a manutenção de instalações e equipamentos",
+      "de sistemas de climatização de ambientes.",
+      "",
+      "Lei Federal 6.437 de 20/08/1977",
+      "Configura as infrações à legislação Sanitária Federal e estabelece as sanções",
+      "respectivas.",
+      "",
+      "Resolução CONFEA 218 de 29/06/1973 — Art. 12",
+      "Estabelece a competência e responsabilidade técnica ao Engenheiro Mecânico pela",
+      "elaboração, implantação e manutenção do PMOC.",
+      "",
+      "─────────────────────────────────────────────────────────────────────────────────────",
+      "",
+      `Londrina, ${dataFormatada}`,
+      "",
+      engenheiro.nome || ENGENHEIRO_PADRAO_PMOC.nome,
+      "Responsável Técnico — Engenheiro Mecânico",
+      `CREA-PR ${engenheiro.crea || ENGENHEIRO_PADRAO_PMOC.crea}`
+    ];
+  }
+
+  private obterMunicipioUf(endereco: EnderecoPmoc) {
+    if (!endereco) return "Não informado";
+    return `${endereco.cidade || "Não informado"} / ${endereco.uf || "PR"}`;
+  }
+
 
   private montarPaginaMaquina(previa: PreviaPmoc, maquina: MaquinaPmoc, indice: number) {
     const primeiraOs = maquina.os_concluidas[0] ?? null;
@@ -204,65 +290,50 @@ export class AdminPmocPdfRendererService {
     const fim = primeiraOs?.concluida_em ?? primeiraOs?.eventos?.at(-1)?.registrado_em ?? null;
     const verificacoes = this.obterLinhasChecklist(primeiraOs);
     const ocorrencias = primeiraOs?.observacoes?.length
-      ? primeiraOs.observacoes.map((observacao) => observacao.texto || "Nao informado")
-      : ["Sem ocorrencias registradas."];
+      ? primeiraOs.observacoes.map((observacao) => observacao.texto || "Não informado")
+      : ["Sem ocorrências registradas."];
 
     return [
-      `MAQUINA N:${String(indice + 1).padStart(3, "0")} - PAGINA EXCLUSIVA`,
+      `EQUIPAMENTO AC${indice + 1} — ${this.valor(maquina.local_instalacao)}`,
       "",
-      "DADOS TECNICOS",
-      this.campo("TAG/Patrimonio", this.valor(maquina.patrimonio)),
-      this.campo("Codigo de barras", this.valor(maquina.codigo_barras)),
-      this.campo("Tipo", this.valor(maquina.tipo)),
-      this.campo("Marca", this.valor(maquina.marca)),
-      this.campo("Modelo", this.valor(maquina.modelo)),
-      this.campo("Gas refrigerante", this.valor(maquina.gas_refrigerante)),
-      this.campo("Local instalado", this.valor(maquina.local_instalacao)),
-      this.campo("Carga termica", this.formatarCapacidade(maquina.capacidade_btu)),
-      this.campo("Area climatizada m2", this.formatarNumero(maquina.area_climatizada_m2)),
-      this.campo("Ocupantes fixos", this.formatarNumero(maquina.ocupantes_fixo)),
-      this.campo("Ocupantes variaveis", this.formatarNumero(maquina.ocupantes_variavel)),
+      "DADOS TÉCNICOS",
       "",
-      "ATIVIDADES / PERIODICIDADE",
-      this.campo("Ultima execucao", `${this.formatarData(primeiraOs?.concluida_em ?? null)} - ${this.formatarHora(inicio)} -> ${this.formatarHora(fim)} (${this.calcularDuracao(inicio, fim)})`),
-      this.campo("Tecnico/Equipe", primeiraOs?.tecnico?.nome || primeiraOs?.equipe?.nome || "Nao informado"),
-      this.campo("OS", primeiraOs?.titulo || "Nao informado"),
-      this.campo("Problema relatado", primeiraOs?.problema_relatado || "Nao informado"),
+      "Campo                                  Informação",
+      "─────────────────────────────────────  ────────────────────────────────────────────────",
+      `Ambiente                               ${this.valor(maquina.local_instalacao)}`,
+      `Ocupantes (Fixo/Variável)              ${this.formatarNumero(maquina.ocupantes_fixo)} / ${this.formatarNumero(maquina.ocupantes_variavel)}`,
+      `Área Climatizada                       ${this.formatarNumero(maquina.area_climatizada_m2)} m²`,
+      `Carga Térmica                          ${this.formatarCapacidade(maquina.capacidade_btu)}`,
+      `Equipamento                            ${this.valor(maquina.tipo)} ${this.valor(maquina.marca)} ${this.valor(maquina.modelo)}`,
+      `TAG                                    ${this.valor(maquina.patrimonio)}`,
+      `Código de barras                       ${this.valor(maquina.codigo_barras)}`,
+      `Gás Refrigerante                       ${this.valor(maquina.gas_refrigerante)}`,
       "",
-      "CONTROLE DE MANUTENCAO",
-      ...verificacoes.map(([label, valor]) => this.campo(label, valor)),
-      this.campo("Evidencias", this.formatarEvidencias(primeiraOs)),
-      this.campo("GPS", this.formatarGps(primeiraOs)),
-      this.campo("Assinatura cliente", primeiraOs?.assinatura?.nome_responsavel || "Pendente"),
+      "ÚLTIMA EXECUÇÃO",
       "",
-      "OCORRENCIAS",
+      `Data                                   ${this.formatarData(primeiraOs?.concluida_em ?? null)}`,
+      `Horário                                ${this.formatarHora(inicio)} → ${this.formatarHora(fim)} (${this.calcularDuracao(inicio, fim)})`,
+      `Técnico/Equipe                         ${primeiraOs?.tecnico?.nome || primeiraOs?.equipe?.nome || "Não informado"}`,
+      `OS                                     ${primeiraOs?.titulo || "Não informado"}`,
+      `Problema relatado                      ${primeiraOs?.problema_relatado || "Manutenção preventiva"}`,
+      "",
+      "CONTROLE DE MANUTENÇÃO",
+      "",
+      ...verificacoes.map(([label, valor]) => `${label.padEnd(35, " ")} ${valor}`),
+      "",
+      `Evidências                             ${this.formatarEvidencias(primeiraOs)}`,
+      `GPS                                    ${this.formatarGps(primeiraOs)}`,
+      `Assinatura do cliente                  ${primeiraOs?.assinatura?.nome_responsavel || "Pendente"}`,
+      "",
+      "OCORRÊNCIAS",
+      "",
       ...ocorrencias.slice(0, 5),
       "",
-      `Pagina da maquina ${indice + 1} de ${previa.maquinas.length}`
+      "─────────────────────────────────────────────────────────────────────────────────────",
+      `Página do equipamento ${indice + 1} de ${previa.maquinas.length}`
     ];
   }
 
-  private montarDeclaracao(previa: PreviaPmoc) {
-    return [
-      `DECLARACAO TECNICA E ASSINATURAS - ${this.formatarMesAno(previa.periodo.fim)}`,
-      "",
-      "Declaramos que as atividades registradas neste PMOC foram organizadas por cliente e por maquina,",
-      "com base nas informacoes cadastradas e nas ordens de servico concluidas na plataforma AIRMOVEBR.",
-      "Este documento nao reutiliza imagem de assinatura do responsavel tecnico; a assinatura e vinculada",
-      "ao relatorio especifico por fluxo de aprovacao e evidencia propria.",
-      "",
-      "Responsavel tecnico:",
-      this.campo("Nome", previa.engenheiro_responsavel?.nome || ENGENHEIRO_PADRAO_PMOC.nome),
-      this.campo("CREA/Carteira", previa.engenheiro_responsavel?.crea || ENGENHEIRO_PADRAO_PMOC.crea),
-      this.campo("RNP", ENGENHEIRO_PADRAO_PMOC.rnp),
-      "",
-      "Assinaturas:",
-      "Responsavel tecnico: ________________________________________________",
-      "Representante do cliente: ___________________________________________",
-      "",
-      "Documento emitido automaticamente pela plataforma AIRMOVEBR."
-    ];
-  }
 
   private numeroPmoc(previa: PreviaPmoc) {
     const documento = (previa.cliente.documento || previa.cliente.nome || "PMOC").replace(/\D/g, "").slice(-6);
@@ -281,24 +352,20 @@ export class AdminPmocPdfRendererService {
 
     return [
       ["Equipamento desligado antes da limpeza?", "Sim"],
-      ["Filtro lavado com agua corrente?", procedimentos.has("limpeza_filtro") ? "Sim" : "Nao informado"],
-      ["Limpeza com escova realizada?", procedimentos.size ? "Sim" : "Nao informado"],
-      ["Secagem completa antes da recolocacao?", procedimentos.has("limpeza_filtro") ? "Sim" : "Nao informado"],
-      ["Integridade fisica do filtro verificada?", "Sim"],
-      ["Limpeza externa do gabinete realizada?", procedimentos.has("limpeza_evaporadora") ? "Sim" : "Nao informado"],
+      ["Filtro lavado com água corrente?", procedimentos.has("limpeza_filtro") ? "Sim" : "Não informado"],
+      ["Limpeza com escova realizada?", procedimentos.size ? "Sim" : "Não informado"],
+      ["Secagem completa antes da recolocação?", procedimentos.has("limpeza_filtro") ? "Sim" : "Não informado"],
+      ["Integridade física do filtro verificada?", "Sim"],
+      ["Limpeza externa do gabinete realizada?", procedimentos.has("limpeza_evaporadora") ? "Sim" : "Não informado"],
       ["Filtro recolocado corretamente?", "Sim"],
-      ["Operacao em modo DRY verificada?", "Nao informado"],
-      ["Condicoes do ambiente verificadas?", ordem?.eventos?.some((evento) => evento.latitude !== null) ? "Sim" : "Nao informado"],
-      ["Evidencia apos limpeza", evidenciaDepois ? "Sim" : "Pendente"]
+      ["Operação em modo DRY verificada?", "Não informado"],
+      ["Condições do ambiente verificadas?", ordem?.eventos?.some((evento) => evento.latitude !== null) ? "Sim" : "Não informado"],
+      ["Evidência após limpeza", evidenciaDepois ? "Sim" : "Pendente"]
     ];
   }
 
-  private campo(campo: string, valor: string) {
-    return `${campo.padEnd(30, " ")} ${valor || "Nao informado"}`;
-  }
-
   private valor(valor?: string | null) {
-    return valor?.trim() || "Nao informado";
+    return valor?.trim() || "Não informado";
   }
 
   private formatarNumero(valor?: number | null) {
@@ -333,7 +400,7 @@ export class AdminPmocPdfRendererService {
 
   private formatarHora(valor: string | null) {
     return valor
-      ? new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" }).format(new Date(valor))
+      ? new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" }).format(new Date(valor))
       : "__:__";
   }
 
@@ -385,9 +452,15 @@ export class AdminPmocPdfRendererService {
     return storageUrl.split(/[\\/]/).filter(Boolean).at(-1) || storageUrl;
   }
 
-  private limitar(valor: string, tamanho: number) {
-    const normalizado = this.normalizarTextoPdf(valor);
-    return normalizado.length > tamanho ? normalizado.slice(0, tamanho) : normalizado.padEnd(tamanho, " ");
+  private normalizarTextoPdf(valor: string) {
+    return valor
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/[^\x20-\x7E]/g, " ");
+  }
+
+  private escaparTextoPdf(valor: string) {
+    return this.normalizarTextoPdf(valor).replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
   }
 
   private criarPdfTexto(paginas: string[][]) {
@@ -447,16 +520,5 @@ export class AdminPmocPdfRendererService {
     }
 
     return linhas.concat(atual || "");
-  }
-
-  private normalizarTextoPdf(valor: string) {
-    return valor
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^\x20-\x7E]/g, " ");
-  }
-
-  private escaparTextoPdf(valor: string) {
-    return this.normalizarTextoPdf(valor).replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
   }
 }
