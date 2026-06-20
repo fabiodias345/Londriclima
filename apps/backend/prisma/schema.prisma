@@ -356,6 +356,9 @@ model Equipamento {
   gasRefrigerante String? @map("gas_refrigerante")
   numeroSerie String? @map("numero_serie")
   localInstalacao String? @map("local_instalacao")
+  areaClimatizadaM2 Int? @map("area_climatizada_m2")
+  ocupantesFixo Int? @map("ocupantes_fixo")
+  ocupantesVariavel Int? @map("ocupantes_variavel")
   criadoEm  DateTime @default(now()) @map("criado_em")
   atualizadoEm DateTime @updatedAt @map("atualizado_em")
 

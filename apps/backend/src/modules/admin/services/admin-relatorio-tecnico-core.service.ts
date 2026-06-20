@@ -351,6 +351,9 @@ export class AdminRelatorioTecnicoCoreService {
             gasRefrigerante: true,
             numeroSerie: true,
             localInstalacao: true,
+            areaClimatizadaM2: true,
+            ocupantesFixo: true,
+            ocupantesVariavel: true,
             atualizadoEm: true,
             ordensServico: {
               where: {
@@ -1155,6 +1158,9 @@ export class AdminRelatorioTecnicoCoreService {
             gasRefrigerante: true,
             numeroSerie: true,
             localInstalacao: true,
+            areaClimatizadaM2: true,
+            ocupantesFixo: true,
+            ocupantesVariavel: true,
             atualizadoEm: true,
             ordensServico: {
               where: {
@@ -1192,6 +1198,9 @@ export class AdminRelatorioTecnicoCoreService {
     gasRefrigerante: string | null;
     numeroSerie: string | null;
     localInstalacao: string | null;
+    areaClimatizadaM2: number | null;
+    ocupantesFixo: number | null;
+    ocupantesVariavel: number | null;
     atualizadoEm: Date;
     ordensServico: Array<{
       id: string;
@@ -1264,6 +1273,9 @@ export class AdminRelatorioTecnicoCoreService {
       gas_refrigerante: equipamento.gasRefrigerante,
       numero_serie: equipamento.numeroSerie,
       local_instalacao: equipamento.localInstalacao,
+      area_climatizada_m2: equipamento.areaClimatizadaM2,
+      ocupantes_fixo: equipamento.ocupantesFixo,
+      ocupantes_variavel: equipamento.ocupantesVariavel,
       atualizado_em: equipamento.atualizadoEm.toISOString(),
       pendencias: this.obterPendenciasMaquinaRelatorioTecnico(equipamento, osConcluidas),
       os_concluidas: osConcluidas

@@ -67,7 +67,10 @@ export class AdminEquipamentosService {
         capacidadeBtu: dto.capacidade_btu,
         gasRefrigerante: dto.gas_refrigerante?.trim() || null,
         numeroSerie: dto.numero_serie?.trim() || null,
-        localInstalacao: dto.local_instalacao?.trim() || null
+        localInstalacao: dto.local_instalacao?.trim() || null,
+        areaClimatizadaM2: dto.area_climatizada_m2,
+        ocupantesFixo: dto.ocupantes_fixo,
+        ocupantesVariavel: dto.ocupantes_variavel
       },
       select: this.equipamentoSelect()
     });
@@ -266,6 +269,9 @@ export class AdminEquipamentosService {
       gasRefrigerante: true,
       numeroSerie: true,
       localInstalacao: true,
+      areaClimatizadaM2: true,
+      ocupantesFixo: true,
+      ocupantesVariavel: true,
       atualizadoEm: true,
       ordensServico: {
         select: {
@@ -289,6 +295,9 @@ export class AdminEquipamentosService {
     gasRefrigerante: string | null;
     numeroSerie: string | null;
     localInstalacao: string | null;
+    areaClimatizadaM2: number | null;
+    ocupantesFixo: number | null;
+    ocupantesVariavel: number | null;
     atualizadoEm: Date;
     ordensServico: { id: string; status: OrdemServicoStatus }[];
   }) {
@@ -308,6 +317,9 @@ export class AdminEquipamentosService {
       gas_refrigerante: equipamento.gasRefrigerante,
       numero_serie: equipamento.numeroSerie,
       local_instalacao: equipamento.localInstalacao,
+      area_climatizada_m2: equipamento.areaClimatizadaM2,
+      ocupantes_fixo: equipamento.ocupantesFixo,
+      ocupantes_variavel: equipamento.ocupantesVariavel,
       atualizado_em: equipamento.atualizadoEm.toISOString(),
       total_os: equipamento.ordensServico.length,
       os_abertas: equipamento.ordensServico.filter((ordem) => STATUS_OS_OPERACIONAIS.includes(ordem.status)).length

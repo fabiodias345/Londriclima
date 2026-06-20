@@ -39,6 +39,21 @@ export class SalvarEquipamentoDto {
   local_instalacao?: string;
 
   @IsOptional()
+  @IsInt()
+  @Min(1)
+  area_climatizada_m2?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  ocupantes_fixo?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  ocupantes_variavel?: number;
+
+  @IsOptional()
   @IsBoolean()
   acesso_publico_ativo?: boolean;
 }
