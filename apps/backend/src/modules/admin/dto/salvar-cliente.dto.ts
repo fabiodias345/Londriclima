@@ -30,6 +30,10 @@ export class SalvarClienteDto {
   engenheiro_responsavel_id?: string;
 
   @IsOptional()
+  @IsUUID()
+  tecnico_responsavel_id?: string;
+
+  @IsOptional()
   @IsArray()
   @IsUUID("4", { each: true })
   equipe_ids?: string[];

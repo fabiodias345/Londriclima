@@ -108,6 +108,12 @@
   font-weight: 800;
 }
 
+.client-responsibles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
 .checkbox-list {
   display: grid;
   gap: 10px;

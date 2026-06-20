@@ -276,14 +276,22 @@ test("admin gerencia tecnicos equipes e responsaveis flexiveis por OS", () => {
   assert.match(html, /id="equipesView"/);
   assert.match(html, /id="equipeForm"/);
   assert.match(html, /id="equipeMembersList"/);
-  assert.match(html, /name="equipe_ids"[^>]*multiple/);
+  assert.match(html, /name="equipe_ids"/);
+  assert.doesNotMatch(html, /id="clientTeamsSelect"[^>]*multiple/);
+  assert.doesNotMatch(html, /id="clientTeamsSelect"[^>]*size="4"/);
+  assert.match(html, /Responsaveis pelo cliente/);
+  assert.match(html, /id="clientTechnicianSelect"/);
+  assert.match(html, /name="tecnico_responsavel_id"/);
+  assert.doesNotMatch(html, /Cadastre ou selecione um engenheiro/);
   assert.match(script, /async function loadTecnicos/);
   assert.match(script, /\/admin\/tecnicos/);
   assert.match(script, /async function loadEquipes/);
   assert.match(script, /\/admin\/equipes/);
   assert.match(script, /function renderEquipeMembersList/);
+  assert.match(script, /function renderClientTechnicianOptions/);
   assert.match(script, /usuario_ids:\s*data\.getAll\("usuario_ids"\)/);
   assert.match(script, /equipe_ids:\s*data\.getAll\("equipe_ids"\)/);
+  assert.match(script, /tecnico_responsavel_id:\s*String\(data\.get\("tecnico_responsavel_id"\)/);
 });
 
 test("landing possui consulta publica de equipamento protegida por senha", () => {

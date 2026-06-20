@@ -1,4 +1,4 @@
-﻿import { BadRequestException,ConflictException } from "@nestjs/common";
+﻿import { BadRequestException } from "@nestjs/common";
 import {
 OrdemServicoEventoAcao,
 OrdemServicoStatus,
@@ -334,10 +334,25 @@ test("criarCliente exige CNPJ valido para pessoa juridica", async () => {
 
 test("apagarCliente remove cliente sem historico nem equipamentos", async () => {
   const chamadas = {
+    clienteEquipeWhere: undefined as unknown,
     deleteManyWhere: undefined as unknown,
     deleteWhere: undefined as unknown
   };
   const tx = {
+    planoRecorrencia: {
+      deleteMany: async () => undefined
+    },
+    pmocRelatorio: {
+      deleteMany: async () => undefined
+    },
+    clienteEquipe: {
+      deleteMany: async ({ where }: { where: unknown }) => {
+        chamadas.clienteEquipeWhere = where;
+      }
+    },
+    equipamento: {
+      deleteMany: async () => undefined
+    },
     clienteEndereco: {
       deleteMany: async ({ where }: { where: unknown }) => {
         chamadas.deleteManyWhere = where;
@@ -360,6 +375,9 @@ test("apagarCliente remove cliente sem historico nem equipamentos", async () => 
         }
       })
     },
+    ordemServico: {
+      findMany: async () => []
+    },
     $transaction: async (callback: (tx: unknown) => unknown) => callback(tx)
   };
   const service = criarService(prisma);
@@ -370,16 +388,104 @@ test("apagarCliente remove cliente sem historico nem equipamentos", async () => 
     clienteId: "cliente-1",
     empresaId: "empresa-1"
   });
+  assert.deepEqual(chamadas.clienteEquipeWhere, {
+    clienteId: "cliente-1",
+    empresaId: "empresa-1"
+  });
   assert.deepEqual(chamadas.deleteWhere, {
     id: "cliente-1"
   });
   assert.deepEqual(resposta, {
     id: "cliente-1",
+    ordens_removidas: 0,
+    equipamentos_removidos: 0,
     apagado: true
   });
 });
 
-test("apagarCliente bloqueia cliente com historico operacional", async () => {
+test("apagarCliente remove historico operacional e equipamentos do cliente", async () => {
+  const chamadas = {
+    automacoesWhere: undefined as unknown,
+    responsaveisWhere: undefined as unknown,
+    pecasWhere: undefined as unknown,
+    checklistWhere: undefined as unknown,
+    evidenciasWhere: undefined as unknown,
+    assinaturaWhere: undefined as unknown,
+    observacaoWhere: undefined as unknown,
+    eventosWhere: undefined as unknown,
+    ordensWhere: undefined as unknown,
+    equipamentosWhere: undefined as unknown,
+    clienteWhere: undefined as unknown
+  };
+  const tx = {
+    planoRecorrencia: {
+      deleteMany: async () => undefined
+    },
+    pmocRelatorio: {
+      deleteMany: async () => undefined
+    },
+    clienteEquipe: {
+      deleteMany: async () => undefined
+    },
+    automacaoAgendada: {
+      deleteMany: async ({ where }: { where: unknown }) => {
+        chamadas.automacoesWhere = where;
+      }
+    },
+    ordemServicoResponsavel: {
+      deleteMany: async ({ where }: { where: unknown }) => {
+        chamadas.responsaveisWhere = where;
+      }
+    },
+    ordemServicoPeca: {
+      deleteMany: async ({ where }: { where: unknown }) => {
+        chamadas.pecasWhere = where;
+      }
+    },
+    ordemServicoChecklist: {
+      deleteMany: async ({ where }: { where: unknown }) => {
+        chamadas.checklistWhere = where;
+      }
+    },
+    ordemServicoEvidencia: {
+      deleteMany: async ({ where }: { where: unknown }) => {
+        chamadas.evidenciasWhere = where;
+      }
+    },
+    ordemServicoAssinatura: {
+      deleteMany: async ({ where }: { where: unknown }) => {
+        chamadas.assinaturaWhere = where;
+      }
+    },
+    ordemServicoObservacao: {
+      deleteMany: async ({ where }: { where: unknown }) => {
+        chamadas.observacaoWhere = where;
+      }
+    },
+    ordemServicoEvento: {
+      deleteMany: async ({ where }: { where: unknown }) => {
+        chamadas.eventosWhere = where;
+      }
+    },
+    ordemServico: {
+      deleteMany: async ({ where }: { where: unknown }) => {
+        chamadas.ordensWhere = where;
+      }
+    },
+    equipamento: {
+      deleteMany: async ({ where }: { where: unknown }) => {
+        chamadas.equipamentosWhere = where;
+      }
+    },
+    clienteEndereco: {
+      deleteMany: async () => undefined
+    },
+    cliente: {
+      delete: async ({ where }: { where: unknown }) => {
+        chamadas.clienteWhere = where;
+      }
+    }
+  };
   const prisma = {
     cliente: {
       findFirst: async () => ({
@@ -387,12 +493,62 @@ test("apagarCliente bloqueia cliente com historico operacional", async () => {
         nome: "Maria",
         _count: {
           ordensServico: 1,
-          equipamentos: 0
+          equipamentos: 1
         }
       })
-    }
+    },
+    ordemServico: {
+      findMany: async () => [
+        {
+          id: "os-1",
+          checklist: {
+            id: "checklist-1"
+          }
+        }
+      ]
+    },
+    $transaction: async (callback: (tx: unknown) => unknown) => callback(tx)
   };
   const service = criarService(prisma);
 
-  await assert.rejects(() => service.apagarCliente("cliente-1", usuario), ConflictException);
+  const resposta = await service.apagarCliente("cliente-1", usuario);
+  const ordemFiltro = {
+    ordemServicoId: {
+      in: ["os-1"]
+    },
+    empresaId: "empresa-1"
+  };
+
+  assert.deepEqual(chamadas.automacoesWhere, ordemFiltro);
+  assert.deepEqual(chamadas.responsaveisWhere, ordemFiltro);
+  assert.deepEqual(chamadas.pecasWhere, {
+    checklistId: {
+      in: ["checklist-1"]
+    },
+    empresaId: "empresa-1"
+  });
+  assert.deepEqual(chamadas.checklistWhere, ordemFiltro);
+  assert.deepEqual(chamadas.evidenciasWhere, ordemFiltro);
+  assert.deepEqual(chamadas.assinaturaWhere, ordemFiltro);
+  assert.deepEqual(chamadas.observacaoWhere, ordemFiltro);
+  assert.deepEqual(chamadas.eventosWhere, ordemFiltro);
+  assert.deepEqual(chamadas.ordensWhere, {
+    id: {
+      in: ["os-1"]
+    },
+    empresaId: "empresa-1"
+  });
+  assert.deepEqual(chamadas.equipamentosWhere, {
+    clienteId: "cliente-1",
+    empresaId: "empresa-1"
+  });
+  assert.deepEqual(chamadas.clienteWhere, {
+    id: "cliente-1"
+  });
+  assert.deepEqual(resposta, {
+    id: "cliente-1",
+    ordens_removidas: 1,
+    equipamentos_removidos: 1,
+    apagado: true
+  });
 });

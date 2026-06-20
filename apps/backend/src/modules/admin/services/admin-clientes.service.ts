@@ -1,5 +1,5 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
-import { OrdemServicoStatus, PessoaTipo, Prisma } from "@prisma/client";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { OrdemServicoStatus, PessoaTipo, Prisma, UsuarioRole } from "@prisma/client";
 import { PrismaService } from "../../../database/prisma.service";
 import { AuthenticatedUser } from "../../auth/auth-user";
 import { SalvarClienteDto } from "../dto/salvar-cliente.dto";
@@ -37,6 +37,14 @@ export class AdminClientesService {
             nome: true,
             crea: true,
             email: true
+          }
+        },
+        tecnicoResponsavel: {
+          select: {
+            id: true,
+            nome: true,
+            email: true,
+            role: true
           }
         },
         equipes: {
@@ -92,6 +100,7 @@ export class AdminClientesService {
         email: cliente.email,
         pmoc_ativo: cliente.pmocAtivo,
         engenheiro_responsavel: cliente.engenheiroResponsavel,
+        tecnico_responsavel: cliente.tecnicoResponsavel,
         equipes: (cliente.equipes || []).map((vinculo) => vinculo.equipe),
         atualizado_em: cliente.atualizadoEm.toISOString(),
         endereco: cliente.enderecos[0] ?? null,
@@ -105,6 +114,7 @@ export class AdminClientesService {
   async criarCliente(dto: SalvarClienteDto, usuario: AuthenticatedUser) {
     this.validarCadastroCliente(dto);
     await this.validarVinculoPmoc(dto, usuario);
+    await this.validarTecnicoDaEmpresa(dto.tecnico_responsavel_id, usuario);
     await this.validarEquipesDaEmpresa(dto.equipe_ids, usuario);
 
     const cliente = await this.prisma.$transaction(async (tx) => {
@@ -132,6 +142,7 @@ export class AdminClientesService {
   async atualizarCliente(clienteId: string, dto: SalvarClienteDto, usuario: AuthenticatedUser) {
     this.validarCadastroCliente(dto);
     await this.validarVinculoPmoc(dto, usuario);
+    await this.validarTecnicoDaEmpresa(dto.tecnico_responsavel_id, usuario);
     await this.validarEquipesDaEmpresa(dto.equipe_ids, usuario);
 
     const clienteExiste = await this.prisma.cliente.findFirst({
@@ -210,11 +221,137 @@ export class AdminClientesService {
       throw new NotFoundException("Cliente nao encontrado.");
     }
 
-    if (cliente._count.ordensServico > 0 || cliente._count.equipamentos > 0) {
-      throw new ConflictException("Cliente possui historico ou equipamentos vinculados e nao pode ser apagado.");
-    }
+    const ordens = await this.prisma.ordemServico.findMany({
+      where: {
+        clienteId,
+        empresaId: usuario.empresa_id
+      },
+      select: {
+        id: true,
+        checklist: {
+          select: {
+            id: true
+          }
+        }
+      }
+    });
+    const ordemIds = ordens.map((ordem) => ordem.id);
+    const checklistIds = ordens.map((ordem) => ordem.checklist?.id).filter((id): id is string => Boolean(id));
 
     await this.prisma.$transaction(async (tx) => {
+      await tx.planoRecorrencia.deleteMany({
+        where: {
+          clienteId,
+          empresaId: usuario.empresa_id
+        }
+      });
+
+      await tx.pmocRelatorio.deleteMany({
+        where: {
+          clienteId,
+          empresaId: usuario.empresa_id
+        }
+      });
+
+      await tx.clienteEquipe.deleteMany({
+        where: {
+          clienteId,
+          empresaId: usuario.empresa_id
+        }
+      });
+
+      if (ordemIds.length) {
+        await tx.automacaoAgendada.deleteMany({
+          where: {
+            ordemServicoId: {
+              in: ordemIds
+            },
+            empresaId: usuario.empresa_id
+          }
+        });
+
+        await tx.ordemServicoResponsavel.deleteMany({
+          where: {
+            ordemServicoId: {
+              in: ordemIds
+            },
+            empresaId: usuario.empresa_id
+          }
+        });
+
+        if (checklistIds.length) {
+          await tx.ordemServicoPeca.deleteMany({
+            where: {
+              checklistId: {
+                in: checklistIds
+              },
+              empresaId: usuario.empresa_id
+            }
+          });
+        }
+
+        await tx.ordemServicoChecklist.deleteMany({
+          where: {
+            ordemServicoId: {
+              in: ordemIds
+            },
+            empresaId: usuario.empresa_id
+          }
+        });
+
+        await tx.ordemServicoEvidencia.deleteMany({
+          where: {
+            ordemServicoId: {
+              in: ordemIds
+            },
+            empresaId: usuario.empresa_id
+          }
+        });
+
+        await tx.ordemServicoAssinatura.deleteMany({
+          where: {
+            ordemServicoId: {
+              in: ordemIds
+            },
+            empresaId: usuario.empresa_id
+          }
+        });
+
+        await tx.ordemServicoObservacao.deleteMany({
+          where: {
+            ordemServicoId: {
+              in: ordemIds
+            },
+            empresaId: usuario.empresa_id
+          }
+        });
+
+        await tx.ordemServicoEvento.deleteMany({
+          where: {
+            ordemServicoId: {
+              in: ordemIds
+            },
+            empresaId: usuario.empresa_id
+          }
+        });
+
+        await tx.ordemServico.deleteMany({
+          where: {
+            id: {
+              in: ordemIds
+            },
+            empresaId: usuario.empresa_id
+          }
+        });
+      }
+
+      await tx.equipamento.deleteMany({
+        where: {
+          clienteId,
+          empresaId: usuario.empresa_id
+        }
+      });
+
       await tx.clienteEndereco.deleteMany({
         where: {
           clienteId,
@@ -231,6 +368,8 @@ export class AdminClientesService {
 
     return {
       id: cliente.id,
+      ordens_removidas: ordemIds.length,
+      equipamentos_removidos: cliente._count.equipamentos,
       apagado: true
     };
   }
@@ -247,7 +386,8 @@ export class AdminClientesService {
       email: dto.email?.trim() || null,
       telefone,
       pmocAtivo: dto.pmoc_ativo === true,
-      engenheiroResponsavelId: dto.pmoc_ativo === true ? dto.engenheiro_responsavel_id?.trim() || null : null
+      engenheiroResponsavelId: dto.pmoc_ativo === true ? dto.engenheiro_responsavel_id?.trim() || null : null,
+      tecnicoResponsavelId: dto.tecnico_responsavel_id?.trim() || null
     };
   }
 
@@ -310,6 +450,32 @@ export class AdminClientesService {
 
     if (total !== ids.length) {
       throw new NotFoundException("Equipe nao encontrada.");
+    }
+  }
+
+  private async validarTecnicoDaEmpresa(tecnicoId: string | undefined, usuario: AuthenticatedUser) {
+    const id = tecnicoId?.trim();
+
+    if (!id) {
+      return;
+    }
+
+    const tecnico = await this.prisma.usuario.findFirst({
+      where: {
+        id,
+        empresaId: usuario.empresa_id,
+        ativo: true,
+        role: {
+          in: [UsuarioRole.tecnico, UsuarioRole.auxiliar]
+        }
+      },
+      select: {
+        id: true
+      }
+    });
+
+    if (!tecnico) {
+      throw new NotFoundException("Tecnico nao encontrado.");
     }
   }
 
@@ -415,6 +581,25 @@ export class AdminClientesService {
             email: true
           }
         },
+        tecnicoResponsavel: {
+          select: {
+            id: true,
+            nome: true,
+            email: true,
+            role: true
+          }
+        },
+        equipes: {
+          select: {
+            equipe: {
+              select: {
+                id: true,
+                nome: true,
+                ativa: true
+              }
+            }
+          }
+        },
         atualizadoEm: true,
         enderecos: {
           orderBy: {
@@ -448,6 +633,8 @@ export class AdminClientesService {
       email: cliente.email,
       pmoc_ativo: cliente.pmocAtivo,
       engenheiro_responsavel: cliente.engenheiroResponsavel,
+      tecnico_responsavel: cliente.tecnicoResponsavel,
+      equipes: (cliente.equipes || []).map((vinculo) => vinculo.equipe),
       atualizado_em: cliente.atualizadoEm.toISOString(),
       endereco: cliente.enderecos[0] ?? null
     };

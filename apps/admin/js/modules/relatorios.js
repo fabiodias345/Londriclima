@@ -34,6 +34,7 @@ async function submitClient(event) {
     documento,
     pmoc_ativo: data.get("pmoc_ativo") === "on",
     engenheiro_responsavel_id: data.get("pmoc_ativo") === "on" ? String(data.get("engenheiro_responsavel_id") || "") : "",
+    tecnico_responsavel_id: String(data.get("tecnico_responsavel_id") || ""),
     equipe_ids: data.getAll("equipe_ids").map(String).filter(Boolean),
     cep: onlyDigits(String(data.get("cep") || "")),
     logradouro: String(data.get("logradouro") || ""),

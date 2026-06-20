@@ -379,6 +379,8 @@ function buildClientPmocPayload(client, engineerId) {
     documento: client.documento || "",
     pmoc_ativo: true,
     engenheiro_responsavel_id: engineerId,
+    tecnico_responsavel_id: client.tecnico_responsavel?.id || "",
+    equipe_ids: (client.equipes || []).map((equipe) => equipe.id),
     cep: onlyDigits(address.cep || ""),
     logradouro: address.logradouro || "",
     numero: address.numero || "",

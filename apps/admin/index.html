@@ -509,18 +509,27 @@
               <input name="pmoc_ativo" type="checkbox" />
               Cliente exige PMOC
             </label>
-            <label>
-              Engenheiro responsavel
-              <select name="engenheiro_responsavel_id" id="clientEngineerSelect">
-                <option value="">Cadastre ou selecione um engenheiro</option>
-              </select>
-            </label>
-            <label>
-              Equipes vinculadas
-              <select name="equipe_ids" id="clientTeamsSelect" multiple size="4">
-                <option value="">Cadastre uma equipe</option>
-              </select>
-            </label>
+            <fieldset class="form-fieldset client-responsibles">
+              <legend>Responsaveis pelo cliente</legend>
+              <label>
+                Engenheiro responsavel
+                <select name="engenheiro_responsavel_id" id="clientEngineerSelect">
+                  <option value="">Selecione</option>
+                </select>
+              </label>
+              <label>
+                Equipe vinculada
+                <select name="equipe_ids" id="clientTeamsSelect">
+                  <option value="">Selecione</option>
+                </select>
+              </label>
+              <label>
+                Tecnico vinculado
+                <select name="tecnico_responsavel_id" id="clientTechnicianSelect">
+                  <option value="">Selecione</option>
+                </select>
+              </label>
+            </fieldset>
             <div class="form-actions">
               <button type="submit">Salvar cliente</button>
               <button class="secondary-button hidden" id="backToClientsButton" type="button">Voltar para clientes</button>

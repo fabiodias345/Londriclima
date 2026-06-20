@@ -91,9 +91,34 @@ function renderClientTeamOptions(selectedIds = getSelectedValues(clientTeamsSele
     return;
   }
 
-  clientTeamsSelect.innerHTML = latestEquipes
-    .map((item) => \`<option value="\${item.id}" \${selectedIds.includes(item.id) ? "selected" : ""}>\${escapeHtml(item.nome)}</option>\`)
-    .join("");
+  clientTeamsSelect.innerHTML = '<option value="">Selecione</option>';
+
+  for (const item of latestEquipes) {
+    const option = document.createElement("option");
+    option.value = item.id;
+    option.textContent = item.nome;
+    option.selected = selectedIds.includes(item.id);
+    clientTeamsSelect.appendChild(option);
+  }
+}
+
+function renderClientTechnicianOptions(selectedId = clientTechnicianSelect?.value || "") {
+  if (!clientTechnicianSelect) {
+    return;
+  }
+
+  clientTechnicianSelect.innerHTML = '<option value="">Selecione</option>';
+
+  for (const item of latestTecnicos) {
+    const option = document.createElement("option");
+    option.value = item.id;
+    option.textContent = item.role === "auxiliar" ? \`\${item.nome} - Auxiliar\` : item.nome;
+    clientTechnicianSelect.appendChild(option);
+  }
+
+  if (selectedId) {
+    clientTechnicianSelect.value = selectedId;
+  }
 }
 
 function renderEquipeClientOptions(selectedIds = getSelectedValues(equipeClientsSelect)) {
@@ -147,7 +172,7 @@ function renderEngineerOptions(selectedId = clientEngineerSelect?.value || "") {
     return;
   }
 
-  clientEngineerSelect.innerHTML = '<option value="">Cadastre ou selecione um engenheiro</option>';
+  clientEngineerSelect.innerHTML = '<option value="">Selecione</option>';
 
   for (const item of latestEngineers) {
     const option = document.createElement("option");

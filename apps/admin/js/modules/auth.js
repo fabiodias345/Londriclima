@@ -106,6 +106,7 @@ async function loadRecorrencias() {
 async function loadClientes() {
   clientesStatus.textContent = "Carregando...";
   await loadEngenheiros(false);
+  await loadTecnicos(false);
   await loadEquipes(false);
 
   const result = await fetchAdminJson("/admin/clientes", clientesStatus);
@@ -122,6 +123,7 @@ async function loadClientes() {
   equipmentCount.textContent = items.reduce((total, item) => total + (item.total_equipamentos || 0), 0);
   clientesStatus.textContent = result.total === 1 ? "1 cliente" : \`\${result.total} clientes\`;
   renderClientes(items);
+  renderClientTechnicianOptions();
   renderClientTeamOptions();
 }
 

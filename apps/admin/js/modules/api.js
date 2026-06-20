@@ -113,6 +113,7 @@ const clientDocumentLabel = document.querySelector("#clientDocumentLabel");
 const clientDocumentHelp = document.querySelector("#clientDocumentHelp");
 const clientEngineerSelect = document.querySelector("#clientEngineerSelect");
 const clientTeamsSelect = document.querySelector("#clientTeamsSelect");
+const clientTechnicianSelect = document.querySelector("#clientTechnicianSelect");
 const engenheirosStatus = document.querySelector("#engenheirosStatus");
 const engenheirosList = document.querySelector("#engenheirosList");
 const engineerForm = document.querySelector("#engineerForm");

@@ -232,6 +232,7 @@ function fillClientForm(clientId) {
   clientForm.elements.uf.value = address.uf || "PR";
   clientForm.elements.pmoc_ativo.checked = Boolean(client.pmoc_ativo);
   renderEngineerOptions(client.engenheiro_responsavel?.id || "");
+  renderClientTechnicianOptions(client.tecnico_responsavel?.id || "");
   renderClientTeamOptions((client.equipes || []).map((equipe) => equipe.id));
   lastCepLookup = onlyDigits(address.cep || "");
   setClientCepStatus("");
@@ -256,6 +257,7 @@ function resetClientForm() {
   clientForm.elements.uf.value = "PR";
   clientForm.elements.pmoc_ativo.checked = false;
   renderEngineerOptions("");
+  renderClientTechnicianOptions("");
   renderClientTeamOptions([]);
   lastCepLookup = "";
   updateClientDocumentCopy();
