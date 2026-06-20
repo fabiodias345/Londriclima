@@ -31,6 +31,7 @@ import { AdminFrotaService } from "./admin-frota.service";
 import { AdminPreChamadosService } from "./admin-pre-chamados.service";
 import { AdminRecorrenciaService } from "./admin-recorrencia.service";
 import { AdminTecnicosService } from "./admin-tecnicos.service";
+import { AdminPmocPdfRendererService } from "./admin-pmoc-pdf-renderer.service";
 
 type PreviaPmocCliente = Awaited<ReturnType<AdminRelatorioTecnicoCoreService["obterPreviaPmocCliente"]>>;
 type PreviaRelatorioAvulsoCliente = Awaited<ReturnType<AdminRelatorioTecnicoCoreService["obterPreviaRelatorioAvulsoCliente"]>>;
@@ -46,6 +47,7 @@ export class AdminRelatorioTecnicoCoreService {
   private readonly equipesService: AdminEquipesService;
   private readonly engenheirosService: AdminEngenheirosService;
   private readonly preChamadosService: AdminPreChamadosService;
+  private readonly pmocPdfRenderer = new AdminPmocPdfRendererService();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -453,7 +455,7 @@ export class AdminRelatorioTecnicoCoreService {
 
   async gerarPdfPmocCliente(clienteId: string, usuario: AuthenticatedUser) {
     const previa = await this.obterPreviaPmocCliente(clienteId, usuario);
-    const buffer = this.gerarPdfBasicoPmoc(previa);
+    const buffer = this.pmocPdfRenderer.gerar(previa);
 
     return {
       filename: `${this.slugArquivo(`pmoc-${previa.cliente.nome}`)}.pdf`,
@@ -1627,27 +1629,6 @@ export class AdminRelatorioTecnicoCoreService {
     return 4;
   }
 
-  private gerarPdfBasicoPmoc(previa: PreviaPmocCliente) {
-    const paginas: string[][] = [this.montarCapaPmoc(previa)];
-
-    if (!previa.maquinas.length) {
-      paginas.push([
-        "MAQUINA N:001",
-        "",
-        "Nenhuma maquina cadastrada para este cliente.",
-        "Cadastre maquinas antes de emitir o PMOC final."
-      ]);
-    }
-
-    for (const [indice, maquina] of previa.maquinas.entries()) {
-      paginas.push(this.montarPaginaMaquinaPmoc(previa, maquina, indice));
-    }
-
-    paginas.push(this.montarDeclaracaoPmoc(previa));
-
-    return this.criarPdfTexto(paginas);
-  }
-
   private gerarPdfBasicoRelatorioAvulso(previa: PreviaRelatorioAvulsoCliente) {
     const paginas: string[][] = [this.montarCapaRelatorioAvulso(previa)];
 
@@ -1727,93 +1708,6 @@ export class AdminRelatorioTecnicoCoreService {
       "",
       "OBSERVACOES",
       ...(primeiraOs?.observacoes.length ? primeiraOs.observacoes.map((observacao) => observacao.texto) : ["Sem observacoes visiveis."])
-    ];
-  }
-
-  private montarCapaPmoc(previa: PreviaPmocCliente) {
-    const responsavel = previa.engenheiro_responsavel
-      ? `${previa.engenheiro_responsavel.nome} - ${previa.engenheiro_responsavel.crea || "CREA pendente"}`
-      : "pendente";
-
-    return [
-      "AIRMOVEBR - RELATORIO PMOC",
-      "",
-      "-----------------------------------------------------------------------",
-      this.formatarLinhaCampoPmoc("Campo", "Informacao"),
-      "----------------------------------- -----------------------------------",
-      this.formatarLinhaCampoPmoc("Empresa", "AIRMOVEBR"),
-      this.formatarLinhaCampoPmoc("Base operacional", "Londrina, PR"),
-      this.formatarLinhaCampoPmoc("Dominio", "airmovebr.com.br"),
-      "",
-      this.formatarLinhaCampoPmoc("Cliente", previa.cliente.nome),
-      this.formatarLinhaCampoPmoc("Documento", previa.cliente.documento || "nao informado"),
-      this.formatarLinhaCampoPmoc("E-mail", previa.cliente.email || "pendente"),
-      this.formatarLinhaCampoPmoc("Endereco", this.formatarEnderecoPmoc(previa.cliente.endereco)),
-      this.formatarLinhaCampoPmoc("Engenheiro Responsavel", responsavel),
-      this.formatarLinhaCampoPmoc(
-        "Periodo",
-        `${this.formatarDataPmoc(previa.periodo.inicio)} a ${this.formatarDataPmoc(previa.periodo.fim)}`
-      ),
-      this.formatarLinhaCampoPmoc(
-        "Maquinas",
-        `${previa.total_maquinas} - OS Concluidas: ${previa.total_os_concluidas} - Status: ${this.formatarStatusPmoc(previa)}`
-      ),
-      this.formatarLinhaCampoPmoc("Pendencias", previa.pendencias.join(", ") || "Nenhuma"),
-      "-----------------------------------------------------------------------",
-      "",
-      "Este relatorio consolida maquinas, execucoes, checklist, evidencias, GPS e assinatura do cliente."
-    ];
-  }
-
-  private montarPaginaMaquinaPmoc(
-    previa: PreviaPmocCliente,
-    maquina: PreviaPmocCliente["maquinas"][number],
-    indice: number
-  ) {
-    const primeiraOs = maquina.os_concluidas[0] ?? null;
-    const inicio = primeiraOs?.agendada_para ?? primeiraOs?.eventos[0]?.registrado_em ?? null;
-    const fim = primeiraOs?.concluida_em ?? primeiraOs?.eventos.at(-1)?.registrado_em ?? null;
-    const verificacoes = this.obterLinhasChecklistPmoc(primeiraOs);
-
-    return [
-      `MAQUINA N:${String(indice + 1).padStart(3, "0")}`,
-      "",
-      "--------------------------------------------------------------------------------------------------",
-      "Modelo              Marca        Serie          Fluido   Capacidade   Localizacao   Patrimonio   Codigo/QR",
-      "------------------  -----------  -------------  -------  -----------  ------------  -----------  -------------",
-      this.formatarLinhaMaquinaPmoc(maquina),
-      "--------------------------------------------------------------------------------------------------",
-      "",
-      `Execucao #1 - ${this.formatarDataPmoc(primeiraOs?.concluida_em ?? null)} - ${this.formatarHoraPmoc(inicio)} -> ${this.formatarHoraPmoc(fim)} (${this.calcularDuracaoPmoc(inicio, fim)}) - Tecnico: ${primeiraOs?.tecnico?.nome || primeiraOs?.equipe?.nome || "nao informado"}`,
-      "",
-      "-----------------------------------------------------------------------",
-      this.formatarLinhaCampoPmoc("Verificacao / Atividade", "Resultado"),
-      "----------------------------------- -----------------------------------",
-      ...verificacoes.map(([label, valor]) => this.formatarLinhaCampoPmoc(label, valor)),
-      "-----------------------------------------------------------------------",
-      "",
-      `Evidencias: ${this.formatarEvidenciasPmoc(primeiraOs)}`,
-      "",
-      `Observacoes: ${primeiraOs?.observacoes[0]?.texto || "Sem observacoes visiveis."}`,
-      "",
-      `Assinatura do Cliente: ${primeiraOs?.assinatura?.nome_responsavel || "pendente"}`,
-      `Pagina da maquina ${indice + 1} de ${previa.maquinas.length}`
-    ];
-  }
-
-  private montarDeclaracaoPmoc(previa: PreviaPmocCliente) {
-    return [
-      `DECLARACAO DE CONFORMIDADE TECNICA - ${this.formatarMesAnoPmoc(previa.periodo.fim)}`,
-      "",
-      "Declaro, para os devidos fins, que os servicos de manutencao preventiva registrados neste Relatorio PMOC",
-      "foram executados em conformidade com o Programa de Manutencao, Operacao e Controle (PMOC), instituido",
-      "pela Lei Federal n 13.589/2018 e regulamentado pela Portaria MS n 3.523/1998, observando os parametros",
-      "de qualidade do ar interior estabelecidos pela Resolucao ANVISA RE n 09/2003.",
-      "",
-      "Os procedimentos abrangem inspecao, limpeza e verificacao funcional dos equipamentos, com evidencias",
-      "fotograficas antes e apos cada intervencao, geolocalizacao do tecnico e assinatura digital do cliente.",
-      "A autenticidade e garantida por UUID da plataforma AirMove BR, com validade juridica nos termos da",
-      "Lei Federal n 14.063/2020 e da MP n 2.200-2/2001 (ICP-Brasil)."
     ];
   }
 
@@ -1904,10 +1798,6 @@ export class AdminRelatorioTecnicoCoreService {
     return normalizado.length > tamanho ? normalizado.slice(0, tamanho) : normalizado.padEnd(tamanho, " ");
   }
 
-  private formatarStatusPmoc(previa: PreviaPmocCliente) {
-    return previa.pronto_para_pdf ? "Pronto para assinatura" : "Com pendencias";
-  }
-
   private formatarEvidenciasPmoc(ordem: PreviaPmocCliente["maquinas"][number]["os_concluidas"][number] | null) {
     if (!ordem?.evidencias.length) {
       return "Nenhuma evidencia registrada.";
@@ -1968,14 +1858,6 @@ export class AdminRelatorioTecnicoCoreService {
 
     const minutos = Math.max(0, Math.round((new Date(fim).getTime() - new Date(inicio).getTime()) / 60000));
     return `${minutos}min`;
-  }
-
-  private formatarMesAnoPmoc(valor: string | null) {
-    const data = valor ? new Date(valor) : new Date();
-    return new Intl.DateTimeFormat("pt-BR", {
-      month: "long",
-      year: "numeric"
-    }).format(data).toUpperCase();
   }
 
   private formatarMesAnoReferenciaPmoc(valor: string | null) {

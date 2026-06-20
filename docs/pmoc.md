@@ -46,3 +46,38 @@ A primeira entrega prepara a base do PMOC:
 - Dados retornados pela API separados por cliente, prontos para a geracao futura de PDF.
 
 A geracao real do PDF, envio de e-mail e assinatura remota serao implementados em etapa propria.
+
+## PDF PMOC aprovado em 20/06/2026
+
+O PDF PMOC deve manter o fluxo operacional existente: `previa -> PDF -> Assinafy -> SMTP`.
+
+Regras obrigatorias:
+
+- gerar um PDF independente por cliente e endereco;
+- nunca misturar maquinas de clientes diferentes;
+- manter uma pagina exclusiva por maquina;
+- usar `Nao informado` para campos ainda nao cadastrados;
+- nao armazenar assinatura digitalizada reutilizavel do engenheiro.
+
+Estrutura aprovada:
+
+1. capa AIRMOVEBR com numero PMOC, cliente, endereco, emissao e renovacao;
+2. identificacao do cliente, contratada, engenheiro e ART;
+3. objetivo, responsabilidades, limitacoes e referencias normativas;
+4. resumo das maquinas do cliente;
+5. uma pagina exclusiva por maquina;
+6. declaracao tecnica e areas de assinatura.
+
+Campos por maquina:
+
+- TAG/patrimonio;
+- codigo de barras futuro;
+- tipo, marca e modelo;
+- gas refrigerante;
+- local instalado;
+- carga termica em BTU;
+- area climatizada em m2;
+- ocupantes fixos e variaveis;
+- atividades/periodicidade;
+- controle de manutencao;
+- ocorrencias.
