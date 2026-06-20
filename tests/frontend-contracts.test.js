@@ -242,6 +242,13 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(script, /clientForm\.elements\.uf\.value = address\.uf/);
   assert.match(script, /function validateClientIdentity/);
   assert.match(script, /Telefone com DDD|Informe telefone com DDD/);
+  assert.match(script, /const rawDocumento = String\(data\.get\("documento"\) \|\| ""\)\.trim\(\)/);
+  assert.match(script, /const documento = tipo === "pj" \? onlyDigits\(rawDocumento\) : rawDocumento/);
+  assert.match(script, /function formatPhoneInput/);
+  assert.match(script, /\(43\) 3348-9760 ou \(43\) 99999-9999/);
+  assert.match(script, /digits\.length <= 10/);
+  assert.match(script, /digits\.slice\(2, 6\)/);
+  assert.match(script, /digits\.slice\(2, 7\)/);
   assert.match(script, /tipo === "pj" \? "CNPJ" : "CPF ou RG"/);
   assert.match(script, /data-action="apagar-cliente"/);
   assert.match(script, /data-action="apagar-engenheiro"/);
@@ -273,6 +280,8 @@ test("admin gerencia tecnicos equipes e responsaveis flexiveis por OS", () => {
   assert.match(html, /id="tecnicosView"/);
   assert.match(html, /id="tecnicoForm"/);
   assert.match(html, /name="senha"/);
+  assert.match(html, /Email \/ login\s*<input name="email" type="text" required \/>/);
+  assert.doesNotMatch(html, /Email \/ login\s*<input name="email" type="email" required \/>/);
   assert.match(html, /id="equipesView"/);
   assert.match(html, /id="equipeForm"/);
   assert.match(html, /id="equipeMembersList"/);

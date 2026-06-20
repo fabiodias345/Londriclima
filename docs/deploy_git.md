@@ -10,5 +10,3 @@ git merge --ff-only dev
 git push origin main
 
 git switch dev
-
-

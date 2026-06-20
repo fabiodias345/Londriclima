@@ -270,6 +270,16 @@ equipesList?.addEventListener("click", (event) => {
 
 clientForm?.elements.tipo?.addEventListener("change", updateClientDocumentCopy);
 
+clientForm?.elements.telefone?.addEventListener("input", (event) => {
+  const target = event.target;
+
+  if (!(target instanceof HTMLInputElement)) {
+    return;
+  }
+
+  target.value = formatPhoneInput(target.value);
+});
+
 clientForm?.elements.cep?.addEventListener("input", (event) => {
   const target = event.target;
 

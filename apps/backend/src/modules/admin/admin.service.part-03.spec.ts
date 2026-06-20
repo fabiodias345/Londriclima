@@ -332,6 +332,58 @@ test("criarCliente exige CNPJ valido para pessoa juridica", async () => {
   );
 });
 
+test("criarCliente aceita CNPJ com pontuacao e salva somente numeros", async () => {
+  const chamadas = {
+    clienteData: undefined as unknown
+  };
+  const tx = {
+    cliente: {
+      create: async ({ data }: { data: unknown }) => {
+        chamadas.clienteData = data;
+        return { id: "cliente-pj-1" };
+      }
+    },
+    clienteEndereco: {
+      create: async () => undefined
+    },
+    clienteEquipe: {
+      deleteMany: async () => undefined
+    }
+  };
+  const prisma = {
+    $transaction: async (callback: (tx: unknown) => unknown) => callback(tx),
+    cliente: {
+      findFirst: async () => ({
+        id: "cliente-pj-1",
+        nome: "Black Workout",
+        tipo: "pj",
+        documento: "50536236000115",
+        telefone: "4333334444",
+        email: null,
+        pmocAtivo: false,
+        engenheiroResponsavel: null,
+        tecnicoResponsavel: null,
+        equipes: [],
+        atualizadoEm: new Date("2026-06-20T10:00:00.000Z"),
+        enderecos: []
+      })
+    }
+  };
+  const service = criarService(prisma);
+
+  await service.criarCliente(
+    {
+      tipo: "pj",
+      nome: "Black Workout",
+      telefone: "(43) 3333-4444",
+      documento: "50.536.236/0001-15"
+    },
+    usuario
+  );
+
+  assert.equal((chamadas.clienteData as { documento: string }).documento, "50536236000115");
+});
+
 test("apagarCliente remove cliente sem historico nem equipamentos", async () => {
   const chamadas = {
     clienteEquipeWhere: undefined as unknown,

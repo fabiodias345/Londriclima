@@ -1,11 +1,12 @@
-import { IsEmail, IsIn, IsNotEmpty, IsOptional, IsString, MinLength } from "class-validator";
+import { IsIn, IsNotEmpty, IsOptional, IsString, MinLength } from "class-validator";
 
 export class SalvarTecnicoDto {
   @IsString()
   @IsNotEmpty()
   nome: string;
 
-  @IsEmail()
+  @IsString()
+  @IsNotEmpty()
   email: string;
 
   @IsOptional()

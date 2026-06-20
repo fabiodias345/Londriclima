@@ -18,7 +18,8 @@ async function submitClient(event) {
   const clientId = String(data.get("id") || "");
   const tipo = String(data.get("tipo") || "pf");
   const telefone = onlyDigits(String(data.get("telefone") || ""));
-  const documento = String(data.get("documento") || "").trim();
+  const rawDocumento = String(data.get("documento") || "").trim();
+  const documento = tipo === "pj" ? onlyDigits(rawDocumento) : rawDocumento;
   const validationMessage = validateClientIdentity(tipo, telefone, documento);
 
   if (validationMessage) {

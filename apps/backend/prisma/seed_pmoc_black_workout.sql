@@ -7,6 +7,8 @@ DECLARE
   v_celso_id uuid;
   v_mituo_id uuid;
   v_equipamento_id uuid;
+  v_endereco_celso_id uuid;
+  v_os_id uuid;
   v_eq record;
 BEGIN
   SELECT id INTO v_empresa_id FROM empresas ORDER BY criado_em LIMIT 1;
@@ -115,6 +117,11 @@ BEGIN
     );
   END IF;
 
+  SELECT id INTO v_endereco_celso_id
+    FROM cliente_enderecos
+   WHERE cliente_id = v_celso_id AND principal = true
+   LIMIT 1;
+
   SELECT id INTO v_mituo_id
     FROM clientes
    WHERE empresa_id = v_empresa_id AND documento = '50.536.236/0001-15'
@@ -194,7 +201,7 @@ BEGIN
       )
       VALUES (
         gen_random_uuid(), v_empresa_id, v_celso_id, v_eq.tipo, v_eq.tag, NULL,
-        v_eq.marca, v_eq.modelo, v_eq.btu, NULL, v_eq.local_instalacao,
+        v_eq.marca, v_eq.modelo, v_eq.btu, 'R-410A', v_eq.local_instalacao,
         v_eq.area_m2, v_eq.ocup_fixo, v_eq.ocup_variavel, false, now()
       );
     ELSE
@@ -204,13 +211,127 @@ BEGIN
              marca = v_eq.marca,
              modelo = v_eq.modelo,
              capacidade_btu = v_eq.btu,
-             gas_refrigerante = NULL,
+             gas_refrigerante = COALESCE(gas_refrigerante, 'R-410A'),
              local_instalacao = v_eq.local_instalacao,
              area_climatizada_m2 = v_eq.area_m2,
              ocupantes_fixo = v_eq.ocup_fixo,
              ocupantes_variavel = v_eq.ocup_variavel,
              atualizado_em = now()
        WHERE id = v_equipamento_id;
+    END IF;
+
+    SELECT id INTO v_equipamento_id
+      FROM equipamentos
+     WHERE cliente_id = v_celso_id AND patrimonio = v_eq.tag
+     LIMIT 1;
+
+    SELECT id INTO v_os_id
+      FROM ordens_servico
+     WHERE empresa_id = v_empresa_id
+       AND cliente_id = v_celso_id
+       AND equipamento_id = v_equipamento_id
+       AND status = 'concluida'
+       AND concluida_em >= date_trunc('month', now())
+       AND concluida_em < date_trunc('month', now()) + interval '1 month'
+     ORDER BY concluida_em DESC
+     LIMIT 1;
+
+    IF v_os_id IS NULL THEN
+      INSERT INTO ordens_servico (
+        id, empresa_id, cliente_id, endereco_id, equipamento_id,
+        status, titulo, problema_relatado, agendada_para, concluida_em, atualizado_em
+      )
+      VALUES (
+        gen_random_uuid(), v_empresa_id, v_celso_id, v_endereco_celso_id, v_equipamento_id,
+        'concluida', 'PMOC mensal - ' || v_eq.tag,
+        'Manutencao preventiva PMOC simulada para fechamento mensal.',
+        date_trunc('month', now()) + interval '15 days' + interval '9 hours',
+        date_trunc('month', now()) + interval '15 days' + interval '10 hours',
+        now()
+      )
+      RETURNING id INTO v_os_id;
+    ELSE
+      UPDATE ordens_servico
+         SET endereco_id = v_endereco_celso_id,
+             status = 'concluida',
+             titulo = 'PMOC mensal - ' || v_eq.tag,
+             problema_relatado = 'Manutencao preventiva PMOC simulada para fechamento mensal.',
+             agendada_para = date_trunc('month', now()) + interval '15 days' + interval '9 hours',
+             concluida_em = date_trunc('month', now()) + interval '15 days' + interval '10 hours',
+             atualizado_em = now()
+       WHERE id = v_os_id;
+    END IF;
+
+    INSERT INTO ordem_servico_checklists (
+      id, empresa_id, ordem_servico_id, servico_realizado, procedimentos, custo_total_pecas, atualizado_em
+    )
+    VALUES (
+      gen_random_uuid(), v_empresa_id, v_os_id,
+      'Limpeza preventiva PMOC concluida.',
+      ARRAY['limpeza_filtro','limpeza_evaporadora','teste_funcionamento'],
+      0, now()
+    )
+    ON CONFLICT (ordem_servico_id) DO UPDATE
+       SET servico_realizado = EXCLUDED.servico_realizado,
+           procedimentos = EXCLUDED.procedimentos,
+           custo_total_pecas = EXCLUDED.custo_total_pecas,
+           atualizado_em = now();
+
+    INSERT INTO ordem_servico_evidencias (
+      id, empresa_id, ordem_servico_id, tipo, descricao, storage_url, mime_type, tamanho_bytes
+    )
+    VALUES
+      (
+        gen_random_uuid(), v_empresa_id, v_os_id, 'antes',
+        'Evidencia inicial da manutencao PMOC.',
+        '/storage/demo/black-workout/' || lower(v_eq.tag) || '-antes.jpg',
+        'image/jpeg', 1000
+      ),
+      (
+        gen_random_uuid(), v_empresa_id, v_os_id, 'depois',
+        'Evidencia final da manutencao PMOC.',
+        '/storage/demo/black-workout/' || lower(v_eq.tag) || '-depois.jpg',
+        'image/jpeg', 1000
+      )
+    ON CONFLICT (ordem_servico_id, tipo) DO UPDATE
+       SET descricao = EXCLUDED.descricao,
+           storage_url = EXCLUDED.storage_url,
+           mime_type = EXCLUDED.mime_type,
+           tamanho_bytes = EXCLUDED.tamanho_bytes;
+
+    INSERT INTO ordem_servico_assinaturas (
+      id, empresa_id, ordem_servico_id, nome_responsavel, storage_url, latitude, longitude, assinado_em
+    )
+    VALUES (
+      gen_random_uuid(), v_empresa_id, v_os_id,
+      'Responsavel Black Workout',
+      '/storage/demo/black-workout/' || lower(v_eq.tag) || '-assinatura.png',
+      -23.3045000, -51.1696000,
+      date_trunc('month', now()) + interval '15 days' + interval '10 hours'
+    )
+    ON CONFLICT (ordem_servico_id) DO UPDATE
+       SET nome_responsavel = EXCLUDED.nome_responsavel,
+           storage_url = EXCLUDED.storage_url,
+           latitude = EXCLUDED.latitude,
+           longitude = EXCLUDED.longitude,
+           assinado_em = EXCLUDED.assinado_em;
+
+    IF NOT EXISTS (
+      SELECT 1
+        FROM ordem_servico_eventos
+       WHERE ordem_servico_id = v_os_id
+         AND acao = 'finalizar'
+         AND status_novo = 'concluida'
+    ) THEN
+      INSERT INTO ordem_servico_eventos (
+        id, empresa_id, ordem_servico_id, usuario_id, acao, status_anterior, status_novo, latitude, longitude, registrado_em
+      )
+      VALUES (
+        gen_random_uuid(), v_empresa_id, v_os_id, NULL,
+        'finalizar', 'em_atendimento', 'concluida',
+        -23.3045000, -51.1696000,
+        date_trunc('month', now()) + interval '15 days' + interval '10 hours'
+      );
     END IF;
   END LOOP;
 

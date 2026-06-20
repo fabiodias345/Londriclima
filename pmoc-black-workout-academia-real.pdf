@@ -1,0 +1,910 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [4 0 R 6 0 R 8 0 R 10 0 R 12 0 R 14 0 R 16 0 R 18 0 R 20 0 R 22 0 R 24 0 R 26 0 R 28 0 R 30 0 R 32 0 R 34 0 R 36 0 R 38 0 R] /Count 18 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 5 0 R >>
+endobj
+5 0 obj
+<< /Length 678 >>
+stream
+BT
+/F1 9 Tf
+42 790 Td
+12 TL
+(AIRMOVEBR) Tj T*
+(PLANO DE MANUTENCAO, OPERACAO E CONTROLE - PMOC) Tj T*
+() Tj T*
+(Documento PMOC202606000135) Tj T*
+(Cliente Black Workout Academia LTDA) Tj T*
+(CNPJ/CPF 37.774.269/0001-35) Tj T*
+(Endereco Rod. Celso Garcia Cid, 123, Sabara, Londrina, PR, CEP 86057-350) Tj T*
+(Emissao junho de 2026) Tj T*
+(Renovacao junho de 2026) Tj T*
+(Total de maquinas 13) Tj T*
+(Status Com pendencias) Tj T*
+() Tj T*
+(Documento tecnico individual do cliente. As maquinas listadas pertencem exclusivamente ao) Tj T*
+(cliente acima.) Tj T*
+(Campos nao cadastrados aparecem como Nao informado para preservar rastreabilidade sem inventar) Tj T*
+(dados.) Tj T*
+ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 7 0 R >>
+endobj
+7 0 obj
+<< /Length 870 >>
+stream
+BT
+/F1 9 Tf
+42 790 Td
+12 TL
+(IDENTIFICACAO DO CLIENTE, CONTRATADA E RESPONSAVEL TECNICO) Tj T*
+() Tj T*
+(CLIENTE) Tj T*
+(Razao/Nome Black Workout Academia LTDA) Tj T*
+(Documento 37.774.269/0001-35) Tj T*
+(Telefone Nao informado) Tj T*
+(E-mail Nao informado) Tj T*
+(Endereco Rod. Celso Garcia Cid, 123, Sabara, Londrina, PR, CEP 86057-350) Tj T*
+() Tj T*
+(EMPRESA CONTRATADA) Tj T*
+(Razao social M. Lima Manutencoes Prediais e Industriais LTDA) Tj T*
+(Nome fantasia AIRMOVEBR) Tj T*
+(CNPJ 04.959.153/0001-11) Tj T*
+(Endereco Avenida Paissandu, 526 - Maringa/PR - CEP 87050-130) Tj T*
+(Telefone \(43\) 99100-0035) Tj T*
+(E-mail airmovebr@gmail.com) Tj T*
+() Tj T*
+(RESPONSAVEL TECNICO) Tj T*
+(Nome Andre Mendes dos Santos) Tj T*
+(Titulo Eng. Mecanico) Tj T*
+(CREA/Carteira PR-206737/D) Tj T*
+(Registro/Visto 89389) Tj T*
+(RNP 1721220267) Tj T*
+(ART Nao informado) Tj T*
+ET
+endstream
+endobj
+8 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 9 0 R >>
+endobj
+9 0 obj
+<< /Length 1019 >>
+stream
+BT
+/F1 9 Tf
+42 790 Td
+12 TL
+(OBJETIVO, RESPONSABILIDADES, LIMITACOES E REFERENCIAS) Tj T*
+() Tj T*
+(Objetivo: consolidar o controle de manutencao preventiva dos sistemas de climatizacao do) Tj T*
+(cliente.) Tj T*
+(Responsabilidade da contratada: executar e registrar atividades, evidencias, ocorrencias e) Tj T*
+(controle tecnico.) Tj T*
+(Responsabilidade do cliente: permitir acesso aos equipamentos e informar alteracoes de uso, area) Tj T*
+(ou ocupacao.) Tj T*
+(Limitacoes: este documento reflete dados cadastrados e OS concluidas na plataforma ate a data de) Tj T*
+(emissao.) Tj T*
+() Tj T*
+(Referencias normativas:) Tj T*
+(- Lei Federal n 13.589/2018) Tj T*
+(- Portaria MS n 3.523/1998) Tj T*
+(- Resolucao ANVISA RE n 09/2003) Tj T*
+(- Lei Federal n 14.063/2020 e MP n 2.200-2/2001 para evidencias e assinatura digital) Tj T*
+() Tj T*
+(Periodo apurado __/__/____ a __/__/____) Tj T*
+(Pendencias email_cliente_pendente, sem_os_concluida, maquina_gas_refrigerante_pendente,) Tj T*
+(maquina_sem_os_concluida) Tj T*
+ET
+endstream
+endobj
+10 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 11 0 R >>
+endobj
+11 0 obj
+<< /Length 986 >>
+stream
+BT
+/F1 9 Tf
+42 790 Td
+12 TL
+(RESUMO DAS MAQUINAS DO CLIENTE) Tj T*
+() Tj T*
+(N TAG Local instalado Carga termica Gas) Tj T*
+(-- ------------ ---------------------- ------------- ------------) Tj T*
+(01 AC1 Cozinha 12.000 BTU Nao informad) Tj T*
+(02 AC2 Mezanino 60.000 BTU Nao informad) Tj T*
+(03 AC10 Musculacao 60.000 BTU Nao informad) Tj T*
+(04 AC8 Musculacao 60.000 BTU Nao informad) Tj T*
+(05 AC12 Musculacao 24.000 BTU Nao informad) Tj T*
+(06 AC11 Musculacao 24.000 BTU Nao informad) Tj T*
+(07 AC9 Musculacao 60.000 BTU Nao informad) Tj T*
+(08 AC7 Musculacao 60.000 BTU Nao informad) Tj T*
+(09 AC3 Musculacao 60.000 BTU Nao informad) Tj T*
+(10 AC4 Musculacao 60.000 BTU Nao informad) Tj T*
+(11 AC5 Musculacao 60.000 BTU Nao informad) Tj T*
+(12 AC6 Musculacao 60.000 BTU Nao informad) Tj T*
+(13 AC13 Sala Nutricionista 9.000 BTU Nao informad) Tj T*
+() Tj T*
+(Total de maquinas 13) Tj T*
+(Total de OS concluidas 0) Tj T*
+(Cada maquina possui uma pagina exclusiva a seguir.) Tj T*
+ET
+endstream
+endobj
+12 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 13 0 R >>
+endobj
+13 0 obj
+<< /Length 1421 >>
+stream
+BT
+/F1 9 Tf
+42 790 Td
+12 TL
+(MAQUINA N:001 - PAGINA EXCLUSIVA) Tj T*
+() Tj T*
+(DADOS TECNICOS) Tj T*
+(TAG/Patrimonio AC1) Tj T*
+(Codigo de barras Nao informado) Tj T*
+(Tipo Split) Tj T*
+(Marca Agratto) Tj T*
+(Modelo Split) Tj T*
+(Gas refrigerante Nao informado) Tj T*
+(Local instalado Cozinha) Tj T*
+(Carga termica 12.000 BTU) Tj T*
+(Area climatizada m2 45) Tj T*
+(Ocupantes fixos 40) Tj T*
+(Ocupantes variaveis 50) Tj T*
+() Tj T*
+(ATIVIDADES / PERIODICIDADE) Tj T*
+(Ultima execucao __/__/____ - __:__ -> __:__ \(0min\)) Tj T*
+(Tecnico/Equipe Nao informado) Tj T*
+(OS Nao informado) Tj T*
+(Problema relatado Nao informado) Tj T*
+() Tj T*
+(CONTROLE DE MANUTENCAO) Tj T*
+(Equipamento desligado antes da limpeza? Sim) Tj T*
+(Filtro lavado com agua corrente? Nao informado) Tj T*
+(Limpeza com escova realizada? Nao informado) Tj T*
+(Secagem completa antes da recolocacao? Nao informado) Tj T*
+(Integridade fisica do filtro verificada? Sim) Tj T*
+(Limpeza externa do gabinete realizada? Nao informado) Tj T*
+(Filtro recolocado corretamente? Sim) Tj T*
+(Operacao em modo DRY verificada? Nao informado) Tj T*
+(Condicoes do ambiente verificadas? Nao informado) Tj T*
+(Evidencia apos limpeza Pendente) Tj T*
+(Evidencias Nenhuma evidencia registrada.) Tj T*
+(GPS Nao informado) Tj T*
+(Assinatura cliente Pendente) Tj T*
+() Tj T*
+(OCORRENCIAS) Tj T*
+(Sem ocorrencias registradas.) Tj T*
+() Tj T*
+(Pagina da maquina 1 de 13) Tj T*
+ET
+endstream
+endobj
+14 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 15 0 R >>
+endobj
+15 0 obj
+<< /Length 1436 >>
+stream
+BT
+/F1 9 Tf
+42 790 Td
+12 TL
+(MAQUINA N:002 - PAGINA EXCLUSIVA) Tj T*
+() Tj T*
+(DADOS TECNICOS) Tj T*
+(TAG/Patrimonio AC2) Tj T*
+(Codigo de barras Nao informado) Tj T*
+(Tipo Piso teto) Tj T*
+(Marca Nao informado) Tj T*
+(Modelo Piso teto) Tj T*
+(Gas refrigerante Nao informado) Tj T*
+(Local instalado Mezanino) Tj T*
+(Carga termica 60.000 BTU) Tj T*
+(Area climatizada m2 45) Tj T*
+(Ocupantes fixos 40) Tj T*
+(Ocupantes variaveis 50) Tj T*
+() Tj T*
+(ATIVIDADES / PERIODICIDADE) Tj T*
+(Ultima execucao __/__/____ - __:__ -> __:__ \(0min\)) Tj T*
+(Tecnico/Equipe Nao informado) Tj T*
+(OS Nao informado) Tj T*
+(Problema relatado Nao informado) Tj T*
+() Tj T*
+(CONTROLE DE MANUTENCAO) Tj T*
+(Equipamento desligado antes da limpeza? Sim) Tj T*
+(Filtro lavado com agua corrente? Nao informado) Tj T*
+(Limpeza com escova realizada? Nao informado) Tj T*
+(Secagem completa antes da recolocacao? Nao informado) Tj T*
+(Integridade fisica do filtro verificada? Sim) Tj T*
+(Limpeza externa do gabinete realizada? Nao informado) Tj T*
+(Filtro recolocado corretamente? Sim) Tj T*
+(Operacao em modo DRY verificada? Nao informado) Tj T*
+(Condicoes do ambiente verificadas? Nao informado) Tj T*
+(Evidencia apos limpeza Pendente) Tj T*
+(Evidencias Nenhuma evidencia registrada.) Tj T*
+(GPS Nao informado) Tj T*
+(Assinatura cliente Pendente) Tj T*
+() Tj T*
+(OCORRENCIAS) Tj T*
+(Sem ocorrencias registradas.) Tj T*
+() Tj T*
+(Pagina da maquina 2 de 13) Tj T*
+ET
+endstream
+endobj
+16 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 17 0 R >>
+endobj
+17 0 obj
+<< /Length 1430 >>
+stream
+BT
+/F1 9 Tf
+42 790 Td
+12 TL
+(MAQUINA N:003 - PAGINA EXCLUSIVA) Tj T*
+() Tj T*
+(DADOS TECNICOS) Tj T*
+(TAG/Patrimonio AC10) Tj T*
+(Codigo de barras Nao informado) Tj T*
+(Tipo Piso teto) Tj T*
+(Marca Gree) Tj T*
+(Modelo Piso teto) Tj T*
+(Gas refrigerante Nao informado) Tj T*
+(Local instalado Musculacao) Tj T*
+(Carga termica 60.000 BTU) Tj T*
+(Area climatizada m2 45) Tj T*
+(Ocupantes fixos 20) Tj T*
+(Ocupantes variaveis 50) Tj T*
+() Tj T*
+(ATIVIDADES / PERIODICIDADE) Tj T*
+(Ultima execucao __/__/____ - __:__ -> __:__ \(0min\)) Tj T*
+(Tecnico/Equipe Nao informado) Tj T*
+(OS Nao informado) Tj T*
+(Problema relatado Nao informado) Tj T*
+() Tj T*
+(CONTROLE DE MANUTENCAO) Tj T*
+(Equipamento desligado antes da limpeza? Sim) Tj T*
+(Filtro lavado com agua corrente? Nao informado) Tj T*
+(Limpeza com escova realizada? Nao informado) Tj T*
+(Secagem completa antes da recolocacao? Nao informado) Tj T*
+(Integridade fisica do filtro verificada? Sim) Tj T*
+(Limpeza externa do gabinete realizada? Nao informado) Tj T*
+(Filtro recolocado corretamente? Sim) Tj T*
+(Operacao em modo DRY verificada? Nao informado) Tj T*
+(Condicoes do ambiente verificadas? Nao informado) Tj T*
+(Evidencia apos limpeza Pendente) Tj T*
+(Evidencias Nenhuma evidencia registrada.) Tj T*
+(GPS Nao informado) Tj T*
+(Assinatura cliente Pendente) Tj T*
+() Tj T*
+(OCORRENCIAS) Tj T*
+(Sem ocorrencias registradas.) Tj T*
+() Tj T*
+(Pagina da maquina 3 de 13) Tj T*
+ET
+endstream
+endobj
+18 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 19 0 R >>
+endobj
+19 0 obj
+<< /Length 1429 >>
+stream
+BT
+/F1 9 Tf
+42 790 Td
+12 TL
+(MAQUINA N:004 - PAGINA EXCLUSIVA) Tj T*
+() Tj T*
+(DADOS TECNICOS) Tj T*
+(TAG/Patrimonio AC8) Tj T*
+(Codigo de barras Nao informado) Tj T*
+(Tipo Piso teto) Tj T*
+(Marca Gree) Tj T*
+(Modelo Piso teto) Tj T*
+(Gas refrigerante Nao informado) Tj T*
+(Local instalado Musculacao) Tj T*
+(Carga termica 60.000 BTU) Tj T*
+(Area climatizada m2 45) Tj T*
+(Ocupantes fixos 20) Tj T*
+(Ocupantes variaveis 50) Tj T*
+() Tj T*
+(ATIVIDADES / PERIODICIDADE) Tj T*
+(Ultima execucao __/__/____ - __:__ -> __:__ \(0min\)) Tj T*
+(Tecnico/Equipe Nao informado) Tj T*
+(OS Nao informado) Tj T*
+(Problema relatado Nao informado) Tj T*
+() Tj T*
+(CONTROLE DE MANUTENCAO) Tj T*
+(Equipamento desligado antes da limpeza? Sim) Tj T*
+(Filtro lavado com agua corrente? Nao informado) Tj T*
+(Limpeza com escova realizada? Nao informado) Tj T*
+(Secagem completa antes da recolocacao? Nao informado) Tj T*
+(Integridade fisica do filtro verificada? Sim) Tj T*
+(Limpeza externa do gabinete realizada? Nao informado) Tj T*
+(Filtro recolocado corretamente? Sim) Tj T*
+(Operacao em modo DRY verificada? Nao informado) Tj T*
+(Condicoes do ambiente verificadas? Nao informado) Tj T*
+(Evidencia apos limpeza Pendente) Tj T*
+(Evidencias Nenhuma evidencia registrada.) Tj T*
+(GPS Nao informado) Tj T*
+(Assinatura cliente Pendente) Tj T*
+() Tj T*
+(OCORRENCIAS) Tj T*
+(Sem ocorrencias registradas.) Tj T*
+() Tj T*
+(Pagina da maquina 4 de 13) Tj T*
+ET
+endstream
+endobj
+20 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 21 0 R >>
+endobj
+21 0 obj
+<< /Length 1422 >>
+stream
+BT
+/F1 9 Tf
+42 790 Td
+12 TL
+(MAQUINA N:005 - PAGINA EXCLUSIVA) Tj T*
+() Tj T*
+(DADOS TECNICOS) Tj T*
+(TAG/Patrimonio AC12) Tj T*
+(Codigo de barras Nao informado) Tj T*
+(Tipo Split) Tj T*
+(Marca Gree) Tj T*
+(Modelo Split) Tj T*
+(Gas refrigerante Nao informado) Tj T*
+(Local instalado Musculacao) Tj T*
+(Carga termica 24.000 BTU) Tj T*
+(Area climatizada m2 45) Tj T*
+(Ocupantes fixos 20) Tj T*
+(Ocupantes variaveis 50) Tj T*
+() Tj T*
+(ATIVIDADES / PERIODICIDADE) Tj T*
+(Ultima execucao __/__/____ - __:__ -> __:__ \(0min\)) Tj T*
+(Tecnico/Equipe Nao informado) Tj T*
+(OS Nao informado) Tj T*
+(Problema relatado Nao informado) Tj T*
+() Tj T*
+(CONTROLE DE MANUTENCAO) Tj T*
+(Equipamento desligado antes da limpeza? Sim) Tj T*
+(Filtro lavado com agua corrente? Nao informado) Tj T*
+(Limpeza com escova realizada? Nao informado) Tj T*
+(Secagem completa antes da recolocacao? Nao informado) Tj T*
+(Integridade fisica do filtro verificada? Sim) Tj T*
+(Limpeza externa do gabinete realizada? Nao informado) Tj T*
+(Filtro recolocado corretamente? Sim) Tj T*
+(Operacao em modo DRY verificada? Nao informado) Tj T*
+(Condicoes do ambiente verificadas? Nao informado) Tj T*
+(Evidencia apos limpeza Pendente) Tj T*
+(Evidencias Nenhuma evidencia registrada.) Tj T*
+(GPS Nao informado) Tj T*
+(Assinatura cliente Pendente) Tj T*
+() Tj T*
+(OCORRENCIAS) Tj T*
+(Sem ocorrencias registradas.) Tj T*
+() Tj T*
+(Pagina da maquina 5 de 13) Tj T*
+ET
+endstream
+endobj
+22 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 23 0 R >>
+endobj
+23 0 obj
+<< /Length 1422 >>
+stream
+BT
+/F1 9 Tf
+42 790 Td
+12 TL
+(MAQUINA N:006 - PAGINA EXCLUSIVA) Tj T*
+() Tj T*
+(DADOS TECNICOS) Tj T*
+(TAG/Patrimonio AC11) Tj T*
+(Codigo de barras Nao informado) Tj T*
+(Tipo Split) Tj T*
+(Marca Gree) Tj T*
+(Modelo Split) Tj T*
+(Gas refrigerante Nao informado) Tj T*
+(Local instalado Musculacao) Tj T*
+(Carga termica 24.000 BTU) Tj T*
+(Area climatizada m2 45) Tj T*
+(Ocupantes fixos 20) Tj T*
+(Ocupantes variaveis 50) Tj T*
+() Tj T*
+(ATIVIDADES / PERIODICIDADE) Tj T*
+(Ultima execucao __/__/____ - __:__ -> __:__ \(0min\)) Tj T*
+(Tecnico/Equipe Nao informado) Tj T*
+(OS Nao informado) Tj T*
+(Problema relatado Nao informado) Tj T*
+() Tj T*
+(CONTROLE DE MANUTENCAO) Tj T*
+(Equipamento desligado antes da limpeza? Sim) Tj T*
+(Filtro lavado com agua corrente? Nao informado) Tj T*
+(Limpeza com escova realizada? Nao informado) Tj T*
+(Secagem completa antes da recolocacao? Nao informado) Tj T*
+(Integridade fisica do filtro verificada? Sim) Tj T*
+(Limpeza externa do gabinete realizada? Nao informado) Tj T*
+(Filtro recolocado corretamente? Sim) Tj T*
+(Operacao em modo DRY verificada? Nao informado) Tj T*
+(Condicoes do ambiente verificadas? Nao informado) Tj T*
+(Evidencia apos limpeza Pendente) Tj T*
+(Evidencias Nenhuma evidencia registrada.) Tj T*
+(GPS Nao informado) Tj T*
+(Assinatura cliente Pendente) Tj T*
+() Tj T*
+(OCORRENCIAS) Tj T*
+(Sem ocorrencias registradas.) Tj T*
+() Tj T*
+(Pagina da maquina 6 de 13) Tj T*
+ET
+endstream
+endobj
+24 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 25 0 R >>
+endobj
+25 0 obj
+<< /Length 1429 >>
+stream
+BT
+/F1 9 Tf
+42 790 Td
+12 TL
+(MAQUINA N:007 - PAGINA EXCLUSIVA) Tj T*
+() Tj T*
+(DADOS TECNICOS) Tj T*
+(TAG/Patrimonio AC9) Tj T*
+(Codigo de barras Nao informado) Tj T*
+(Tipo Piso teto) Tj T*
+(Marca Gree) Tj T*
+(Modelo Piso teto) Tj T*
+(Gas refrigerante Nao informado) Tj T*
+(Local instalado Musculacao) Tj T*
+(Carga termica 60.000 BTU) Tj T*
+(Area climatizada m2 45) Tj T*
+(Ocupantes fixos 20) Tj T*
+(Ocupantes variaveis 50) Tj T*
+() Tj T*
+(ATIVIDADES / PERIODICIDADE) Tj T*
+(Ultima execucao __/__/____ - __:__ -> __:__ \(0min\)) Tj T*
+(Tecnico/Equipe Nao informado) Tj T*
+(OS Nao informado) Tj T*
+(Problema relatado Nao informado) Tj T*
+() Tj T*
+(CONTROLE DE MANUTENCAO) Tj T*
+(Equipamento desligado antes da limpeza? Sim) Tj T*
+(Filtro lavado com agua corrente? Nao informado) Tj T*
+(Limpeza com escova realizada? Nao informado) Tj T*
+(Secagem completa antes da recolocacao? Nao informado) Tj T*
+(Integridade fisica do filtro verificada? Sim) Tj T*
+(Limpeza externa do gabinete realizada? Nao informado) Tj T*
+(Filtro recolocado corretamente? Sim) Tj T*
+(Operacao em modo DRY verificada? Nao informado) Tj T*
+(Condicoes do ambiente verificadas? Nao informado) Tj T*
+(Evidencia apos limpeza Pendente) Tj T*
+(Evidencias Nenhuma evidencia registrada.) Tj T*
+(GPS Nao informado) Tj T*
+(Assinatura cliente Pendente) Tj T*
+() Tj T*
+(OCORRENCIAS) Tj T*
+(Sem ocorrencias registradas.) Tj T*
+() Tj T*
+(Pagina da maquina 7 de 13) Tj T*
+ET
+endstream
+endobj
+26 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 27 0 R >>
+endobj
+27 0 obj
+<< /Length 1438 >>
+stream
+BT
+/F1 9 Tf
+42 790 Td
+12 TL
+(MAQUINA N:008 - PAGINA EXCLUSIVA) Tj T*
+() Tj T*
+(DADOS TECNICOS) Tj T*
+(TAG/Patrimonio AC7) Tj T*
+(Codigo de barras Nao informado) Tj T*
+(Tipo Piso teto) Tj T*
+(Marca Nao informado) Tj T*
+(Modelo Piso teto) Tj T*
+(Gas refrigerante Nao informado) Tj T*
+(Local instalado Musculacao) Tj T*
+(Carga termica 60.000 BTU) Tj T*
+(Area climatizada m2 45) Tj T*
+(Ocupantes fixos 20) Tj T*
+(Ocupantes variaveis 50) Tj T*
+() Tj T*
+(ATIVIDADES / PERIODICIDADE) Tj T*
+(Ultima execucao __/__/____ - __:__ -> __:__ \(0min\)) Tj T*
+(Tecnico/Equipe Nao informado) Tj T*
+(OS Nao informado) Tj T*
+(Problema relatado Nao informado) Tj T*
+() Tj T*
+(CONTROLE DE MANUTENCAO) Tj T*
+(Equipamento desligado antes da limpeza? Sim) Tj T*
+(Filtro lavado com agua corrente? Nao informado) Tj T*
+(Limpeza com escova realizada? Nao informado) Tj T*
+(Secagem completa antes da recolocacao? Nao informado) Tj T*
+(Integridade fisica do filtro verificada? Sim) Tj T*
+(Limpeza externa do gabinete realizada? Nao informado) Tj T*
+(Filtro recolocado corretamente? Sim) Tj T*
+(Operacao em modo DRY verificada? Nao informado) Tj T*
+(Condicoes do ambiente verificadas? Nao informado) Tj T*
+(Evidencia apos limpeza Pendente) Tj T*
+(Evidencias Nenhuma evidencia registrada.) Tj T*
+(GPS Nao informado) Tj T*
+(Assinatura cliente Pendente) Tj T*
+() Tj T*
+(OCORRENCIAS) Tj T*
+(Sem ocorrencias registradas.) Tj T*
+() Tj T*
+(Pagina da maquina 8 de 13) Tj T*
+ET
+endstream
+endobj
+28 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 29 0 R >>
+endobj
+29 0 obj
+<< /Length 1438 >>
+stream
+BT
+/F1 9 Tf
+42 790 Td
+12 TL
+(MAQUINA N:009 - PAGINA EXCLUSIVA) Tj T*
+() Tj T*
+(DADOS TECNICOS) Tj T*
+(TAG/Patrimonio AC3) Tj T*
+(Codigo de barras Nao informado) Tj T*
+(Tipo Piso teto) Tj T*
+(Marca Nao informado) Tj T*
+(Modelo Piso teto) Tj T*
+(Gas refrigerante Nao informado) Tj T*
+(Local instalado Musculacao) Tj T*
+(Carga termica 60.000 BTU) Tj T*
+(Area climatizada m2 45) Tj T*
+(Ocupantes fixos 20) Tj T*
+(Ocupantes variaveis 50) Tj T*
+() Tj T*
+(ATIVIDADES / PERIODICIDADE) Tj T*
+(Ultima execucao __/__/____ - __:__ -> __:__ \(0min\)) Tj T*
+(Tecnico/Equipe Nao informado) Tj T*
+(OS Nao informado) Tj T*
+(Problema relatado Nao informado) Tj T*
+() Tj T*
+(CONTROLE DE MANUTENCAO) Tj T*
+(Equipamento desligado antes da limpeza? Sim) Tj T*
+(Filtro lavado com agua corrente? Nao informado) Tj T*
+(Limpeza com escova realizada? Nao informado) Tj T*
+(Secagem completa antes da recolocacao? Nao informado) Tj T*
+(Integridade fisica do filtro verificada? Sim) Tj T*
+(Limpeza externa do gabinete realizada? Nao informado) Tj T*
+(Filtro recolocado corretamente? Sim) Tj T*
+(Operacao em modo DRY verificada? Nao informado) Tj T*
+(Condicoes do ambiente verificadas? Nao informado) Tj T*
+(Evidencia apos limpeza Pendente) Tj T*
+(Evidencias Nenhuma evidencia registrada.) Tj T*
+(GPS Nao informado) Tj T*
+(Assinatura cliente Pendente) Tj T*
+() Tj T*
+(OCORRENCIAS) Tj T*
+(Sem ocorrencias registradas.) Tj T*
+() Tj T*
+(Pagina da maquina 9 de 13) Tj T*
+ET
+endstream
+endobj
+30 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 31 0 R >>
+endobj
+31 0 obj
+<< /Length 1439 >>
+stream
+BT
+/F1 9 Tf
+42 790 Td
+12 TL
+(MAQUINA N:010 - PAGINA EXCLUSIVA) Tj T*
+() Tj T*
+(DADOS TECNICOS) Tj T*
+(TAG/Patrimonio AC4) Tj T*
+(Codigo de barras Nao informado) Tj T*
+(Tipo Piso teto) Tj T*
+(Marca Nao informado) Tj T*
+(Modelo Piso teto) Tj T*
+(Gas refrigerante Nao informado) Tj T*
+(Local instalado Musculacao) Tj T*
+(Carga termica 60.000 BTU) Tj T*
+(Area climatizada m2 45) Tj T*
+(Ocupantes fixos 20) Tj T*
+(Ocupantes variaveis 50) Tj T*
+() Tj T*
+(ATIVIDADES / PERIODICIDADE) Tj T*
+(Ultima execucao __/__/____ - __:__ -> __:__ \(0min\)) Tj T*
+(Tecnico/Equipe Nao informado) Tj T*
+(OS Nao informado) Tj T*
+(Problema relatado Nao informado) Tj T*
+() Tj T*
+(CONTROLE DE MANUTENCAO) Tj T*
+(Equipamento desligado antes da limpeza? Sim) Tj T*
+(Filtro lavado com agua corrente? Nao informado) Tj T*
+(Limpeza com escova realizada? Nao informado) Tj T*
+(Secagem completa antes da recolocacao? Nao informado) Tj T*
+(Integridade fisica do filtro verificada? Sim) Tj T*
+(Limpeza externa do gabinete realizada? Nao informado) Tj T*
+(Filtro recolocado corretamente? Sim) Tj T*
+(Operacao em modo DRY verificada? Nao informado) Tj T*
+(Condicoes do ambiente verificadas? Nao informado) Tj T*
+(Evidencia apos limpeza Pendente) Tj T*
+(Evidencias Nenhuma evidencia registrada.) Tj T*
+(GPS Nao informado) Tj T*
+(Assinatura cliente Pendente) Tj T*
+() Tj T*
+(OCORRENCIAS) Tj T*
+(Sem ocorrencias registradas.) Tj T*
+() Tj T*
+(Pagina da maquina 10 de 13) Tj T*
+ET
+endstream
+endobj
+32 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 33 0 R >>
+endobj
+33 0 obj
+<< /Length 1439 >>
+stream
+BT
+/F1 9 Tf
+42 790 Td
+12 TL
+(MAQUINA N:011 - PAGINA EXCLUSIVA) Tj T*
+() Tj T*
+(DADOS TECNICOS) Tj T*
+(TAG/Patrimonio AC5) Tj T*
+(Codigo de barras Nao informado) Tj T*
+(Tipo Piso teto) Tj T*
+(Marca Nao informado) Tj T*
+(Modelo Piso teto) Tj T*
+(Gas refrigerante Nao informado) Tj T*
+(Local instalado Musculacao) Tj T*
+(Carga termica 60.000 BTU) Tj T*
+(Area climatizada m2 45) Tj T*
+(Ocupantes fixos 20) Tj T*
+(Ocupantes variaveis 50) Tj T*
+() Tj T*
+(ATIVIDADES / PERIODICIDADE) Tj T*
+(Ultima execucao __/__/____ - __:__ -> __:__ \(0min\)) Tj T*
+(Tecnico/Equipe Nao informado) Tj T*
+(OS Nao informado) Tj T*
+(Problema relatado Nao informado) Tj T*
+() Tj T*
+(CONTROLE DE MANUTENCAO) Tj T*
+(Equipamento desligado antes da limpeza? Sim) Tj T*
+(Filtro lavado com agua corrente? Nao informado) Tj T*
+(Limpeza com escova realizada? Nao informado) Tj T*
+(Secagem completa antes da recolocacao? Nao informado) Tj T*
+(Integridade fisica do filtro verificada? Sim) Tj T*
+(Limpeza externa do gabinete realizada? Nao informado) Tj T*
+(Filtro recolocado corretamente? Sim) Tj T*
+(Operacao em modo DRY verificada? Nao informado) Tj T*
+(Condicoes do ambiente verificadas? Nao informado) Tj T*
+(Evidencia apos limpeza Pendente) Tj T*
+(Evidencias Nenhuma evidencia registrada.) Tj T*
+(GPS Nao informado) Tj T*
+(Assinatura cliente Pendente) Tj T*
+() Tj T*
+(OCORRENCIAS) Tj T*
+(Sem ocorrencias registradas.) Tj T*
+() Tj T*
+(Pagina da maquina 11 de 13) Tj T*
+ET
+endstream
+endobj
+34 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 35 0 R >>
+endobj
+35 0 obj
+<< /Length 1439 >>
+stream
+BT
+/F1 9 Tf
+42 790 Td
+12 TL
+(MAQUINA N:012 - PAGINA EXCLUSIVA) Tj T*
+() Tj T*
+(DADOS TECNICOS) Tj T*
+(TAG/Patrimonio AC6) Tj T*
+(Codigo de barras Nao informado) Tj T*
+(Tipo Piso teto) Tj T*
+(Marca Nao informado) Tj T*
+(Modelo Piso teto) Tj T*
+(Gas refrigerante Nao informado) Tj T*
+(Local instalado Musculacao) Tj T*
+(Carga termica 60.000 BTU) Tj T*
+(Area climatizada m2 45) Tj T*
+(Ocupantes fixos 20) Tj T*
+(Ocupantes variaveis 50) Tj T*
+() Tj T*
+(ATIVIDADES / PERIODICIDADE) Tj T*
+(Ultima execucao __/__/____ - __:__ -> __:__ \(0min\)) Tj T*
+(Tecnico/Equipe Nao informado) Tj T*
+(OS Nao informado) Tj T*
+(Problema relatado Nao informado) Tj T*
+() Tj T*
+(CONTROLE DE MANUTENCAO) Tj T*
+(Equipamento desligado antes da limpeza? Sim) Tj T*
+(Filtro lavado com agua corrente? Nao informado) Tj T*
+(Limpeza com escova realizada? Nao informado) Tj T*
+(Secagem completa antes da recolocacao? Nao informado) Tj T*
+(Integridade fisica do filtro verificada? Sim) Tj T*
+(Limpeza externa do gabinete realizada? Nao informado) Tj T*
+(Filtro recolocado corretamente? Sim) Tj T*
+(Operacao em modo DRY verificada? Nao informado) Tj T*
+(Condicoes do ambiente verificadas? Nao informado) Tj T*
+(Evidencia apos limpeza Pendente) Tj T*
+(Evidencias Nenhuma evidencia registrada.) Tj T*
+(GPS Nao informado) Tj T*
+(Assinatura cliente Pendente) Tj T*
+() Tj T*
+(OCORRENCIAS) Tj T*
+(Sem ocorrencias registradas.) Tj T*
+() Tj T*
+(Pagina da maquina 12 de 13) Tj T*
+ET
+endstream
+endobj
+36 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 37 0 R >>
+endobj
+37 0 obj
+<< /Length 1432 >>
+stream
+BT
+/F1 9 Tf
+42 790 Td
+12 TL
+(MAQUINA N:013 - PAGINA EXCLUSIVA) Tj T*
+() Tj T*
+(DADOS TECNICOS) Tj T*
+(TAG/Patrimonio AC13) Tj T*
+(Codigo de barras Nao informado) Tj T*
+(Tipo Split) Tj T*
+(Marca Philco) Tj T*
+(Modelo Split) Tj T*
+(Gas refrigerante Nao informado) Tj T*
+(Local instalado Sala Nutricionista) Tj T*
+(Carga termica 9.000 BTU) Tj T*
+(Area climatizada m2 45) Tj T*
+(Ocupantes fixos 20) Tj T*
+(Ocupantes variaveis 50) Tj T*
+() Tj T*
+(ATIVIDADES / PERIODICIDADE) Tj T*
+(Ultima execucao __/__/____ - __:__ -> __:__ \(0min\)) Tj T*
+(Tecnico/Equipe Nao informado) Tj T*
+(OS Nao informado) Tj T*
+(Problema relatado Nao informado) Tj T*
+() Tj T*
+(CONTROLE DE MANUTENCAO) Tj T*
+(Equipamento desligado antes da limpeza? Sim) Tj T*
+(Filtro lavado com agua corrente? Nao informado) Tj T*
+(Limpeza com escova realizada? Nao informado) Tj T*
+(Secagem completa antes da recolocacao? Nao informado) Tj T*
+(Integridade fisica do filtro verificada? Sim) Tj T*
+(Limpeza externa do gabinete realizada? Nao informado) Tj T*
+(Filtro recolocado corretamente? Sim) Tj T*
+(Operacao em modo DRY verificada? Nao informado) Tj T*
+(Condicoes do ambiente verificadas? Nao informado) Tj T*
+(Evidencia apos limpeza Pendente) Tj T*
+(Evidencias Nenhuma evidencia registrada.) Tj T*
+(GPS Nao informado) Tj T*
+(Assinatura cliente Pendente) Tj T*
+() Tj T*
+(OCORRENCIAS) Tj T*
+(Sem ocorrencias registradas.) Tj T*
+() Tj T*
+(Pagina da maquina 13 de 13) Tj T*
+ET
+endstream
+endobj
+38 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 39 0 R >>
+endobj
+39 0 obj
+<< /Length 893 >>
+stream
+BT
+/F1 9 Tf
+42 790 Td
+12 TL
+(DECLARACAO TECNICA E ASSINATURAS - JUNHO DE 2026) Tj T*
+() Tj T*
+(Declaramos que as atividades registradas neste PMOC foram organizadas por cliente e por maquina,) Tj T*
+(com base nas informacoes cadastradas e nas ordens de servico concluidas na plataforma AIRMOVEBR.) Tj T*
+(Este documento nao reutiliza imagem de assinatura do responsavel tecnico; a assinatura e) Tj T*
+(vinculada) Tj T*
+(ao relatorio especifico por fluxo de aprovacao e evidencia propria.) Tj T*
+() Tj T*
+(Responsavel tecnico:) Tj T*
+(Nome Andre Mendes dos Santos) Tj T*
+(CREA/Carteira PR-206737/D) Tj T*
+(RNP 1721220267) Tj T*
+() Tj T*
+(Assinaturas:) Tj T*
+(Responsavel tecnico: ________________________________________________) Tj T*
+(Representante do cliente: ___________________________________________) Tj T*
+() Tj T*
+(Documento emitido automaticamente pela plataforma AIRMOVEBR.) Tj T*
+ET
+endstream
+endobj
+xref
+0 40
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000233 00000 n 
+0000000303 00000 n 
+0000000429 00000 n 
+0000001158 00000 n 
+0000001284 00000 n 
+0000002205 00000 n 
+0000002331 00000 n 
+0000003402 00000 n 
+0000003530 00000 n 
+0000004568 00000 n 
+0000004696 00000 n 
+0000006170 00000 n 
+0000006298 00000 n 
+0000007787 00000 n 
+0000007915 00000 n 
+0000009398 00000 n 
+0000009526 00000 n 
+0000011008 00000 n 
+0000011136 00000 n 
+0000012611 00000 n 
+0000012739 00000 n 
+0000014214 00000 n 
+0000014342 00000 n 
+0000015824 00000 n 
+0000015952 00000 n 
+0000017443 00000 n 
+0000017571 00000 n 
+0000019062 00000 n 
+0000019190 00000 n 
+0000020682 00000 n 
+0000020810 00000 n 
+0000022302 00000 n 
+0000022430 00000 n 
+0000023922 00000 n 
+0000024050 00000 n 
+0000025535 00000 n 
+0000025663 00000 n 
+trailer
+<< /Size 40 /Root 1 0 R >>
+startxref
+26608
+%%EOF

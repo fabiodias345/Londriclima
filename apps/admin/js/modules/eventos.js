@@ -164,7 +164,17 @@ function formatPhone(phone) {
     return "sem telefone";
   }
 
-  return phone.replace(/^(\d{2})(\d{5})(\d{4})$/, "($1) $2-$3");
+  const digits = onlyDigits(String(phone));
+
+  if (digits.length === 10) {
+    return digits.replace(/^(\d{2})(\d{4})(\d{4})$/, "($1) $2-$3");
+  }
+
+  if (digits.length === 11) {
+    return digits.replace(/^(\d{2})(\d{5})(\d{4})$/, "($1) $2-$3");
+  }
+
+  return phone;
 }
 
 function getAgendaItemDateKey(item) {

@@ -96,7 +96,7 @@ function normalizeSearch(value) {
 
 function validateClientIdentity(tipo, telefone, documento) {
   if (![10, 11].includes(telefone.length)) {
-    return "Informe telefone com DDD. Exemplo: (43) 99999-9999.";
+    return "Informe telefone com DDD. Exemplo: (43) 3348-9760 ou (43) 99999-9999.";
   }
 
   if (!documento) {
@@ -110,6 +110,24 @@ function validateClientIdentity(tipo, telefone, documento) {
   return "";
 }
 
+function formatPhoneInput(value) {
+  const digits = onlyDigits(String(value || "")).slice(0, 11);
+
+  if (digits.length <= 2) {
+    return digits;
+  }
+
+  if (digits.length <= 6) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  }
+
+  if (digits.length <= 10) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  }
+
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
+
 function updateClientDocumentCopy() {
   const tipo = clientForm?.elements.tipo?.value || "pf";
 
@@ -120,12 +138,12 @@ function updateClientDocumentCopy() {
   if (clientDocumentHelp) {
     clientDocumentHelp.textContent =
       tipo === "pj"
-        ? "Informe o CNPJ com 14 digitos."
+        ? "Informe os 14 numeros do CNPJ."
         : "Informe CPF ou RG para identificar o cliente.";
   }
 
   if (clientForm?.elements.documento instanceof HTMLInputElement) {
-    clientForm.elements.documento.placeholder = tipo === "pj" ? "00.000.000/0000-00" : "CPF ou RG";
+    clientForm.elements.documento.placeholder = tipo === "pj" ? "00000000000000" : "CPF ou RG";
   }
 }
 
@@ -221,7 +239,7 @@ function fillClientForm(clientId) {
   clientForm.elements.tipo.value = client.tipo || "pf";
   updateClientDocumentCopy();
   clientForm.elements.nome.value = client.nome || "";
-  clientForm.elements.telefone.value = client.telefone || "";
+  clientForm.elements.telefone.value = formatPhoneInput(client.telefone || "");
   clientForm.elements.email.value = client.email || "";
   clientForm.elements.documento.value = client.documento || "";
   clientForm.elements.cep.value = formatCep(address.cep || "");
