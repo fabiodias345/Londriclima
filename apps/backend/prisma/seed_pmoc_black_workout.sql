@@ -70,7 +70,8 @@ BEGIN
 
   SELECT id INTO v_celso_id
     FROM clientes
-   WHERE empresa_id = v_empresa_id AND documento = '37.774.269/0001-35'
+   WHERE empresa_id = v_empresa_id
+     AND regexp_replace(COALESCE(documento, ''), '\D', '', 'g') = '37774269000135'
    LIMIT 1;
 
   IF v_celso_id IS NULL THEN
@@ -87,6 +88,7 @@ BEGIN
     UPDATE clientes
        SET tipo = 'pj',
            nome = 'Black Workout Academia LTDA',
+           documento = '37.774.269/0001-35',
            pmoc_ativo = true,
            engenheiro_responsavel_id = v_eng_id,
            atualizado_em = now()
@@ -124,7 +126,8 @@ BEGIN
 
   SELECT id INTO v_mituo_id
     FROM clientes
-   WHERE empresa_id = v_empresa_id AND documento = '50.536.236/0001-15'
+   WHERE empresa_id = v_empresa_id
+     AND regexp_replace(COALESCE(documento, ''), '\D', '', 'g') = '50536236000115'
    LIMIT 1;
 
   IF v_mituo_id IS NULL THEN
@@ -142,6 +145,7 @@ BEGIN
     UPDATE clientes
        SET tipo = 'pj',
            nome = 'Black Workout Escola de Ginastica e Danca LTDA',
+           documento = '50.536.236/0001-15',
            pmoc_ativo = true,
            engenheiro_responsavel_id = v_eng_id,
            atualizado_em = now()
@@ -239,7 +243,7 @@ BEGIN
     IF v_os_id IS NULL THEN
       INSERT INTO ordens_servico (
         id, empresa_id, cliente_id, endereco_id, equipamento_id,
-        status, titulo, problema_relatado, agendada_para, concluida_em, atualizado_em
+        status, titulo, problema_relatado, agendada_para, concluida_em, atualizada_em
       )
       VALUES (
         gen_random_uuid(), v_empresa_id, v_celso_id, v_endereco_celso_id, v_equipamento_id,
@@ -258,7 +262,7 @@ BEGIN
              problema_relatado = 'Manutencao preventiva PMOC simulada para fechamento mensal.',
              agendada_para = date_trunc('month', now()) + interval '15 days' + interval '9 hours',
              concluida_em = date_trunc('month', now()) + interval '15 days' + interval '10 hours',
-             atualizado_em = now()
+             atualizada_em = now()
        WHERE id = v_os_id;
     END IF;
 
