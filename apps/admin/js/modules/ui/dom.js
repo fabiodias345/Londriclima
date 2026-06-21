@@ -82,7 +82,9 @@ function stopEquipmentScanner() {
 }
 
 function onlyDigits(value) {
-  return String(value || "").replace(/\\D/g, "");
+  return Array.from(String(value || ""))
+    .filter((char) => char >= "0" && char <= "9")
+    .join("");
 }
 
 function normalizeSearch(value) {

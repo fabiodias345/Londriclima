@@ -167,11 +167,11 @@ function formatPhone(phone) {
   const digits = onlyDigits(String(phone));
 
   if (digits.length === 10) {
-    return digits.replace(/^(\\d{2})(\\d{4})(\\d{4})$/, "($1) $2-$3");
+    return "(" + digits.slice(0, 2) + ") " + digits.slice(2, 6) + "-" + digits.slice(6);
   }
 
   if (digits.length === 11) {
-    return digits.replace(/^(\\d{2})(\\d{5})(\\d{4})$/, "($1) $2-$3");
+    return "(" + digits.slice(0, 2) + ") " + digits.slice(2, 7) + "-" + digits.slice(7);
   }
 
   return phone;
