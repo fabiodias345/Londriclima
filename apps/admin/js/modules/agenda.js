@@ -161,9 +161,11 @@ function renderClientes(items) {
       <div>
         <span>\${escapeHtml(formatAddress(item.endereco))}</span>
         <span>\${item.total_equipamentos} equipamentos · \${item.total_os} OS</span>
+        <span>ART PMOC: \${escapeHtml(item.pmoc_art_numero || "nao informada")}</span>
       </div>
       <div class="data-row-actions">
         <span class="status-pill">\${item.os_abertas} abertas</span>
+        <button class="secondary-button compact-button" type="button" data-action="editar-art-cliente" data-id="\${item.id}">ART</button>
         <button class="secondary-button compact-button" type="button" data-action="editar-cliente" data-id="\${item.id}">Editar</button>
         <button class="secondary-button compact-button danger-button" type="button" data-action="apagar-cliente" data-id="\${item.id}">Apagar</button>
       </div>
@@ -179,6 +181,67 @@ function renderPmocSummary() {
   pmocClientCount.textContent = pmocClients.length;
   pmocMachineCount.textContent = pmocClients.reduce((total, item) => total + (item.total_equipamentos || 0), 0);
   pmocPendingCount.textContent = pendingClients.length;
+}
+
+async function updateClientArt(clientId) {
+  const client = latestClients.find((item) => item.id === clientId);
+
+  if (!client) {
+    return;
+  }
+
+  const artNumero = window.prompt("Numero da ART anual PMOC", client.pmoc_art_numero || "1720263699262");
+
+  if (artNumero === null) {
+    return;
+  }
+
+  const payload = removeEmptyValues({
+    tipo: client.tipo || "pf",
+    nome: client.nome || "",
+    telefone: onlyDigits(client.telefone || ""),
+    email: client.email || "",
+    documento: client.tipo === "pj" ? onlyDigits(client.documento || "") : client.documento || "",
+    pmoc_ativo: Boolean(client.pmoc_ativo),
+    pmoc_art_numero: String(artNumero || "").trim(),
+    engenheiro_responsavel_id: client.pmoc_ativo ? client.engenheiro_responsavel?.id || "" : "",
+    tecnico_responsavel_id: client.tecnico_responsavel?.id || "",
+    equipe_ids: (client.equipes || []).map((equipe) => equipe.id),
+    cep: onlyDigits(client.endereco?.cep || ""),
+    logradouro: client.endereco?.logradouro || "",
+    numero: client.endereco?.numero || "",
+    bairro: client.endereco?.bairro || "",
+    cidade: client.endereco?.cidade || "Londrina",
+    uf: client.endereco?.uf || "PR"
+  });
+
+  clientFormStatus.textContent = "Salvando ART do cliente...";
+
+  try {
+    const response = await fetch(\`\${apiBaseUrl}/admin/clientes/\${client.id}\`, {
+      method: "PATCH",
+      headers: {
+        ...authHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (await handleUnauthorized(response)) {
+      return;
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      clientFormStatus.textContent = error.message || "Nao foi possivel salvar a ART.";
+      return;
+    }
+
+    clientFormStatus.textContent = "ART salva.";
+    await loadClientes();
+  } catch {
+    clientFormStatus.textContent = "API indisponivel.";
+  }
 }
 
 function renderPmocEngineerOptions(selectedId = "") {

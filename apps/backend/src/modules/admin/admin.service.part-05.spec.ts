@@ -32,6 +32,7 @@ test("obterPreviaPmocCliente nao bloqueia reenvio quando PMOC assinado ainda nao
         telefone: "43988887777",
         email: "maria@example.com",
         pmocAtivo: true,
+        pmocArtNumero: null,
         atualizadoEm: new Date("2026-06-12T10:00:00.000Z"),
         engenheiroResponsavel: {
           id: "engenheiro-1",
@@ -89,6 +90,7 @@ test("gerarPdfPmocCliente retorna PDF com nome de arquivo e conteudo oficial", a
         telefone: "43988887777",
         email: "maria@example.com",
         pmocAtivo: true,
+        pmocArtNumero: "1720263699262",
         atualizadoEm: new Date("2026-06-12T10:00:00.000Z"),
         engenheiroResponsavel: {
           id: "engenheiro-1",
@@ -126,7 +128,7 @@ test("gerarPdfPmocCliente retorna PDF com nome de arquivo e conteudo oficial", a
   assert.match(pdf, /RESPONSAVEL TECNICO/);
   assert.match(pdf, /Nome\s+Fabio Dias/);
   assert.match(pdf, /CREA\/Carteira\s+CREA-PR 654321/);
-  assert.match(pdf, /ART\s+Nao informado/);
+  assert.match(pdf, /ART anual PMOC\s+1720263699262/);
   assert.match(pdf, /RESUMO DAS MAQUINAS DO CLIENTE/);
   assert.match(pdf, /MAQUINA N:001 - PAGINA EXCLUSIVA/);
   assert.match(pdf, /MAQUINA N:002 - PAGINA EXCLUSIVA/);
@@ -330,6 +332,7 @@ test("solicitarAssinaturaPmocEngenheiro cria relatorio com token e hash do PDF",
         telefone: "43988887777",
         email: "maria@example.com",
         pmocAtivo: true,
+        pmocArtNumero: "1720263699262",
         atualizadoEm: new Date("2026-06-12T10:00:00.000Z"),
         engenheiroResponsavel: {
           id: "engenheiro-1",

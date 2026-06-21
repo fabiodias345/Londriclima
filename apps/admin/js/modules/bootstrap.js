@@ -215,6 +215,10 @@ clientesList?.addEventListener("click", (event) => {
     fillClientForm(target.dataset.id);
   }
 
+  if (target.dataset.action === "editar-art-cliente" && target.dataset.id) {
+    void updateClientArt(target.dataset.id);
+  }
+
   if (target.dataset.action === "apagar-cliente" && target.dataset.id) {
     openDeleteClientModal(target.dataset.id);
   }

@@ -31,6 +31,7 @@ export class AdminClientesService {
         telefone: true,
         email: true,
         pmocAtivo: true,
+        pmocArtNumero: true,
         engenheiroResponsavel: {
           select: {
             id: true,
@@ -99,6 +100,7 @@ export class AdminClientesService {
         telefone: cliente.telefone,
         email: cliente.email,
         pmoc_ativo: cliente.pmocAtivo,
+        pmoc_art_numero: cliente.pmocArtNumero,
         engenheiro_responsavel: cliente.engenheiroResponsavel,
         tecnico_responsavel: cliente.tecnicoResponsavel,
         equipes: (cliente.equipes || []).map((vinculo) => vinculo.equipe),
@@ -386,6 +388,7 @@ export class AdminClientesService {
       email: dto.email?.trim() || null,
       telefone,
       pmocAtivo: dto.pmoc_ativo === true,
+      pmocArtNumero: dto.pmoc_ativo === true ? dto.pmoc_art_numero?.trim() || null : null,
       engenheiroResponsavelId: dto.pmoc_ativo === true ? dto.engenheiro_responsavel_id?.trim() || null : null,
       tecnicoResponsavelId: dto.tecnico_responsavel_id?.trim() || null
     };
@@ -573,6 +576,7 @@ export class AdminClientesService {
         telefone: true,
         email: true,
         pmocAtivo: true,
+        pmocArtNumero: true,
         engenheiroResponsavel: {
           select: {
             id: true,
@@ -632,6 +636,7 @@ export class AdminClientesService {
       telefone: cliente.telefone,
       email: cliente.email,
       pmoc_ativo: cliente.pmocAtivo,
+      pmoc_art_numero: cliente.pmocArtNumero,
       engenheiro_responsavel: cliente.engenheiroResponsavel,
       tecnico_responsavel: cliente.tecnicoResponsavel,
       equipes: (cliente.equipes || []).map((vinculo) => vinculo.equipe),

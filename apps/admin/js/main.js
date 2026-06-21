@@ -1,14 +1,14 @@
-import { apiModule, apiRoot } from "./modules/api.js";
-import { authModule, authRoot } from "./modules/auth.js";
-import { agendaModule, agendaRoot } from "./modules/agenda.js";
-import { clientesModule, clientesRoot } from "./modules/clientes.js";
-import { frotaModule, frotaRoot } from "./modules/frota.js";
-import { pmocModule, pmocRoot } from "./modules/pmoc.js";
-import { recorrenciasModule, recorrenciasRoot } from "./modules/recorrencias.js";
-import { relatoriosModule, relatoriosRoot } from "./modules/relatorios.js";
-import { domModule, domRoot } from "./modules/ui/dom.js";
-import { eventosModule, eventsRoot } from "./modules/eventos.js";
-import { bootstrapModule, bootstrapRoot } from "./modules/bootstrap.js";
+import { apiModule, apiRoot } from "./modules/api.js?v=20260620-art";
+import { authModule, authRoot } from "./modules/auth.js?v=20260620-art";
+import { agendaModule, agendaRoot } from "./modules/agenda.js?v=20260620-art";
+import { clientesModule, clientesRoot } from "./modules/clientes.js?v=20260620-art";
+import { frotaModule, frotaRoot } from "./modules/frota.js?v=20260620-art";
+import { pmocModule, pmocRoot } from "./modules/pmoc.js?v=20260620-art";
+import { recorrenciasModule, recorrenciasRoot } from "./modules/recorrencias.js?v=20260620-art";
+import { relatoriosModule, relatoriosRoot } from "./modules/relatorios.js?v=20260620-art";
+import { domModule, domRoot } from "./modules/ui/dom.js?v=20260620-art";
+import { eventosModule, eventsRoot } from "./modules/eventos.js?v=20260620-art";
+import { bootstrapModule, bootstrapRoot } from "./modules/bootstrap.js?v=20260620-art";
 
 export const adminModules = {
   api: apiModule,

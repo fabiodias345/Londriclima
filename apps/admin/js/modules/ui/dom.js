@@ -118,14 +118,14 @@ function formatPhoneInput(value) {
   }
 
   if (digits.length <= 6) {
-    return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    return "(" + digits.slice(0, 2) + ") " + digits.slice(2);
   }
 
   if (digits.length <= 10) {
-    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+    return "(" + digits.slice(0, 2) + ") " + digits.slice(2, 6) + "-" + digits.slice(6);
   }
 
-  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  return "(" + digits.slice(0, 2) + ") " + digits.slice(2, 7) + "-" + digits.slice(7);
 }
 
 function updateClientDocumentCopy() {
@@ -249,6 +249,7 @@ function fillClientForm(clientId) {
   clientForm.elements.cidade.value = address.cidade || "Londrina";
   clientForm.elements.uf.value = address.uf || "PR";
   clientForm.elements.pmoc_ativo.checked = Boolean(client.pmoc_ativo);
+  clientForm.elements.pmoc_art_numero.value = client.pmoc_art_numero || "";
   renderEngineerOptions(client.engenheiro_responsavel?.id || "");
   renderClientTechnicianOptions(client.tecnico_responsavel?.id || "");
   renderClientTeamOptions((client.equipes || []).map((equipe) => equipe.id));
@@ -274,6 +275,7 @@ function resetClientForm() {
   clientForm.elements.cidade.value = "Londrina";
   clientForm.elements.uf.value = "PR";
   clientForm.elements.pmoc_ativo.checked = false;
+  clientForm.elements.pmoc_art_numero.value = "";
   renderEngineerOptions("");
   renderClientTechnicianOptions("");
   renderClientTeamOptions([]);

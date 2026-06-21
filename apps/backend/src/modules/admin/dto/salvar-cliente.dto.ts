@@ -26,6 +26,10 @@ export class SalvarClienteDto {
   pmoc_ativo?: boolean;
 
   @IsOptional()
+  @IsString()
+  pmoc_art_numero?: string;
+
+  @IsOptional()
   @IsUUID()
   engenheiro_responsavel_id?: string;
 

@@ -34,6 +34,7 @@ async function submitClient(event) {
     email: String(data.get("email") || ""),
     documento,
     pmoc_ativo: data.get("pmoc_ativo") === "on",
+    pmoc_art_numero: data.get("pmoc_ativo") === "on" ? String(data.get("pmoc_art_numero") || "") : "",
     engenheiro_responsavel_id: data.get("pmoc_ativo") === "on" ? String(data.get("engenheiro_responsavel_id") || "") : "",
     tecnico_responsavel_id: String(data.get("tecnico_responsavel_id") || ""),
     equipe_ids: data.getAll("equipe_ids").map(String).filter(Boolean),

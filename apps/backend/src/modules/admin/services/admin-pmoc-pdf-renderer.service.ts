@@ -45,6 +45,7 @@ type PreviaPmoc = {
     documento?: string | null;
     telefone?: string | null;
     email?: string | null;
+    pmoc_art_numero?: string | null;
     endereco: EnderecoPmoc;
   };
   engenheiro_responsavel?: {
@@ -173,13 +174,14 @@ export class AdminPmocPdfRendererService {
       ["CREA/Carteira", engenheiro.crea || ENGENHEIRO_PADRAO_PMOC.crea],
       ["Registro", ENGENHEIRO_PADRAO_PMOC.registro],
       ["RNP", ENGENHEIRO_PADRAO_PMOC.rnp],
-      ["ART", "Nao informado"]
+      ["ART anual PMOC", this.formatarArt(previa)]
     ]);
     this.compat(page, [
       `Cliente ${previa.cliente.nome}`,
       `Nome ${engenheiro.nome || ENGENHEIRO_PADRAO_PMOC.nome}`,
       `CREA/Carteira ${engenheiro.crea || ENGENHEIRO_PADRAO_PMOC.crea}`,
-      "ART Nao informado"
+      `ART ${this.formatarArt(previa)}`,
+      `ART anual PMOC ${this.formatarArt(previa)}`
     ]);
     this.footer(page, 2);
     return page;
@@ -494,6 +496,10 @@ export class AdminPmocPdfRendererService {
     return [endereco.logradouro, endereco.numero, endereco.complemento, endereco.bairro, endereco.cidade, endereco.uf, endereco.cep ? `CEP ${endereco.cep}` : null]
       .filter(Boolean)
       .join(", ") || "Nao informado";
+  }
+
+  private formatarArt(previa: PreviaPmoc) {
+    return previa.cliente.pmoc_art_numero?.trim() || "Nao informado";
   }
 
   private formatarData(valor: string | null) {

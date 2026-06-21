@@ -8,6 +8,8 @@ O checklist operacional detalhado fica em `checklist.md` e sera usado como base 
 - Nem todo cliente precisa de PMOC.
 - O cadastro de cliente deve ter a opcao **Cliente exige PMOC**.
 - Cliente PMOC deve ser vinculado a um engenheiro responsavel antes da emissao do relatorio.
+- Cliente PMOC pode ter **ART anual PMOC** informada no cadastro do cliente.
+- A ART anual deve aparecer junto dos dados do responsavel tecnico no PDF.
 - Cada cliente deve gerar relatorio proprio, separado dos demais clientes.
 - Dentro do relatorio de um cliente, as maquinas devem ficar separadas maquina por maquina.
 - Equipamentos sem gas refrigerante cadastrado devem obrigar preenchimento na primeira visita tecnica.

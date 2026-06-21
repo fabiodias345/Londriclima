@@ -303,6 +303,7 @@ export class AdminRelatorioTecnicoCoreService {
         telefone: true,
         email: true,
         pmocAtivo: true,
+        pmocArtNumero: true,
         atualizadoEm: true,
         engenheiroResponsavel: {
           select: {
@@ -428,6 +429,7 @@ export class AdminRelatorioTecnicoCoreService {
         email: cliente.email,
         endereco: cliente.enderecos[0] ?? null,
         pmoc_ativo: cliente.pmocAtivo,
+        pmoc_art_numero: cliente.pmocArtNumero,
         atualizado_em: cliente.atualizadoEm.toISOString()
       },
       engenheiro_responsavel: cliente.engenheiroResponsavel

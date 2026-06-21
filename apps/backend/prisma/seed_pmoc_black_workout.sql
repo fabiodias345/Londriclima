@@ -76,12 +76,12 @@ BEGIN
 
   IF v_celso_id IS NULL THEN
     INSERT INTO clientes (
-      id, empresa_id, tipo, nome, documento, pmoc_ativo,
+      id, empresa_id, tipo, nome, documento, pmoc_ativo, pmoc_art_numero,
       engenheiro_responsavel_id, atualizado_em
     )
     VALUES (
       gen_random_uuid(), v_empresa_id, 'pj', 'Black Workout Academia LTDA',
-      '37.774.269/0001-35', true, v_eng_id, now()
+      '37.774.269/0001-35', true, '1720263699262', v_eng_id, now()
     )
     RETURNING id INTO v_celso_id;
   ELSE
@@ -90,6 +90,7 @@ BEGIN
            nome = 'Black Workout Academia LTDA',
            documento = '37.774.269/0001-35',
            pmoc_ativo = true,
+           pmoc_art_numero = '1720263699262',
            engenheiro_responsavel_id = v_eng_id,
            atualizado_em = now()
      WHERE id = v_celso_id;
@@ -132,13 +133,13 @@ BEGIN
 
   IF v_mituo_id IS NULL THEN
     INSERT INTO clientes (
-      id, empresa_id, tipo, nome, documento, pmoc_ativo,
+      id, empresa_id, tipo, nome, documento, pmoc_ativo, pmoc_art_numero,
       engenheiro_responsavel_id, atualizado_em
     )
     VALUES (
       gen_random_uuid(), v_empresa_id, 'pj',
       'Black Workout Escola de Ginastica e Danca LTDA',
-      '50.536.236/0001-15', true, v_eng_id, now()
+      '50.536.236/0001-15', true, '1720263699262', v_eng_id, now()
     )
     RETURNING id INTO v_mituo_id;
   ELSE
@@ -147,6 +148,7 @@ BEGIN
            nome = 'Black Workout Escola de Ginastica e Danca LTDA',
            documento = '50.536.236/0001-15',
            pmoc_ativo = true,
+           pmoc_art_numero = '1720263699262',
            engenheiro_responsavel_id = v_eng_id,
            atualizado_em = now()
      WHERE id = v_mituo_id;
