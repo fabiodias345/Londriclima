@@ -400,7 +400,7 @@ async function openPmocDossier(clientId) {
     const hasPendingSignature = preview.assinatura_atual?.status === "aguardando_assinatura_engenheiro";
     const hasDeliveredCurrentMonth = getCurrentPmocMonth(preview)?.email_entregue === true;
     const isTestClient = isPmocTestClient(client);
-    const canRequestSignature = (!hasPendingSignature || isTestClient) && (!hasDeliveredCurrentMonth || isTestClient) && preview.pronto_para_pdf;
+    const canRequestSignature = (!hasDeliveredCurrentMonth || isTestClient) && preview.pronto_para_pdf;
     renderPmocMonths(preview.pmoc_meses || []);
     renderPmocDossierAlerts(client, machines, preview);
     pmocDossierMeta.textContent = \`\${preview.total_maquinas || machines.length} maquinas - \${preview.total_os_concluidas || 0} OS concluidas - \${client.engenheiro_responsavel?.nome || "sem engenheiro"}\`;
@@ -410,7 +410,7 @@ async function openPmocDossier(clientId) {
       : hasDeliveredCurrentMonth
       ? "PMOC enviado"
       : hasPendingSignature
-      ? "Assinatura solicitada"
+      ? "Reenviar assinatura"
       : "Solicitar assinatura";
   }
 }

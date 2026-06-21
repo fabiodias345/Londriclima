@@ -82,13 +82,20 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
       throw new BadRequestException("Cliente PMOC precisa de engenheiro responsavel para Assinafy.");
     }
 
+    const engenheiroResponsavel = previa.engenheiro_responsavel;
+    const signer = {
+      nome: exigirString(engenheiroResponsavel.nome, "nome do engenheiro").trim(),
+      email: exigirString(engenheiroResponsavel.email, "e-mail do engenheiro").trim()
+    };
+    const accountId = await this.obterAccountId();
+    const signerId = await this.obterOuCriarSignerId(accountId, signer);
+
     const pdf = await this.adminService.gerarPdfPmocCliente(clienteId, usuario);
     const form = new FormData();
     form.append("file", new Blob([pdf.buffer as unknown as BlobPart], { type: pdf.contentType }), pdf.filename);
     form.append("title", `PMOC - ${previa.cliente.nome}`);
     form.append("description", "Relatorio PMOC gerado pela AIRMOVEBR.");
 
-    const accountId = await this.obterAccountId();
     const documento = await this.postAssinafy(
       `/accounts/${accountId}/documents`,
       form,
@@ -99,11 +106,6 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
     );
     const documentPayload = extrairPayload(documento.data);
     const documentId = exigirString(documentPayload.id, "documento Assinafy");
-
-    const signerId = await this.obterOuCriarSignerId(accountId, {
-      nome: previa.engenheiro_responsavel.nome,
-      email: previa.engenheiro_responsavel.email
-    });
 
     const assignment = await this.postAssinafy(
       `/documents/${documentId}/assignments`,
@@ -116,27 +118,43 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
     const assignmentId = exigirString(assignmentPayload.id, "signatario Assinafy");
     const assinafyStatus = exigirString(assignmentPayload.status ?? "pending", "status Assinafy");
 
-    const relatorio = await this.prisma.pmocRelatorio.create({
-      data: {
-        empresaId: usuario.empresa_id,
-        clienteId: previa.cliente.id,
-        engenheiroResponsavelId: previa.engenheiro_responsavel.id,
-        criadoPorUsuarioId: usuario.id,
-        status: PmocRelatorioStatus.aguardando_assinatura_engenheiro,
-        tokenAssinatura: randomBytes(24).toString("hex"),
-        pdfHash: createHash("sha256").update(pdf.buffer).digest("hex"),
-        assinafyDocumentId: documentId,
-        assinafyAssignmentId: assignmentId,
-        assinafyStatus,
-        assinafyUltimoEvento: assignmentPayload as Prisma.JsonObject
-      },
-      select: {
-        id: true,
-        status: true,
-        assinafyDocumentId: true,
-        assinafyAssignmentId: true,
-        assinafyStatus: true
-      }
+    const agora = new Date();
+    const relatorio = await this.prisma.$transaction(async (tx) => {
+      await tx.pmocRelatorio.updateMany({
+        where: {
+          empresaId: usuario.empresa_id,
+          clienteId: previa.cliente.id,
+          status: PmocRelatorioStatus.aguardando_assinatura_engenheiro
+        },
+        data: {
+          status: PmocRelatorioStatus.cancelado,
+          assinafyStatus: "superseded",
+          historicoFinalizadoEm: agora
+        }
+      });
+
+      return tx.pmocRelatorio.create({
+        data: {
+          empresaId: usuario.empresa_id,
+          clienteId: previa.cliente.id,
+          engenheiroResponsavelId: engenheiroResponsavel.id,
+          criadoPorUsuarioId: usuario.id,
+          status: PmocRelatorioStatus.aguardando_assinatura_engenheiro,
+          tokenAssinatura: randomBytes(24).toString("hex"),
+          pdfHash: createHash("sha256").update(pdf.buffer).digest("hex"),
+          assinafyDocumentId: documentId,
+          assinafyAssignmentId: assignmentId,
+          assinafyStatus,
+          assinafyUltimoEvento: assignmentPayload as Prisma.JsonObject
+        },
+        select: {
+          id: true,
+          status: true,
+          assinafyDocumentId: true,
+          assinafyAssignmentId: true,
+          assinafyStatus: true
+        }
+      });
     });
 
     return {
@@ -161,6 +179,8 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
         empresaId: true,
         clienteId: true,
         status: true,
+        assinafyStatus: true,
+        pdfStorageUrl: true,
         cliente: {
           select: {
             nome: true,
@@ -180,6 +200,15 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
 
     if (!relatorio) {
       throw new NotFoundException("Relatorio Assinafy nao encontrado.");
+    }
+
+    if (relatorio.status === PmocRelatorioStatus.cancelado) {
+      return {
+        id: relatorio.id,
+        status: relatorio.status,
+        assinafy_status: relatorio.assinafyStatus,
+        pdf_storage_url: relatorio.pdfStorageUrl
+      };
     }
 
     const data: Prisma.PmocRelatorioUpdateInput = {
@@ -423,7 +452,13 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
   private async obterOuCriarSignerId(accountId: string, signer: { nome: string; email: string }) {
     const existente = await this.buscarSignerPorEmail(accountId, signer.email);
     if (existente) {
-      return existente;
+      const nomeExistente = stringOuNulo(existente.full_name);
+      if (!nomeExistente || this.normalizarIdentidade(nomeExistente) !== this.normalizarIdentidade(signer.nome)) {
+        throw new BadRequestException(
+          `Signatario Assinafy com o e-mail ${signer.email} esta cadastrado com outro nome.`
+        );
+      }
+      return exigirString(existente.id, "signatario Assinafy");
     }
 
     const criado = await this.postAssinafy(
@@ -443,7 +478,11 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
     const signers = extrairLista<AssinafySigner>(response.data);
     const alvo = email.trim().toLowerCase();
     const signer = signers.find((item) => typeof item.email === "string" && item.email.trim().toLowerCase() === alvo);
-    return typeof signer?.id === "string" && signer.id.trim() ? signer.id : null;
+    return signer ?? null;
+  }
+
+  private normalizarIdentidade(value: string) {
+    return value.trim().replace(/\s+/g, " ").toLocaleLowerCase("pt-BR");
   }
 
   private async postAssinafy(url: string, data: unknown, config?: AxiosRequestConfig) {

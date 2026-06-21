@@ -396,6 +396,8 @@ test("admin possui triagem PMOC por cliente e conversao com engenheiro", () => {
   assert.match(script, /\/assinaturas\/pmoc\/clientes\/\$\{selectedPmocDossierClientId\}\/assinafy/);
   assert.match(script, /assinafy_document_id/);
   assert.match(script, /canRequestSignature/);
+  assert.match(script, /Reenviar assinatura/);
+  assert.doesNotMatch(script, /\(!hasPendingSignature \|\| isTestClient\)/);
   assert.doesNotMatch(script, /token_assinatura/);
   assert.match(script, /pronto_para_pdf/);
   assert.match(script, /total_os_concluidas/);

@@ -29,6 +29,9 @@ function criarServico(options?: {
     posts: [] as Array<{ url: string; data: unknown; config: unknown }>,
     gets: [] as Array<{ url: string; config?: unknown }>,
     relatorioData: undefined as unknown,
+    updateManyWhere: undefined as unknown,
+    updateManyData: undefined as unknown,
+    transactionEvents: [] as string[],
     updateWhere: undefined as unknown,
     updateData: undefined as unknown,
     automacaoData: undefined as unknown,
@@ -79,6 +82,7 @@ function criarServico(options?: {
   const prisma = {
     pmocRelatorio: {
       create: async ({ data }: { data: unknown }) => {
+        chamadas.transactionEvents.push("create");
         chamadas.relatorioData = data;
         return {
           id: "relatorio-1",
@@ -88,11 +92,19 @@ function criarServico(options?: {
           assinafyStatus: "pending"
         };
       },
+      updateMany: async ({ where, data }: { where: unknown; data: unknown }) => {
+        chamadas.transactionEvents.push("updateMany");
+        chamadas.updateManyWhere = where;
+        chamadas.updateManyData = data;
+        return { count: 1 };
+      },
       findFirst: async () => ({
         id: "relatorio-1",
         empresaId: "empresa-1",
         clienteId: "cliente-1",
         status: chamadas.findFirstStatus,
+        assinafyStatus: chamadas.findFirstStatus === PmocRelatorioStatus.cancelado ? "superseded" : "pending",
+        pdfStorageUrl: null,
         cliente: { nome: "Hospital Teste", email: "cliente@example.com" },
         engenheiroResponsavel: { nome: "Paulo Silva", email: "paulo@example.com", cpf: "12345678901", crea: "CREA-PR 12345" }
       }),
@@ -173,15 +185,15 @@ test("enviarPmocParaAssinatura envia PDF e cadastra signatario na Assinafy sem e
   const resposta = await service.enviarPmocParaAssinatura("cliente-1", usuario);
 
   assert.equal(chamadas.gets[0].url, "/accounts");
-  assert.equal(chamadas.posts[0].url, "/accounts/account-1/documents");
-  assert.equal(chamadas.posts[0].data instanceof FormData, true);
-  assert.equal((chamadas.posts[0].data as FormData).get("title"), "PMOC - Hospital Teste");
-  assert.equal((chamadas.posts[0].data as FormData).get("description"), "Relatorio PMOC gerado pela AIRMOVEBR.");
-  assert.equal((chamadas.posts[0].data as FormData).get("file") instanceof Blob, true);
-  assert.equal((chamadas.posts[0].config as { maxBodyLength?: unknown }).maxBodyLength, Infinity);
-  assert.equal(chamadas.posts[1].url, "/accounts/account-1/signers");
-  assert.equal((chamadas.posts[1].data as { full_name?: unknown }).full_name, "Paulo Silva");
-  assert.match(JSON.stringify(chamadas.posts[1].data), /paulo@example.com/);
+  assert.equal(chamadas.posts[0].url, "/accounts/account-1/signers");
+  assert.equal((chamadas.posts[0].data as { full_name?: unknown }).full_name, "Paulo Silva");
+  assert.match(JSON.stringify(chamadas.posts[0].data), /paulo@example.com/);
+  assert.equal(chamadas.posts[1].url, "/accounts/account-1/documents");
+  assert.equal(chamadas.posts[1].data instanceof FormData, true);
+  assert.equal((chamadas.posts[1].data as FormData).get("title"), "PMOC - Hospital Teste");
+  assert.equal((chamadas.posts[1].data as FormData).get("description"), "Relatorio PMOC gerado pela AIRMOVEBR.");
+  assert.equal((chamadas.posts[1].data as FormData).get("file") instanceof Blob, true);
+  assert.equal((chamadas.posts[1].config as { maxBodyLength?: unknown }).maxBodyLength, Infinity);
   assert.equal(chamadas.posts[2].url, "/documents/doc-assinafy-1/assignments");
   assert.equal(JSON.stringify(resposta).includes("assinafy-secret"), false);
   assert.equal(resposta.assinafy_document_id, "doc-assinafy-1");
@@ -200,6 +212,35 @@ test("enviarPmocParaAssinatura reutiliza signatario Assinafy quando email ja exi
   assert.equal(chamadas.posts[1].url, "/documents/doc-assinafy-1/assignments");
   assert.match(JSON.stringify(chamadas.posts[1].data), /signer-existente/);
   assert.equal(resposta.assinafy_assignment_id, "assignment-1");
+});
+
+test("enviarPmocParaAssinatura rejeita signatario com mesmo email e nome divergente", async () => {
+  const { service, chamadas } = criarServico({
+    signers: [{ id: "signer-existente", email: "paulo@example.com", full_name: "Andre Mendes" }]
+  });
+
+  await assert.rejects(
+    service.enviarPmocParaAssinatura("cliente-1", usuario),
+    /Signatario Assinafy.*outro nome/
+  );
+
+  assert.equal(chamadas.posts.some((post) => post.url.includes("/assignments")), false);
+});
+
+test("enviarPmocParaAssinatura cancela pendencias anteriores antes de gravar o reenvio", async () => {
+  const { service, chamadas } = criarServico();
+
+  await service.enviarPmocParaAssinatura("cliente-1", usuario);
+
+  assert.deepEqual(chamadas.updateManyWhere, {
+    empresaId: "empresa-1",
+    clienteId: "cliente-1",
+    status: PmocRelatorioStatus.aguardando_assinatura_engenheiro
+  });
+  assert.equal((chamadas.updateManyData as { status?: unknown }).status, PmocRelatorioStatus.cancelado);
+  assert.equal((chamadas.updateManyData as { assinafyStatus?: unknown }).assinafyStatus, "superseded");
+  assert.ok((chamadas.updateManyData as { historicoFinalizadoEm?: unknown }).historicoFinalizadoEm instanceof Date);
+  assert.deepEqual(chamadas.transactionEvents, ["updateMany", "create"]);
 });
 
 test("processarWebhook salva status e baixa PDF assinado quando assinatura conclui", async () => {
@@ -310,6 +351,23 @@ test("processarWebhook nao duplica alerta interno quando PMOC ja esta cancelado"
   });
 
   assert.equal(chamadas.automacaoData, undefined);
+});
+
+test("processarWebhook ignora conclusao de solicitacao substituida", async () => {
+  const { service, chamadas } = criarServico({
+    relatorioStatus: PmocRelatorioStatus.cancelado
+  });
+
+  const resposta = await service.processarWebhook({
+    document_id: "doc-assinafy-1",
+    assignment_id: "assignment-1",
+    status: "completed"
+  });
+
+  assert.equal(chamadas.gets.length, 0);
+  assert.equal(chamadas.updateData, undefined);
+  assert.equal(chamadas.automacaoData, undefined);
+  assert.equal(resposta.status, PmocRelatorioStatus.cancelado);
 });
 
 test("sincronizarPendentesAssinafy fecha PMOC certificado mesmo sem webhook cadastrado", async () => {

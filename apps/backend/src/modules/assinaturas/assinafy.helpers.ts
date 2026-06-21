@@ -7,6 +7,7 @@ export type AssinafyAccount = {
 export type AssinafySigner = {
   id?: unknown;
   email?: unknown;
+  full_name?: unknown;
 };
 
 export function statusConcluidoAssinafy(status: string) {
