@@ -334,7 +334,31 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
         }
       });
 
-      if (!relatorio.emailAgendadoEm) {
+      const automacaoFinalExistente = await tx.automacaoAgendada.findFirst({
+        where: {
+          empresaId: relatorio.empresaId,
+          tipo: AutomacaoTipo.enviar_email,
+          AND: [
+            {
+              payload: {
+                path: ["tipo"],
+                equals: "pmoc_relatorio_assinado"
+              }
+            },
+            {
+              payload: {
+                path: ["relatorio_id"],
+                equals: relatorio.id
+              }
+            }
+          ]
+        },
+        select: {
+          id: true
+        }
+      });
+
+      if (!automacaoFinalExistente) {
         await tx.automacaoAgendada.create({
           data: {
             empresaId: relatorio.empresaId,

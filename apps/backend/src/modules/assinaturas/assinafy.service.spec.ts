@@ -16,6 +16,8 @@ function criarServico(options?: {
   documentStatus?: string;
   assignmentStatus?: string;
   relatorioStatus?: PmocRelatorioStatus;
+  emailAgendadoEm?: Date | null;
+  automacaoFinalExistente?: boolean;
   driveStorage?: {
     salvarPdfAssinadoPmoc: (input: {
       relatorioId: string;
@@ -105,6 +107,7 @@ function criarServico(options?: {
         status: chamadas.findFirstStatus,
         assinafyStatus: chamadas.findFirstStatus === PmocRelatorioStatus.cancelado ? "superseded" : "pending",
         pdfStorageUrl: null,
+        emailAgendadoEm: options?.emailAgendadoEm ?? null,
         cliente: { nome: "Hospital Teste", email: "cliente@example.com" },
         engenheiroResponsavel: { nome: "Paulo Silva", email: "paulo@example.com", cpf: "12345678901", crea: "CREA-PR 12345" }
       }),
@@ -126,6 +129,7 @@ function criarServico(options?: {
       }
     },
     automacaoAgendada: {
+      findFirst: async () => (options?.automacaoFinalExistente ? { id: "automacao-existente" } : null),
       create: async ({ data }: { data: unknown }) => {
         chamadas.automacaoData = data;
         return { id: "automacao-1" };
@@ -288,6 +292,38 @@ test("processarWebhook agenda envio do PMOC assinado para o cliente quando Assin
   assert.equal(automacao.payload?.pdf_filename, "pmoc-relatorio-1-assinado-assinafy.pdf");
   assert.equal(typeof automacao.payload?.pdf_hash, "string");
   assert.equal(resposta.status, PmocRelatorioStatus.assinado);
+});
+
+test("processarWebhook cria envio final mesmo quando relatorio ja estava marcado como email agendado", async () => {
+  const { service, chamadas } = criarServico({
+    emailAgendadoEm: new Date("2026-06-12T11:00:00.000Z")
+  });
+
+  await service.processarWebhook({
+    document_id: "doc-assinafy-1",
+    assignment_id: "assignment-1",
+    status: "certificated"
+  });
+
+  assert.equal((chamadas.automacaoData as { tipo?: unknown }).tipo, AutomacaoTipo.enviar_email);
+  assert.equal(
+    ((chamadas.automacaoData as { payload?: Record<string, unknown> }).payload ?? {}).tipo,
+    "pmoc_relatorio_assinado"
+  );
+});
+
+test("processarWebhook nao duplica envio final quando automacao ja existe para o relatorio", async () => {
+  const { service, chamadas } = criarServico({
+    automacaoFinalExistente: true
+  });
+
+  await service.processarWebhook({
+    document_id: "doc-assinafy-1",
+    assignment_id: "assignment-1",
+    status: "certificated"
+  });
+
+  assert.equal(chamadas.automacaoData, undefined);
 });
 
 test("processarWebhook nao arquiva PDF assinado no Drive quando assinatura Assinafy conclui", async () => {

@@ -7,3 +7,7 @@ ssh airmovebr@191.252.226.11 "cd /opt/airmovebr/repo && docker compose --env-fil
 ssh airmovebr@191.252.226.11 "cd /opt/airmovebr/repo && docker compose --env-file .env.production -f infra/docker-compose.prod.example.yml exec -T postgres psql -U airmovebr_prod -d airmovebr_prod -c 'SELECT now();' && echo DB_OK"
 ssh airmovebr@191.252.226.11 "cd /opt/airmovebr/repo && docker run --rm --network container:infra-backend-1 curlimages/curl:8.11.1 -fsS http://127.0.0.1:3000/api/v1/health && echo API_OK"
 ssh airmovebr@191.252.226.11 "cd /opt/airmovebr/repo && docker compose --env-file .env.production -f infra/docker-compose.prod.example.yml exec -T postgres psql -U airmovebr_prod -d airmovebr_prod -c 'SELECT id, nome, crea FROM engenheiros_responsaveis;' -c 'SELECT COUNT(*) FROM empresas;' -c 'SELECT COUNT(*) FROM clientes;' -c 'SELECT COUNT(*) FROM equipamentos;'"
+
+
+
+ssh airmovebr@191.252.226.11 "cd /opt/airmovebr/repo && git pull origin main && docker compose --env-file .env.production -f infra/docker-compose.prod.example.yml up -d --build"
