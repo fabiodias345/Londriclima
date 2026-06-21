@@ -111,7 +111,7 @@ test("admin autentica, guarda token e protege chamadas administrativas", () => {
   const html = read("apps/admin/index.html");
   const main = read("apps/admin/js/main.js");
 
-  assert.match(html, /<script type="module" src="\.\/js\/main\.js"><\/script>/);
+  assert.match(html, /<script type="module" src="\.\/js\/main\.js\?v=20260621-phone"><\/script>/);
   assert.doesNotMatch(main, /import "\.\.\/script\.js"/);
   assert.match(main, /adminModules/);
   assertFileExists("apps/admin/js/modules/api.js");
@@ -245,7 +245,7 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(script, /const rawDocumento = String\(data\.get\("documento"\) \|\| ""\)\.trim\(\)/);
   assert.match(script, /const documento = tipo === "pj" \? onlyDigits\(rawDocumento\) : rawDocumento/);
   assert.match(script, /function formatPhoneInput/);
-  assert.match(script, /return String\(value \|\| ""\)\.replace\(\/\\D\/g, ""\)/);
+  assert.match(script, /return String\(value \|\| ""\)\.replace\(\/\\\\D\/g, ""\)/);
   assert.match(script, /\(43\) 3348-9760 ou \(43\) 99999-9999/);
   assert.match(script, /digits\.length <= 10/);
   assert.match(script, /digits\.slice\(2, 6\)/);
