@@ -237,13 +237,13 @@ async function loadRecurrenceEquipments(clientId) {
   recurrenceEquipmentSelect.innerHTML = '<option value="">Carregando equipamentos...</option>';
 
   if (!clientId) {
-    recurrenceEquipmentSelect.innerHTML = '<option value="">Sem equipamento definido</option>';
+    recurrenceEquipmentSelect.innerHTML = '<option value="">Todos os equipamentos</option>';
     return;
   }
 
   const result = await fetchAdminJson(\`/admin/clientes/\${clientId}/equipamentos\`, recurrenceFormStatus);
   recurrenceEquipmentSelect.innerHTML =
-    '<option value="">Sem equipamento definido</option>' +
+    '<option value="">Todos os equipamentos</option>' +
     (result?.items || [])
       .map((item) => \`<option value="\${item.id}">\${escapeHtml(formatAgendaEquipment(item))}</option>\`)
       .join("");

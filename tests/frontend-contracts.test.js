@@ -215,6 +215,8 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(script, /async function submitRecurrence/);
   assert.match(script, /function renderRecorrencias/);
   assert.match(script, /function renderRecurrenceCard/);
+  assert.match(script, /Todos os equipamentos/);
+  assert.match(script, /equipamento_id:\s*String\(data\.get\("equipamento_id"\) \|\| ""\)/);
   assert.match(script, /function generateRecurrenceOs/);
   assert.match(script, /\/admin\/planos-recorrencia\/\$\{planId\}\/gerar-os/);
   assert.match(script, /const AGENDA_LOOKAHEAD_DAYS = 180/);
