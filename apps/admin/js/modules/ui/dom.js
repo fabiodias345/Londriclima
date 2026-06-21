@@ -82,7 +82,7 @@ function stopEquipmentScanner() {
 }
 
 function onlyDigits(value) {
-  return value.replace(/\D/g, "");
+  return String(value || "").replace(/\D/g, "");
 }
 
 function normalizeSearch(value) {
