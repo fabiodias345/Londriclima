@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../auth/mobile_login_gateway.dart';
 import '../models/work_order.dart';
+import '../services/barcode_scanner_service.dart';
 import '../services/checklist_photo_picker.dart';
 import '../services/location_service.dart';
 import '../theme/app_theme.dart';
@@ -13,11 +14,13 @@ class LoginScreen extends StatefulWidget {
     required this.loginGateway,
     this.locationService = const DeviceLocationService(),
     this.photoPicker = const DeviceChecklistPhotoPicker(),
+    this.barcodeScanner = const DeviceBarcodeScannerService(),
   });
 
   final MobileLoginGateway loginGateway;
   final LocationService locationService;
   final ChecklistPhotoPicker photoPicker;
+  final BarcodeScannerService barcodeScanner;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -72,6 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
             repository: loginSession.repository,
             locationService: widget.locationService,
             photoPicker: widget.photoPicker,
+            barcodeScanner: widget.barcodeScanner,
           ),
         ),
       );

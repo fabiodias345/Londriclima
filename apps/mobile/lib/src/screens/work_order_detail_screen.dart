@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../models/work_order.dart';
 import '../repositories/work_order_repository.dart';
+import '../services/barcode_scanner_service.dart';
 import '../services/location_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/detail_section.dart';
@@ -42,12 +43,14 @@ class WorkOrderDetailScreen extends StatefulWidget {
     required this.repository,
     required this.locationService,
     required this.photoPicker,
+    required this.barcodeScanner,
   });
 
   final WorkOrder order;
   final WorkOrderRepository repository;
   final LocationService locationService;
   final ChecklistPhotoPicker photoPicker;
+  final BarcodeScannerService barcodeScanner;
 
   @override
   State<WorkOrderDetailScreen> createState() => _WorkOrderDetailScreenState();
@@ -256,6 +259,18 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
                         _machineFilter = value;
                       });
                     },
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    key: const Key('scanEquipmentButton'),
+                    onPressed: _scanEquipmentCode,
+                    icon: const Icon(Icons.qr_code_scanner_outlined),
+                    label: const Text('Ler QR / codigo de barras'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                      alignment: Alignment.centerLeft,
+                      foregroundColor: airmovebrPrimary,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   ..._filteredEquipments().map(
@@ -617,6 +632,40 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
         _errorMessage = 'Falha ao salvar maquina.';
       });
     }
+  }
+
+  Future<void> _scanEquipmentCode() async {
+    final code = await widget.barcodeScanner.scanBarcode(context);
+    final normalized = code?.trim();
+    if (normalized == null || normalized.isEmpty) {
+      return;
+    }
+
+    final equipment = _equipments.where((item) {
+      return item.qrCode.toLowerCase() == normalized.toLowerCase() ||
+          item.id.toLowerCase() == normalized.toLowerCase();
+    }).firstOrNull;
+
+    setState(() {
+      _machineFilter = normalized;
+      _errorMessage = null;
+      if (equipment == null) {
+        _errorMessage = 'Maquina nao encontrada para o codigo $normalized.';
+        return;
+      }
+      _selectedEquipment = equipment;
+      _editingMachine = !equipment.hasRequiredMachineData();
+      _loadMachineForm(equipment);
+      _checklistStarted = false;
+      _checklistSaved = false;
+      _checklistMessage = null;
+      _checklistValues.clear();
+      _initialEvidenceSaved = false;
+      _finalEvidenceSaved = false;
+      _signaturePoints.clear();
+      _responsibleController.clear();
+      _clearTextControllers();
+    });
   }
 
   MachineDataInput _buildMachineInput() {

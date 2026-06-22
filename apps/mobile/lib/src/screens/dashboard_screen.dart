@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/work_order.dart';
 import '../repositories/work_order_repository.dart';
+import '../services/barcode_scanner_service.dart';
 import '../services/location_service.dart';
 import '../theme/app_theme.dart';
 import 'work_order_detail_screen.dart';
@@ -15,11 +16,13 @@ class DashboardScreen extends StatefulWidget {
     required this.repository,
     required this.locationService,
     required this.photoPicker,
+    required this.barcodeScanner,
   });
 
   final WorkOrderRepository repository;
   final LocationService locationService;
   final ChecklistPhotoPicker photoPicker;
+  final BarcodeScannerService barcodeScanner;
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -97,6 +100,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           repository: widget.repository,
           locationService: widget.locationService,
           photoPicker: widget.photoPicker,
+          barcodeScanner: widget.barcodeScanner,
         ),
       ),
     );

@@ -36,6 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   geolocator: ^14.0.3
   image_picker: ^1.2.2
+  mobile_scanner: ^7.2.0
 
 dev_dependencies:
   flutter_test:

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'auth/hybrid_login_gateway.dart';
 import 'screens/login_screen.dart';
+import 'services/barcode_scanner_service.dart';
 import 'services/location_service.dart';
 import 'theme/app_theme.dart';
 
@@ -19,6 +20,7 @@ class AirmovebrApp extends StatelessWidget {
       home: LoginScreen(
         loginGateway: HybridLoginGateway(apiBaseUrl: _parseApiBaseUrl()),
         locationService: const DeviceLocationService(),
+        barcodeScanner: const DeviceBarcodeScannerService(),
       ),
     );
   }

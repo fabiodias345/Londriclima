@@ -187,6 +187,14 @@ POST /api/v1/os/:osId/finalizar
 - A fila evita perder checklist/fotos/finalizacao quando a internet cai durante o atendimento.
 - Limitacao atual: cadastro/inicio de atendimento ainda dependem de rede; offline completo de abertura/cadastro fica para fase futura se necessario.
 
+### Fase 14 - Leitura de QR/codigo de barras
+
+- APK recebeu scanner real por camera usando `mobile_scanner`.
+- Tela de Maquinas tem botao `Ler QR / codigo de barras`.
+- Ao ler um codigo que bate com `codigo_qr` ou ID da maquina, o APK seleciona a maquina automaticamente.
+- Se o codigo nao bater, o APK preenche a busca e mostra mensagem de maquina nao encontrada.
+- Android ja tinha permissao de camera no Manifest; build debug validado.
+
 ### Ponto de retomada
 
 - Instalar/testar o APK debug mais recente no celular.
@@ -247,9 +255,8 @@ C:\develop\LondriClima\apps\mobile\build\app\outputs\flutter-apk\app-debug.apk
 
 ### Proximas fases do APK
 
-1. Confirmar Fase 13 no celular real e depois commitar/subir.
-2. Fase 14: leitura de codigo de barras/QR por equipamento.
-3. Fase 15: polimento visual, icon/app name, checklist real por tipo de servico e APK release.
+1. Confirmar Fase 14 no celular real e depois commitar/subir.
+2. Fase 15: polimento visual, icon/app name, checklist real por tipo de servico e APK release.
 
 ## Prioridade aprovada: novo PDF PMOC
 

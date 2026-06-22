@@ -6,6 +6,7 @@ import 'package:airmovebr_mobile/src/auth/hybrid_login_gateway.dart';
 import 'package:airmovebr_mobile/src/auth/mobile_login_gateway.dart';
 import 'package:airmovebr_mobile/src/models/work_order.dart';
 import 'package:airmovebr_mobile/src/services/location_service.dart';
+import 'package:airmovebr_mobile/src/services/barcode_scanner_service.dart';
 import 'package:airmovebr_mobile/src/repositories/work_order_repository.dart';
 import 'package:airmovebr_mobile/src/screens/login_screen.dart';
 import 'package:flutter/material.dart';
@@ -281,6 +282,42 @@ void main() {
     expect(find.byKey(const Key('checklist_final_M16')), findsOneWidget);
   });
 
+  testWidgets('ler QR seleciona maquina correspondente', (tester) async {
+    final repository = _RepositorioDeTeste();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LoginScreen(
+          loginGateway: _GatewayDeTeste(repository: repository),
+          locationService: const _LocationServiceTeste(),
+          photoPicker: const _PhotoPickerTeste(),
+          barcodeScanner: const _BarcodeScannerTeste('QR-102'),
+        ),
+      ),
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('loginUserField')),
+      'tecnico@airmovebr.local',
+    );
+    await tester.enterText(
+      find.byKey(const Key('loginPasswordField')),
+      '123456',
+    );
+    await tester.tap(find.byKey(const Key('loginSubmitButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cliente API'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
+    await tester.tap(find.text('Iniciar atendimento'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('scanEquipmentButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Maquina selecionada'), findsOneWidget);
+    expect(find.text('Sala 102'), findsOneWidget);
+  });
+
   testWidgets('salvar checklist envia respostas da maquina selecionada', (
     tester,
   ) async {
@@ -452,6 +489,8 @@ void main() {
   testWidgets('detalhe em atendimento usa abas menores para o fluxo', (
     tester,
   ) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     final repository = _RepositorioDeTeste();
     await tester.pumpWidget(
       MaterialApp(
@@ -479,13 +518,28 @@ void main() {
     await tester.tap(find.text('Iniciar atendimento'));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('stepTab_data')), findsOneWidget);
-    expect(find.byKey(const Key('stepTab_machines')), findsOneWidget);
-    expect(find.byKey(const Key('stepTab_checklist')), findsOneWidget);
-    expect(find.byKey(const Key('stepTab_finish')), findsOneWidget);
+    expect(
+      find.byKey(const Key('stepTab_data'), skipOffstage: false),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('stepTab_machines'), skipOffstage: false),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('stepTab_checklist'), skipOffstage: false),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('stepTab_finish'), skipOffstage: false),
+      findsOneWidget,
+    );
     expect(find.text('Selecionar maquina'), findsOneWidget);
     expect(find.text('Finalizar OS'), findsNothing);
 
+    await tester.ensureVisible(
+      find.byKey(const Key('stepTab_finish'), skipOffstage: false),
+    );
     await tester.tap(find.byKey(const Key('stepTab_finish')));
     await tester.pumpAndSettle();
 
@@ -1162,4 +1216,13 @@ class _LocationServiceTeste implements LocationService {
   Future<GeoPoint> currentLocation() async {
     return const GeoPoint(latitude: -23.3048, longitude: -51.1701);
   }
+}
+
+class _BarcodeScannerTeste implements BarcodeScannerService {
+  const _BarcodeScannerTeste(this.result);
+
+  final String? result;
+
+  @override
+  Future<String?> scanBarcode(BuildContext context) async => result;
 }
