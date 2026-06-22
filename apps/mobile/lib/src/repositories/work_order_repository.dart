@@ -26,4 +26,21 @@ abstract class WorkOrderRepository {
     required String code,
     required ChecklistPhotoFile photo,
   });
+
+  Future<void> saveInitialEvidence(
+    WorkOrder order, {
+    required String description,
+    required ChecklistPhotoFile photo,
+  });
+
+  Future<void> saveFinalEvidence(
+    WorkOrder order, {
+    required String description,
+    required ChecklistPhotoFile photo,
+  });
+
+  Future<WorkOrder> finishWorkOrder(
+    WorkOrder order,
+    FinalizeWorkOrderInput input,
+  );
 }

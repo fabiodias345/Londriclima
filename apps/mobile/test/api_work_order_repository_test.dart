@@ -160,9 +160,7 @@ void main() {
       body = latin1.decode(bytes);
       request.response.headers.contentType = ContentType.json;
       request.response.write(
-        jsonEncode({
-          'storage_url': '/storage/os/os-1/checklist/eq-1/M4.jpg',
-        }),
+        jsonEncode({'storage_url': '/storage/os/os-1/checklist/eq-1/M4.jpg'}),
       );
       await request.response.close();
     });
@@ -207,6 +205,96 @@ void main() {
     expect(body, contains('M4'));
     expect(body, contains('name="foto"; filename="filtro.jpg"'));
     expect(storageUrl, '/storage/os/os-1/checklist/eq-1/M4.jpg');
+
+    await pump.cancel();
+    await server.close(force: true);
+  });
+
+  test('ApiWorkOrderRepository envia evidencias e finaliza OS', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    final paths = <String>[];
+    final bodies = <String>[];
+    late Map<String, dynamic> finishPayload;
+
+    final pump = server.listen((request) async {
+      paths.add(request.uri.path);
+      final bytes = await request.fold<List<int>>(
+        <int>[],
+        (previous, element) => previous..addAll(element),
+      );
+      final body = latin1.decode(bytes);
+      bodies.add(body);
+
+      if (request.uri.path.endsWith('/finalizar')) {
+        finishPayload = jsonDecode(body) as Map<String, dynamic>;
+      }
+
+      request.response.headers.contentType = ContentType.json;
+      request.response.write('{}');
+      await request.response.close();
+    });
+
+    final repository = ApiWorkOrderRepository(
+      baseUrl: Uri.parse('http://127.0.0.1:${server.port}'),
+      token: 'token-api',
+    );
+    final order = WorkOrder(
+      id: 'os-1',
+      clientName: 'Cliente API',
+      address: 'Rua API, 10',
+      equipment: 'Split API',
+      maintenanceType: 'PMOC',
+      scheduledAt: DateTime.now(),
+      status: WorkOrderStatus.inProgress,
+    );
+
+    await repository.saveInitialEvidence(
+      order,
+      description: 'antes',
+      photo: const ChecklistPhotoFile(
+        filename: 'antes.jpg',
+        mimeType: 'image/jpeg',
+        bytes: [1, 2, 3],
+      ),
+    );
+    await repository.saveFinalEvidence(
+      order,
+      description: 'depois',
+      photo: const ChecklistPhotoFile(
+        filename: 'depois.jpg',
+        mimeType: 'image/jpeg',
+        bytes: [4, 5, 6],
+      ),
+    );
+    final updated = await repository.finishWorkOrder(
+      order,
+      FinalizeWorkOrderInput(
+        signatureBase64: 'data:image/png;base64,abc',
+        responsibleName: 'Cliente Teste',
+        latitude: -23.3048,
+        longitude: -51.1701,
+        finalizedAt: DateTime.parse('2026-06-22T10:00:00Z'),
+      ),
+    );
+
+    expect(paths, [
+      '/api/v1/os/os-1/evidencia-inicial',
+      '/api/v1/os/os-1/evidencia-final',
+      '/api/v1/os/os-1/finalizar',
+    ]);
+    expect(bodies[0], contains('name="descricao_antes"'));
+    expect(bodies[0], contains('name="foto_antes"; filename="antes.jpg"'));
+    expect(bodies[1], contains('name="descricao_depois"'));
+    expect(bodies[1], contains('name="foto_depois"; filename="depois.jpg"'));
+    expect(
+      finishPayload['assinatura_cliente_base64'],
+      startsWith('data:image/png;base64,'),
+    );
+    expect(finishPayload['nome_responsavel_assinatura'], 'Cliente Teste');
+    expect(finishPayload['latitude'], -23.3048);
+    expect(finishPayload['longitude'], -51.1701);
+    expect(updated.status, WorkOrderStatus.done);
+    expect(updated.backendStatus, 'concluida');
 
     await pump.cancel();
     await server.close(force: true);

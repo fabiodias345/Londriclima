@@ -152,6 +152,31 @@ class FakeWorkOrderRepository implements WorkOrderRepository {
   }
 
   @override
+  Future<void> saveInitialEvidence(
+    WorkOrder order, {
+    required String description,
+    required ChecklistPhotoFile photo,
+  }) async {}
+
+  @override
+  Future<void> saveFinalEvidence(
+    WorkOrder order, {
+    required String description,
+    required ChecklistPhotoFile photo,
+  }) async {}
+
+  @override
+  Future<WorkOrder> finishWorkOrder(
+    WorkOrder order,
+    FinalizeWorkOrderInput input,
+  ) async {
+    return order.copyWith(
+      status: WorkOrderStatus.done,
+      backendStatus: 'concluida',
+    );
+  }
+
+  @override
   Future<WorkOrderEquipment> saveMachineData(
     WorkOrder order,
     MachineDataInput input,

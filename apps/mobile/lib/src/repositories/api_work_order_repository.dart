@@ -95,11 +95,14 @@ class ApiWorkOrderRepository implements WorkOrderRepository {
       );
 
       final response = await request.close();
-      await response.drain<void>();
+      final body = await response.transform(utf8.decoder).join();
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw HttpException(
-          'Falha ao salvar checklist: ${response.statusCode}',
+          _errorMessage(
+            body,
+            fallback: 'Falha ao salvar checklist: ${response.statusCode}',
+          ),
         );
       }
     } finally {
@@ -128,10 +131,7 @@ class ApiWorkOrderRepository implements WorkOrderRepository {
       request.add(
         _multipartBody(
           boundary: boundary,
-          fields: {
-            'equipamento_id': equipmentId,
-            'codigo': code,
-          },
+          fields: {'equipamento_id': equipmentId, 'codigo': code},
           fileField: 'foto',
           filename: photo.filename,
           mimeType: photo.mimeType,
@@ -150,6 +150,78 @@ class ApiWorkOrderRepository implements WorkOrderRepository {
 
       final decoded = jsonDecode(body) as Map<String, dynamic>;
       return decoded['storage_url'].toString();
+    } finally {
+      client.close(force: true);
+    }
+  }
+
+  @override
+  Future<void> saveInitialEvidence(
+    WorkOrder order, {
+    required String description,
+    required ChecklistPhotoFile photo,
+  }) async {
+    await _saveEvidencePhoto(
+      order,
+      path: '/api/v1/os/${order.id}/evidencia-inicial',
+      descriptionField: 'descricao_antes',
+      fileField: 'foto_antes',
+      description: description,
+      photo: photo,
+      errorPrefix: 'Falha ao enviar foto antes',
+    );
+  }
+
+  @override
+  Future<void> saveFinalEvidence(
+    WorkOrder order, {
+    required String description,
+    required ChecklistPhotoFile photo,
+  }) async {
+    await _saveEvidencePhoto(
+      order,
+      path: '/api/v1/os/${order.id}/evidencia-final',
+      descriptionField: 'descricao_depois',
+      fileField: 'foto_depois',
+      description: description,
+      photo: photo,
+      errorPrefix: 'Falha ao enviar foto depois',
+    );
+  }
+
+  @override
+  Future<WorkOrder> finishWorkOrder(
+    WorkOrder order,
+    FinalizeWorkOrderInput input,
+  ) async {
+    final uri = baseUrl.resolve('/api/v1/os/${order.id}/finalizar');
+    final client = HttpClient();
+
+    try {
+      final request = await client.postUrl(uri);
+      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      request.headers.contentType = ContentType.json;
+      request.write(
+        jsonEncode({
+          'assinatura_cliente_base64': input.signatureBase64,
+          'nome_responsavel_assinatura': input.responsibleName,
+          'latitude': input.latitude,
+          'longitude': input.longitude,
+          'finalizado_em': input.finalizedAt.toIso8601String(),
+        }),
+      );
+
+      final response = await request.close();
+      await response.drain<void>();
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw HttpException('Falha ao finalizar OS: ${response.statusCode}');
+      }
+
+      return order.copyWith(
+        status: WorkOrderStatus.done,
+        backendStatus: 'concluida',
+      );
     } finally {
       client.close(force: true);
     }
@@ -229,6 +301,48 @@ class ApiWorkOrderRepository implements WorkOrderRepository {
     write('\r\n--$boundary--\r\n');
 
     return body;
+  }
+
+  Future<void> _saveEvidencePhoto(
+    WorkOrder order, {
+    required String path,
+    required String descriptionField,
+    required String fileField,
+    required String description,
+    required ChecklistPhotoFile photo,
+    required String errorPrefix,
+  }) async {
+    final uri = baseUrl.resolve(path);
+    final client = HttpClient();
+    final boundary = 'airmovebr-${DateTime.now().microsecondsSinceEpoch}';
+
+    try {
+      final request = await client.postUrl(uri);
+      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      request.headers.set(
+        HttpHeaders.contentTypeHeader,
+        'multipart/form-data; boundary=$boundary',
+      );
+      request.add(
+        _multipartBody(
+          boundary: boundary,
+          fields: {descriptionField: description},
+          fileField: fileField,
+          filename: photo.filename,
+          mimeType: photo.mimeType,
+          bytes: photo.bytes,
+        ),
+      );
+
+      final response = await request.close();
+      await response.drain<void>();
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw HttpException('$errorPrefix: ${response.statusCode}');
+      }
+    } finally {
+      client.close(force: true);
+    }
   }
 
   Future<WorkOrder> _updateStatus({
@@ -377,6 +491,29 @@ class ApiWorkOrderRepository implements WorkOrderRepository {
       return null;
     }
     return int.tryParse(value.toString());
+  }
+
+  String _errorMessage(String body, {required String fallback}) {
+    if (body.trim().isEmpty) {
+      return fallback;
+    }
+
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map<String, dynamic>) {
+        final message = decoded['message'];
+        if (message is String && message.trim().isNotEmpty) {
+          return message;
+        }
+        if (message is List && message.isNotEmpty) {
+          return message.join(' ');
+        }
+      }
+    } on Object {
+      return fallback;
+    }
+
+    return fallback;
   }
 
   Map<String, String> _impossibleFieldsFromJson(Map<String, dynamic> map) {

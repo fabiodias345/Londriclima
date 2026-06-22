@@ -118,6 +118,22 @@ abstract class ChecklistPhotoPicker {
   Future<ChecklistPhotoFile?> pickPhoto();
 }
 
+class FinalizeWorkOrderInput {
+  const FinalizeWorkOrderInput({
+    required this.signatureBase64,
+    required this.responsibleName,
+    required this.latitude,
+    required this.longitude,
+    required this.finalizedAt,
+  });
+
+  final String signatureBase64;
+  final String responsibleName;
+  final double latitude;
+  final double longitude;
+  final DateTime finalizedAt;
+}
+
 class WorkOrderEquipment {
   const WorkOrderEquipment({
     required this.id,
