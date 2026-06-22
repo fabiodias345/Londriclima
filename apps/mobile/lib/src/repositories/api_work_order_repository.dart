@@ -108,6 +108,54 @@ class ApiWorkOrderRepository implements WorkOrderRepository {
   }
 
   @override
+  Future<String> saveChecklistPhoto(
+    WorkOrder order, {
+    required String equipmentId,
+    required String code,
+    required ChecklistPhotoFile photo,
+  }) async {
+    final uri = baseUrl.resolve('/api/v1/os/${order.id}/checklist/fotos');
+    final client = HttpClient();
+    final boundary = 'airmovebr-${DateTime.now().microsecondsSinceEpoch}';
+
+    try {
+      final request = await client.postUrl(uri);
+      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      request.headers.set(
+        HttpHeaders.contentTypeHeader,
+        'multipart/form-data; boundary=$boundary',
+      );
+      request.add(
+        _multipartBody(
+          boundary: boundary,
+          fields: {
+            'equipamento_id': equipmentId,
+            'codigo': code,
+          },
+          fileField: 'foto',
+          filename: photo.filename,
+          mimeType: photo.mimeType,
+          bytes: photo.bytes,
+        ),
+      );
+
+      final response = await request.close();
+      final body = await response.transform(utf8.decoder).join();
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw HttpException(
+          'Falha ao enviar foto do checklist: ${response.statusCode}',
+        );
+      }
+
+      final decoded = jsonDecode(body) as Map<String, dynamic>;
+      return decoded['storage_url'].toString();
+    } finally {
+      client.close(force: true);
+    }
+  }
+
+  @override
   Future<WorkOrderEquipment> saveMachineData(
     WorkOrder order,
     MachineDataInput input,
@@ -150,6 +198,37 @@ class ApiWorkOrderRepository implements WorkOrderRepository {
     } finally {
       client.close(force: true);
     }
+  }
+
+  List<int> _multipartBody({
+    required String boundary,
+    required Map<String, String> fields,
+    required String fileField,
+    required String filename,
+    required String mimeType,
+    required List<int> bytes,
+  }) {
+    final body = <int>[];
+
+    void write(String value) {
+      body.addAll(utf8.encode(value));
+    }
+
+    for (final entry in fields.entries) {
+      write('--$boundary\r\n');
+      write('Content-Disposition: form-data; name="${entry.key}"\r\n\r\n');
+      write('${entry.value}\r\n');
+    }
+
+    write('--$boundary\r\n');
+    write(
+      'Content-Disposition: form-data; name="$fileField"; filename="$filename"\r\n',
+    );
+    write('Content-Type: $mimeType\r\n\r\n');
+    body.addAll(bytes);
+    write('\r\n--$boundary--\r\n');
+
+    return body;
   }
 
   Future<WorkOrder> _updateStatus({

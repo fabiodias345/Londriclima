@@ -102,6 +102,22 @@ class WorkOrderChecklistResponse {
   final String? note;
 }
 
+class ChecklistPhotoFile {
+  const ChecklistPhotoFile({
+    required this.filename,
+    required this.mimeType,
+    required this.bytes,
+  });
+
+  final String filename;
+  final String mimeType;
+  final List<int> bytes;
+}
+
+abstract class ChecklistPhotoPicker {
+  Future<ChecklistPhotoFile?> pickPhoto();
+}
+
 class WorkOrderEquipment {
   const WorkOrderEquipment({
     required this.id,

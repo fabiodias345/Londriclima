@@ -71,6 +71,12 @@ type RegistrarEvidenciaInput = {
   usuario: AuthenticatedUser;
 };
 
+type RegistrarFotoChecklistInput = {
+  equipamentoId?: string;
+  codigo?: string;
+  foto?: EvidenciaUploadFile;
+};
+
 @Injectable()
 export class OrdensServicoService {
   constructor(private readonly prisma: PrismaService) {}
@@ -429,6 +435,26 @@ export class OrdensServicoService {
     return `/storage/${relativePath.replace(/\\/g, "/")}`;
   }
 
+  private async salvarFotoChecklist(
+    osId: string,
+    equipamentoId: string,
+    codigo: string,
+    extensao: string,
+    foto: EvidenciaUploadFile
+  ) {
+    const storageRoot = this.resolveStorageRoot();
+    const codigoSeguro = codigo.replace(/[^a-zA-Z0-9_-]/g, "_");
+    const relativeDir = join("os", osId, "checklist", equipamentoId);
+    const relativePath = join(relativeDir, `${codigoSeguro}.${extensao}`);
+    const absoluteDir = join(storageRoot, relativeDir);
+    const absolutePath = join(storageRoot, relativePath);
+
+    await mkdir(absoluteDir, { recursive: true });
+    await writeFile(absolutePath, foto.buffer);
+
+    return `/storage/${relativePath.replace(/\\/g, "/")}`;
+  }
+
   private resolveStorageRoot() {
     const cwd = process.cwd();
 
@@ -437,6 +463,80 @@ export class OrdensServicoService {
     }
 
     return resolve(cwd, "storage");
+  }
+
+  async registrarFotoChecklist(
+    osId: string,
+    input: RegistrarFotoChecklistInput,
+    usuario: AuthenticatedUser
+  ) {
+    const equipamentoId = input.equipamentoId?.trim();
+    const codigo = input.codigo?.trim();
+
+    if (!equipamentoId) {
+      throw new BadRequestException("equipamento_id e obrigatorio.");
+    }
+
+    if (!codigo) {
+      throw new BadRequestException("codigo do item de checklist e obrigatorio.");
+    }
+
+    if (!input.foto) {
+      throw new BadRequestException("foto do checklist e obrigatoria.");
+    }
+
+    const extensao = EXTENSAO_POR_MIME_TYPE[input.foto.mimetype];
+    if (!extensao) {
+      throw new BadRequestException("Formato de arquivo nao suportado. Use WebP ou JPEG.");
+    }
+
+    if (input.foto.size > 800 * 1024) {
+      throw new BadRequestException("Foto excede o limite de 800 KB.");
+    }
+
+    const ordemServico = await this.prisma.ordemServico.findUnique({
+      where: { id: osId },
+      select: {
+        id: true,
+        empresaId: true,
+        clienteId: true,
+        status: true
+      }
+    });
+
+    if (!ordemServico) {
+      throw new NotFoundException("OS nao encontrada.");
+    }
+
+    this.garantirAcessoEmpresa(ordemServico.empresaId, usuario);
+
+    if (ordemServico.status !== OrdemServicoStatus.em_atendimento) {
+      throw new UnprocessableEntityException("OS nao esta com status em_atendimento.");
+    }
+
+    const equipamento = await this.prisma.equipamento.findFirst({
+      where: {
+        id: equipamentoId,
+        empresaId: ordemServico.empresaId,
+        clienteId: ordemServico.clienteId
+      },
+      select: {
+        id: true
+      }
+    });
+
+    if (!equipamento) {
+      throw new NotFoundException("Equipamento nao encontrado para esta OS.");
+    }
+
+    const storageUrl = await this.salvarFotoChecklist(osId, equipamentoId, codigo, extensao, input.foto);
+
+    return {
+      os_id: osId,
+      equipamento_id: equipamentoId,
+      codigo,
+      storage_url: storageUrl
+    };
   }
 
   async registrarChecklist(

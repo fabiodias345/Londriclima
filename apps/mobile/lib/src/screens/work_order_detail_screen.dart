@@ -35,11 +35,13 @@ class WorkOrderDetailScreen extends StatefulWidget {
     required this.order,
     required this.repository,
     required this.locationService,
+    required this.photoPicker,
   });
 
   final WorkOrder order;
   final WorkOrderRepository repository;
   final LocationService locationService;
+  final ChecklistPhotoPicker photoPicker;
 
   @override
   State<WorkOrderDetailScreen> createState() => _WorkOrderDetailScreenState();
@@ -57,6 +59,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
   String? _checklistMessage;
   final _checklistSectionKey = GlobalKey();
   final Map<String, String> _checklistValues = {};
+  final Set<String> _uploadingPhotoCodes = {};
   final Map<String, TextEditingController> _textControllers = {};
   final Map<String, TextEditingController> _noteControllers = {};
   final Map<String, TextEditingController> _machineControllers = {
@@ -376,11 +379,17 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
                                 value: _checklistValues[item.code],
                                 textController: _controllerFor(item.code),
                                 noteController: _noteControllerFor(item.code),
+                                uploadingPhoto: _uploadingPhotoCodes.contains(
+                                  item.code,
+                                ),
                                 onChanged: (value) {
                                   setState(() {
                                     _checklistValues[item.code] = value;
                                   });
                                 },
+                                onPhotoPressed: item.kind == 'foto'
+                                    ? () => _pickChecklistPhoto(item)
+                                    : null,
                               ),
                             )
                             .toList(),
@@ -581,6 +590,59 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
     }
   }
 
+  Future<void> _pickChecklistPhoto(WorkOrderChecklistItem item) async {
+    final equipment = _selectedEquipment;
+    if (equipment == null) {
+      setState(() {
+        _errorMessage = 'Selecione uma maquina antes de fotografar.';
+      });
+      return;
+    }
+
+    setState(() {
+      _errorMessage = null;
+      _uploadingPhotoCodes.add(item.code);
+    });
+
+    try {
+      final photo = await widget.photoPicker.pickPhoto();
+      if (photo == null) {
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _uploadingPhotoCodes.remove(item.code);
+        });
+        return;
+      }
+
+      final storageUrl = await widget.repository.saveChecklistPhoto(
+        _order,
+        equipmentId: equipment.id,
+        code: item.code,
+        photo: photo,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _checklistValues[item.code] = storageUrl;
+        _uploadingPhotoCodes.remove(item.code);
+      });
+    } on Object {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _uploadingPhotoCodes.remove(item.code);
+        _errorMessage = 'Falha ao enviar foto do checklist.';
+      });
+    }
+  }
+
   List<WorkOrderChecklistResponse> _buildChecklistResponses() {
     return _order.checklist.map((item) {
       final textValue = _textControllers[item.code]?.text.trim();
@@ -615,6 +677,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
     for (final controller in _noteControllers.values) {
       controller.clear();
     }
+    _uploadingPhotoCodes.clear();
   }
 
   List<WorkOrderEquipment> _filteredEquipments() {
@@ -752,14 +815,18 @@ class _ChecklistField extends StatelessWidget {
     required this.value,
     required this.textController,
     required this.noteController,
+    required this.uploadingPhoto,
     required this.onChanged,
+    this.onPhotoPressed,
   });
 
   final WorkOrderChecklistItem item;
   final String? value;
   final TextEditingController textController;
   final TextEditingController noteController;
+  final bool uploadingPhoto;
   final ValueChanged<String> onChanged;
+  final VoidCallback? onPhotoPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -842,9 +909,19 @@ class _ChecklistField extends StatelessWidget {
         ),
         'foto' => OutlinedButton.icon(
           key: Key('checklist_photo_${item.code}'),
-          onPressed: () => onChanged('pendente'),
-          icon: const Icon(Icons.photo_camera_outlined),
-          label: Text(item.label),
+          onPressed: uploadingPhoto ? null : onPhotoPressed,
+          icon: Icon(
+            value != null && value!.startsWith('/storage/')
+                ? Icons.check_circle_outline
+                : Icons.photo_camera_outlined,
+          ),
+          label: Text(
+            uploadingPhoto
+                ? 'Enviando foto...'
+                : value != null && value!.startsWith('/storage/')
+                ? 'Foto registrada'
+                : item.label,
+          ),
           style: OutlinedButton.styleFrom(
             minimumSize: const Size.fromHeight(48),
             alignment: Alignment.centerLeft,

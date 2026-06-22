@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../auth/mobile_login_gateway.dart';
+import '../models/work_order.dart';
+import '../services/checklist_photo_picker.dart';
 import '../services/location_service.dart';
 import '../theme/app_theme.dart';
 import 'dashboard_screen.dart';
@@ -10,10 +12,12 @@ class LoginScreen extends StatefulWidget {
     super.key,
     required this.loginGateway,
     this.locationService = const DeviceLocationService(),
+    this.photoPicker = const DeviceChecklistPhotoPicker(),
   });
 
   final MobileLoginGateway loginGateway;
   final LocationService locationService;
+  final ChecklistPhotoPicker photoPicker;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -67,6 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
           builder: (_) => DashboardScreen(
             repository: loginSession.repository,
             locationService: widget.locationService,
+            photoPicker: widget.photoPicker,
           ),
         ),
       );

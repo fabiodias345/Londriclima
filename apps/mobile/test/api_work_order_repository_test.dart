@@ -145,4 +145,70 @@ void main() {
     await pump.cancel();
     await server.close(force: true);
   });
+
+  test('ApiWorkOrderRepository envia foto de checklist para API', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    late HttpRequest capturedRequest;
+    late String body;
+
+    final pump = server.listen((request) async {
+      capturedRequest = request;
+      final bytes = await request.fold<List<int>>(
+        <int>[],
+        (previous, element) => previous..addAll(element),
+      );
+      body = latin1.decode(bytes);
+      request.response.headers.contentType = ContentType.json;
+      request.response.write(
+        jsonEncode({
+          'storage_url': '/storage/os/os-1/checklist/eq-1/M4.jpg',
+        }),
+      );
+      await request.response.close();
+    });
+
+    final repository = ApiWorkOrderRepository(
+      baseUrl: Uri.parse('http://127.0.0.1:${server.port}'),
+      token: 'token-api',
+    );
+
+    final storageUrl = await repository.saveChecklistPhoto(
+      WorkOrder(
+        id: 'os-1',
+        clientName: 'Cliente API',
+        address: 'Rua API, 10',
+        equipment: 'Split API',
+        maintenanceType: 'PMOC',
+        scheduledAt: DateTime.now(),
+        status: WorkOrderStatus.inProgress,
+      ),
+      equipmentId: 'eq-1',
+      code: 'M4',
+      photo: const ChecklistPhotoFile(
+        filename: 'filtro.jpg',
+        mimeType: 'image/jpeg',
+        bytes: [1, 2, 3],
+      ),
+    );
+
+    expect(capturedRequest.method, 'POST');
+    expect(capturedRequest.uri.path, '/api/v1/os/os-1/checklist/fotos');
+    expect(
+      capturedRequest.headers.value(HttpHeaders.authorizationHeader),
+      'Bearer token-api',
+    );
+    expect(
+      capturedRequest.headers.contentType?.mimeType,
+      'multipart/form-data',
+    );
+    expect(body, contains('name="equipamento_id"'));
+    expect(body, contains('eq-1'));
+    expect(body, contains('name="codigo"'));
+    expect(body, contains('M4'));
+    expect(body, contains('name="foto"; filename="filtro.jpg"'));
+    expect(storageUrl, '/storage/os/os-1/checklist/eq-1/M4.jpg');
+
+    await pump.cancel();
+    await server.close(force: true);
+  });
 }

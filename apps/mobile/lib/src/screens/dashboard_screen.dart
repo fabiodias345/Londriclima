@@ -14,10 +14,12 @@ class DashboardScreen extends StatefulWidget {
     super.key,
     required this.repository,
     required this.locationService,
+    required this.photoPicker,
   });
 
   final WorkOrderRepository repository;
   final LocationService locationService;
+  final ChecklistPhotoPicker photoPicker;
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -93,6 +95,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           order: order,
           repository: widget.repository,
           locationService: widget.locationService,
+          photoPicker: widget.photoPicker,
         ),
       ),
     );

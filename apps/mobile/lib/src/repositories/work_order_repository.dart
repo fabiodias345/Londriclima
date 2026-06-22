@@ -19,4 +19,11 @@ abstract class WorkOrderRepository {
     required String checklistType,
     required List<WorkOrderChecklistResponse> responses,
   });
+
+  Future<String> saveChecklistPhoto(
+    WorkOrder order, {
+    required String equipmentId,
+    required String code,
+    required ChecklistPhotoFile photo,
+  });
 }

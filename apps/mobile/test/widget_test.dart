@@ -342,6 +342,64 @@ void main() {
     expect(find.text('Checklist salvo.'), findsOneWidget);
   });
 
+  testWidgets('item foto envia upload e salva URL no checklist', (
+    tester,
+  ) async {
+    final repository = _RepositorioDeTeste();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LoginScreen(
+          loginGateway: _GatewayDeTeste(repository: repository),
+          locationService: const _LocationServiceTeste(),
+          photoPicker: const _PhotoPickerTeste(),
+        ),
+      ),
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('loginUserField')),
+      'tecnico@airmovebr.local',
+    );
+    await tester.enterText(
+      find.byKey(const Key('loginPasswordField')),
+      '123456',
+    );
+    await tester.tap(find.byKey(const Key('loginSubmitButton')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Cliente API'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
+    await tester.tap(find.text('Iniciar atendimento'));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(const Key('selectEquipment_EQ-102')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('selectEquipment_EQ-102')));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('checklistReadyButton')),
+      240,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.byKey(const Key('checklistReadyButton')));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(const Key('checklist_photo_M4')));
+    await tester.tap(find.byKey(const Key('checklist_photo_M4')));
+    await tester.pumpAndSettle();
+
+    expect(repository.uploadedPhotoCode, 'M4');
+    expect(repository.uploadedPhotoEquipmentId, 'EQ-102');
+    expect(find.text('Foto registrada'), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(const Key('saveChecklistButton')));
+    await tester.tap(find.byKey(const Key('saveChecklistButton')));
+    await tester.pumpAndSettle();
+
+    expect(repository.savedChecklistResponses['M4'], '/storage/os/OS-API/checklist/EQ-102/M4.jpg');
+  });
+
   testWidgets('cadastro de maquina usa seletores e salva dados obrigatorios', (
     tester,
   ) async {
@@ -495,6 +553,8 @@ class _RepositorioDeTeste implements WorkOrderRepository {
   String? savedChecklistType;
   MachineDataInput? savedMachineInput;
   Map<String, String> savedChecklistResponses = {};
+  String? uploadedPhotoCode;
+  String? uploadedPhotoEquipmentId;
 
   @override
   Future<List<WorkOrder>> listMine() async {
@@ -605,6 +665,18 @@ class _RepositorioDeTeste implements WorkOrderRepository {
   }
 
   @override
+  Future<String> saveChecklistPhoto(
+    WorkOrder order, {
+    required String equipmentId,
+    required String code,
+    required ChecklistPhotoFile photo,
+  }) async {
+    uploadedPhotoCode = code;
+    uploadedPhotoEquipmentId = equipmentId;
+    return '/storage/os/${order.id}/checklist/$equipmentId/$code.jpg';
+  }
+
+  @override
   Future<WorkOrderEquipment> saveMachineData(
     WorkOrder order,
     MachineDataInput input,
@@ -622,6 +694,19 @@ class _RepositorioDeTeste implements WorkOrderRepository {
       gas: input.gas,
       serialNumber: input.serialNumber,
       impossibleFields: input.impossibleFields,
+    );
+  }
+}
+
+class _PhotoPickerTeste implements ChecklistPhotoPicker {
+  const _PhotoPickerTeste();
+
+  @override
+  Future<ChecklistPhotoFile?> pickPhoto() async {
+    return const ChecklistPhotoFile(
+      filename: 'filtro.jpg',
+      mimeType: 'image/jpeg',
+      bytes: [1, 2, 3],
     );
   }
 }

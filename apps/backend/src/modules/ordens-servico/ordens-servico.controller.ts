@@ -94,6 +94,26 @@ export class OrdensServicoController {
     return this.ordensServicoService.registrarChecklist(osId, dto, usuario);
   }
 
+  @Post(":osId/checklist/fotos")
+  @UseInterceptors(FileInterceptor("foto", { limits: { fileSize: LIMITE_FOTO_BYTES } }))
+  registrarFotoChecklist(
+    @Param("osId", new ParseUUIDPipe()) osId: string,
+    @Body("equipamento_id") equipamentoId: string | undefined,
+    @Body("codigo") codigo: string | undefined,
+    @UploadedFile() foto: EvidenciaUploadFile | undefined,
+    @CurrentUser() usuario: AuthenticatedUser
+  ) {
+    return this.ordensServicoService.registrarFotoChecklist(
+      osId,
+      {
+        equipamentoId,
+        codigo,
+        foto
+      },
+      usuario
+    );
+  }
+
   @Patch(":osId/observacoes")
   registrarObservacoes(
     @Param("osId", new ParseUUIDPipe()) osId: string,

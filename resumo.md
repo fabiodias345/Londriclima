@@ -130,14 +130,19 @@ POST /api/v1/os/:osId/checklist
 
 - Payload inclui `equipamento_id`, `checklist_tipo`, `procedimentos` e `respostas`.
 - Backend persiste respostas estruturadas por OS, maquina e codigo do item.
-- Fotos continuam preparadas como item de checklist, mas upload real fica para a fase 11.
-
 ### Fase 10.1 - Cadastro guiado de maquina
 
 - Campo `Tipo` virou seletor: Split, Cassete, Piso teto, Condensadora, Janela, VRF ou Outro.
 - Campo `Gas refrigerante` virou seletor: R-22, R-410A, R-32, R-134a ou Outro.
 - Campo `BTUs` usa teclado numerico.
 - Nova maquina cadastrada no atendimento libera o checklist sem precisar reinstalar APK.
+
+### Fase 11 - Fotos dentro dos itens do checklist
+
+- Itens `foto` do checklist agora abrem a camera do APK.
+- Cada foto e enviada para a API e vinculada por OS, maquina e codigo do item.
+- Backend salva o arquivo em storage local e retorna `storage_url`.
+- Ao salvar checklist, o valor do item `foto` passa a ser a URL da foto registrada.
 
 ### Como testar no celular
 
@@ -178,11 +183,10 @@ C:\develop\LondriClima\apps\mobile\build\app\outputs\flutter-apk\app-debug.apk
 
 ### Proximas fases do APK
 
-1. Fase 11: fotos dentro dos itens do checklist.
-2. Fase 12: assinatura do cliente e finalizacao da OS.
-3. Fase 13: modo offline com fila de sincronizacao.
-4. Fase 14: leitura de codigo de barras/QR por equipamento.
-5. Fase 15: polimento visual, icon/app name e APK release.
+1. Fase 12: assinatura do cliente e finalizacao da OS.
+2. Fase 13: modo offline com fila de sincronizacao.
+3. Fase 14: leitura de codigo de barras/QR por equipamento.
+4. Fase 15: polimento visual, icon/app name e APK release.
 
 ## Prioridade aprovada: novo PDF PMOC
 

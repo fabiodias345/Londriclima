@@ -205,6 +205,62 @@ test("registrarChecklist esconde OS de outra empresa", async () => {
   );
 });
 
+test("registrarFotoChecklist salva foto vinculada ao item e equipamento", async () => {
+  const prisma = {
+    ordemServico: {
+      findUnique: async () => ({
+        id: "os-1",
+        empresaId: "empresa-1",
+        clienteId: "cliente-1",
+        status: OrdemServicoStatus.em_atendimento
+      })
+    },
+    equipamento: {
+      findFirst: async ({ where }: { where: Record<string, unknown> }) =>
+        where.id === "equipamento-1" ? { id: "equipamento-1" } : null
+    }
+  };
+  const service = criarService(prisma);
+  (service as unknown as {
+    salvarFotoChecklist: (
+      osId: string,
+      equipamentoId: string,
+      codigo: string,
+      extensao: string,
+      foto: { buffer: Buffer }
+    ) => Promise<string>;
+  }).salvarFotoChecklist = async (osId, equipamentoId, codigo, extensao, foto) => {
+    assert.equal(osId, "os-1");
+    assert.equal(equipamentoId, "equipamento-1");
+    assert.equal(codigo, "M4");
+    assert.equal(extensao, "jpg");
+    assert.deepEqual(foto.buffer, Buffer.from("foto"));
+    return "/storage/os/os-1/checklist/equipamento-1/M4.jpg";
+  };
+
+  const resposta = await service.registrarFotoChecklist(
+    "os-1",
+    {
+      equipamentoId: "equipamento-1",
+      codigo: "M4",
+      foto: {
+        originalname: "filtro.jpg",
+        buffer: Buffer.from("foto"),
+        mimetype: "image/jpeg",
+        size: 4
+      }
+    },
+    usuario
+  );
+
+  assert.deepEqual(resposta, {
+    os_id: "os-1",
+    equipamento_id: "equipamento-1",
+    codigo: "M4",
+    storage_url: "/storage/os/os-1/checklist/equipamento-1/M4.jpg"
+  });
+});
+
 test("registrarObservacoes esconde OS de outra empresa", async () => {
   const prisma = {
     ordemServico: {

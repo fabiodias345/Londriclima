@@ -142,6 +142,16 @@ class FakeWorkOrderRepository implements WorkOrderRepository {
   }) async {}
 
   @override
+  Future<String> saveChecklistPhoto(
+    WorkOrder order, {
+    required String equipmentId,
+    required String code,
+    required ChecklistPhotoFile photo,
+  }) async {
+    return '/storage/os/${order.id}/checklist/$equipmentId/$code.jpg';
+  }
+
+  @override
   Future<WorkOrderEquipment> saveMachineData(
     WorkOrder order,
     MachineDataInput input,
