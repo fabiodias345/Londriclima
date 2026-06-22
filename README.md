@@ -21,6 +21,9 @@ O repositorio ja possui:
 - Painel administrativo web estatico em `apps/admin`.
 - Landing page publica em `apps/landing`, integrada ao endpoint de
   pre-chamados.
+- Aplicativo Flutter Android em `apps/mobile`, com dashboard do tecnico,
+  detalhe de OS, multiplos equipamentos e inicio de servico com GPS.
+- API mobile para listar OS do tecnico autenticado.
 - Fluxo PMOC com previa, PDF, assinatura Gov.br enviada pelo engenheiro e
   e-mail final ao cliente com PDF assinado anexado.
 - Automacoes SMTP para assinatura PMOC e envio do relatorio assinado.
@@ -28,9 +31,9 @@ O repositorio ja possui:
 - Testes unitarios/HTTP do backend e testes de contrato do frontend.
 - Documentacao de produto, API, telemetria GPS e implantacao.
 
-Ainda estao como roadmap ou documentacao, e nao como app completo neste
-repositorio: aplicativo mobile Flutter, WhatsApp real, PDF PMOC em formato
-profissional por maquina e fluxo gravavel completo de checklist PMOC no app.
+Ainda estao como roadmap ou documentacao: WhatsApp real, PDF PMOC em formato
+profissional por maquina, fluxo completo de checklist PMOC no app, assinatura
+mobile, fotos antes/depois e modo offline/sync.
 
 ## Stack
 
@@ -40,8 +43,9 @@ profissional por maquina e fluxo gravavel completo de checklist PMOC no app.
 | Banco | PostgreSQL 16, Prisma 5 |
 | Admin | HTML, CSS, JavaScript e Leaflet local |
 | Landing | HTML, CSS e JavaScript |
+| Mobile | Flutter Android |
 | Infra local | Docker Compose |
-| Testes | `node:test`, Nest Testing, ESLint |
+| Testes | `node:test`, Nest Testing, ESLint, Flutter test |
 
 ## Estrutura do repositorio
 
@@ -51,6 +55,7 @@ Londriclima/
 |   +-- backend/          # API REST, Prisma, seed e testes
 |   +-- admin/            # Painel administrativo web
 |   +-- landing/          # Site publico
+|   +-- mobile/           # APK Flutter Android
 +-- docs/                 # PRD, API spec, memoria e implantacao
 +-- infra/                # Docker Compose local/producao e scripts
 +-- storage/              # Arquivos locais de desenvolvimento
@@ -131,6 +136,31 @@ E-mail: tecnico@airmovebr.local
 Senha:  123456
 ```
 
+## Aplicativo mobile
+
+Comandos principais:
+
+```bash
+cd apps/mobile
+flutter test
+flutter analyze
+flutter build apk --debug
+```
+
+Teste no celular usando a API local:
+
+```bash
+flutter run --dart-define=MOBILE_API_BASE_URL=http://10.91.93.11:3000
+```
+
+Sem `MOBILE_API_BASE_URL`, o APK usa dados fake locais.
+
+APK debug:
+
+```text
+apps/mobile/build/app/outputs/flutter-apk/app-debug.apk
+```
+
 ## Scripts principais
 
 | Comando | Funcao |
@@ -176,6 +206,9 @@ GET  /admin/pmoc/clientes/:clienteId/pdf
 POST /admin/pmoc/clientes/:clienteId/assinatura-engenheiro
 PATCH /admin/pre-chamados/:osId/aprovar
 PATCH /admin/pre-chamados/:osId/rejeitar
+
+GET  /mobile/os
+GET  /mobile/os/:id
 
 GET  /site/pmoc/assinaturas/:token
 POST /site/pmoc/assinaturas/:token/confirmar  # recebe PDF assinado no Gov.br em base64

@@ -1,6 +1,6 @@
 # Memoria AIRMOVEBR
 
-Atualizado em: 13/06/2026
+Atualizado em: 21/06/2026
 
 ## Contexto
 
@@ -30,6 +30,7 @@ Atualizado em: 13/06/2026
 - Banco: PostgreSQL, Prisma.
 - Admin: HTML, CSS, JavaScript, Leaflet.
 - Landing: HTML, CSS, JavaScript.
+- Mobile: Flutter Android.
 - Infra: Docker Compose local/producao.
 - Testes: `node:test`, Nest Testing, ESLint.
 
@@ -47,9 +48,64 @@ site -> pre-chamado -> admin -> OS -> tecnico -> evidencias/checklist/GPS -> rel
 - OS com status, eventos, GPS, evidencias, checklist e assinatura.
 - Admin com login, agenda, clientes, frota, relatorios e PMOC.
 - Landing publica com pre-chamado.
+- APK Flutter com login, dashboard, filtros, detalhe de OS, lista de equipamentos e inicio de servico com GPS.
+- API mobile para listar OS do tecnico logado.
+- Seed local de OS demo para testar o APK na maquina local.
 - Consulta publica de equipamento protegida por senha.
 - Frota com mapa Leaflet, consumo e abastecimentos.
 - Testes de backend e contratos do frontend.
+
+## Mobile Atual
+
+Frente em desenvolvimento por fases, testada no celular pelo usuario.
+
+Concluido:
+
+1. Dashboard mobile com dados fake e filtros.
+2. Tela de detalhe da OS.
+3. Suporte a varias maquinas no mesmo local.
+4. Login real via API quando `MOBILE_API_BASE_URL` e informado.
+5. Inicio de servico com GPS usando `iniciar_rota`.
+
+Arquivos principais:
+
+```text
+apps/mobile/lib/src/
+apps/backend/src/modules/mobile/
+apps/backend/prisma/seed_mobile_demo.ts
+```
+
+Comando local atual:
+
+```text
+cd C:\develop\LondriClima\apps\mobile
+flutter run --dart-define=MOBILE_API_BASE_URL=http://10.91.93.11:3000
+```
+
+Credenciais locais:
+
+```text
+tecnico@airmovebr.local / 123456
+```
+
+Validacoes recentes:
+
+```text
+flutter test
+flutter analyze
+flutter build apk --debug
+npm.cmd run backend:build
+```
+
+Proximas fases mobile:
+
+1. `Cheguei ao cliente`.
+2. Foto antes.
+3. Checklist por equipamento e periodicidade.
+4. Foto depois.
+5. Assinatura do cliente e finalizar OS.
+6. Offline/sync.
+7. Codigo de barras/QR por equipamento.
 
 ## PMOC Atual
 
@@ -93,9 +149,11 @@ POST /api/v1/site/pmoc/assinaturas/:token/confirmar
 - Deploy na VM: `/opt/airmovebr/repo`.
 - Usuario operacional: `airmovebr`.
 - Backend/PostgreSQL ja validados internamente em Docker.
-- Bloqueador conhecido: DNS/publicacao HTTPS.
-- Nota 2026-06-16: o cliente ainda nao passou o acesso/gestao do registro do dominio. Ate isso acontecer, considerar o teste por dominio como pendente.
-- O pre-chamado publico foi validado por IP (`191.252.226.11`), mas deve ser retestado pelo dominio depois que `airmovebr.com.br` apontar para a VM.
+- Producao atual online:
+  - `https://airmovebr.com.br/`
+  - `https://admin.airmovebr.com.br/`
+  - `https://api.airmovebr.com.br/api/v1/health`
+- Para o desenvolvimento do APK, a prioridade atual e usar a maquina local.
 
 DNS desejado:
 
@@ -107,16 +165,16 @@ api.airmovebr.com.br   -> 191.252.226.11
 
 ## Proximos Passos
 
-1. Aguardar o cliente passar acesso/gestao do registro do dominio.
-2. Confirmar DNS no Registro.br para os 3 hosts.
-3. Validar HTTPS publico.
-4. Retestar formulario publico de pre-chamado pelo dominio e confirmar entrada no painel.
-5. Configurar SMTP real em `.env.production`.
-6. Testar fluxo PMOC completo fora do local.
-7. Evoluir PDF PMOC profissional por maquina.
-8. Revisar Agenda e Frota.
-9. Aplicar logo real quando o arquivo estiver no workspace.
-10. Preparar backup, logs e permissoes antes de cliente real.
+1. Testar Fase 5 do APK no celular usando API local.
+2. Implementar `Cheguei ao cliente`.
+3. Implementar fotos antes/depois.
+4. Implementar checklist por equipamento.
+5. Implementar assinatura e finalizacao da OS.
+6. Depois do fluxo local estar bom, apontar APK para `https://api.airmovebr.com.br`.
+7. Retestar formulario publico de pre-chamado pelo dominio e confirmar entrada no painel.
+8. Configurar SMTP real em `.env.production`.
+9. Testar fluxo PMOC completo fora do local.
+10. Evoluir PDF PMOC profissional por maquina.
 
 ## Regras de Negocio
 

@@ -6,6 +6,7 @@ import { AssinaturasModule } from "./modules/assinaturas/assinaturas.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { AutomacoesModule } from "./modules/automacoes/automacoes.module";
 import { HealthModule } from "./modules/health/health.module";
+import { MobileModule } from "./modules/mobile/mobile.module";
 import { OrdensServicoModule } from "./modules/ordens-servico/ordens-servico.module";
 import { SiteModule } from "./modules/site/site.module";
 
@@ -21,6 +22,7 @@ import { SiteModule } from "./modules/site/site.module";
     AuthModule,
     AutomacoesModule,
     HealthModule,
+    MobileModule,
     OrdensServicoModule,
     SiteModule
   ]

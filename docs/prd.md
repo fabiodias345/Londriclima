@@ -1,236 +1,199 @@
-# AIRMOVEBR Digital — Plataforma FSM
+# PRD - AIRMOVEBR Digital
 
-> Plataforma integrada de gestão de serviços em campo (Field Service Management)
-> desenvolvida para empresas de refrigeração e climatização.
-> Cliente piloto: **AIRMOVEBR** — Londrina, PR.
+Versao: 1.5.0  
+Atualizado em: 21/06/2026  
+Cliente piloto: AIRMOVEBR - Londrina/PR
 
----
+## Visao
 
-## Visão Geral
+Plataforma de Field Service Management para manutencao, instalacao e PMOC de ar-condicionado.
 
-O **AIRMOVEBR Digital** substitui processos manuais por uma operação
-digitalizada de ponta a ponta: do agendamento pelo site até o relatório
-técnico enviado automaticamente ao cliente após o serviço.
-
-A plataforma é construída com arquitetura Multi-Tenant desde o banco de
-dados, preparada para ser comercializada como SaaS para outras empresas
-do setor (refrigeração, solar, construtoras) a partir da Fase 2.
-
----
-
-## Estrutura do Repositório
+Fluxo principal:
 
 ```text
-📁 plataforma-airmovebr/
-│
-├── docs/                        ← Documentação do projeto
-├── apps/
-│   ├── backend/                 ← API REST, automações e banco de dados
-│   ├── admin/                   ← Painel web administrativo
-│   ├── landing/                 ← Website institucional público
-│   └── mobile/                  ← Aplicativo Flutter (Android)
-├── infra/                       ← Docker e infraestrutura local
-└── storage/                     ← Arquivos locais de desenvolvimento
+site -> pre-chamado -> admin -> OS -> tecnico -> evidencias/checklist/GPS -> relatorios/PMOC
 ```
 
----
+O produto deve atender primeiro a operacao real da AIRMOVEBR e evoluir depois para SaaS multiempresa.
 
-## Módulos da Plataforma
+## Modulos
 
-### 🌐 Website Institucional (`londriclima-landing`)
-Site público focado em conversão e captação de leads. Formulário de
-agendamento integrado ao backend, criando pré-chamados automáticos no
-painel administrativo.
+### Site publico
 
-### 💻 Painel Administrativo (`londriclima-admin`)
-Interface web para o gestor. Controle de clientes, equipamentos, ordens
-de serviço, agenda com drag-and-drop, mapa de monitoramento da frota via
-Leaflet e dashboard financeiro com Recharts.
+- Captar pre-chamados.
+- Enviar solicitacoes para o backend.
+- Operar em `https://airmovebr.com.br/`.
 
-### 📱 App do Técnico (`londriclima-mobile`)
-Aplicativo Flutter para Android com funcionamento **offline-first**
-obrigatório. Guia o técnico por um fluxo linear de registro de serviço
-com fotos obrigatórias, checklist, peças trocadas e assinatura digital
-do cliente. Sincronização automática em background ao retomar conexão.
+### Painel admin
 
-### ⚙️ Motor de Automações (`londriclima-backend`)
-API centralizada responsável por geração de PDF de relatório técnico,
-disparo de e-mail transacional, mensagem de agradecimento via WhatsApp
-e motor de recorrência para lembretes preventivos de manutenção.
+- Gerenciar clientes, equipamentos, agenda, OS, frota, relatorios e PMOC.
+- Operar em `https://admin.airmovebr.com.br/`.
+- Criar/aprovar pre-chamados e acompanhar execucao.
 
----
+### Backend
 
-## Stack Técnica
+- API NestJS com JWT, Prisma e PostgreSQL.
+- Operar localmente em `http://localhost:3000/api/v1`.
+- Operar em producao em `https://api.airmovebr.com.br/api/v1`.
+- Manter regras de negocio no servidor, mesmo quando o app tiver validacoes locais.
+
+### App tecnico Android
+
+Estado atual: em desenvolvimento por fases.
+
+Concluido:
+
+1. Login fake local.
+2. Login real por API.
+3. Dashboard de OS do tecnico.
+4. Filtros por status/data.
+5. Detalhe da OS.
+6. Listagem de varias maquinas no mesmo atendimento.
+7. Inicio de servico com GPS.
+
+Pendente:
+
+1. Cheguei ao cliente.
+2. Foto antes.
+3. Checklist por equipamento.
+4. Foto depois.
+5. Assinatura do cliente.
+6. Finalizacao da OS.
+7. Offline/sync.
+8. Codigo de barras/QR por equipamento.
+9. APK release.
+
+## Stack Real Atual
 
 | Camada | Tecnologia |
-| :--- | :--- |
-| Backend | Node.js (NestJS) ou Python (FastAPI) |
-| Banco de dados | PostgreSQL |
-| Storage de mídia | Google Cloud Storage ou Supabase |
-| Frontend admin | React.js + Tailwind CSS + Recharts + Leaflet |
-| App técnico | Flutter + Drift (SQLite offline) |
-| Autenticação | JWT + Refresh Token |
-| Geração de PDF | Puppeteer (Node) ou WeasyPrint (Python) |
-| E-mail | Resend ou SendGrid |
-| WhatsApp | Evolution API (isolada via padrão Strategy) |
-| Infra | VM Locaweb Cloud Medium com Ubuntu 24.04, usando `airmovebr.com.br` |
+| --- | --- |
+| Backend | Node.js, NestJS, TypeScript |
+| Banco | PostgreSQL, Prisma |
+| Admin | HTML, CSS, JavaScript, Leaflet |
+| Landing | HTML, CSS, JavaScript |
+| Mobile | Flutter Android |
+| Auth | JWT |
+| Infra | Docker local e VM Locaweb Cloud |
+| Testes | Node test, Nest Testing, ESLint, Flutter test |
 
----
+Tecnologias antigas citadas em documentos anteriores, como FastAPI, React/Tailwind, Drift e Supabase, nao representam o estado atual implementado. Podem voltar como decisao futura, mas nao devem ser tratadas como arquitetura ativa.
 
-## Documentação de Referência
-
-| Documento | Descrição |
-| :--- | :--- |
-| [`memoria.md`](./memoria.md) | Contexto, decisões arquiteturais, convenções e modelo de monetização. |
-| [`prd.md`](./prd.md) | Visão consolidada do produto, escopo do MVP, decisões técnicas e diagrama de estados. |
-| [`api-spec.md`](./api-spec.md) | Especificação parcial dos endpoints REST do fluxo mobile de OS. |
-| [`schema.prisma`](../apps/backend/prisma/schema.prisma) | Schema inicial PostgreSQL/Prisma com ENUMs e `empresa_id`. |
-
----
-
-## Ciclo de Vida de uma Ordem de Serviço
+## Estado da OS
 
 ```text
-[Pré-Chamado (Site / WhatsApp)]
-        │
-        ├──(Rejeitado pelo Admin)──────────────────────► [Rejeitado]
-        │
-        └──(Aprovado pelo Admin)──► [Aberta]
-                                        │
-                                        ├──(Cancelado)──► [Cancelada]
-                                        │
-                                   (Iniciar Rota)
-                                        │
-                                        ▼
-                                 [Em Deslocamento]
-                                        │
-                                        ├──(Cancelado)──► [Cancelada]
-                                        │
-                                 (Cheguei no Cliente)
-                                        │
-                                        ▼
-                                 [Em Atendimento]
-                                        │
-                              (Fotos + Assinatura)
-                                        │
-                                        ▼
-                                   [Concluída]
-                                        │
-                              (PDF + E-mail + WhatsApp)
-                                        │
-                              (Gatilho: +180 dias)
-                                        │
-                                        ▼
-                            [Lembrete Preventivo Enviado]
+pre_chamado
+  +-- rejeitar -> rejeitada
+  +-- aprovar  -> aberta
+                 +-- iniciar_rota    -> em_deslocamento
+                 +-- cheguei_cliente -> em_atendimento
+                 +-- cancelar        -> cancelada
+                 +-- finalizar       -> concluida
 ```
 
----
+Regras:
 
-## Decisões Arquiteturais Importantes
+- OS concluida nao deve ser reaberta.
+- GPS e capturado por evento, nao por rastreamento continuo.
+- Celular do tecnico nao deve ser usado como rastreador de frota.
+- Para rastreamento continuo de veiculo, usar hardware dedicado.
+- Antes de finalizar, a API deve validar evidencias, checklist, assinatura e GPS final.
 
-**Commit e deploy manuais.**
-A partir de 19/06/2026, Codex nao deve executar commit, push ou deploy
-automaticamente neste projeto. O usuario fara essas etapas manualmente
-usando os roteiros `docs/deploy_git.md` e `docs/deploy_ssh.md`.
+## Fluxo Mobile Alvo
 
-**GPS por eventos, não contínuo.**
-O app não rastreia o técnico em segundo plano. A geolocalização é
-capturada apenas nos três gatilhos manuais da OS: Iniciar Rota,
-Chegar ao Cliente e Finalizar OS. Decisão por segurança jurídica
-trabalhista e economia de bateria.
-
-**Rastreamento de frota via hardware.**
-Veículos monitorados por rastreadores físicos de baixo custo
-(ex: SinoTrack via protocolo TCP). O celular do técnico fica fora
-do rastreamento contínuo.
-
-**Mensageria desacoplada via padrão Strategy.**
-Evolution API é o provedor atual. Migração futura para API Oficial
-da Meta não exige refatoração da lógica de negócio.
-
-**Multi-Tenant por `empresa_id`.**
-Todas as tabelas transacionais possuem `empresa_id`. A barreira
-está no banco, não apenas na API.
-
-**Integridade transacional offline.**
-Status local de OS no Drift só atualiza após confirmação de sucesso
-completo do servidor. Nenhum dado parcial é marcado como sincronizado.
-
----
-
-## Fora do Escopo — Fase 1
-
-- Emissão de NF-e ou NFS-e.
-- Integração com ERP ou sistema contábil externo.
-- Login individual para o Auxiliar Técnico. Na Fase 1, o auxiliar pode ser cadastrado no painel apenas como vínculo operacional da equipe, sem credenciais próprias.
-- IA de diagnóstico por código de erro (Fase 2 — Claude API).
-- Reabertura de OS com status `Concluída`.
-- Multi-Tenant ativo com múltiplas empresas simultâneas (Fase 2).
-- Versão iOS do aplicativo mobile.
-- Dashboard financeiro com DRE automatizada ou integração bancária.
-
----
-
-## Estimativa de Custo Mensal (Fase Piloto)
-
-| Item | Estimativa |
-| :--- | :--- |
-| Servidor e banco de dados | R$ 0 a R$ 100 |
-| Storage de fotos | R$ 0 a R$ 30 |
-| Instância Evolution API (VPS) | R$ 50 a R$ 90 |
-| E-mail transacional | R$ 0 (free tier) |
-| Chips M2M dos rastreadores | R$ 15 por veículo |
-| **Total estimado** | **< R$ 250 / mês** |
-
-Observacao atual: Turbo Cloud/cPanel foi descartado para o sistema completo. Para o MVP, a decisao e usar VM Locaweb Cloud Medium com Ubuntu 24.04 e o dominio `airmovebr.com.br`. Ver `docs/implantacao-producao.md`.
-
----
-
-## Como Começar (Ambiente Local)
-
-Pré-requisitos: Docker, PostgreSQL e Node.js ou Python instalados.
-
-```bash
-# 1. Clone o repositório principal
-git clone https://github.com/fabiodias345/Londriclima.git plataforma-airmovebr
-
-# 2. Acesse o repositório
-cd plataforma-airmovebr
-
-# 3. Inicialize o banco de dados
-npm run docker:up
-npm run backend:prisma:migrate
-
-# 4. Configure as variáveis de ambiente
-cp .env.example .env
-# Edite o .env com suas credenciais locais
-
-# 5. Instale as dependências e suba o servidor
-npm install && npm run start:dev   # NestJS
-# ou
-pip install -r requirements.txt && uvicorn main:app --reload  # FastAPI
+```text
+1. Login
+2. Listar minhas OS
+3. Abrir detalhe da OS
+4. Iniciar servico/rota com GPS
+5. Cheguei ao cliente com GPS
+6. Selecionar equipamento
+7. Foto antes
+8. Checklist por periodicidade
+9. Observacoes e ocorrencias
+10. Foto depois
+11. Assinatura do cliente
+12. Finalizar OS com GPS
+13. Sincronizar pendencias
 ```
 
-Cada submódulo possui um `README.md` próprio com instruções específicas
-de inicialização.
+## PMOC
 
----
+Requisitos:
 
-## Ordem de Desenvolvimento Recomendada
+- PMOC sempre separado por cliente e endereco.
+- Nao misturar maquinas de clientes diferentes.
+- Cada equipamento deve ter historico proprio.
+- O PDF profissional deve listar maquinas, atividades, periodicidade, registros e assinaturas.
+- O app deve alimentar o historico PMOC com checklist, fotos e ocorrencias por equipamento.
 
-O banco de dados é a dependência raiz de todos os módulos. A sequência
-recomendada é:
+Estado atual:
 
-1. `apps/backend` — Schema, autenticação e endpoints base.
-2. `apps/mobile` — Estrutura Flutter + Drift espelhando as tabelas locais.
-3. `apps/admin` — Painel conectado à API do backend.
-4. `apps/landing` — Website com formulário integrado ao backend.
+- Previa PMOC no backend.
+- PDF PMOC atual no backend.
+- Fluxo de assinatura do engenheiro.
+- Envio final ao cliente com PDF assinado.
+- Novo PDF profissional por maquina ainda pendente.
 
----
+## Escopo MVP
 
-## Repositório e Autoria
+Dentro do MVP:
 
-**GitHub:** https://github.com/fabiodias345/Londriclima.git
-**Autor:** Fábio Dias
-**Versão do PRD:** 1.4.0
-**Última atualização:** 10/06/2026
+- Site publico.
+- Admin.
+- Backend.
+- Login tecnico.
+- OS no app.
+- GPS por eventos.
+- Fotos e checklist.
+- Assinatura do cliente.
+- PDF/relatorio.
+- PMOC basico.
+
+Fora do MVP:
+
+- iOS.
+- NF-e/NFS-e.
+- ERP externo.
+- IA de diagnostico.
+- Banco aberto publicamente.
+- Rastreamento continuo pelo celular.
+- Multiempresa comercial ativa com varios clientes SaaS.
+
+## Criterios de Aceite Mobile
+
+- Tecnico loga com conta real.
+- Tecnico ve somente OS vinculadas a ele/equipe.
+- Uma OS com varias maquinas mostra todas as maquinas.
+- Iniciar servico grava GPS e muda status no backend.
+- Chegada ao cliente grava GPS e libera execucao.
+- Checklist nao permite finalizar incompleto.
+- Fotos antes/depois sao obrigatorias.
+- Finalizacao exige assinatura e GPS final.
+- Se ficar sem internet, app guarda pendencias e sincroniza depois.
+
+## Comandos de Validacao
+
+Backend:
+
+```text
+npm.cmd run backend:build
+npm.cmd run backend:test
+npm.cmd run backend:lint
+```
+
+Mobile:
+
+```text
+cd apps/mobile
+flutter test
+flutter analyze
+flutter build apk --debug
+```
+
+## Decisoes Operacionais
+
+- Commit, push e deploy sao manuais pelo usuario.
+- Segredos nao devem ir para Git.
+- Arquivos proprios devem ficar preferencialmente abaixo de 500 linhas.
+- A maquina local e o ambiente principal para testar o APK nesta etapa.
+- Producao esta online, mas so deve receber o APK depois do fluxo local ficar bom.

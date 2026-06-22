@@ -1,6 +1,6 @@
 # Resumo AIRMOVEBR
 
-Atualizado em: 20/06/2026
+Atualizado em: 21/06/2026
 
 ## Estado operacional
 
@@ -8,8 +8,122 @@ Atualizado em: 20/06/2026
 - Branch atual: `dev`
 - Commit atual: `75a4b12`
 - `dev`, `main`, `origin/dev` e `origin/main` apontam para o mesmo commit.
-- Arvore de trabalho limpa antes desta atualizacao.
+- Arvore de trabalho contem mudancas da frente mobile/backend ainda nao commitadas.
 - Commit, push e deploy sao feitos manualmente pelo usuario.
+
+## APK tecnico AIRMOVEBR
+
+Status: Fases 1 a 5 concluidas em desenvolvimento local. O teste principal agora deve ser no celular usando a API local.
+
+### Fase 1 - Dashboard mobile
+
+- App Flutter Android criado em `apps/mobile`.
+- Login de teste local sem API: `teste / 123456`.
+- Dashboard com resumo de OS, filtros e lista de atendimentos.
+- Dados fake locais para testar layout sem depender de backend.
+
+### Fase 2 - Detalhe da OS
+
+- Toque no card abre a tela de detalhes.
+- Detalhe mostra cliente, endereco, tipo de manutencao, checklist previsto e obrigatorios da execucao.
+- Botao de inicio de servico preparado na tela.
+
+### Fase 2.1 - Varias maquinas no mesmo local
+
+- Uma OS pode listar varios equipamentos do mesmo cliente/endereco.
+- Dashboard mostra contagem de equipamentos.
+- Detalhe lista todas as maquinas do atendimento.
+
+### Fase 3 - API mobile no backend
+
+- Criado modulo backend `apps/backend/src/modules/mobile`.
+- Endpoints:
+
+```text
+GET /api/v1/mobile/os
+GET /api/v1/mobile/os/:id
+```
+
+- API filtra OS pelo tecnico logado, responsavel direto ou equipe.
+- Retorno inclui equipamentos do cliente para o APK listar varias maquinas.
+
+### Fase 4 - Login real e integracao API
+
+- APK aceita `--dart-define=MOBILE_API_BASE_URL`.
+- Sem URL, usa dados fake locais.
+- Com URL, faz login real em `/api/v1/auth/login` e carrega `/api/v1/mobile/os`.
+- API local validada em `http://127.0.0.1:3000/api/v1/health`.
+- Producao validada online:
+
+```text
+https://api.airmovebr.com.br/api/v1/health
+https://admin.airmovebr.com.br/
+https://airmovebr.com.br/
+```
+
+### Fase 5 - Iniciar servico com GPS
+
+- Criado servico de localizacao no APK usando `geolocator`.
+- AndroidManifest recebeu permissao de localizacao.
+- Botao `Iniciar servico` captura GPS e chama:
+
+```text
+PATCH /api/v1/os/:osId/status
+acao: iniciar_rota
+```
+
+- Backend muda a OS para `em_deslocamento`.
+- APK mostra a OS como `Em andamento`.
+- Seed demo local criado em `apps/backend/prisma/seed_mobile_demo.ts`.
+- Tecnico local validado: `tecnico@airmovebr.local / 123456`.
+- API local retornou 4 OS para o tecnico, incluindo `Hospital Norte - Demo Mobile` com 3 equipamentos.
+
+### Como testar no celular
+
+Backend local precisa estar rodando na maquina:
+
+```text
+npm.cmd run backend:dev
+```
+
+Rodar o APK conectado na API local:
+
+```text
+cd C:\develop\LondriClima\apps\mobile
+flutter run --dart-define=MOBILE_API_BASE_URL=http://10.91.93.11:3000
+```
+
+Se falhar no celular, testar no navegador do celular:
+
+```text
+http://10.91.93.11:3000/api/v1/health
+```
+
+### Validacoes executadas
+
+```text
+flutter test
+flutter analyze
+flutter build apk --debug
+npm.cmd run backend:build
+```
+
+APK debug:
+
+```text
+C:\develop\LondriClima\apps\mobile\build\app\outputs\flutter-apk\app-debug.apk
+```
+
+### Proximas fases do APK
+
+1. Fase 6: botao `Cheguei ao cliente`, mudando de `em_deslocamento` para `em_atendimento`.
+2. Fase 7: evidencia inicial com foto antes, texto e GPS.
+3. Fase 8: checklist estruturado por periodicidade e por equipamento.
+4. Fase 9: evidencia final com foto depois.
+5. Fase 10: assinatura do cliente e finalizacao da OS.
+6. Fase 11: modo offline com fila de sincronizacao.
+7. Fase 12: leitura de codigo de barras/QR por equipamento.
+8. Fase 13: polimento visual, icon/app name e APK release.
 
 ## Prioridade aprovada: novo PDF PMOC
 
@@ -133,9 +247,9 @@ Total: 17 maquinas
 - Modelo e gas refrigerante ainda nao foram informados.
 - As TAGs repetidas `AC7` nos documentos devem ser corrigidas pela sequencia aprovada acima.
 
-### Continuidade futura do app
+### Continuidade futura do app PMOC
 
-Depois do PDF e dos cadastros, concluir o app tecnico para executar manutencoes:
+Depois das fases basicas da OS, concluir o app tecnico para executar manutencoes PMOC:
 
 - selecionar ou ler a maquina por codigo de barras;
 - trabalhar sempre dentro do cliente e equipamento corretos;
