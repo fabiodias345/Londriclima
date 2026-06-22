@@ -8,7 +8,7 @@ Aplicativo Flutter para a operacao AIRMOVEBR.
 - Senha de teste: `123456`
 - Login local API: `tecnico@airmovebr.local`
 - Senha local API: `123456`
-- Dashboard com lista de OS, detalhe, equipamentos e inicio de servico com GPS
+- Dashboard com lista de OS, detalhe, equipamentos e inicio de atendimento com GPS
 
 ## Fases concluidas
 
@@ -16,17 +16,20 @@ Aplicativo Flutter para a operacao AIRMOVEBR.
 2. Tela de detalhe da OS.
 3. Lista de varias maquinas no mesmo atendimento.
 4. Login real e listagem via API.
-5. Iniciar servico com GPS e status `em_deslocamento`.
+5. Iniciar atendimento com GPS e status `em_atendimento`.
+6. Selecionar maquina existente ou cadastrar nova maquina com dados obrigatorios.
+7. Receber `checklist_tipo` e checklist flat da API.
+8. Selecionar maquina antes de iniciar checklist.
+9. Renderizar checklist por tipo de campo.
+10. Salvar checklist preenchido por maquina.
+11. Cadastro guiado de maquina: seletores de tipo/gas e BTUs numerico.
 
 ## Proximas fases
 
-1. Cheguei ao cliente.
-2. Foto antes.
-3. Checklist por equipamento.
-4. Foto depois.
-5. Assinatura do cliente e finalizar OS.
-6. Offline/sync.
-7. Codigo de barras/QR.
+1. Fotos dentro dos itens do checklist.
+2. Assinatura do cliente e finalizar OS.
+3. Offline/sync.
+4. Codigo de barras/QR.
 
 ## Comandos
 

@@ -38,16 +38,18 @@ Fases concluidas:
 2. Detalhe da OS.
 3. Varias maquinas no mesmo atendimento.
 4. Login/API real.
-5. Iniciar servico com GPS.
+5. Iniciar atendimento com GPS.
+6. Selecionar ou cadastrar maquina com dados obrigatorios.
+7. Checklist definido pela recorrencia/API.
+8. Selecao de maquina antes do checklist.
+9. Renderizacao do checklist por tipo de campo.
+10. Salvamento do checklist preenchido por maquina.
 
 Proximas fases:
 
-1. Cheguei ao cliente.
-2. Foto antes.
-3. Checklist por equipamento.
-4. Foto depois.
-5. Assinatura e finalizar OS.
-6. Offline/sync.
+1. Fotos dentro dos itens do checklist.
+2. Assinatura e finalizar OS.
+3. Offline/sync.
 
 Comando local atual:
 

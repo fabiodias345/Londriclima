@@ -50,18 +50,20 @@ Concluido:
 5. Detalhe da OS.
 6. Listagem de varias maquinas no mesmo atendimento.
 7. Inicio de servico com GPS.
+8. Chegada ao cliente com GPS.
+9. Recebimento de checklist flat definido pelo backend.
+10. Selecao de maquina antes do checklist.
+11. Renderizacao do checklist por tipo de campo.
+12. Salvamento do checklist preenchido por maquina.
 
 Pendente:
 
-1. Cheguei ao cliente.
-2. Foto antes.
-3. Checklist por equipamento.
-4. Foto depois.
-5. Assinatura do cliente.
-6. Finalizacao da OS.
-7. Offline/sync.
-8. Codigo de barras/QR por equipamento.
-9. APK release.
+1. Fotos dentro dos itens do checklist.
+2. Assinatura do cliente.
+3. Finalizacao da OS.
+4. Offline/sync.
+5. Codigo de barras/QR por equipamento.
+6. APK release.
 
 ## Stack Real Atual
 
@@ -84,8 +86,7 @@ Tecnologias antigas citadas em documentos anteriores, como FastAPI, React/Tailwi
 pre_chamado
   +-- rejeitar -> rejeitada
   +-- aprovar  -> aberta
-                 +-- iniciar_rota    -> em_deslocamento
-                 +-- cheguei_cliente -> em_atendimento
+                 +-- iniciar_atendimento -> em_atendimento
                  +-- cancelar        -> cancelada
                  +-- finalizar       -> concluida
 ```
@@ -104,9 +105,9 @@ Regras:
 1. Login
 2. Listar minhas OS
 3. Abrir detalhe da OS
-4. Iniciar servico/rota com GPS
-5. Cheguei ao cliente com GPS
-6. Selecionar equipamento
+4. Iniciar atendimento com GPS
+5. Selecionar equipamento existente ou cadastrar novo
+6. Completar cadastro obrigatorio da maquina ou justificar dado impossivel
 7. Foto antes
 8. Checklist por periodicidade
 9. Observacoes e ocorrencias
@@ -123,6 +124,8 @@ Requisitos:
 - PMOC sempre separado por cliente e endereco.
 - Nao misturar maquinas de clientes diferentes.
 - Cada equipamento deve ter historico proprio.
+- O tecnico nao escolhe a periodicidade do checklist no app; a OS deve trazer o `checklist_tipo` definido pelo admin ou pela recorrencia.
+- O backend deve enviar o checklist flat ja expandido para o mobile, incluindo herancas entre mensal, trimestral, semestral e anual.
 - O PDF profissional deve listar maquinas, atividades, periodicidade, registros e assinaturas.
 - O app deve alimentar o historico PMOC com checklist, fotos e ocorrencias por equipamento.
 
@@ -164,8 +167,8 @@ Fora do MVP:
 - Tecnico loga com conta real.
 - Tecnico ve somente OS vinculadas a ele/equipe.
 - Uma OS com varias maquinas mostra todas as maquinas.
-- Iniciar servico grava GPS e muda status no backend.
-- Chegada ao cliente grava GPS e libera execucao.
+- Iniciar atendimento grava GPS e muda status no backend.
+- Tecnico seleciona/cadastra maquina e completa dados obrigatorios antes do checklist.
 - Checklist nao permite finalizar incompleto.
 - Fotos antes/depois sao obrigatorias.
 - Finalizacao exige assinatura e GPS final.

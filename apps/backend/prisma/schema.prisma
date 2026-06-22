@@ -45,6 +45,7 @@ enum OrdemServicoEventoAcao {
   aprovar
   rejeitar
   iniciar_rota
+  iniciar_atendimento
   cheguei_cliente
   cancelar
   finalizar
@@ -78,6 +79,13 @@ enum PmocRelatorioStatus {
 }
 
 enum PlanoRecorrenciaFrequencia {
+  mensal
+  trimestral
+  semestral
+  anual
+}
+
+enum ChecklistTipo {
   mensal
   trimestral
   semestral
@@ -357,6 +365,7 @@ model Equipamento {
   gasRefrigerante String? @map("gas_refrigerante")
   numeroSerie String? @map("numero_serie")
   localInstalacao String? @map("local_instalacao")
+  dadosPendentesJustificados Json? @map("dados_pendentes_justificados")
   areaClimatizadaM2 Int? @map("area_climatizada_m2")
   ocupantesFixo Int? @map("ocupantes_fixo")
   ocupantesVariavel Int? @map("ocupantes_variavel")
@@ -366,6 +375,7 @@ model Equipamento {
   empresa Empresa @relation(fields: [empresaId], references: [id])
   cliente Cliente @relation(fields: [clienteId], references: [id])
   ordensServico OrdemServico[]
+  checklistRespostas OrdemServicoChecklistResposta[]
   planosRecorrencia PlanoRecorrencia[]
 
   @@index([empresaId])
@@ -384,6 +394,7 @@ model OrdemServico {
   equipeId  String? @map("equipe_id") @db.Uuid
   tecnicoId String? @map("tecnico_id") @db.Uuid
   status    OrdemServicoStatus @default(pre_chamado)
+  checklistTipo ChecklistTipo @default(mensal) @map("checklist_tipo")
   titulo    String
   problemaRelatado String? @map("problema_relatado")
   agendadaPara DateTime? @map("agendada_para")
@@ -402,6 +413,7 @@ model OrdemServico {
   eventos OrdemServicoEvento[]
   evidencias OrdemServicoEvidencia[]
   checklist OrdemServicoChecklist?
+  checklistRespostas OrdemServicoChecklistResposta[]
   assinatura OrdemServicoAssinatura?
   observacoes OrdemServicoObservacao[]
   automacoes AutomacaoAgendada[]
@@ -424,6 +436,7 @@ model PlanoRecorrencia {
   titulo    String
   detalhes  String?
   frequencia PlanoRecorrenciaFrequencia
+  checklistTipo ChecklistTipo @default(mensal) @map("checklist_tipo")
   proximaExecucao DateTime @map("proxima_execucao")
   valorCobrado Decimal? @map("valor_cobrado") @db.Decimal(12, 2)
   ativo     Boolean @default(true)
@@ -515,9 +528,35 @@ model OrdemServicoChecklist {
 
   ordemServico OrdemServico @relation(fields: [ordemServicoId], references: [id])
   pecas OrdemServicoPeca[]
+  respostas OrdemServicoChecklistResposta[]
 
   @@index([empresaId])
   @@map("ordem_servico_checklists")
+}
+
+model OrdemServicoChecklistResposta {
+  id        String   @id @default(uuid()) @db.Uuid
+  empresaId String  @map("empresa_id") @db.Uuid
+  ordemServicoId String @map("ordem_servico_id") @db.Uuid
+  checklistId String @map("checklist_id") @db.Uuid
+  equipamentoId String @map("equipamento_id") @db.Uuid
+  checklistTipo ChecklistTipo @map("checklist_tipo")
+  codigo String
+  tipo String
+  valor String
+  observacao String?
+  criadoEm DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  ordemServico OrdemServico @relation(fields: [ordemServicoId], references: [id])
+  checklist OrdemServicoChecklist @relation(fields: [checklistId], references: [id])
+  equipamento Equipamento @relation(fields: [equipamentoId], references: [id])
+
+  @@unique([ordemServicoId, equipamentoId, codigo])
+  @@index([empresaId])
+  @@index([checklistId])
+  @@index([equipamentoId])
+  @@map("ordem_servico_checklist_respostas")
 }
 
 model OrdemServicoPeca {

@@ -13,7 +13,7 @@ Atualizado em: 21/06/2026
 
 ## APK tecnico AIRMOVEBR
 
-Status: Fases 1 a 5 concluidas em desenvolvimento local. O teste principal agora deve ser no celular usando a API local.
+Status: Fases 1 a 10.1 concluidas em desenvolvimento local. O teste principal agora deve ser no celular usando a API local.
 
 ### Fase 1 - Dashboard mobile
 
@@ -61,22 +61,83 @@ https://admin.airmovebr.com.br/
 https://airmovebr.com.br/
 ```
 
-### Fase 5 - Iniciar servico com GPS
+### Fase 5 - Iniciar atendimento com GPS
 
 - Criado servico de localizacao no APK usando `geolocator`.
 - AndroidManifest recebeu permissao de localizacao.
-- Botao `Iniciar servico` captura GPS e chama:
+- Botao `Iniciar atendimento` captura GPS e chama:
 
 ```text
 PATCH /api/v1/os/:osId/status
-acao: iniciar_rota
+acao: iniciar_atendimento
 ```
 
-- Backend muda a OS para `em_deslocamento`.
+- Backend muda a OS direto para `em_atendimento`.
 - APK mostra a OS como `Em andamento`.
 - Seed demo local criado em `apps/backend/prisma/seed_mobile_demo.ts`.
 - Tecnico local validado: `tecnico@airmovebr.local / 123456`.
 - API local retornou 4 OS para o tecnico, incluindo `Hospital Norte - Demo Mobile` com 3 equipamentos.
+
+### Fase 6 - Selecionar ou cadastrar maquina
+
+- Depois de iniciar atendimento, APK mostra maquinas do cliente.
+- Tecnico pode selecionar maquina existente ou cadastrar nova maquina.
+- Cadastro minimo: QR/codigo, tipo, marca, modelo, BTUs, gas, numero de serie e local instalado.
+- Se dado obrigatorio estiver indisponivel, tecnico marca `Impossivel coletar dados` e informa observacao.
+- Checklist fica bloqueado ate cadastro estar completo ou justificado.
+
+### Fase 7 - Checklist definido pela recorrencia
+
+- Banco recebeu enum `checklist_tipo`: `mensal`, `trimestral`, `semestral`, `anual`.
+- Planos de recorrencia gravam `checklist_tipo`.
+- OS gerada pela recorrencia herda o checklist definido no plano.
+- API mobile envia `checklist_tipo` e checklist flat ja expandido.
+- Debito tecnico: OS antigas ou criadas fora da recorrencia usam default `mensal` ate o admin expor seletor claro.
+
+### Fase 8 - Selecionar maquina antes do checklist
+
+- Depois de `Iniciar atendimento`, APK mostra a lista de maquinas da OS.
+- Tecnico pode buscar por TAG/id, local ou modelo.
+- Checklist so fica disponivel depois de selecionar uma maquina.
+- QR/barcode fica para fase futura.
+
+### Fase 9 - Renderizar checklist flat no app
+
+- Botao `Iniciar checklist` abre a lista de itens da maquina selecionada.
+- APK renderiza campos conforme `tipo` vindo da API:
+
+```text
+checkbox
+select
+select_obs
+numerico
+texto
+foto
+finalizacao
+```
+
+- Itens `foto` aparecem como acao de camera preparada, ainda sem upload real.
+- Itens `finalizacao` aparecem como bloco informativo para a etapa final da OS.
+
+### Fase 10 - Salvar checklist preenchido
+
+- APK guarda respostas dos campos `checkbox`, `select`, `select_obs`, `numerico` e `texto`.
+- Botao `Salvar checklist` envia as respostas da maquina selecionada para:
+
+```text
+POST /api/v1/os/:osId/checklist
+```
+
+- Payload inclui `equipamento_id`, `checklist_tipo`, `procedimentos` e `respostas`.
+- Backend persiste respostas estruturadas por OS, maquina e codigo do item.
+- Fotos continuam preparadas como item de checklist, mas upload real fica para a fase 11.
+
+### Fase 10.1 - Cadastro guiado de maquina
+
+- Campo `Tipo` virou seletor: Split, Cassete, Piso teto, Condensadora, Janela, VRF ou Outro.
+- Campo `Gas refrigerante` virou seletor: R-22, R-410A, R-32, R-134a ou Outro.
+- Campo `BTUs` usa teclado numerico.
+- Nova maquina cadastrada no atendimento libera o checklist sem precisar reinstalar APK.
 
 ### Como testar no celular
 
@@ -106,6 +167,7 @@ flutter test
 flutter analyze
 flutter build apk --debug
 npm.cmd run backend:build
+npm.cmd run backend:test
 ```
 
 APK debug:
@@ -116,14 +178,11 @@ C:\develop\LondriClima\apps\mobile\build\app\outputs\flutter-apk\app-debug.apk
 
 ### Proximas fases do APK
 
-1. Fase 6: botao `Cheguei ao cliente`, mudando de `em_deslocamento` para `em_atendimento`.
-2. Fase 7: evidencia inicial com foto antes, texto e GPS.
-3. Fase 8: checklist estruturado por periodicidade e por equipamento.
-4. Fase 9: evidencia final com foto depois.
-5. Fase 10: assinatura do cliente e finalizacao da OS.
-6. Fase 11: modo offline com fila de sincronizacao.
-7. Fase 12: leitura de codigo de barras/QR por equipamento.
-8. Fase 13: polimento visual, icon/app name e APK release.
+1. Fase 11: fotos dentro dos itens do checklist.
+2. Fase 12: assinatura do cliente e finalizacao da OS.
+3. Fase 13: modo offline com fila de sincronizacao.
+4. Fase 14: leitura de codigo de barras/QR por equipamento.
+5. Fase 15: polimento visual, icon/app name e APK release.
 
 ## Prioridade aprovada: novo PDF PMOC
 

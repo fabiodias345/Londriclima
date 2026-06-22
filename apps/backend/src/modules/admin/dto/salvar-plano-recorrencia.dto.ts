@@ -1,6 +1,6 @@
 import { Type } from "class-transformer";
 import { IsBoolean, IsDateString, IsEnum, IsNumber, IsOptional, IsString, IsUUID, Min } from "class-validator";
-import { PlanoRecorrenciaFrequencia } from "@prisma/client";
+import { ChecklistTipo, PlanoRecorrenciaFrequencia } from "@prisma/client";
 
 export class SalvarPlanoRecorrenciaDto {
   @IsUUID()
@@ -27,6 +27,10 @@ export class SalvarPlanoRecorrenciaDto {
 
   @IsEnum(PlanoRecorrenciaFrequencia)
   frequencia!: PlanoRecorrenciaFrequencia;
+
+  @IsOptional()
+  @IsEnum(ChecklistTipo)
+  checklist_tipo?: ChecklistTipo;
 
   @IsDateString()
   proxima_execucao!: string;

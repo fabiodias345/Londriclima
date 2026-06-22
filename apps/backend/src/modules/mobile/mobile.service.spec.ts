@@ -59,3 +59,38 @@ test("listarOrdens retorna OS do tecnico com equipamentos do atendimento", async
   assert.equal(resultado.items[0].equipamentos[0].nome, "Sala 101");
   assert.equal(resultado.items[0].equipamentos[1].nome, "Sala 102");
 });
+
+test("listarOrdens retorna checklist flat definido pelo backend", async () => {
+  const prisma = {
+    ordemServico: {
+      findMany: async () => [
+        {
+          id: "os-2",
+          clienteId: "cliente-1",
+          titulo: "Texto livre qualquer",
+          checklistTipo: "semestral",
+          status: OrdemServicoStatus.aberta,
+          agendadaPara: new Date("2026-06-22T12:00:00.000Z"),
+          cliente: {
+            nome: "Hospital Norte",
+            equipamentos: []
+          },
+          endereco: null,
+          equipamento: null,
+          responsaveis: []
+        }
+      ]
+    }
+  };
+
+  const resultado = await criarService(prisma).listarOrdens(usuario);
+  const ordem = resultado.items[0];
+
+  assert.equal(ordem.checklist_tipo, "semestral");
+  assert.ok(Array.isArray(ordem.checklist));
+  assert.equal(ordem.checklist[0].codigo, "M1");
+  assert.equal(ordem.checklist[0].tipo, "checkbox");
+  assert.ok(ordem.checklist.some((item: { codigo: string }) => item.codigo === "T21"));
+  assert.ok(ordem.checklist.some((item: { codigo: string }) => item.codigo === "S14"));
+  assert.equal(ordem.checklist.some((item: { codigo: string }) => item.codigo === "A1"), false);
+});

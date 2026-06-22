@@ -1,7 +1,29 @@
 import { Type } from "class-transformer";
-import { IsInt, IsNotEmpty, IsOptional, IsString, Min } from "class-validator";
+import { IsArray, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Min, ValidateNested } from "class-validator";
+
+export class DadoEquipamentoImpossivelDto {
+  @IsString()
+  @IsNotEmpty()
+  campo: string;
+
+  @IsString()
+  @IsNotEmpty()
+  observacao: string;
+}
 
 export class IdentificarEquipamentoDto {
+  @IsOptional()
+  @IsUUID()
+  equipamento_id?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  codigo_qr: string;
+
+  @IsString()
+  @IsNotEmpty()
+  tipo: string;
+
   @IsString()
   @IsNotEmpty()
   marca: string;
@@ -27,4 +49,10 @@ export class IdentificarEquipamentoDto {
   @IsOptional()
   @IsString()
   local_instalacao?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => DadoEquipamentoImpossivelDto)
+  dados_impossiveis?: DadoEquipamentoImpossivelDto[];
 }

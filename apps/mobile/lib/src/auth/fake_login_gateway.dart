@@ -5,7 +5,10 @@ class FakeLoginGateway implements MobileLoginGateway {
   @override
   Future<LoginSession?> login(String user, String password) async {
     final normalizedUser = user.trim().toLowerCase();
-    if (normalizedUser == 'teste' && password == '123456') {
+    final isDemoUser =
+        normalizedUser == 'teste' ||
+        normalizedUser == 'tecnico@airmovebr.local';
+    if (isDemoUser && password == '123456') {
       return LoginSession(repository: FakeWorkOrderRepository());
     }
 

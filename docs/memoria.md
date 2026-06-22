@@ -65,7 +65,12 @@ Concluido:
 2. Tela de detalhe da OS.
 3. Suporte a varias maquinas no mesmo local.
 4. Login real via API quando `MOBILE_API_BASE_URL` e informado.
-5. Inicio de servico com GPS usando `iniciar_rota`.
+5. Inicio de atendimento com GPS usando `iniciar_atendimento`.
+6. Chegada ao cliente com GPS usando `cheguei_cliente`.
+7. Checklist definido pela recorrencia e enviado flat pelo backend.
+8. Selecao/confirmacao da maquina antes do checklist.
+9. Renderizacao do checklist flat por tipo de campo no app.
+10. Salvamento do checklist preenchido por maquina.
 
 Arquivos principais:
 
@@ -74,6 +79,14 @@ apps/mobile/lib/src/
 apps/backend/src/modules/mobile/
 apps/backend/prisma/seed_mobile_demo.ts
 ```
+
+Decisao de checklist:
+
+- Tecnico nao escolhe periodicidade no app.
+- Periodicidade/checklist deve vir da OS, definida pelo admin/plano de recorrencia.
+- Banco possui enum limpo `checklist_tipo`: `mensal`, `trimestral`, `semestral`, `anual`.
+- Backend envia checklist flat ja expandido para o mobile; o app apenas renderiza os itens.
+- Debito tecnico consciente: OS antigas ou criadas fora da recorrencia podem cair no default `mensal` ate o admin expor seletor claro para `checklist_tipo`.
 
 Comando local atual:
 
@@ -99,13 +112,11 @@ npm.cmd run backend:build
 
 Proximas fases mobile:
 
-1. `Cheguei ao cliente`.
-2. Foto antes.
-3. Checklist por equipamento e periodicidade.
-4. Foto depois.
-5. Assinatura do cliente e finalizar OS.
-6. Offline/sync.
-7. Codigo de barras/QR por equipamento.
+1. Fotos dentro dos itens do checklist.
+2. Foto depois quando exigida pelo item.
+3. Assinatura do cliente e finalizar OS.
+4. Offline/sync.
+5. Codigo de barras/QR por equipamento.
 
 ## PMOC Atual
 
@@ -165,10 +176,10 @@ api.airmovebr.com.br   -> 191.252.226.11
 
 ## Proximos Passos
 
-1. Testar Fase 5 do APK no celular usando API local.
-2. Implementar `Cheguei ao cliente`.
-3. Implementar fotos antes/depois.
-4. Implementar checklist por equipamento.
+1. Testar Fase 10 do APK no celular usando API local.
+2. Implementar fotos dentro dos itens do checklist.
+3. Implementar assinatura e finalizacao da OS.
+4. Implementar modo offline/sync.
 5. Implementar assinatura e finalizacao da OS.
 6. Depois do fluxo local estar bom, apontar APK para `https://api.airmovebr.com.br`.
 7. Retestar formulario publico de pre-chamado pelo dominio e confirmar entrada no painel.

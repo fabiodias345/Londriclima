@@ -6,6 +6,29 @@ import '../services/location_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/detail_section.dart';
 
+const _machineFieldLabels = {
+  'codigo_qr': 'QR / codigo da maquina',
+  'tipo': 'Tipo',
+  'marca': 'Marca',
+  'modelo': 'Modelo',
+  'capacidade_btu': 'BTUs',
+  'gas_refrigerante': 'Gas refrigerante',
+  'numero_serie': 'Numero de serie',
+  'local_instalacao': 'Local instalado',
+};
+
+const _machineTypeOptions = [
+  'Split',
+  'Cassete',
+  'Piso teto',
+  'Condensadora',
+  'Janela',
+  'VRF',
+  'Outro',
+];
+
+const _gasOptions = ['R-22', 'R-410A', 'R-32', 'R-134a', 'Outro'];
+
 class WorkOrderDetailScreen extends StatefulWidget {
   const WorkOrderDetailScreen({
     super.key,
@@ -25,13 +48,55 @@ class WorkOrderDetailScreen extends StatefulWidget {
 class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
   late WorkOrder _order;
   bool _starting = false;
-  bool _arriving = false;
+  String _machineFilter = '';
+  late List<WorkOrderEquipment> _equipments;
+  WorkOrderEquipment? _selectedEquipment;
+  bool _editingMachine = false;
+  bool _checklistStarted = false;
+  bool _savingChecklist = false;
+  String? _checklistMessage;
+  final _checklistSectionKey = GlobalKey();
+  final Map<String, String> _checklistValues = {};
+  final Map<String, TextEditingController> _textControllers = {};
+  final Map<String, TextEditingController> _noteControllers = {};
+  final Map<String, TextEditingController> _machineControllers = {
+    'codigo_qr': TextEditingController(),
+    'tipo': TextEditingController(),
+    'marca': TextEditingController(),
+    'modelo': TextEditingController(),
+    'capacidade_btu': TextEditingController(),
+    'gas_refrigerante': TextEditingController(),
+    'numero_serie': TextEditingController(),
+    'local_instalacao': TextEditingController(),
+  };
+  final Map<String, TextEditingController> _machineImpossibleControllers = {
+    for (final key in _machineFieldLabels.keys) key: TextEditingController(),
+  };
+  final Set<String> _machineImpossibleFields = {};
   String? _errorMessage;
+
+  @override
+  void dispose() {
+    for (final controller in _textControllers.values) {
+      controller.dispose();
+    }
+    for (final controller in _noteControllers.values) {
+      controller.dispose();
+    }
+    for (final controller in _machineControllers.values) {
+      controller.dispose();
+    }
+    for (final controller in _machineImpossibleControllers.values) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
 
   @override
   void initState() {
     super.initState();
     _order = widget.order;
+    _equipments = List<WorkOrderEquipment>.of(_equipmentsFor(widget.order));
   }
 
   @override
@@ -115,32 +180,236 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
                 foregroundColor: Colors.white,
               ),
             ),
-            if (_order.isOnRoute) ...[
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                key: const Key('arriveAtClientButton'),
-                onPressed: _canArrive ? _arriveAtClient : null,
-                icon: const Icon(Icons.place_outlined),
-                label: Text(_arriveButtonLabel),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(52),
-                  foregroundColor: airmovebrPrimary,
-                ),
-              ),
-            ],
             if (_order.isAtClient) ...[
               const SizedBox(height: 12),
-              FilledButton.icon(
-                key: const Key('checklistReadyButton'),
-                onPressed: () {},
-                icon: const Icon(Icons.checklist_rounded),
-                label: const Text('Checklist liberado'),
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(52),
-                  backgroundColor: airmovebrPrimary,
-                  foregroundColor: Colors.white,
-                ),
+              DetailSection(
+                title: 'Selecionar maquina',
+                children: [
+                  TextField(
+                    key: const Key('machineSearchField'),
+                    decoration: const InputDecoration(
+                      labelText: 'Buscar por TAG, local ou modelo',
+                      prefixIcon: Icon(Icons.search_rounded),
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _machineFilter = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  ..._filteredEquipments().map(
+                    (equipment) => _SelectableEquipmentItem(
+                      key: Key('selectEquipment_${equipment.id}'),
+                      equipment: equipment,
+                      selected: _selectedEquipment?.id == equipment.id,
+                      onTap: () {
+                        setState(() {
+                          _selectedEquipment = equipment;
+                          _editingMachine = !equipment.hasRequiredMachineData();
+                          _loadMachineForm(equipment);
+                          _checklistStarted = false;
+                          _checklistMessage = null;
+                          _checklistValues.clear();
+                          _clearTextControllers();
+                        });
+                      },
+                    ),
+                  ),
+                  OutlinedButton.icon(
+                    key: const Key('newMachineButton'),
+                    onPressed: () {
+                      setState(() {
+                        _selectedEquipment = null;
+                        _editingMachine = true;
+                        _checklistStarted = false;
+                        _checklistMessage = null;
+                        _clearMachineForm();
+                      });
+                    },
+                    icon: const Icon(Icons.add_circle_outline),
+                    label: const Text('Nova maquina'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                      foregroundColor: airmovebrPrimary,
+                    ),
+                  ),
+                  if (_filteredEquipments().isEmpty)
+                    const Text(
+                      'Nenhuma maquina encontrada.',
+                      style: TextStyle(color: airmovebrMuted),
+                    ),
+                ],
               ),
+              if (_selectedEquipment != null) ...[
+                const SizedBox(height: 12),
+                DetailSection(
+                  title: 'Maquina selecionada',
+                  children: [
+                    _InfoRow(
+                      icon: Icons.ac_unit,
+                      label: _selectedEquipment!.location.isEmpty
+                          ? 'Equipamento'
+                          : _selectedEquipment!.location,
+                      value:
+                          '${_selectedEquipment!.name} - ${_selectedEquipment!.model}',
+                    ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 12),
+              if (_editingMachine) ...[
+                DetailSection(
+                  title: _selectedEquipment == null
+                      ? 'Cadastrar maquina'
+                      : 'Completar cadastro da maquina',
+                  children: [
+                    ..._machineFieldLabels.entries.map(
+                      (entry) => _MachineField(
+                        fieldKey: entry.key,
+                        label: entry.value,
+                        controller: _machineControllers[entry.key]!,
+                        impossibleController:
+                            _machineImpossibleControllers[entry.key]!,
+                        impossible: _machineImpossibleFields.contains(
+                          entry.key,
+                        ),
+                        numeric: entry.key == 'capacidade_btu',
+                        options: switch (entry.key) {
+                          'tipo' => _machineTypeOptions,
+                          'gas_refrigerante' => _gasOptions,
+                          _ => const <String>[],
+                        },
+                        onImpossibleChanged: (checked) {
+                          setState(() {
+                            if (checked) {
+                              _machineImpossibleFields.add(entry.key);
+                            } else {
+                              _machineImpossibleFields.remove(entry.key);
+                              _machineImpossibleControllers[entry.key]!.clear();
+                            }
+                          });
+                        },
+                      ),
+                    ),
+                    FilledButton.icon(
+                      key: const Key('saveMachineButton'),
+                      onPressed: _saveMachine,
+                      icon: const Icon(Icons.save_outlined),
+                      label: const Text('Salvar maquina'),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(52),
+                        backgroundColor: airmovebrPrimary,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+              ],
+              Builder(
+                builder: (context) {
+                  final checklistBlocked =
+                      _selectedEquipment == null ||
+                      _editingMachine ||
+                      (!_selectedEquipment!.hasRequiredMachineData() &&
+                          _missingMachineInputFields(
+                            _buildMachineInput(),
+                          ).isNotEmpty);
+
+                  return FilledButton.icon(
+                    key: const Key('checklistReadyButton'),
+                    onPressed: checklistBlocked
+                        ? null
+                        : () {
+                            setState(() {
+                              _checklistStarted = true;
+                              _checklistMessage = null;
+                            });
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              final context =
+                                  _checklistSectionKey.currentContext;
+                              if (context != null) {
+                                Scrollable.ensureVisible(
+                                  context,
+                                  duration: const Duration(milliseconds: 200),
+                                  alignment: 0.05,
+                                );
+                              }
+                            });
+                          },
+                    icon: const Icon(Icons.checklist_rounded),
+                    label: Text(
+                      _selectedEquipment == null
+                          ? 'Selecione uma maquina'
+                          : _editingMachine ||
+                                !_selectedEquipment!.hasRequiredMachineData()
+                          ? 'Complete cadastro da maquina'
+                          : _checklistStarted
+                          ? 'Checklist iniciado'
+                          : 'Iniciar checklist',
+                    ),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(52),
+                      backgroundColor: airmovebrPrimary,
+                      foregroundColor: Colors.white,
+                    ),
+                  );
+                },
+              ),
+              if (_checklistStarted && _selectedEquipment != null) ...[
+                const SizedBox(height: 12),
+                DetailSection(
+                  key: _checklistSectionKey,
+                  title: 'Checklist da maquina',
+                  children: _order.checklist.isEmpty
+                      ? const [
+                          Text(
+                            'Checklist nao definido para esta OS.',
+                            style: TextStyle(color: airmovebrMuted),
+                          ),
+                        ]
+                      : _order.checklist
+                            .map(
+                              (item) => _ChecklistField(
+                                item: item,
+                                value: _checklistValues[item.code],
+                                textController: _controllerFor(item.code),
+                                noteController: _noteControllerFor(item.code),
+                                onChanged: (value) {
+                                  setState(() {
+                                    _checklistValues[item.code] = value;
+                                  });
+                                },
+                              ),
+                            )
+                            .toList(),
+                ),
+                const SizedBox(height: 12),
+                if (_checklistMessage != null) ...[
+                  Text(
+                    _checklistMessage!,
+                    style: const TextStyle(
+                      color: airmovebrAccent,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                FilledButton.icon(
+                  key: const Key('saveChecklistButton'),
+                  onPressed: _savingChecklist ? null : _saveChecklist,
+                  icon: const Icon(Icons.save_outlined),
+                  label: Text(
+                    _savingChecklist ? 'Salvando...' : 'Salvar checklist',
+                  ),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(52),
+                    backgroundColor: airmovebrAccent,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
             ],
           ],
         ),
@@ -150,22 +419,16 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
 
   bool get _canStart => _order.status == WorkOrderStatus.pending && !_starting;
 
-  bool get _canArrive => _order.isOnRoute && !_arriving;
-
   String get _startButtonLabel {
     if (_starting) {
       return 'Iniciando...';
     }
 
     if (_order.status == WorkOrderStatus.pending) {
-      return 'Iniciar servico';
+      return 'Iniciar atendimento';
     }
 
-    return 'Servico iniciado';
-  }
-
-  String get _arriveButtonLabel {
-    return _arriving ? 'Registrando chegada...' : 'Cheguei ao cliente';
+    return 'Atendimento iniciado';
   }
 
   Future<void> _startService() async {
@@ -199,40 +462,429 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
     }
   }
 
-  Future<void> _arriveAtClient() async {
+  Future<void> _saveMachine() async {
+    final input = _buildMachineInput();
+    final missing = _missingMachineInputFields(input);
+    if (missing.isNotEmpty) {
+      setState(() {
+        _errorMessage =
+            'Complete os dados da maquina ou marque impossivel coletar com observacao.';
+      });
+      return;
+    }
+
     setState(() {
-      _arriving = true;
       _errorMessage = null;
     });
 
     try {
-      final location = await widget.locationService.currentLocation();
-      final updated = await widget.repository.arriveAtClient(_order, location);
+      final saved = await widget.repository.saveMachineData(_order, input);
       if (!mounted) {
         return;
       }
-
       setState(() {
-        _order = updated;
-        _arriving = false;
+        final index = _equipments.indexWhere((item) => item.id == saved.id);
+        if (index >= 0) {
+          _equipments[index] = saved;
+        } else {
+          _equipments.add(saved);
+        }
+        _selectedEquipment = saved;
+        _editingMachine = false;
       });
-    } on Object catch (error) {
+    } on Object {
       if (!mounted) {
         return;
       }
-
       setState(() {
-        _arriving = false;
-        _errorMessage = error is LocationServiceException
-            ? error.message
-            : 'Falha ao registrar chegada.';
+        _errorMessage = 'Falha ao salvar maquina.';
       });
     }
+  }
+
+  MachineDataInput _buildMachineInput() {
+    return MachineDataInput(
+      equipmentId: _selectedEquipment?.id,
+      qrCode: _machineControllers['codigo_qr']!.text.trim(),
+      type: _machineControllers['tipo']!.text.trim(),
+      brand: _machineControllers['marca']!.text.trim(),
+      model: _machineControllers['modelo']!.text.trim(),
+      btus: int.tryParse(_machineControllers['capacidade_btu']!.text.trim()),
+      gas: _machineControllers['gas_refrigerante']!.text.trim(),
+      serialNumber: _machineControllers['numero_serie']!.text.trim(),
+      location: _machineControllers['local_instalacao']!.text.trim(),
+      impossibleFields: {
+        for (final field in _machineImpossibleFields)
+          field: _machineImpossibleControllers[field]!.text.trim(),
+      },
+    );
+  }
+
+  List<String> _missingMachineInputFields(MachineDataInput input) {
+    final values = {
+      'codigo_qr': input.qrCode,
+      'tipo': input.type,
+      'marca': input.brand,
+      'modelo': input.model,
+      'capacidade_btu': input.btus?.toString() ?? '',
+      'gas_refrigerante': input.gas,
+      'numero_serie': input.serialNumber,
+      'local_instalacao': input.location,
+    };
+
+    return values.entries
+        .where((entry) {
+          final impossible = input.impossibleFields[entry.key];
+          return entry.value.trim().isEmpty &&
+              (impossible == null || impossible.trim().isEmpty);
+        })
+        .map((entry) => entry.key)
+        .toList();
+  }
+
+  Future<void> _saveChecklist() async {
+    final equipment = _selectedEquipment;
+    if (equipment == null) {
+      return;
+    }
+
+    setState(() {
+      _savingChecklist = true;
+      _errorMessage = null;
+      _checklistMessage = null;
+    });
+
+    try {
+      await widget.repository.saveChecklist(
+        _order,
+        equipmentId: equipment.id,
+        checklistType: _order.checklistType,
+        responses: _buildChecklistResponses(),
+      );
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _savingChecklist = false;
+        _checklistMessage = 'Checklist salvo.';
+      });
+    } on Object {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _savingChecklist = false;
+        _errorMessage = 'Falha ao salvar checklist.';
+      });
+    }
+  }
+
+  List<WorkOrderChecklistResponse> _buildChecklistResponses() {
+    return _order.checklist.map((item) {
+      final textValue = _textControllers[item.code]?.text.trim();
+      final value = switch (item.kind) {
+        'texto' || 'numerico' => textValue ?? '',
+        'foto' => _checklistValues[item.code] ?? 'pendente',
+        'finalizacao' => _checklistValues[item.code] ?? 'pendente',
+        _ => _checklistValues[item.code] ?? '',
+      };
+      final note = _noteControllers[item.code]?.text.trim();
+      return WorkOrderChecklistResponse(
+        code: item.code,
+        kind: item.kind,
+        value: value,
+        note: note == null || note.isEmpty ? null : note,
+      );
+    }).toList();
+  }
+
+  TextEditingController _controllerFor(String code) {
+    return _textControllers.putIfAbsent(code, TextEditingController.new);
+  }
+
+  TextEditingController _noteControllerFor(String code) {
+    return _noteControllers.putIfAbsent(code, TextEditingController.new);
+  }
+
+  void _clearTextControllers() {
+    for (final controller in _textControllers.values) {
+      controller.clear();
+    }
+    for (final controller in _noteControllers.values) {
+      controller.clear();
+    }
+  }
+
+  List<WorkOrderEquipment> _filteredEquipments() {
+    final filter = _machineFilter.trim().toLowerCase();
+    final equipments = _equipments;
+    if (filter.isEmpty) {
+      return equipments;
+    }
+
+    return equipments.where((equipment) {
+      final searchable = [
+        equipment.id,
+        equipment.name,
+        equipment.location,
+        equipment.model,
+      ].join(' ').toLowerCase();
+      return searchable.contains(filter);
+    }).toList();
+  }
+
+  void _loadMachineForm(WorkOrderEquipment equipment) {
+    _machineControllers['codigo_qr']!.text = equipment.qrCode;
+    _machineControllers['tipo']!.text = equipment.type;
+    _machineControllers['marca']!.text = equipment.brand;
+    _machineControllers['modelo']!.text = equipment.model;
+    _machineControllers['capacidade_btu']!.text =
+        equipment.btus?.toString() ?? '';
+    _machineControllers['gas_refrigerante']!.text = equipment.gas;
+    _machineControllers['numero_serie']!.text = equipment.serialNumber;
+    _machineControllers['local_instalacao']!.text = equipment.location;
+    _machineImpossibleFields
+      ..clear()
+      ..addAll(equipment.impossibleFields.keys);
+    for (final entry in _machineImpossibleControllers.entries) {
+      entry.value.text = equipment.impossibleFields[entry.key] ?? '';
+    }
+  }
+
+  void _clearMachineForm() {
+    for (final controller in _machineControllers.values) {
+      controller.clear();
+    }
+    for (final controller in _machineImpossibleControllers.values) {
+      controller.clear();
+    }
+    _machineImpossibleFields.clear();
+  }
+}
+
+class _MachineField extends StatelessWidget {
+  const _MachineField({
+    required this.fieldKey,
+    required this.label,
+    required this.controller,
+    required this.impossibleController,
+    required this.impossible,
+    required this.onImpossibleChanged,
+    this.numeric = false,
+    this.options = const [],
+  });
+
+  final String fieldKey;
+  final String label;
+  final TextEditingController controller;
+  final TextEditingController impossibleController;
+  final bool impossible;
+  final bool numeric;
+  final List<String> options;
+  final ValueChanged<bool> onImpossibleChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (options.isEmpty)
+            TextField(
+              key: Key('machineField_$fieldKey'),
+              controller: controller,
+              enabled: !impossible,
+              keyboardType: numeric ? TextInputType.number : TextInputType.text,
+              decoration: InputDecoration(labelText: label),
+            )
+          else
+            DropdownButtonFormField<String>(
+              key: Key('machineSelect_$fieldKey'),
+              initialValue: controller.text.trim().isEmpty
+                  ? null
+                  : controller.text.trim(),
+              decoration: InputDecoration(labelText: label),
+              items: options
+                  .map(
+                    (option) =>
+                        DropdownMenuItem(value: option, child: Text(option)),
+                  )
+                  .toList(),
+              onChanged: impossible
+                  ? null
+                  : (value) {
+                      if (value != null) {
+                        controller.text = value;
+                      }
+                    },
+            ),
+          Row(
+            key: Key('machineImpossible_$fieldKey'),
+            children: [
+              Checkbox(
+                value: impossible,
+                onChanged: (value) => onImpossibleChanged(value == true),
+              ),
+              const Expanded(child: Text('Impossivel coletar dados')),
+            ],
+          ),
+          if (impossible)
+            TextField(
+              key: Key('machineImpossibleNote_$fieldKey'),
+              controller: impossibleController,
+              decoration: const InputDecoration(
+                labelText: 'Observacao obrigatoria',
+              ),
+              maxLines: 2,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChecklistField extends StatelessWidget {
+  const _ChecklistField({
+    required this.item,
+    required this.value,
+    required this.textController,
+    required this.noteController,
+    required this.onChanged,
+  });
+
+  final WorkOrderChecklistItem item;
+  final String? value;
+  final TextEditingController textController;
+  final TextEditingController noteController;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: switch (item.kind) {
+        'checkbox' => InkWell(
+          key: Key('checklist_checkbox_${item.code}'),
+          onTap: () => onChanged(value == 'true' ? 'false' : 'true'),
+          child: Row(
+            children: [
+              Checkbox(
+                value: value == 'true',
+                onChanged: (checked) =>
+                    onChanged(checked == true ? 'true' : 'false'),
+              ),
+              Expanded(child: Text(item.label)),
+            ],
+          ),
+        ),
+        'select' => DropdownButtonFormField<String>(
+          key: Key('checklist_select_${item.code}'),
+          initialValue: value,
+          decoration: InputDecoration(labelText: item.label),
+          items: item.options
+              .map(
+                (option) =>
+                    DropdownMenuItem(value: option, child: Text(option)),
+              )
+              .toList(),
+          onChanged: (selected) {
+            if (selected != null) {
+              onChanged(selected);
+            }
+          },
+        ),
+        'select_obs' => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            DropdownButtonFormField<String>(
+              key: Key('checklist_select_${item.code}'),
+              initialValue: value,
+              decoration: InputDecoration(labelText: item.label),
+              items: const ['ok', 'nao conforme']
+                  .map(
+                    (option) =>
+                        DropdownMenuItem(value: option, child: Text(option)),
+                  )
+                  .toList(),
+              onChanged: (selected) {
+                if (selected != null) {
+                  onChanged(selected);
+                }
+              },
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              key: Key('checklist_obs_${item.code}'),
+              controller: noteController,
+              decoration: const InputDecoration(labelText: 'Observacao'),
+              maxLines: 2,
+            ),
+          ],
+        ),
+        'numerico' => TextField(
+          key: Key('checklist_number_${item.code}'),
+          controller: textController,
+          decoration: InputDecoration(
+            labelText: item.unit == null
+                ? item.label
+                : '${item.label} (${item.unit})',
+          ),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        ),
+        'texto' => TextField(
+          key: Key('checklist_text_${item.code}'),
+          controller: textController,
+          decoration: InputDecoration(labelText: item.label),
+          maxLines: 2,
+        ),
+        'foto' => OutlinedButton.icon(
+          key: Key('checklist_photo_${item.code}'),
+          onPressed: () => onChanged('pendente'),
+          icon: const Icon(Icons.photo_camera_outlined),
+          label: Text(item.label),
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size.fromHeight(48),
+            alignment: Alignment.centerLeft,
+          ),
+        ),
+        'finalizacao' => Row(
+          key: Key('checklist_final_${item.code}'),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.assignment_turned_in_outlined),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(item.label),
+                  const SizedBox(height: 2),
+                  const Text(
+                    'Sera preenchido na finalizacao da OS.',
+                    style: TextStyle(color: airmovebrMuted),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        _ => Text(item.label),
+      },
+    );
   }
 }
 
 List<Widget> _equipmentWidgets(WorkOrder order) {
-  final equipments = order.equipments.isEmpty
+  return _equipmentsFor(
+    order,
+  ).map((equipment) => _EquipmentItem(equipment: equipment)).toList();
+}
+
+List<WorkOrderEquipment> _equipmentsFor(WorkOrder order) {
+  return order.equipments.isEmpty
       ? [
           WorkOrderEquipment(
             id: order.id,
@@ -242,10 +894,6 @@ List<Widget> _equipmentWidgets(WorkOrder order) {
           ),
         ]
       : order.equipments;
-
-  return equipments
-      .map((equipment) => _EquipmentItem(equipment: equipment))
-      .toList();
 }
 
 class _EquipmentItem extends StatelessWidget {
@@ -287,6 +935,76 @@ class _EquipmentItem extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SelectableEquipmentItem extends StatelessWidget {
+  const _SelectableEquipmentItem({
+    super.key,
+    required this.equipment,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final WorkOrderEquipment equipment;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: OutlinedButton(
+        onPressed: onTap,
+        style: OutlinedButton.styleFrom(
+          alignment: Alignment.centerLeft,
+          padding: const EdgeInsets.all(12),
+          side: BorderSide(
+            color: selected ? airmovebrPrimary : const Color(0xFFD8DEE8),
+            width: selected ? 2 : 1,
+          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              selected
+                  ? Icons.radio_button_checked
+                  : Icons.radio_button_unchecked,
+              color: selected ? airmovebrPrimary : airmovebrMuted,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    equipment.qrCode.isEmpty
+                        ? equipment.name
+                        : '${equipment.qrCode} - ${equipment.type}',
+                    style: const TextStyle(
+                      color: airmovebrText,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    [
+                      if (equipment.brand.isNotEmpty) equipment.brand,
+                      equipment.model,
+                      if (equipment.btus != null) '${equipment.btus} BTUs',
+                      equipment.location,
+                    ].where((item) => item.isNotEmpty).join(' - '),
+                    style: const TextStyle(color: airmovebrMuted),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -403,27 +1121,12 @@ class _Bullet extends StatelessWidget {
 }
 
 List<String> _checklistFor(WorkOrder order) {
-  final type = order.maintenanceType.toLowerCase();
-  if (type.contains('filtro')) {
-    return const [
-      'Desligar equipamento',
-      'Fotografar filtros',
-      'Limpar filtros',
-      'Verificar operacao final',
-    ];
+  if (order.checklist.isNotEmpty) {
+    return order.checklist.take(4).map((item) => item.label).toList();
   }
-  if (type.contains('completa')) {
-    return const [
-      'Executar checklist trimestral',
-      'Verificar pressao',
-      'Medir amperagem',
-      'Inspecionar eletrica',
-    ];
-  }
+
   return const [
-    'Foto inicial',
-    'Inspecao geral',
-    'Registro tecnico',
-    'Foto final',
+    'Checklist definido pela OS',
+    'Selecione a maquina antes de iniciar',
   ];
 }

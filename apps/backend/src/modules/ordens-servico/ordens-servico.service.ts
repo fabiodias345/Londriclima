@@ -7,6 +7,7 @@ import {
 } from "@nestjs/common";
 import {
   AutomacaoTipo,
+  ChecklistTipo,
   EvidenciaTipo,
   OrdemServicoEventoAcao,
   OrdemServicoStatus,
@@ -31,6 +32,10 @@ type TransicaoStatus = {
 const TRANSICOES_STATUS: Partial<Record<OrdemServicoEventoAcao, TransicaoStatus>> = {
   [OrdemServicoEventoAcao.iniciar_rota]: {
     statusNovo: OrdemServicoStatus.em_deslocamento,
+    statusPermitidos: [OrdemServicoStatus.aberta]
+  },
+  [OrdemServicoEventoAcao.iniciar_atendimento]: {
+    statusNovo: OrdemServicoStatus.em_atendimento,
     statusPermitidos: [OrdemServicoStatus.aberta]
   },
   [OrdemServicoEventoAcao.cheguei_cliente]: {
@@ -180,40 +185,72 @@ export class OrdensServicoService {
         throw new UnprocessableEntityException("OS não está com status em_atendimento.");
       }
 
+      const dadosPendentesJustificados = dto.dados_impossiveis?.length
+        ? dto.dados_impossiveis.map((dado) => ({
+            campo: dado.campo,
+            observacao: dado.observacao
+          })) as Prisma.InputJsonValue
+        : Prisma.JsonNull;
+
       const data = {
+        codigoBarras: dto.codigo_qr.trim(),
+        patrimonio: dto.codigo_qr.trim(),
+        tipo: dto.tipo.trim(),
         marca: dto.marca,
         modelo: dto.modelo,
         capacidadeBtu: dto.capacidade_btu,
         gasRefrigerante: dto.gas_refrigerante?.trim() || undefined,
         numeroSerie: dto.numero_serie,
-        localInstalacao: dto.local_instalacao
+        localInstalacao: dto.local_instalacao,
+        dadosPendentesJustificados
       };
 
-      if (ordemServico.equipamentoId) {
+      const equipamentoAlvoId = dto.equipamento_id ?? ordemServico.equipamentoId;
+
+      if (equipamentoAlvoId) {
         const equipamentoAtual = await tx.equipamento.findUnique({
-          where: { id: ordemServico.equipamentoId },
+          where: { id: equipamentoAlvoId },
           select: {
+            empresaId: true,
+            clienteId: true,
             gasRefrigerante: true
           }
         });
+
+        if (!equipamentoAtual || equipamentoAtual.empresaId !== ordemServico.empresaId || equipamentoAtual.clienteId !== ordemServico.clienteId) {
+          throw new NotFoundException("Equipamento nao encontrado para esta OS.");
+        }
 
         if (!equipamentoAtual?.gasRefrigerante && !dto.gas_refrigerante?.trim()) {
           throw new BadRequestException("Gas refrigerante e obrigatorio na primeira identificacao do equipamento.");
         }
 
-        return tx.equipamento.update({
-          where: { id: ordemServico.equipamentoId },
+        const equipamentoAtualizado = await tx.equipamento.update({
+          where: { id: equipamentoAlvoId },
           data,
           select: {
+            id: true,
+            codigoBarras: true,
+            tipo: true,
             marca: true,
             modelo: true,
             capacidadeBtu: true,
             gasRefrigerante: true,
             numeroSerie: true,
             localInstalacao: true,
+            dadosPendentesJustificados: true,
             atualizadoEm: true
           }
         });
+
+        if (!ordemServico.equipamentoId) {
+          await tx.ordemServico.update({
+            where: { id: osId },
+            data: { equipamentoId: equipamentoAtualizado.id }
+          });
+        }
+
+        return equipamentoAtualizado;
       }
 
       const novoEquipamento = await tx.equipamento.create({
@@ -225,12 +262,15 @@ export class OrdensServicoService {
         },
         select: {
           id: true,
+          codigoBarras: true,
+          tipo: true,
           marca: true,
           modelo: true,
           capacidadeBtu: true,
           gasRefrigerante: true,
           numeroSerie: true,
           localInstalacao: true,
+          dadosPendentesJustificados: true,
           atualizadoEm: true
         }
       });
@@ -248,12 +288,16 @@ export class OrdensServicoService {
     return {
       os_id: osId,
       equipamento: {
+        id: equipamento.id,
+        codigo_qr: equipamento.codigoBarras,
+        tipo: equipamento.tipo,
         marca: equipamento.marca,
         modelo: equipamento.modelo,
         capacidade_btu: equipamento.capacidadeBtu,
         gas_refrigerante: equipamento.gasRefrigerante,
         numero_serie: equipamento.numeroSerie,
-        local_instalacao: equipamento.localInstalacao
+        local_instalacao: equipamento.localInstalacao,
+        dados_impossiveis: equipamento.dadosPendentesJustificados
       },
       atualizado_em: equipamento.atualizadoEm.toISOString()
     };
@@ -406,7 +450,9 @@ export class OrdensServicoService {
         select: {
           id: true,
           empresaId: true,
+          clienteId: true,
           status: true,
+          checklistTipo: true,
           evidencias: {
             select: {
               tipo: true
@@ -440,14 +486,38 @@ export class OrdensServicoService {
         );
       }
 
+      const respostas = dto.respostas ?? [];
+      if (respostas.length && !dto.equipamento_id) {
+        throw new BadRequestException("equipamento_id e obrigatorio para salvar respostas do checklist.");
+      }
+
+      const equipamentoId = dto.equipamento_id;
+      if (equipamentoId) {
+        const equipamento = await tx.equipamento.findFirst({
+          where: {
+            id: equipamentoId,
+            empresaId: ordemServico.empresaId,
+            clienteId: ordemServico.clienteId
+          },
+          select: {
+            id: true
+          }
+        });
+
+        if (!equipamento) {
+          throw new NotFoundException("Equipamento nao encontrado para esta OS.");
+        }
+      }
+
       const pecas = dto.pecas ?? [];
       const custoTotalPecas = pecas.reduce(
         (total, peca) => total + peca.quantidade * peca.custo_unitario,
         0
       );
+      const procedimentos = dto.procedimentos ?? respostas.map((resposta) => resposta.codigo);
       const data = {
         servicoRealizado: dto.servico_realizado,
-        procedimentos: dto.procedimentos ?? [],
+        procedimentos,
         custoTotalPecas: new Prisma.Decimal(custoTotalPecas)
       };
       const pecasCreate = pecas.map((peca) => ({
@@ -456,6 +526,32 @@ export class OrdensServicoService {
         quantidade: peca.quantidade,
         custoUnitario: new Prisma.Decimal(peca.custo_unitario)
       }));
+      const salvarRespostas = async (checklistId: string) => {
+        if (!equipamentoId || !respostas.length) {
+          return;
+        }
+
+        await tx.ordemServicoChecklistResposta.deleteMany({
+          where: {
+            ordemServicoId: osId,
+            equipamentoId
+          }
+        });
+
+        await tx.ordemServicoChecklistResposta.createMany({
+          data: respostas.map((resposta) => ({
+            empresaId: ordemServico.empresaId,
+            ordemServicoId: osId,
+            checklistId,
+            equipamentoId,
+            checklistTipo: dto.checklist_tipo ?? ordemServico.checklistTipo ?? ChecklistTipo.mensal,
+            codigo: resposta.codigo,
+            tipo: resposta.tipo,
+            valor: resposta.valor,
+            observacao: resposta.observacao?.trim() || null
+          }))
+        });
+      };
 
       if (ordemServico.checklist) {
         await tx.ordemServicoPeca.deleteMany({
@@ -464,7 +560,7 @@ export class OrdensServicoService {
           }
         });
 
-        return tx.ordemServicoChecklist.update({
+        const checklistAtualizado = await tx.ordemServicoChecklist.update({
           where: {
             id: ordemServico.checklist.id
           },
@@ -478,9 +574,12 @@ export class OrdensServicoService {
             pecas: true
           }
         });
+
+        await salvarRespostas(checklistAtualizado.id);
+        return checklistAtualizado;
       }
 
-      return tx.ordemServicoChecklist.create({
+      const checklistCriado = await tx.ordemServicoChecklist.create({
         data: {
           ...data,
           empresaId: ordemServico.empresaId,
@@ -493,12 +592,17 @@ export class OrdensServicoService {
           pecas: true
         }
       });
+
+      await salvarRespostas(checklistCriado.id);
+      return checklistCriado;
     });
 
     return {
       os_id: osId,
+      equipamento_id: dto.equipamento_id,
       servico_realizado: checklist.servicoRealizado,
       procedimentos: checklist.procedimentos,
+      respostas_salvas: dto.respostas?.length ?? 0,
       pecas: checklist.pecas.map((peca) => ({
         id: peca.id,
         descricao_peca: peca.descricaoPeca,

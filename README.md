@@ -22,7 +22,8 @@ O repositorio ja possui:
 - Landing page publica em `apps/landing`, integrada ao endpoint de
   pre-chamados.
 - Aplicativo Flutter Android em `apps/mobile`, com dashboard do tecnico,
-  detalhe de OS, multiplos equipamentos e inicio de servico com GPS.
+  detalhe de OS, multiplos equipamentos, inicio de servico e chegada ao cliente
+  com GPS.
 - API mobile para listar OS do tecnico autenticado.
 - Fluxo PMOC com previa, PDF, assinatura Gov.br enviada pelo engenheiro e
   e-mail final ao cliente com PDF assinado anexado.
@@ -262,8 +263,7 @@ periodicidade.
 pre_chamado
   +-- rejeitar -> rejeitada
   +-- aprovar  -> aberta
-                 +-- iniciar_rota    -> em_deslocamento
-                 +-- cheguei_cliente -> em_atendimento
+                 +-- iniciar_atendimento -> em_atendimento
                  +-- cancelar        -> cancelada
                  +-- finalizar       -> concluida
 ```

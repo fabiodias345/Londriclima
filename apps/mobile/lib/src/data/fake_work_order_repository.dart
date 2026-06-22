@@ -17,24 +17,82 @@ class FakeWorkOrderRepository implements WorkOrderRepository {
         equipments: const [
           WorkOrderEquipment(
             id: 'EQ-101',
+            qrCode: 'QR-000101',
+            type: 'Split',
+            brand: 'LG',
             name: 'Evaporadora sala 101',
             location: 'Sala 101',
             model: 'Split Hi-Wall 24.000 BTUs',
+            btus: 24000,
+            gas: 'R-410A',
+            serialNumber: 'SN-101',
           ),
           WorkOrderEquipment(
             id: 'EQ-102',
+            qrCode: 'QR-000102',
+            type: 'Split',
+            brand: 'Samsung',
             name: 'Evaporadora sala 102',
             location: 'Sala 102',
             model: 'Split Hi-Wall 24.000 BTUs',
+            btus: 24000,
+            gas: 'R-410A',
+            serialNumber: 'SN-102',
           ),
           WorkOrderEquipment(
             id: 'EQ-103',
+            qrCode: 'QR-000103',
+            type: 'Condensadora',
+            brand: 'Carrier',
             name: 'Condensadora cobertura',
             location: 'Cobertura',
             model: 'Condensadora 24.000 BTUs',
+            btus: 24000,
+            gas: 'R-410A',
+            serialNumber: 'SN-103',
           ),
         ],
         maintenanceType: 'Limpeza de filtros',
+        checklistType: 'semestral',
+        checklist: const [
+          WorkOrderChecklistItem(
+            code: 'M1',
+            label: 'Desligar pelo controle remoto',
+            kind: 'checkbox',
+          ),
+          WorkOrderChecklistItem(
+            code: 'M4',
+            label: 'Fotografar filtros antes',
+            kind: 'foto',
+          ),
+          WorkOrderChecklistItem(
+            code: 'M6',
+            label: 'Condicao dos filtros',
+            kind: 'select',
+            options: ['ok', 'danificado', 'substituido'],
+          ),
+          WorkOrderChecklistItem(
+            code: 'M9',
+            label: 'Inspecao interior: mofo, sujidade, odor',
+            kind: 'select_obs',
+          ),
+          WorkOrderChecklistItem(
+            code: 'M16',
+            label: 'Finalizacao',
+            kind: 'finalizacao',
+          ),
+          WorkOrderChecklistItem(
+            code: 'S6',
+            label: 'Pressao do fluido refrigerante',
+            kind: 'numerico',
+            unit: 'bar/psi',
+          ),
+          WorkOrderChecklistItem(
+            code: 'S7',
+            label: 'Tipo de fluido refrigerante',
+            kind: 'texto',
+          ),
+        ],
         scheduledAt: today,
         status: WorkOrderStatus.pending,
       ),
@@ -63,7 +121,7 @@ class FakeWorkOrderRepository implements WorkOrderRepository {
   Future<WorkOrder> startService(WorkOrder order, GeoPoint location) async {
     return order.copyWith(
       status: WorkOrderStatus.inProgress,
-      backendStatus: 'em_deslocamento',
+      backendStatus: 'em_atendimento',
     );
   }
 
@@ -72,6 +130,36 @@ class FakeWorkOrderRepository implements WorkOrderRepository {
     return order.copyWith(
       status: WorkOrderStatus.inProgress,
       backendStatus: 'em_atendimento',
+    );
+  }
+
+  @override
+  Future<void> saveChecklist(
+    WorkOrder order, {
+    required String equipmentId,
+    required String checklistType,
+    required List<WorkOrderChecklistResponse> responses,
+  }) async {}
+
+  @override
+  Future<WorkOrderEquipment> saveMachineData(
+    WorkOrder order,
+    MachineDataInput input,
+  ) async {
+    return WorkOrderEquipment(
+      id:
+          input.equipmentId ??
+          'EQ-NOVA-${DateTime.now().millisecondsSinceEpoch}',
+      qrCode: input.qrCode,
+      type: input.type,
+      brand: input.brand,
+      name: input.location,
+      location: input.location,
+      model: input.model,
+      btus: input.btus,
+      gas: input.gas,
+      serialNumber: input.serialNumber,
+      impossibleFields: input.impossibleFields,
     );
   }
 }

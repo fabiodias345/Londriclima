@@ -93,6 +93,8 @@ test("identificarEquipamento salva gas refrigerante no equipamento novo", async 
   const resposta = await service.identificarEquipamento(
     "os-1",
     {
+      codigo_qr: "QR-1",
+      tipo: "Split",
       marca: "LG",
       modelo: "Dual Inverter",
       capacidade_btu: 12000,
@@ -132,6 +134,8 @@ test("identificarEquipamento esconde OS de outra empresa", async () => {
       service.identificarEquipamento(
         "os-1",
         {
+          codigo_qr: "QR-1",
+          tipo: "Split",
           marca: "LG",
           modelo: "Dual Inverter"
         },

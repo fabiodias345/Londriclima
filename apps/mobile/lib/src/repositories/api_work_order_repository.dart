@@ -43,9 +43,9 @@ class ApiWorkOrderRepository implements WorkOrderRepository {
     return _updateStatus(
       order: order,
       location: location,
-      action: 'iniciar_rota',
-      fallbackStatus: 'em_deslocamento',
-      errorPrefix: 'Falha ao iniciar OS',
+      action: 'iniciar_atendimento',
+      fallbackStatus: 'em_atendimento',
+      errorPrefix: 'Falha ao iniciar atendimento',
     );
   }
 
@@ -58,6 +58,98 @@ class ApiWorkOrderRepository implements WorkOrderRepository {
       fallbackStatus: 'em_atendimento',
       errorPrefix: 'Falha ao chegar no cliente',
     );
+  }
+
+  @override
+  Future<void> saveChecklist(
+    WorkOrder order, {
+    required String equipmentId,
+    required String checklistType,
+    required List<WorkOrderChecklistResponse> responses,
+  }) async {
+    final uri = baseUrl.resolve('/api/v1/os/${order.id}/checklist');
+    final client = HttpClient();
+
+    try {
+      final request = await client.postUrl(uri);
+      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      request.headers.contentType = ContentType.json;
+      request.write(
+        jsonEncode({
+          'equipamento_id': equipmentId,
+          'checklist_tipo': checklistType,
+          'servico_realizado': 'Checklist da maquina',
+          'procedimentos': responses.map((response) => response.code).toList(),
+          'respostas': responses
+              .map(
+                (response) => {
+                  'codigo': response.code,
+                  'tipo': response.kind,
+                  'valor': response.value,
+                  if (response.note != null && response.note!.isNotEmpty)
+                    'observacao': response.note,
+                },
+              )
+              .toList(),
+        }),
+      );
+
+      final response = await request.close();
+      await response.drain<void>();
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw HttpException(
+          'Falha ao salvar checklist: ${response.statusCode}',
+        );
+      }
+    } finally {
+      client.close(force: true);
+    }
+  }
+
+  @override
+  Future<WorkOrderEquipment> saveMachineData(
+    WorkOrder order,
+    MachineDataInput input,
+  ) async {
+    final uri = baseUrl.resolve(
+      '/api/v1/os/${order.id}/identificacao-equipamento',
+    );
+    final client = HttpClient();
+
+    try {
+      final request = await client.putUrl(uri);
+      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      request.headers.contentType = ContentType.json;
+      request.write(
+        jsonEncode({
+          if (input.equipmentId != null) 'equipamento_id': input.equipmentId,
+          'codigo_qr': input.qrCode,
+          'tipo': input.type,
+          'marca': input.brand,
+          'modelo': input.model,
+          if (input.btus != null) 'capacidade_btu': input.btus,
+          'gas_refrigerante': input.gas,
+          'numero_serie': input.serialNumber,
+          'local_instalacao': input.location,
+          'dados_impossiveis': input.impossibleFields.entries
+              .map((entry) => {'campo': entry.key, 'observacao': entry.value})
+              .toList(),
+        }),
+      );
+
+      final response = await request.close();
+      final body = await response.transform(utf8.decoder).join();
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw HttpException('Falha ao salvar maquina: ${response.statusCode}');
+      }
+
+      final decoded = jsonDecode(body) as Map<String, dynamic>;
+      return _equipmentFromJson(decoded['equipamento'] as Map<String, dynamic>);
+    } finally {
+      client.close(force: true);
+    }
   }
 
   Future<WorkOrder> _updateStatus({
@@ -109,10 +201,36 @@ class ApiWorkOrderRepository implements WorkOrderRepository {
       equipments: _equipmentsFromJson(json),
       maintenanceType:
           json['tipo']?.toString() ?? json['maintenanceType'].toString(),
+      checklistType:
+          json['checklist_tipo']?.toString() ??
+          json['checklistType']?.toString() ??
+          'mensal',
+      checklist: _checklistFromJson(json),
       scheduledAt: _dateFromJson(json),
       status: _statusFromJson(json['status'].toString()),
       backendStatus: json['status'].toString(),
     );
+  }
+
+  List<WorkOrderChecklistItem> _checklistFromJson(Map<String, dynamic> json) {
+    final raw = json['checklist'];
+    if (raw is! List) {
+      return const [];
+    }
+
+    return raw.map((item) {
+      final map = item as Map<String, dynamic>;
+      final rawOptions = map['opcoes'] ?? map['options'];
+      return WorkOrderChecklistItem(
+        code: map['codigo']?.toString() ?? map['code'].toString(),
+        label: map['item']?.toString() ?? map['label'].toString(),
+        kind: map['tipo']?.toString() ?? map['kind'].toString(),
+        options: rawOptions is List
+            ? rawOptions.map((option) => option.toString()).toList()
+            : const [],
+        unit: map['unidade']?.toString() ?? map['unit']?.toString(),
+      );
+    }).toList();
   }
 
   DateTime _dateFromJson(Map<String, dynamic> json) {
@@ -134,11 +252,63 @@ class ApiWorkOrderRepository implements WorkOrderRepository {
       final map = item as Map<String, dynamic>;
       return WorkOrderEquipment(
         id: map['id'].toString(),
-        name: map['nome']?.toString() ?? map['name'].toString(),
-        location: map['local']?.toString() ?? map['location']?.toString() ?? '',
+        qrCode: map['codigo_qr']?.toString() ?? map['qrCode']?.toString() ?? '',
+        type: map['tipo']?.toString() ?? map['type']?.toString() ?? '',
+        brand: map['marca']?.toString() ?? map['brand']?.toString() ?? '',
+        name: map['nome']?.toString() ?? map['name']?.toString() ?? '',
+        location:
+            map['local']?.toString() ??
+            map['location']?.toString() ??
+            map['local_instalacao']?.toString() ??
+            '',
         model: map['modelo']?.toString() ?? map['model']?.toString() ?? '',
+        btus: _intFromJson(map['capacidade_btu'] ?? map['btus']),
+        gas:
+            map['gas_refrigerante']?.toString() ?? map['gas']?.toString() ?? '',
+        serialNumber:
+            map['numero_serie']?.toString() ??
+            map['serialNumber']?.toString() ??
+            '',
+        impossibleFields: _impossibleFieldsFromJson(map),
       );
     }).toList();
+  }
+
+  WorkOrderEquipment _equipmentFromJson(Map<String, dynamic> map) {
+    return WorkOrderEquipment(
+      id: map['id']?.toString() ?? map['equipamento_id']?.toString() ?? '',
+      qrCode: map['codigo_qr']?.toString() ?? '',
+      type: map['tipo']?.toString() ?? '',
+      brand: map['marca']?.toString() ?? '',
+      name:
+          map['local_instalacao']?.toString() ??
+          map['modelo']?.toString() ??
+          '',
+      location: map['local_instalacao']?.toString() ?? '',
+      model: map['modelo']?.toString() ?? '',
+      btus: _intFromJson(map['capacidade_btu']),
+      gas: map['gas_refrigerante']?.toString() ?? '',
+      serialNumber: map['numero_serie']?.toString() ?? '',
+      impossibleFields: _impossibleFieldsFromJson(map),
+    );
+  }
+
+  int? _intFromJson(Object? value) {
+    if (value == null) {
+      return null;
+    }
+    return int.tryParse(value.toString());
+  }
+
+  Map<String, String> _impossibleFieldsFromJson(Map<String, dynamic> map) {
+    final raw = map['dados_impossiveis'] ?? map['impossibleFields'];
+    if (raw is! List) {
+      return const {};
+    }
+    return {
+      for (final item in raw.whereType<Map<String, dynamic>>())
+        item['campo'].toString(): item['observacao'].toString(),
+    };
   }
 
   WorkOrderStatus _statusFromJson(String status) {

@@ -1,4 +1,8 @@
+import 'dart:io';
+
 import 'package:airmovebr_mobile/main.dart';
+import 'package:airmovebr_mobile/src/auth/fake_login_gateway.dart';
+import 'package:airmovebr_mobile/src/auth/hybrid_login_gateway.dart';
 import 'package:airmovebr_mobile/src/auth/mobile_login_gateway.dart';
 import 'package:airmovebr_mobile/src/models/work_order.dart';
 import 'package:airmovebr_mobile/src/services/location_service.dart';
@@ -8,6 +12,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('fake login aceita tecnico demo sem URL de API', () async {
+    final fakeSession = await FakeLoginGateway().login(
+      'tecnico@airmovebr.local',
+      '123456',
+    );
+    final hybridSession = await HybridLoginGateway(
+      apiBaseUrl: null,
+    ).login('tecnico@airmovebr.local', '123456');
+
+    expect(fakeSession, isNotNull);
+    expect(hybridSession, isNotNull);
+  });
+
   testWidgets('login de teste abre dashboard operacional com ordens fake', (
     tester,
   ) async {
@@ -83,9 +100,9 @@ void main() {
 
     expect(find.text('Obrigatorios da execucao'), findsOneWidget);
 
-    await tester.scrollUntilVisible(find.text('Iniciar servico'), 240);
+    await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
 
-    expect(find.text('Iniciar servico'), findsOneWidget);
+    expect(find.text('Iniciar atendimento'), findsOneWidget);
   });
 
   testWidgets('login invalido mostra mensagem de erro', (tester) async {
@@ -101,6 +118,28 @@ void main() {
 
     expect(find.byKey(const Key('loginErrorMessage')), findsOneWidget);
     expect(find.text('Login ou senha invalido.'), findsOneWidget);
+  });
+
+  testWidgets('falha de rede no login libera botao e mostra erro', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: LoginScreen(loginGateway: _GatewayComFalha())),
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('loginUserField')),
+      'tecnico@airmovebr.local',
+    );
+    await tester.enterText(
+      find.byKey(const Key('loginPasswordField')),
+      '123456',
+    );
+    await tester.tap(find.byKey(const Key('loginSubmitButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Entrar'), findsOneWidget);
+    expect(find.text('Falha ao conectar na API.'), findsOneWidget);
   });
 
   testWidgets('login via gateway usa ordens vindas da API', (tester) async {
@@ -126,7 +165,7 @@ void main() {
     expect(find.text('Cliente API'), findsOneWidget);
   });
 
-  testWidgets('botao iniciar servico muda OS para em andamento', (
+  testWidgets('botao iniciar atendimento muda OS e libera maquinas', (
     tester,
   ) async {
     final repository = _RepositorioDeTeste();
@@ -152,19 +191,20 @@ void main() {
 
     await tester.tap(find.text('Cliente API'));
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('Iniciar servico'), 240);
-    await tester.tap(find.text('Iniciar servico'));
+    await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
+    await tester.tap(find.text('Iniciar atendimento'));
     await tester.pumpAndSettle();
 
     expect(repository.startedOrderId, 'OS-API');
-    await tester.drag(find.byType(ListView), const Offset(0, 1000));
-    await tester.pumpAndSettle();
-    expect(find.text('Em andamento'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Cheguei ao cliente'), 240);
-    expect(find.text('Cheguei ao cliente'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Selecionar maquina'),
+      240,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Selecionar maquina'), findsOneWidget);
   });
 
-  testWidgets('botao cheguei ao cliente libera checklist', (tester) async {
+  testWidgets('iniciar atendimento libera selecao de maquina', (tester) async {
     final repository = _RepositorioDeTeste();
     await tester.pumpWidget(
       MaterialApp(
@@ -188,22 +228,253 @@ void main() {
 
     await tester.tap(find.text('Cliente API'));
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('Iniciar servico'), 240);
-    await tester.tap(find.text('Iniciar servico'));
+    await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
+    await tester.tap(find.text('Iniciar atendimento'));
     await tester.pumpAndSettle();
 
-    await tester.scrollUntilVisible(
-      find.byKey(const Key('arriveAtClientButton')),
-      240,
-    );
-    await tester.drag(find.byType(ListView), const Offset(0, -80));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('arriveAtClientButton')));
+    expect(find.text('Selecionar maquina'), findsOneWidget);
+    expect(find.byKey(const Key('machineSearchField')), findsOneWidget);
+    expect(find.byKey(const Key('selectEquipment_EQ-101')), findsOneWidget);
+    expect(find.byKey(const Key('selectEquipment_EQ-102')), findsOneWidget);
+
+    final machineSearchField = find
+        .byKey(const Key('machineSearchField'))
+        .first;
+    await tester.enterText(machineSearchField, 'sala 102');
     await tester.pumpAndSettle();
 
-    expect(repository.arrivedOrderId, 'OS-API');
-    expect(find.text('Checklist liberado'), findsOneWidget);
+    expect(find.byKey(const Key('selectEquipment_EQ-101')), findsNothing);
+    expect(find.byKey(const Key('selectEquipment_EQ-102')), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(const Key('selectEquipment_EQ-102')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('selectEquipment_EQ-102')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Maquina selecionada'), findsOneWidget);
+    await tester.drag(find.byType(ListView), const Offset(0, -500));
+    await tester.pumpAndSettle();
+    expect(find.text('Selecione uma maquina'), findsNothing);
+    expect(find.text('Iniciar checklist'), findsOneWidget);
+
+    await tester.tap(find.text('Iniciar checklist'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Checklist da maquina'), findsOneWidget);
+    expect(find.text('Desligar pelo controle remoto'), findsOneWidget);
+    expect(find.byKey(const Key('checklist_checkbox_M1')), findsOneWidget);
+    expect(find.text('Condicao dos filtros'), findsOneWidget);
+    expect(find.byKey(const Key('checklist_select_M6')), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(const Key('checklist_number_S6')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('checklist_number_S6')), findsOneWidget);
+    expect(find.byKey(const Key('checklist_text_S7')), findsOneWidget);
+    expect(find.text('Fotografar filtros antes'), findsOneWidget);
+    expect(find.byKey(const Key('checklist_photo_M4')), findsOneWidget);
+    expect(find.byKey(const Key('checklist_final_M16')), findsOneWidget);
   });
+
+  testWidgets('salvar checklist envia respostas da maquina selecionada', (
+    tester,
+  ) async {
+    final repository = _RepositorioDeTeste();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LoginScreen(
+          loginGateway: _GatewayDeTeste(repository: repository),
+          locationService: const _LocationServiceTeste(),
+        ),
+      ),
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('loginUserField')),
+      'tecnico@airmovebr.local',
+    );
+    await tester.enterText(
+      find.byKey(const Key('loginPasswordField')),
+      '123456',
+    );
+    await tester.tap(find.byKey(const Key('loginSubmitButton')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Cliente API'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
+    await tester.tap(find.text('Iniciar atendimento'));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(const Key('selectEquipment_EQ-102')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('selectEquipment_EQ-102')));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('checklistReadyButton')),
+      240,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.byKey(const Key('checklistReadyButton')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('checklist_checkbox_M1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('checklist_select_M6')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('danificado').last);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('checklist_number_S6')));
+    await tester.enterText(find.byKey(const Key('checklist_number_S6')), '7.5');
+    await tester.enterText(
+      find.byKey(const Key('checklist_text_S7')),
+      'R-410A',
+    );
+    await tester.ensureVisible(find.byKey(const Key('saveChecklistButton')));
+    await tester.tap(find.byKey(const Key('saveChecklistButton')));
+    await tester.pumpAndSettle();
+
+    expect(repository.savedChecklistEquipmentId, 'EQ-102');
+    expect(repository.savedChecklistType, 'semestral');
+    expect(repository.savedChecklistResponses['M1'], 'true');
+    expect(repository.savedChecklistResponses['M6'], 'danificado');
+    expect(repository.savedChecklistResponses['S6'], '7.5');
+    expect(repository.savedChecklistResponses['S7'], 'R-410A');
+    expect(find.text('Checklist salvo.'), findsOneWidget);
+  });
+
+  testWidgets('cadastro de maquina usa seletores e salva dados obrigatorios', (
+    tester,
+  ) async {
+    final repository = _RepositorioDeTeste();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LoginScreen(
+          loginGateway: _GatewayDeTeste(repository: repository),
+          locationService: const _LocationServiceTeste(),
+        ),
+      ),
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('loginUserField')),
+      'tecnico@airmovebr.local',
+    );
+    await tester.enterText(
+      find.byKey(const Key('loginPasswordField')),
+      '123456',
+    );
+    await tester.tap(find.byKey(const Key('loginSubmitButton')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Cliente API'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
+    await tester.tap(find.text('Iniciar atendimento'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('newMachineButton')),
+      240,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('newMachineButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('machineSelect_tipo')), findsOneWidget);
+    expect(
+      find.byKey(const Key('machineSelect_gas_refrigerante')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('machineField_capacidade_btu')),
+      findsOneWidget,
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('machineField_codigo_qr')),
+      'QR-999',
+    );
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('machineSelect_tipo')),
+      240,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('machineSelect_tipo')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cassete').last);
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('machineField_marca')),
+      240,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.enterText(
+      find.byKey(const Key('machineField_marca')),
+      'Daikin',
+    );
+    await tester.enterText(
+      find.byKey(const Key('machineField_modelo')),
+      'SkyAir',
+    );
+    await tester.enterText(
+      find.byKey(const Key('machineField_capacidade_btu')),
+      '36000',
+    );
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('machineSelect_gas_refrigerante')),
+      240,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('machineSelect_gas_refrigerante')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('R-410A').last);
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('machineField_numero_serie')),
+      240,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.enterText(
+      find.byKey(const Key('machineField_numero_serie')),
+      'SN-999',
+    );
+    await tester.enterText(
+      find.byKey(const Key('machineField_local_instalacao')),
+      'Sala nova',
+    );
+    await tester.ensureVisible(find.byKey(const Key('saveMachineButton')));
+    await tester.tap(find.byKey(const Key('saveMachineButton')));
+    await tester.pumpAndSettle();
+
+    expect(repository.savedMachineInput?.qrCode, 'QR-999');
+    expect(repository.savedMachineInput?.type, 'Cassete');
+    expect(repository.savedMachineInput?.brand, 'Daikin');
+    expect(repository.savedMachineInput?.model, 'SkyAir');
+    expect(repository.savedMachineInput?.btus, 36000);
+    expect(repository.savedMachineInput?.gas, 'R-410A');
+    expect(repository.savedMachineInput?.serialNumber, 'SN-999');
+    expect(repository.savedMachineInput?.location, 'Sala nova');
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('checklistReadyButton')),
+      240,
+      scrollable: find.byType(Scrollable).first,
+    );
+    final checklistButton = tester.widget<FilledButton>(
+      find.byKey(const Key('checklistReadyButton')),
+    );
+    expect(checklistButton.onPressed, isNotNull);
+  });
+}
+
+class _GatewayComFalha implements MobileLoginGateway {
+  const _GatewayComFalha();
+
+  @override
+  Future<LoginSession?> login(String user, String password) async {
+    throw const SocketException('API indisponivel');
+  }
 }
 
 class _GatewayDeTeste implements MobileLoginGateway {
@@ -220,6 +491,10 @@ class _GatewayDeTeste implements MobileLoginGateway {
 class _RepositorioDeTeste implements WorkOrderRepository {
   String? startedOrderId;
   String? arrivedOrderId;
+  String? savedChecklistEquipmentId;
+  String? savedChecklistType;
+  MachineDataInput? savedMachineInput;
+  Map<String, String> savedChecklistResponses = {};
 
   @override
   Future<List<WorkOrder>> listMine() async {
@@ -229,7 +504,68 @@ class _RepositorioDeTeste implements WorkOrderRepository {
         clientName: 'Cliente API',
         address: 'Rua da API, 10',
         equipment: 'Split API',
+        equipments: const [
+          WorkOrderEquipment(
+            id: 'EQ-101',
+            qrCode: 'QR-101',
+            type: 'Split',
+            brand: 'LG',
+            name: 'Evaporadora sala 101',
+            location: 'Sala 101',
+            model: 'Split API',
+            btus: 24000,
+            gas: 'R-410A',
+            serialNumber: 'SN-101',
+          ),
+          WorkOrderEquipment(
+            id: 'EQ-102',
+            qrCode: 'QR-102',
+            type: 'Split',
+            brand: 'Samsung',
+            name: 'Evaporadora sala 102',
+            location: 'Sala 102',
+            model: 'Split API',
+            btus: 24000,
+            gas: 'R-410A',
+            serialNumber: 'SN-102',
+          ),
+        ],
         maintenanceType: 'Limpeza de filtros',
+        checklistType: 'semestral',
+        checklist: const [
+          WorkOrderChecklistItem(
+            code: 'M1',
+            label: 'Desligar pelo controle remoto',
+            kind: 'checkbox',
+          ),
+          WorkOrderChecklistItem(
+            code: 'M4',
+            label: 'Fotografar filtros antes',
+            kind: 'foto',
+          ),
+          WorkOrderChecklistItem(
+            code: 'M6',
+            label: 'Condicao dos filtros',
+            kind: 'select',
+            options: ['ok', 'danificado', 'substituido'],
+          ),
+          WorkOrderChecklistItem(
+            code: 'M16',
+            label: 'Finalizacao',
+            kind: 'finalizacao',
+          ),
+          WorkOrderChecklistItem(
+            code: 'S6',
+            label: 'Pressao do fluido refrigerante',
+            kind: 'numerico',
+            unit: 'bar/psi',
+          ),
+          WorkOrderChecklistItem(
+            code: 'S7',
+            label: 'Tipo de fluido refrigerante',
+            kind: 'texto',
+          ),
+        ],
         scheduledAt: DateTime.now(),
         status: WorkOrderStatus.pending,
       ),
@@ -241,7 +577,7 @@ class _RepositorioDeTeste implements WorkOrderRepository {
     startedOrderId = order.id;
     return order.copyWith(
       status: WorkOrderStatus.inProgress,
-      backendStatus: 'em_deslocamento',
+      backendStatus: 'em_atendimento',
     );
   }
 
@@ -251,6 +587,41 @@ class _RepositorioDeTeste implements WorkOrderRepository {
     return order.copyWith(
       status: WorkOrderStatus.inProgress,
       backendStatus: 'em_atendimento',
+    );
+  }
+
+  @override
+  Future<void> saveChecklist(
+    WorkOrder order, {
+    required String equipmentId,
+    required String checklistType,
+    required List<WorkOrderChecklistResponse> responses,
+  }) async {
+    savedChecklistEquipmentId = equipmentId;
+    savedChecklistType = checklistType;
+    savedChecklistResponses = {
+      for (final response in responses) response.code: response.value,
+    };
+  }
+
+  @override
+  Future<WorkOrderEquipment> saveMachineData(
+    WorkOrder order,
+    MachineDataInput input,
+  ) async {
+    savedMachineInput = input;
+    return WorkOrderEquipment(
+      id: input.equipmentId ?? 'EQ-NOVA',
+      qrCode: input.qrCode,
+      type: input.type,
+      brand: input.brand,
+      name: input.location,
+      location: input.location,
+      model: input.model,
+      btus: input.btus,
+      gas: input.gas,
+      serialNumber: input.serialNumber,
+      impossibleFields: input.impossibleFields,
     );
   }
 }

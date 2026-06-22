@@ -1,5 +1,6 @@
 ﻿import { BadRequestException } from "@nestjs/common";
 import {
+ChecklistTipo,
 OrdemServicoEventoAcao,
 OrdemServicoStatus,
 PlanoRecorrenciaFrequencia,
@@ -227,6 +228,7 @@ test("criarPlanoRecorrencia cadastra rotina operacional para cliente da empresa"
   assert.equal((chamadas.createData as { clienteId: string }).clienteId, "cliente-1");
   assert.equal((chamadas.createData as { titulo: string }).titulo, "PMOC mensal");
   assert.equal((chamadas.createData as { frequencia: PlanoRecorrenciaFrequencia }).frequencia, PlanoRecorrenciaFrequencia.mensal);
+  assert.equal((chamadas.createData as { checklistTipo: ChecklistTipo }).checklistTipo, ChecklistTipo.mensal);
   assert.equal((chamadas.createData as { valorCobrado: Prisma.Decimal }).valorCobrado.toNumber(), 280);
   assert.deepEqual(resposta, {
     plano_id: "plano-1",
@@ -251,6 +253,7 @@ test("gerarOrdemPlanoRecorrencia cria OS e avanca proxima execucao", async () =>
         titulo: "PMOC mensal",
         detalhes: "Limpeza preventiva",
         frequencia: PlanoRecorrenciaFrequencia.mensal,
+        checklistTipo: ChecklistTipo.mensal,
         proximaExecucao: new Date("2026-07-01T11:00:00.000Z"),
         valorCobrado: new Prisma.Decimal(280),
         ativo: true,
@@ -286,6 +289,7 @@ test("gerarOrdemPlanoRecorrencia cria OS e avanca proxima execucao", async () =>
   assert.equal((chamadas.osData as { clienteId: string }).clienteId, "cliente-1");
   assert.equal((chamadas.osData as { equipamentoId: string }).equipamentoId, "equipamento-1");
   assert.equal((chamadas.osData as { status: OrdemServicoStatus }).status, OrdemServicoStatus.aberta);
+  assert.equal((chamadas.osData as { checklistTipo: ChecklistTipo }).checklistTipo, ChecklistTipo.mensal);
   assert.equal((chamadas.planoUpdate as { ultimoOsId: string }).ultimoOsId, "os-recorrente-1");
   assert.equal((chamadas.planoUpdate as { proximaExecucao: Date }).proximaExecucao.toISOString(), "2026-08-01T11:00:00.000Z");
   assert.deepEqual(resposta, {

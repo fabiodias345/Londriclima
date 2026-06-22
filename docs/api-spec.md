@@ -13,7 +13,7 @@ Registra eventos de status da OS, com geolocalização e horário do evento.
 **Body completo:**
 ```json
 {
-  "acao": "iniciar_rota",
+  "acao": "iniciar_atendimento",
   "latitude": -23.3045,
   "longitude": -51.1696,
   "registrado_em": "2026-06-10T08:45:00-03:00"
@@ -24,8 +24,8 @@ Registra eventos de status da OS, com geolocalização e horário do evento.
 
 | Ação | Status resultante | Descrição |
 | :--- | :--- | :--- |
-| `iniciar_rota` | `em_deslocamento` | Técnico saiu em direção ao cliente. |
-| `cheguei_cliente` | `em_atendimento` | Técnico chegou ao endereço de atendimento. |
+| `iniciar_atendimento` | `em_atendimento` | Tecnico iniciou o atendimento no cliente. |
+
 | `cancelar` | `cancelada` | Cancela a OS antes da conclusão. |
 
 **Campos do Body:**
@@ -41,9 +41,9 @@ Registra eventos de status da OS, com geolocalização e horário do evento.
 ```json
 {
   "os_id": "uuid-da-os",
-  "status": "em_deslocamento",
+  "status": "em_atendimento",
   "evento": {
-    "acao": "iniciar_rota",
+    "acao": "iniciar_atendimento",
     "latitude": -23.3045,
     "longitude": -51.1696,
     "registrado_em": "2026-06-10T08:45:00-03:00"
@@ -59,6 +59,40 @@ Registra eventos de status da OS, com geolocalização e horário do evento.
 | 400 | "latitude e longitude são obrigatórias." |
 | 409 | "Transição de status inválida para esta OS." |
 | 422 | "OS concluída é imutável." |
+
+---
+
+### Campos de checklist no fluxo mobile
+
+Endpoints:
+
+```text
+GET /mobile/os
+GET /mobile/os/:id
+```
+
+Cada OS mobile deve trazer:
+
+```json
+{
+  "checklist_tipo": "mensal",
+  "checklist": [
+    {
+      "codigo": "M1",
+      "item": "Desligar pelo controle remoto",
+      "tipo": "checkbox"
+    }
+  ]
+}
+```
+
+`checklist_tipo` usa enum limpo:
+
+```text
+mensal | trimestral | semestral | anual
+```
+
+O backend envia checklist flat ja expandido. Exemplo: `semestral` inclui itens mensais, trimestrais e semestrais. O mobile nao deve conter regra de heranca de checklist.
 
 ---
 
@@ -378,3 +412,4 @@ Finaliza a OS, salvando assinatura digital, geolocalização e horário de encer
 | 422 | "Evidência inicial ainda não registrada." |
 | 422 | "Checklist ainda não registrado." |
 | 422 | "Evidência final ainda não registrada." |
+

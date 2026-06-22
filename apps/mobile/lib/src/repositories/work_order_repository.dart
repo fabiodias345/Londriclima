@@ -7,4 +7,16 @@ abstract class WorkOrderRepository {
   Future<WorkOrder> startService(WorkOrder order, GeoPoint location);
 
   Future<WorkOrder> arriveAtClient(WorkOrder order, GeoPoint location);
+
+  Future<WorkOrderEquipment> saveMachineData(
+    WorkOrder order,
+    MachineDataInput input,
+  );
+
+  Future<void> saveChecklist(
+    WorkOrder order, {
+    required String equipmentId,
+    required String checklistType,
+    required List<WorkOrderChecklistResponse> responses,
+  });
 }

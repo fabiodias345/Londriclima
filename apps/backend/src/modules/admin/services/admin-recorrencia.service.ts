@@ -1,5 +1,6 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import {
+  ChecklistTipo,
   OrdemServicoEventoAcao,
   OrdemServicoStatus,
   PlanoRecorrenciaFrequencia,
@@ -34,6 +35,7 @@ export class AdminRecorrenciaService {
         titulo: true,
         detalhes: true,
         frequencia: true,
+        checklistTipo: true,
         proximaExecucao: true,
         valorCobrado: true,
         ativo: true,
@@ -101,6 +103,7 @@ export class AdminRecorrenciaService {
         titulo: this.normalizarTextoObrigatorio(dto.titulo, "Titulo do plano e obrigatorio."),
         detalhes: this.normalizarTextoOpcional(dto.detalhes),
         frequencia: dto.frequencia,
+        checklistTipo: dto.checklist_tipo ?? this.checklistTipoDaFrequencia(dto.frequencia),
         proximaExecucao: new Date(dto.proxima_execucao),
         valorCobrado: dto.valor_cobrado !== undefined ? new Prisma.Decimal(dto.valor_cobrado) : undefined,
         ativo: dto.ativo ?? true
@@ -147,6 +150,7 @@ export class AdminRecorrenciaService {
         titulo: this.normalizarTextoObrigatorio(dto.titulo, "Titulo do plano e obrigatorio."),
         detalhes: this.normalizarTextoOpcional(dto.detalhes),
         frequencia: dto.frequencia,
+        checklistTipo: dto.checklist_tipo ?? this.checklistTipoDaFrequencia(dto.frequencia),
         proximaExecucao: new Date(dto.proxima_execucao),
         valorCobrado: dto.valor_cobrado !== undefined ? new Prisma.Decimal(dto.valor_cobrado) : null,
         ativo: dto.ativo ?? true
@@ -180,6 +184,7 @@ export class AdminRecorrenciaService {
           titulo: true,
           detalhes: true,
           frequencia: true,
+          checklistTipo: true,
           proximaExecucao: true,
           valorCobrado: true,
           ativo: true,
@@ -216,6 +221,7 @@ export class AdminRecorrenciaService {
           equipeId: plano.equipeId ?? undefined,
           tecnicoId: plano.tecnicoId ?? undefined,
           status: OrdemServicoStatus.aberta,
+          checklistTipo: plano.checklistTipo,
           titulo: plano.titulo,
           problemaRelatado: plano.detalhes,
           agendadaPara: plano.proximaExecucao,
@@ -346,11 +352,22 @@ export class AdminRecorrenciaService {
     return proxima;
   }
 
+  private checklistTipoDaFrequencia(frequencia: PlanoRecorrenciaFrequencia): ChecklistTipo {
+    const porFrequencia: Record<PlanoRecorrenciaFrequencia, ChecklistTipo> = {
+      [PlanoRecorrenciaFrequencia.mensal]: ChecklistTipo.mensal,
+      [PlanoRecorrenciaFrequencia.trimestral]: ChecklistTipo.trimestral,
+      [PlanoRecorrenciaFrequencia.semestral]: ChecklistTipo.semestral,
+      [PlanoRecorrenciaFrequencia.anual]: ChecklistTipo.anual
+    };
+    return porFrequencia[frequencia];
+  }
+
   private mapearPlanoRecorrencia(plano: {
     id: string;
     titulo: string;
     detalhes: string | null;
     frequencia: PlanoRecorrenciaFrequencia;
+    checklistTipo: ChecklistTipo;
     proximaExecucao: Date;
     valorCobrado: Prisma.Decimal | null;
     ativo: boolean;
@@ -366,6 +383,7 @@ export class AdminRecorrenciaService {
       titulo: plano.titulo,
       detalhes: plano.detalhes,
       frequencia: plano.frequencia,
+      checklist_tipo: plano.checklistTipo,
       proxima_execucao: plano.proximaExecucao.toISOString(),
       valor_cobrado: plano.valorCobrado?.toNumber() ?? null,
       ativo: plano.ativo,

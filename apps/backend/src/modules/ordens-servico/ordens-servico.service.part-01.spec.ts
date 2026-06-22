@@ -119,6 +119,57 @@ test("atualizarStatus muda OS aberta para em_deslocamento e registra evento com 
   assert.equal((chamadas.eventoData as { usuarioId: string }).usuarioId, "usuario-1");
 });
 
+test("atualizarStatus inicia atendimento direto a partir de OS aberta", async () => {
+  const registradoEm = "2026-06-10T08:45:00-03:00";
+  const eventoCriado = {
+    acao: OrdemServicoEventoAcao.iniciar_atendimento,
+    latitude: new Prisma.Decimal(-23.3045),
+    longitude: new Prisma.Decimal(-51.1696),
+    registradoEm: new Date(registradoEm)
+  };
+  const chamadas = {
+    updateData: undefined as unknown
+  };
+  const tx = {
+    ordemServico: {
+      findUnique: async () => ({
+        id: "os-1",
+        empresaId: "empresa-1",
+        status: OrdemServicoStatus.aberta
+      }),
+      update: async ({ data }: { data: unknown }) => {
+        chamadas.updateData = data;
+        return {
+          id: "os-1",
+          status: OrdemServicoStatus.em_atendimento
+        };
+      }
+    },
+    ordemServicoEvento: {
+      create: async () => eventoCriado
+    }
+  };
+  const prisma = {
+    $transaction: async (callback: (tx: unknown) => unknown) => callback(tx)
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.atualizarStatus(
+    "os-1",
+    {
+      acao: OrdemServicoEventoAcao.iniciar_atendimento,
+      latitude: -23.3045,
+      longitude: -51.1696,
+      registrado_em: registradoEm
+    },
+    usuario
+  );
+
+  assert.deepEqual(chamadas.updateData, { status: OrdemServicoStatus.em_atendimento });
+  assert.equal(resposta.status, OrdemServicoStatus.em_atendimento);
+  assert.equal(resposta.evento.acao, OrdemServicoEventoAcao.iniciar_atendimento);
+});
+
 test("atualizarStatus rejeita transicao fora do fluxo permitido", async () => {
   const tx = {
     ordemServico: {
@@ -211,6 +262,109 @@ test("registrarChecklist exige evidencia inicial antes de salvar servico", async
       ),
     UnprocessableEntityException
   );
+});
+
+test("registrarChecklist salva respostas estruturadas por equipamento", async () => {
+  const chamadas = {
+    respostasDeleteWhere: undefined as unknown,
+    respostasCreateData: undefined as unknown
+  };
+  const checklistCriado = {
+    id: "checklist-1",
+    servicoRealizado: "Checklist PMOC mensal",
+    procedimentos: ["M1", "M6"],
+    custoTotalPecas: new Prisma.Decimal(0),
+    atualizadoEm: new Date("2026-06-10T15:30:00.000Z"),
+    pecas: []
+  };
+  const tx = {
+    ordemServico: {
+      findUnique: async () => ({
+        id: "os-1",
+        empresaId: "empresa-1",
+        clienteId: "cliente-1",
+        status: OrdemServicoStatus.em_atendimento,
+        evidencias: [{ tipo: EvidenciaTipo.antes }],
+        checklist: null
+      })
+    },
+    equipamento: {
+      findFirst: async () => ({
+        id: "equip-1",
+        empresaId: "empresa-1",
+        clienteId: "cliente-1"
+      })
+    },
+    ordemServicoChecklist: {
+      create: async () => checklistCriado
+    },
+    ordemServicoChecklistResposta: {
+      deleteMany: async ({ where }: { where: unknown }) => {
+        chamadas.respostasDeleteWhere = where;
+      },
+      createMany: async ({ data }: { data: unknown }) => {
+        chamadas.respostasCreateData = data;
+      }
+    }
+  };
+  const prisma = {
+    $transaction: async (callback: (tx: unknown) => unknown) => callback(tx)
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.registrarChecklist(
+    "os-1",
+    {
+      equipamento_id: "equip-1",
+      checklist_tipo: "mensal",
+      servico_realizado: "Checklist PMOC mensal",
+      respostas: [
+        {
+          codigo: "M1",
+          tipo: "checkbox",
+          valor: "true"
+        },
+        {
+          codigo: "M6",
+          tipo: "select",
+          valor: "danificado",
+          observacao: "Filtro rasgado"
+        }
+      ]
+    },
+    usuario
+  );
+
+  assert.deepEqual(chamadas.respostasDeleteWhere, {
+    ordemServicoId: "os-1",
+    equipamentoId: "equip-1"
+  });
+  assert.deepEqual(chamadas.respostasCreateData, [
+    {
+      empresaId: "empresa-1",
+      ordemServicoId: "os-1",
+      checklistId: "checklist-1",
+      equipamentoId: "equip-1",
+      checklistTipo: "mensal",
+      codigo: "M1",
+      tipo: "checkbox",
+      valor: "true",
+      observacao: null
+    },
+    {
+      empresaId: "empresa-1",
+      ordemServicoId: "os-1",
+      checklistId: "checklist-1",
+      equipamentoId: "equip-1",
+      checklistTipo: "mensal",
+      codigo: "M6",
+      tipo: "select",
+      valor: "danificado",
+      observacao: "Filtro rasgado"
+    }
+  ]);
+  assert.equal(resposta.equipamento_id, "equip-1");
+  assert.equal(resposta.respostas_salvas, 2);
 });
 
 test("finalizarOs conclui a OS, registra assinatura, evento e automacoes", async () => {
@@ -428,6 +582,8 @@ test("identificarEquipamento exige gas refrigerante na primeira identificacao", 
       service.identificarEquipamento(
         "os-1",
         {
+          codigo_qr: "QR-1",
+          tipo: "Split",
           marca: "LG",
           modelo: "Dual Inverter"
         },

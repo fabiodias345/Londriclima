@@ -1,90 +1,123 @@
 # Checklists de Manutenção de Ar-Condicionado — PMOC
 
+> Documento elaborado conforme Portaria MS 3.523/98 e NBR 13971.
+
+---
+
+## Legenda de tipos de campo
+
+| Tipo | Descrição |
+|------|-----------|
+| `checkbox` | Confirmação de etapa executada |
+| `select` | Opções fixas: ok / não conforme / danificado / substituído |
+| `select + obs` | Select com campo de observação livre |
+| `numerico` | Valor numérico com unidade (A, bar, psi) |
+| `texto` | Campo de texto livre |
+| `foto` | Captura de imagem vinculada ao item |
+| `finalizacao` | Bloco final: data, técnico, assinatura |
+
 ---
 
 ## Checklist Mensal — Limpeza de Filtros
 
-1. Desligue o ar-condicionado pelo controle remoto.
-2. Desligue o disjuntor ou desconecte a alimentação elétrica.
-3. Abra a tampa frontal da evaporadora.
-4. Fotografe os filtros antes de remover.
-5. Retire os filtros com cuidado.
-6. Verifique e registre a condição dos filtros: ok / danificado / substituído.
-7. Limpe os filtros com jato de ar comprimido ou água corrente.
-8. Aguarde a secagem completa antes de reinstalar.
-9. Inspecione visualmente o interior da evaporadora: presença de mofo, sujidade ou odor — registre.
-10. Verifique se a bandeja de condensado está limpa e sem obstrução.
-11. Reinstale os filtros na posição correta.
-12. Feche a tampa frontal.
-13. Ligue o disjuntor e religue o equipamento.
-14. Verifique operação normal: sopro de ar e temperatura.
-15. Fotografe o equipamento após a conclusão.
-16. Registre data, técnico responsável e assine a OS.
+| # | Item | Tipo |
+|---|------|------|
+| 1 | Desligar pelo controle remoto | `checkbox` |
+| 2 | Desligar disjuntor | `checkbox` |
+| 3 | Abrir tampa frontal | `checkbox` |
+| 4 | Fotografar filtros antes | `foto` |
+| 5 | Retirar filtros | `checkbox` |
+| 6 | Condição dos filtros | `select` (ok / danificado / substituído) |
+| 7 | Limpar filtros | `checkbox` |
+| 8 | Aguardar secagem | `checkbox` |
+| 9 | Inspeção interior: mofo, sujidade, odor | `select + obs` |
+| 10 | Bandeja de condensado | `select + obs` |
+| 11 | Reinstalar filtros | `checkbox` |
+| 12 | Fechar tampa frontal | `checkbox` |
+| 13 | Ligar disjuntor e religar | `checkbox` |
+| 14 | Verificar operação normal | `select + obs` |
+| 15 | Foto após conclusão | `foto` |
+| 16 | Finalização | `finalizacao` |
 
 ---
 
-## Checklist Trimestral — Limpeza de Serpentina e Inspeção Geral
+## Checklist Trimestral — Serpentina e Inspeção Geral
 
-1. Desligue o ar-condicionado pelo controle remoto.
-2. Desligue o disjuntor ou desconecte a alimentação elétrica.
-3. Abra a tampa frontal da evaporadora.
-4. Fotografe os filtros antes de remover.
-5. Retire os filtros e registre a condição: ok / danificado / substituído.
-6. Limpe os filtros com jato de ar ou água corrente e aguarde secar.
-7. Fotografe a serpentina da evaporadora antes de limpar.
-8. Aplique produto higienizante na serpentina e aguarde o tempo de ação conforme o fabricante.
-9. Limpe com jato de ar comprimido ou lavagem controlada, sem forçar as aletas.
-10. Verifique e registre presença de mofo, oxidação ou danos nas aletas: ok / não conforme.
-11. Inspecione e limpe a bandeja de condensado — registre se havia acúmulo ou entupimento.
-12. Verifique e limpe o dreno de escoamento — confirme que está desobstruído.
-13. Inspecione o gabinete e vedações laterais — registre se há folgas ou danos.
-14. Ligue o ventilador brevemente e verifique ruídos ou vibrações anormais — registre.
-15. Verifique a direção e distribuição do fluxo de ar pelas aletas direcionais — registre se está adequado.
-16. Reinstale os filtros.
-17. Feche a tampa frontal.
-18. Ligue o disjuntor e religue o equipamento.
-19. Verifique operação normal: sopro de ar, temperatura e ausência de ruído.
-20. Fotografe o equipamento após a conclusão.
-21. Registre data, técnico responsável e assine a OS.
+| # | Item | Tipo |
+|---|------|------|
+| 1 | Desligar pelo controle remoto | `checkbox` |
+| 2 | Desligar disjuntor | `checkbox` |
+| 3 | Abrir tampa frontal | `checkbox` |
+| 4 | Foto filtros antes | `foto` |
+| 5 | Condição dos filtros | `select` (ok / danificado / substituído) |
+| 6 | Limpar e secar filtros | `checkbox` |
+| 7 | Foto serpentina antes | `foto` |
+| 8 | Aplicar higienizante | `checkbox` |
+| 9 | Limpar serpentina | `checkbox` |
+| 10 | Mofo, oxidação, danos nas aletas | `select + obs` |
+| 11 | Bandeja de condensado | `select + obs` |
+| 12 | Dreno de escoamento | `select + obs` |
+| 13 | Gabinete e vedações | `select + obs` |
+| 14 | Ruídos e vibrações | `select + obs` |
+| 15 | Fluxo de ar pelas aletas | `select + obs` |
+| 16 | Reinstalar filtros | `checkbox` |
+| 17 | Fechar tampa | `checkbox` |
+| 18 | Ligar e religar | `checkbox` |
+| 19 | Verificar operação | `select + obs` |
+| 20 | Foto após conclusão | `foto` |
+| 21 | Finalização | `finalizacao` |
 
 ---
 
 ## Checklist Semestral — Manutenção Completa
 
-1. Desligue o ar-condicionado pelo controle remoto.
-2. Desligue o disjuntor ou desconecte a alimentação elétrica.
-3. Execute todos os itens do checklist trimestral.
-4. Acesse a condensadora externamente.
-5. Fotografe a condensadora antes de limpar.
-6. Limpe a serpentina da condensadora com jato de água ou ar comprimido, sem forçar as aletas.
-7. Verifique e registre presença de oxidação, entupimento ou danos físicos na condensadora: ok / não conforme.
-8. Limpe o ventilador e a hélice da condensadora — registre condição.
-9. Verifique o nível de pressão do fluido refrigerante com manômetro — registre os valores e se está dentro do especificado pelo fabricante.
-10. Registre o tipo de fluido refrigerante utilizado.
-11. Realize inspeção elétrica geral: verifique conexões, aperto de bornes e estado dos cabos — registre condição: ok / não conforme.
-12. Meça e registre a corrente elétrica de operação (amperagem).
-13. Verifique o estado das proteções e dispositivos elétricos.
-14. Reinstale componentes, feche os painéis e tampos.
-15. Ligue o disjuntor e religue o equipamento.
-16. Verifique operação completa: temperatura, pressão, corrente e ausência de ruídos.
-17. Fotografe o equipamento após a conclusão.
-18. Registre data, técnico responsável e assine a OS.
+> Inclui todos os itens do Trimestral, mais os itens abaixo.
+
+| # | Item | Tipo |
+|---|------|------|
+| S1 | Acesso à condensadora | `checkbox` |
+| S2 | Foto condensadora antes | `foto` |
+| S3 | Limpar serpentina condensadora | `checkbox` |
+| S4 | Oxidação, entupimento, danos condensadora | `select + obs` |
+| S5 | Limpeza ventilador e hélice | `select + obs` |
+| S6 | Pressão do fluido refrigerante | `numerico` (bar / psi) + `select` (ok / fora do especificado) |
+| S7 | Tipo de fluido refrigerante | `texto` (R-22, R-410A…) |
+| S8 | Inspeção elétrica: conexões, bornes, cabos | `select + obs` |
+| S9 | Corrente elétrica de operação | `numerico` (A) |
+| S10 | Estado das proteções elétricas | `select + obs` |
+| S11 | Reinstalar componentes | `checkbox` |
+| S12 | Religar e verificar operação completa | `select + obs` |
+| S13 | Foto após conclusão | `foto` |
+| S14 | Finalização | `finalizacao` |
 
 ---
 
-## Checklist Anual — Relatório Consolidado e Inspeção Completa
+## Checklist Anual — Relatório Consolidado
 
-1. Execute todos os itens do checklist semestral.
-2. Verifique o histórico de manutenções do equipamento durante o ano — registre quantidade de intervenções realizadas.
-3. Avalie o desempenho geral do equipamento no período: temperatura de operação, consumo, ocorrências registradas.
-4. Verifique o estado geral de fixações mecânicas da evaporadora e condensadora — aperte parafusos e suportes se necessário.
-5. Inspecione a integridade do isolamento térmico das tubulações de gás — registre se há trechos danificados.
-6. Verifique o estado das conexões das tubulações de cobre — registre se há vazamentos ou oxidação.
-7. Avalie se a capacidade do equipamento ainda atende às necessidades do ambiente — registre parecer técnico.
-8. Elabore o relatório consolidado anual contendo: equipamento identificado, intervenções realizadas no ano, condições encontradas, recomendações técnicas e assinatura do responsável técnico.
-9. Fotografe o equipamento após a conclusão.
-10. Registre data, técnico responsável e assine a OS.
+> Inclui todos os itens do Semestral, mais os itens abaixo.
+
+| # | Item | Tipo |
+|---|------|------|
+| A1 | Quantidade de intervenções no ano | `numerico` |
+| A2 | Avaliação de desempenho geral | `texto` |
+| A3 | Fixações mecânicas evaporadora/condensadora | `select + obs` |
+| A4 | Isolamento térmico das tubulações | `select + obs` |
+| A5 | Conexões de cobre: vazamentos, oxidação | `select + obs` |
+| A6 | Capacidade atende ao ambiente? | `select` (sim / não) + `texto` (parecer técnico) |
+| A7 | Relatório consolidado anual | bloco exportável → `PDF` |
+| A8 | Foto após conclusão | `foto` |
+| A9 | Finalização | `finalizacao` |
 
 ---
 
-*Documento elaborado conforme Portaria MS 3.523/98 e NBR 13971.*
+## Resumo quantitativo
+
+| Tipo | Ocorrências |
+|------|-------------|
+| `checkbox` | 18 |
+| `select` | 4 |
+| `select + obs` | 15 |
+| `numerico` | 3 |
+| `texto` | 2 |
+| `foto` | 8 |
+| `finalizacao` | 4 |

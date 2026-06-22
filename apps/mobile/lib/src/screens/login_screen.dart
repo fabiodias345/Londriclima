@@ -41,17 +41,31 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorMessage = null;
     });
 
-    final session = await widget.loginGateway.login(user, password);
+    final LoginSession? session;
+    try {
+      session = await widget.loginGateway.login(user, password);
+    } on Object {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Falha ao conectar na API.';
+      });
+      return;
+    }
 
     if (!mounted) {
       return;
     }
 
     if (session != null) {
+      final loginSession = session;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute<void>(
           builder: (_) => DashboardScreen(
-            repository: session.repository,
+            repository: loginSession.repository,
             locationService: widget.locationService,
           ),
         ),
