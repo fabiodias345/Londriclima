@@ -346,6 +346,9 @@ void main() {
       find.byKey(const Key('checklist_text_S7')),
       'R-410A',
     );
+    await tester.ensureVisible(find.byKey(const Key('checklist_photo_M4')));
+    await tester.tap(find.byKey(const Key('checklist_photo_M4')));
+    await tester.pumpAndSettle();
     await tester.ensureVisible(find.byKey(const Key('saveChecklistButton')));
     await tester.tap(find.byKey(const Key('saveChecklistButton')));
     await tester.pumpAndSettle();
@@ -421,6 +424,17 @@ void main() {
     expect(repository.initialEvidenceOrderId, 'OS-API');
     expect(find.text('Foto registrada'), findsOneWidget);
 
+    await tester.tap(find.byKey(const Key('checklist_checkbox_M1')));
+    await tester.tap(find.byKey(const Key('checklist_select_M6')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('ok').last);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('checklist_number_S6')));
+    await tester.enterText(find.byKey(const Key('checklist_number_S6')), '8');
+    await tester.enterText(
+      find.byKey(const Key('checklist_text_S7')),
+      'R-410A',
+    );
     await tester.ensureVisible(find.byKey(const Key('saveChecklistButton')));
     final saveChecklistButton = tester.widget<FilledButton>(
       find.byKey(const Key('saveChecklistButton')),
@@ -433,6 +447,155 @@ void main() {
       repository.savedChecklistResponses['M4'],
       '/storage/os/OS-API/checklist/EQ-102/M4.jpg',
     );
+  });
+
+  testWidgets('detalhe em atendimento usa abas menores para o fluxo', (
+    tester,
+  ) async {
+    final repository = _RepositorioDeTeste();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LoginScreen(
+          loginGateway: _GatewayDeTeste(repository: repository),
+          locationService: const _LocationServiceTeste(),
+          photoPicker: const _PhotoPickerTeste(),
+        ),
+      ),
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('loginUserField')),
+      'tecnico@airmovebr.local',
+    );
+    await tester.enterText(
+      find.byKey(const Key('loginPasswordField')),
+      '123456',
+    );
+    await tester.tap(find.byKey(const Key('loginSubmitButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cliente API'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
+    await tester.tap(find.text('Iniciar atendimento'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('stepTab_data')), findsOneWidget);
+    expect(find.byKey(const Key('stepTab_machines')), findsOneWidget);
+    expect(find.byKey(const Key('stepTab_checklist')), findsOneWidget);
+    expect(find.byKey(const Key('stepTab_finish')), findsOneWidget);
+    expect(find.text('Selecionar maquina'), findsOneWidget);
+    expect(find.text('Finalizar OS'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('stepTab_finish')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Finalizar OS'), findsOneWidget);
+    expect(find.text('Selecionar maquina'), findsNothing);
+  });
+
+  testWidgets('salvar checklist vazio mostra item obrigatorio faltando', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = _RepositorioDeTeste();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LoginScreen(
+          loginGateway: _GatewayDeTeste(repository: repository),
+          locationService: const _LocationServiceTeste(),
+          photoPicker: const _PhotoPickerTeste(),
+        ),
+      ),
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('loginUserField')),
+      'tecnico@airmovebr.local',
+    );
+    await tester.enterText(
+      find.byKey(const Key('loginPasswordField')),
+      '123456',
+    );
+    await tester.tap(find.byKey(const Key('loginSubmitButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cliente API'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
+    await tester.tap(find.text('Iniciar atendimento'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('machineSearchField')),
+      'sala 102',
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('selectEquipment_EQ-102')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('checklistReadyButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('initialEvidenceButton')));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(const Key('saveChecklistButton')));
+    await tester.tap(find.byKey(const Key('saveChecklistButton')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Preencha: Desligar pelo controle remoto.'),
+      findsOneWidget,
+    );
+    expect(repository.savedChecklistResponses, isEmpty);
+  });
+
+  testWidgets('campos simples do checklist usam avancar no teclado', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = _RepositorioDeTeste();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LoginScreen(
+          loginGateway: _GatewayDeTeste(repository: repository),
+          locationService: const _LocationServiceTeste(),
+          photoPicker: const _PhotoPickerTeste(),
+        ),
+      ),
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('loginUserField')),
+      'tecnico@airmovebr.local',
+    );
+    await tester.enterText(
+      find.byKey(const Key('loginPasswordField')),
+      '123456',
+    );
+    await tester.tap(find.byKey(const Key('loginSubmitButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cliente API'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
+    await tester.tap(find.text('Iniciar atendimento'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('selectEquipment_EQ-102')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('checklistReadyButton')));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(const Key('checklist_number_S6')));
+    await tester.pumpAndSettle();
+
+    final numberField = tester.widget<TextField>(
+      find.byKey(const Key('checklist_number_S6')),
+    );
+    final textField = tester.widget<TextField>(
+      find.byKey(const Key('checklist_text_S7')),
+    );
+
+    expect(numberField.textInputAction, TextInputAction.next);
+    expect(textField.textInputAction, TextInputAction.next);
+    expect(textField.maxLines, 1);
   });
 
   testWidgets(
@@ -482,6 +645,8 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('initialEvidenceButton')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('stepTab_finish')));
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.byKey(const Key('finalEvidenceButton')));
       final finalPhotoButton = tester.widget<OutlinedButton>(
@@ -570,6 +735,21 @@ void main() {
 
     await tester.ensureVisible(find.byKey(const Key('initialEvidenceButton')));
     await tester.tap(find.byKey(const Key('initialEvidenceButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('checklist_checkbox_M1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('checklist_select_M6')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('ok').last);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('checklist_number_S6')));
+    await tester.enterText(find.byKey(const Key('checklist_number_S6')), '8');
+    await tester.enterText(
+      find.byKey(const Key('checklist_text_S7')),
+      'R-410A',
+    );
+    await tester.ensureVisible(find.byKey(const Key('checklist_photo_M4')));
+    await tester.tap(find.byKey(const Key('checklist_photo_M4')));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.byKey(const Key('saveChecklistButton')));
     await tester.tap(find.byKey(const Key('saveChecklistButton')));

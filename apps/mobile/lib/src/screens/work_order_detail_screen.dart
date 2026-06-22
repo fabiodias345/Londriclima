@@ -33,6 +33,8 @@ const _machineTypeOptions = [
 
 const _gasOptions = ['R-22', 'R-410A', 'R-32', 'R-134a', 'Outro'];
 
+enum _WorkOrderDetailStep { data, machines, checklist, finish }
+
 class WorkOrderDetailScreen extends StatefulWidget {
   const WorkOrderDetailScreen({
     super.key,
@@ -89,6 +91,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
   };
   final Set<String> _machineImpossibleFields = {};
   String? _errorMessage;
+  _WorkOrderDetailStep _activeStep = _WorkOrderDetailStep.data;
 
   @override
   void dispose() {
@@ -125,62 +128,87 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
           children: [
             _Header(order: _order),
             const SizedBox(height: 14),
-            DetailSection(
-              title: 'Dados do atendimento',
-              children: [
-                _InfoRow(
-                  icon: Icons.business_outlined,
-                  label: 'Cliente',
-                  value: _order.clientName,
-                ),
-                _InfoRow(
-                  icon: Icons.place_outlined,
-                  label: 'Endereco',
-                  value: _order.address,
-                ),
-                _InfoRow(
-                  icon: Icons.ac_unit,
-                  label: 'Resumo',
-                  value: _order.equipmentCountLabel,
-                ),
-                _InfoRow(
-                  icon: Icons.build_outlined,
-                  label: 'Tipo',
-                  value: _order.maintenanceType,
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            DetailSection(
-              title: 'Equipamentos deste atendimento',
-              children: _equipmentWidgets(_order),
-            ),
-            const SizedBox(height: 14),
-            DetailSection(
-              title: 'Checklist previsto',
-              children: _checklistFor(
-                _order,
-              ).map((item) => _Bullet(text: item)).toList(),
-            ),
-            const SizedBox(height: 14),
-            const DetailSection(
-              title: 'Obrigatorios da execucao',
-              children: [
-                _Bullet(text: 'GPS inicial'),
-                _Bullet(text: 'Foto antes'),
-                _Bullet(text: 'Checklist completo'),
-                _Bullet(text: 'Foto depois'),
-                _Bullet(text: 'Nome e assinatura do cliente'),
-                _Bullet(text: 'GPS final'),
-              ],
-            ),
-            const SizedBox(height: 18),
+            if (_order.isAtClient) ...[
+              _StepTabs(
+                activeStep: _activeStep,
+                onChanged: (step) {
+                  setState(() {
+                    _activeStep = step;
+                  });
+                },
+              ),
+              const SizedBox(height: 14),
+            ],
+            if (!_order.isAtClient ||
+                _activeStep == _WorkOrderDetailStep.data) ...[
+              DetailSection(
+                title: 'Dados do atendimento',
+                children: [
+                  _InfoRow(
+                    icon: Icons.business_outlined,
+                    label: 'Cliente',
+                    value: _order.clientName,
+                  ),
+                  _InfoRow(
+                    icon: Icons.place_outlined,
+                    label: 'Endereco',
+                    value: _order.address,
+                  ),
+                  _InfoRow(
+                    icon: Icons.ac_unit,
+                    label: 'Resumo',
+                    value: _order.equipmentCountLabel,
+                  ),
+                  _InfoRow(
+                    icon: Icons.build_outlined,
+                    label: 'Tipo',
+                    value: _order.maintenanceType,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              DetailSection(
+                title: 'Equipamentos deste atendimento',
+                children: _equipmentWidgets(_order),
+              ),
+              const SizedBox(height: 14),
+              DetailSection(
+                title: 'Checklist previsto',
+                children: _checklistFor(
+                  _order,
+                ).map((item) => _Bullet(text: item)).toList(),
+              ),
+              const SizedBox(height: 14),
+              const DetailSection(
+                title: 'Obrigatorios da execucao',
+                children: [
+                  _Bullet(text: 'GPS inicial'),
+                  _Bullet(text: 'Foto antes'),
+                  _Bullet(text: 'Checklist completo'),
+                  _Bullet(text: 'Foto depois'),
+                  _Bullet(text: 'Nome e assinatura do cliente'),
+                  _Bullet(text: 'GPS final'),
+                ],
+              ),
+              const SizedBox(height: 18),
+            ],
             if (_errorMessage != null) ...[
               Text(
                 _errorMessage!,
                 style: const TextStyle(
                   color: Color(0xFFB3261E),
                   fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+            if (_checklistMessage != null &&
+                _order.status != WorkOrderStatus.done) ...[
+              Text(
+                _checklistMessage!,
+                style: const TextStyle(
+                  color: airmovebrAccent,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
               const SizedBox(height: 12),
@@ -211,7 +239,8 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
                 ],
               ),
             ],
-            if (_order.isAtClient) ...[
+            if (_order.isAtClient &&
+                _activeStep == _WorkOrderDetailStep.machines) ...[
               const SizedBox(height: 12),
               DetailSection(
                 title: 'Selecionar maquina',
@@ -248,6 +277,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
                           _signaturePoints.clear();
                           _responsibleController.clear();
                           _clearTextControllers();
+                          _activeStep = _WorkOrderDetailStep.machines;
                         });
                       },
                     ),
@@ -266,6 +296,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
                         _signaturePoints.clear();
                         _responsibleController.clear();
                         _clearMachineForm();
+                        _activeStep = _WorkOrderDetailStep.machines;
                       });
                     },
                     icon: const Icon(Icons.add_circle_outline),
@@ -366,6 +397,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
                             setState(() {
                               _checklistStarted = true;
                               _checklistMessage = null;
+                              _activeStep = _WorkOrderDetailStep.checklist;
                             });
                             WidgetsBinding.instance.addPostFrameCallback((_) {
                               final context =
@@ -398,180 +430,102 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
                   );
                 },
               ),
-              if (_checklistStarted && _selectedEquipment != null) ...[
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  key: const Key('initialEvidenceButton'),
-                  onPressed: _savingInitialEvidence || _initialEvidenceSaved
-                      ? null
-                      : _saveInitialEvidence,
-                  icon: Icon(
-                    _initialEvidenceSaved
-                        ? Icons.check_circle_outline
-                        : Icons.photo_camera_outlined,
-                  ),
-                  label: Text(
-                    _savingInitialEvidence
-                        ? 'Enviando foto antes...'
-                        : _initialEvidenceSaved
-                        ? 'Foto antes registrada'
-                        : 'Registrar foto antes',
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
-                    alignment: Alignment.centerLeft,
-                  ),
+            ],
+            if (_order.isAtClient &&
+                _activeStep == _WorkOrderDetailStep.checklist &&
+                _checklistStarted &&
+                _selectedEquipment != null) ...[
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                key: const Key('initialEvidenceButton'),
+                onPressed: _savingInitialEvidence || _initialEvidenceSaved
+                    ? null
+                    : _saveInitialEvidence,
+                icon: Icon(
+                  _initialEvidenceSaved
+                      ? Icons.check_circle_outline
+                      : Icons.photo_camera_outlined,
                 ),
-                const SizedBox(height: 12),
-                DetailSection(
-                  key: _checklistSectionKey,
-                  title: 'Checklist da maquina',
-                  children: _order.checklist.isEmpty
-                      ? const [
-                          Text(
-                            'Checklist nao definido para esta OS.',
-                            style: TextStyle(color: airmovebrMuted),
-                          ),
-                        ]
-                      : _order.checklist
-                            .map(
-                              (item) => _ChecklistField(
-                                item: item,
-                                value: _checklistValues[item.code],
-                                textController: _controllerFor(item.code),
-                                noteController: _noteControllerFor(item.code),
-                                uploadingPhoto: _uploadingPhotoCodes.contains(
-                                  item.code,
-                                ),
-                                onChanged: (value) {
-                                  setState(() {
-                                    _checklistValues[item.code] = value;
-                                  });
-                                },
-                                onPhotoPressed: item.kind == 'foto'
-                                    ? () => _pickChecklistPhoto(item)
-                                    : null,
+                label: Text(
+                  _savingInitialEvidence
+                      ? 'Enviando foto antes...'
+                      : _initialEvidenceSaved
+                      ? 'Foto antes registrada'
+                      : 'Registrar foto antes',
+                ),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                  alignment: Alignment.centerLeft,
+                ),
+              ),
+              const SizedBox(height: 12),
+              DetailSection(
+                key: _checklistSectionKey,
+                title: 'Checklist da maquina',
+                children: _order.checklist.isEmpty
+                    ? const [
+                        Text(
+                          'Checklist nao definido para esta OS.',
+                          style: TextStyle(color: airmovebrMuted),
+                        ),
+                      ]
+                    : _order.checklist
+                          .map(
+                            (item) => _ChecklistField(
+                              item: item,
+                              value: _checklistValues[item.code],
+                              textController: _controllerFor(item.code),
+                              noteController: _noteControllerFor(item.code),
+                              uploadingPhoto: _uploadingPhotoCodes.contains(
+                                item.code,
                               ),
-                            )
-                            .toList(),
-                ),
-                const SizedBox(height: 12),
-                if (_checklistMessage != null) ...[
-                  Text(
-                    _checklistMessage!,
-                    style: const TextStyle(
-                      color: airmovebrAccent,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                FilledButton.icon(
-                  key: const Key('saveChecklistButton'),
-                  onPressed: _savingChecklist || !_initialEvidenceSaved
-                      ? null
-                      : _saveChecklist,
-                  icon: const Icon(Icons.save_outlined),
-                  label: Text(
-                    _savingChecklist
-                        ? 'Salvando...'
-                        : !_initialEvidenceSaved
-                        ? 'Registre foto antes'
-                        : 'Salvar checklist',
-                  ),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(52),
-                    backgroundColor: airmovebrAccent,
-                    foregroundColor: Colors.white,
+                              onChanged: (value) {
+                                setState(() {
+                                  _checklistValues[item.code] = value;
+                                });
+                              },
+                              onPhotoPressed: item.kind == 'foto'
+                                  ? () => _pickChecklistPhoto(item)
+                                  : null,
+                            ),
+                          )
+                          .toList(),
+              ),
+              const SizedBox(height: 12),
+              if (_checklistMessage != null) ...[
+                Text(
+                  _checklistMessage!,
+                  style: const TextStyle(
+                    color: airmovebrAccent,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
                 const SizedBox(height: 12),
-                DetailSection(
-                  title: 'Finalizar OS',
-                  children: [
-                    OutlinedButton.icon(
-                      key: const Key('finalEvidenceButton'),
-                      onPressed:
-                          !_initialEvidenceSaved ||
-                              _savingFinalEvidence ||
-                              _finalEvidenceSaved
-                          ? null
-                          : _saveFinalEvidence,
-                      icon: Icon(
-                        _finalEvidenceSaved
-                            ? Icons.check_circle_outline
-                            : Icons.photo_camera_outlined,
-                      ),
-                      label: Text(
-                        !_initialEvidenceSaved
-                            ? 'Registre foto antes'
-                            : _savingFinalEvidence
-                            ? 'Enviando foto depois...'
-                            : _finalEvidenceSaved
-                            ? 'Foto depois registrada'
-                            : 'Registrar foto depois',
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(48),
-                        alignment: Alignment.centerLeft,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      key: const Key('responsibleNameField'),
-                      controller: _responsibleController,
-                      enabled: _initialEvidenceSaved,
-                      decoration: const InputDecoration(
-                        labelText: 'Nome do responsavel',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _SignaturePad(
-                      points: _signaturePoints,
-                      enabled: _initialEvidenceSaved,
-                      onChanged: (points) {
-                        setState(() {
-                          _signaturePoints
-                            ..clear()
-                            ..addAll(points);
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    OutlinedButton.icon(
-                      key: const Key('clearSignatureButton'),
-                      onPressed:
-                          !_initialEvidenceSaved || _signaturePoints.isEmpty
-                          ? null
-                          : () {
-                              setState(_signaturePoints.clear);
-                            },
-                      icon: const Icon(Icons.backspace_outlined),
-                      label: const Text('Limpar assinatura'),
-                    ),
-                    const SizedBox(height: 12),
-                    FilledButton.icon(
-                      key: const Key('finishWorkOrderButton'),
-                      onPressed: !_checklistSaved || _finishing
-                          ? null
-                          : _finishWorkOrder,
-                      icon: const Icon(Icons.assignment_turned_in_outlined),
-                      label: Text(
-                        !_checklistSaved
-                            ? 'Salve o checklist primeiro'
-                            : _finishing
-                            ? 'Finalizando...'
-                            : 'Finalizar OS',
-                      ),
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(52),
-                        backgroundColor: airmovebrAccent,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
               ],
+              FilledButton.icon(
+                key: const Key('saveChecklistButton'),
+                onPressed: _savingChecklist || !_initialEvidenceSaved
+                    ? null
+                    : _saveChecklist,
+                icon: const Icon(Icons.save_outlined),
+                label: Text(
+                  _savingChecklist
+                      ? 'Salvando...'
+                      : !_initialEvidenceSaved
+                      ? 'Registre foto antes'
+                      : 'Salvar checklist',
+                ),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(52),
+                  backgroundColor: airmovebrAccent,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ],
+            if (_order.isAtClient &&
+                _activeStep == _WorkOrderDetailStep.finish) ...[
+              const SizedBox(height: 12),
+              DetailSection(title: 'Finalizar OS', children: _finishWidgets()),
             ],
           ],
         ),
@@ -609,6 +563,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
       setState(() {
         _order = updated;
         _starting = false;
+        _activeStep = _WorkOrderDetailStep.machines;
       });
     } on Object catch (error) {
       if (!mounted) {
@@ -709,6 +664,15 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
     if (equipment == null) {
       return;
     }
+    final missing = _missingChecklistItems();
+    if (missing.isNotEmpty) {
+      setState(() {
+        _savingChecklist = false;
+        _checklistMessage = null;
+        _errorMessage = 'Preencha: ${missing.first}.';
+      });
+      return;
+    }
 
     setState(() {
       _savingChecklist = true;
@@ -731,6 +695,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
         _savingChecklist = false;
         _checklistSaved = true;
         _checklistMessage = 'Checklist salvo.';
+        _activeStep = _WorkOrderDetailStep.finish;
       });
     } on Object catch (error) {
       if (!mounted) {
@@ -1021,6 +986,105 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
     }).toList();
   }
 
+  List<String> _missingChecklistItems() {
+    return _order.checklist
+        .where((item) {
+          if (item.kind == 'finalizacao') {
+            return false;
+          }
+          final textValue = _textControllers[item.code]?.text.trim() ?? '';
+          final value = switch (item.kind) {
+            'texto' || 'numerico' => textValue,
+            'foto' => _checklistValues[item.code] ?? '',
+            _ => _checklistValues[item.code] ?? '',
+          };
+          return value.trim().isEmpty || value == 'false';
+        })
+        .map((item) => item.label)
+        .toList();
+  }
+
+  List<Widget> _finishWidgets() {
+    return [
+      OutlinedButton.icon(
+        key: const Key('finalEvidenceButton'),
+        onPressed:
+            !_initialEvidenceSaved ||
+                _savingFinalEvidence ||
+                _finalEvidenceSaved
+            ? null
+            : _saveFinalEvidence,
+        icon: Icon(
+          _finalEvidenceSaved
+              ? Icons.check_circle_outline
+              : Icons.photo_camera_outlined,
+        ),
+        label: Text(
+          !_initialEvidenceSaved
+              ? 'Registre foto antes'
+              : _savingFinalEvidence
+              ? 'Enviando foto depois...'
+              : _finalEvidenceSaved
+              ? 'Foto depois registrada'
+              : 'Registrar foto depois',
+        ),
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size.fromHeight(48),
+          alignment: Alignment.centerLeft,
+        ),
+      ),
+      const SizedBox(height: 12),
+      TextField(
+        key: const Key('responsibleNameField'),
+        controller: _responsibleController,
+        enabled: _initialEvidenceSaved,
+        textInputAction: TextInputAction.next,
+        decoration: const InputDecoration(labelText: 'Nome do responsavel'),
+      ),
+      const SizedBox(height: 12),
+      _SignaturePad(
+        points: _signaturePoints,
+        enabled: _initialEvidenceSaved,
+        onChanged: (points) {
+          setState(() {
+            _signaturePoints
+              ..clear()
+              ..addAll(points);
+          });
+        },
+      ),
+      const SizedBox(height: 8),
+      OutlinedButton.icon(
+        key: const Key('clearSignatureButton'),
+        onPressed: !_initialEvidenceSaved || _signaturePoints.isEmpty
+            ? null
+            : () {
+                setState(_signaturePoints.clear);
+              },
+        icon: const Icon(Icons.backspace_outlined),
+        label: const Text('Limpar assinatura'),
+      ),
+      const SizedBox(height: 12),
+      FilledButton.icon(
+        key: const Key('finishWorkOrderButton'),
+        onPressed: !_checklistSaved || _finishing ? null : _finishWorkOrder,
+        icon: const Icon(Icons.assignment_turned_in_outlined),
+        label: Text(
+          !_checklistSaved
+              ? 'Salve o checklist primeiro'
+              : _finishing
+              ? 'Finalizando...'
+              : 'Finalizar OS',
+        ),
+        style: FilledButton.styleFrom(
+          minimumSize: const Size.fromHeight(52),
+          backgroundColor: airmovebrAccent,
+          foregroundColor: Colors.white,
+        ),
+      ),
+    ];
+  }
+
   TextEditingController _controllerFor(String code) {
     return _textControllers.putIfAbsent(code, TextEditingController.new);
   }
@@ -1083,6 +1147,92 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
       controller.clear();
     }
     _machineImpossibleFields.clear();
+  }
+}
+
+class _StepTabs extends StatelessWidget {
+  const _StepTabs({required this.activeStep, required this.onChanged});
+
+  final _WorkOrderDetailStep activeStep;
+  final ValueChanged<_WorkOrderDetailStep> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          _StepTab(
+            key: const Key('stepTab_data'),
+            icon: Icons.assignment_outlined,
+            label: 'Dados',
+            selected: activeStep == _WorkOrderDetailStep.data,
+            onTap: () => onChanged(_WorkOrderDetailStep.data),
+          ),
+          _StepTab(
+            key: const Key('stepTab_machines'),
+            icon: Icons.ac_unit,
+            label: 'Maquinas',
+            selected: activeStep == _WorkOrderDetailStep.machines,
+            onTap: () => onChanged(_WorkOrderDetailStep.machines),
+          ),
+          _StepTab(
+            key: const Key('stepTab_checklist'),
+            icon: Icons.checklist_rounded,
+            label: 'Checklist',
+            selected: activeStep == _WorkOrderDetailStep.checklist,
+            onTap: () => onChanged(_WorkOrderDetailStep.checklist),
+          ),
+          _StepTab(
+            key: const Key('stepTab_finish'),
+            icon: Icons.draw_outlined,
+            label: 'Finalizar',
+            selected: activeStep == _WorkOrderDetailStep.finish,
+            onTap: () => onChanged(_WorkOrderDetailStep.finish),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StepTab extends StatelessWidget {
+  const _StepTab({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: ChoiceChip(
+        selected: selected,
+        avatar: Icon(
+          icon,
+          size: 18,
+          color: selected ? Colors.white : airmovebrPrimary,
+        ),
+        label: Text(label),
+        labelStyle: TextStyle(
+          color: selected ? Colors.white : airmovebrText,
+          fontWeight: FontWeight.w800,
+        ),
+        selectedColor: airmovebrPrimary,
+        backgroundColor: Colors.white,
+        side: const BorderSide(color: airmovebrBorder),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        onSelected: (_) => onTap(),
+      ),
+    );
   }
 }
 
@@ -1227,6 +1377,7 @@ class _MachineField extends StatelessWidget {
               controller: controller,
               enabled: !impossible,
               keyboardType: numeric ? TextInputType.number : TextInputType.text,
+              textInputAction: TextInputAction.next,
               decoration: InputDecoration(labelText: label),
             )
           else
@@ -1267,7 +1418,8 @@ class _MachineField extends StatelessWidget {
               decoration: const InputDecoration(
                 labelText: 'Observacao obrigatoria',
               ),
-              maxLines: 2,
+              textInputAction: TextInputAction.next,
+              maxLines: 1,
             ),
         ],
       ),
@@ -1353,7 +1505,8 @@ class _ChecklistField extends StatelessWidget {
               key: Key('checklist_obs_${item.code}'),
               controller: noteController,
               decoration: const InputDecoration(labelText: 'Observacao'),
-              maxLines: 2,
+              textInputAction: TextInputAction.next,
+              maxLines: 1,
             ),
           ],
         ),
@@ -1366,12 +1519,14 @@ class _ChecklistField extends StatelessWidget {
                 : '${item.label} (${item.unit})',
           ),
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          textInputAction: TextInputAction.next,
         ),
         'texto' => TextField(
           key: Key('checklist_text_${item.code}'),
           controller: textController,
           decoration: InputDecoration(labelText: item.label),
-          maxLines: 2,
+          textInputAction: TextInputAction.next,
+          maxLines: 1,
         ),
         'foto' => OutlinedButton.icon(
           key: Key('checklist_photo_${item.code}'),

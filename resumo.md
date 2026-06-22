@@ -168,10 +168,19 @@ POST /api/v1/os/:osId/finalizar
 - Corrigido botao/foto depois, que estava bloqueado ate salvar checklist.
 - Corrigido salvamento do checklist quando a foto antes ja tinha sido tirada dentro do checklist.
 
+### Fase 12.1 - UX do fluxo de atendimento
+
+- Tela longa do atendimento foi dividida em abas: Dados, Maquinas, Checklist e Finalizar.
+- Ao iniciar atendimento, o APK vai direto para Maquinas.
+- Ao iniciar checklist, o APK vai direto para Checklist.
+- Ao salvar checklist com sucesso, o APK vai direto para Finalizar.
+- `Salvar checklist` valida itens obrigatorios antes de enviar para API e mostra o primeiro item faltando.
+- Campos simples do checklist e cadastro usam `avancar` no teclado em vez de abrir nova linha.
+- Foto do checklist agora e tratada como obrigatoria para salvar quando o item existir.
+
 ### Ponto de retomada
 
-- Antes de commit/deploy, melhorar a experiencia do APK conforme pendencias abaixo.
-- Depois instalar/testar o APK debug mais recente no celular.
+- Instalar/testar o APK debug mais recente no celular.
 - Validar no celular o fluxo completo:
   1. iniciar atendimento;
   2. selecionar maquina;
@@ -184,27 +193,7 @@ POST /api/v1/os/:osId/finalizar
 
 ### Pendencias de UX e funcionalidade do APK
 
-- Tela de detalhe da OS ficou comprida demais; evitar fluxo unico com rolagem longa.
-- Reorganizar o atendimento em botoes/abas/telas especificas, por exemplo:
-  - dados da OS;
-  - maquinas;
-  - foto antes;
-  - checklist;
-  - foto depois;
-  - assinatura/finalizacao.
 - Melhorar visual geral: APK esta simples, feio e com pouca cor; precisa identidade visual mais clara da AIRMOVEBR.
-- Quando faltar item obrigatorio e o tecnico tocar em `Salvar`, mostrar exatamente o que faltou, em vez de erro generico.
-- Validar campos do checklist antes de enviar para API:
-  - checkbox obrigatorio nao marcado;
-  - select sem escolha;
-  - numerico vazio;
-  - texto obrigatorio vazio;
-  - foto obrigatoria pendente;
-  - nome/assinatura/foto depois pendentes na finalizacao.
-- Ajustar comportamento do teclado:
-  - Enter/avancar deve ir para o proximo campo quando for campo simples;
-  - campo de observacao nao deve abrir nova linha quando o usuario espera avancar;
-  - revisar `TextInputAction.next`, foco e fechamento do teclado no celular.
 - Checklist ainda esta generico/demo em alguns pontos; precisa virar checklist real por tipo de servico/manutencao.
 - Resolver checklist real na ultima fase antes de considerar o APK funcional para operacao.
 - Revisar textos e labels para linguagem de tecnico em campo, evitando termos confusos.
@@ -249,11 +238,10 @@ C:\develop\LondriClima\apps\mobile\build\app\outputs\flutter-apk\app-debug.apk
 
 ### Proximas fases do APK
 
-1. Redesenhar UX do APK em telas/abas menores e corrigir validacoes.
-2. Confirmar Fase 12 no celular real e depois commitar/subir.
-3. Fase 13: modo offline com fila de sincronizacao.
-4. Fase 14: leitura de codigo de barras/QR por equipamento.
-5. Fase 15: polimento visual, icon/app name, checklist real por tipo de servico e APK release.
+1. Confirmar Fase 12.1 no celular real e depois commitar/subir.
+2. Fase 13: modo offline com fila de sincronizacao.
+3. Fase 14: leitura de codigo de barras/QR por equipamento.
+4. Fase 15: polimento visual, icon/app name, checklist real por tipo de servico e APK release.
 
 ## Prioridade aprovada: novo PDF PMOC
 
