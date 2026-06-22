@@ -1,6 +1,13 @@
 import '../models/work_order.dart';
 import '../services/location_service.dart';
 
+class OfflineSyncResult {
+  const OfflineSyncResult({this.synced = 0, this.failed = 0});
+
+  final int synced;
+  final int failed;
+}
+
 abstract class WorkOrderRepository {
   Future<List<WorkOrder>> listMine();
 
@@ -43,4 +50,8 @@ abstract class WorkOrderRepository {
     WorkOrder order,
     FinalizeWorkOrderInput input,
   );
+
+  Future<int> pendingSyncCount();
+
+  Future<OfflineSyncResult> syncPending();
 }

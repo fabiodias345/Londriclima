@@ -28,6 +28,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   WorkOrderFilter _filter = WorkOrderFilter.today;
   late Future<List<WorkOrder>> _ordersFuture;
+  bool _syncing = false;
 
   @override
   void initState() {
@@ -109,9 +110,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return IconButton(
       key: const Key('syncNowButton'),
       tooltip: 'Sincronizar',
-      onPressed: _reload,
-      icon: const Icon(Icons.sync),
+      onPressed: _syncing ? null : _syncNow,
+      icon: _syncing
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.sync),
     );
+  }
+
+  Future<void> _syncNow() async {
+    setState(() {
+      _syncing = true;
+    });
+    final result = await widget.repository.syncPending();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _syncing = false;
+      _ordersFuture = widget.repository.listMine();
+    });
+    final message = result.synced == 0 && result.failed == 0
+        ? 'Nada pendente para sincronizar.'
+        : 'Sincronizadas: ${result.synced}. Pendentes: ${result.failed}.';
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }
 

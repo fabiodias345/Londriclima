@@ -178,6 +178,15 @@ POST /api/v1/os/:osId/finalizar
 - Campos simples do checklist e cadastro usam `avancar` no teclado em vez de abrir nova linha.
 - Foto do checklist agora e tratada como obrigatoria para salvar quando o item existir.
 
+### Fase 13 - Fila offline de sincronizacao
+
+- Login real via API agora usa um reposititorio com fila offline.
+- Se checklist, fotos ou finalizacao falharem por falta de rede, o APK grava a acao em fila local.
+- OS com acoes pendentes aparece como `Aguardando sync`.
+- Botao de sincronizacao do dashboard tenta reenviar a fila e mostra quantos itens sincronizaram ou ficaram pendentes.
+- A fila evita perder checklist/fotos/finalizacao quando a internet cai durante o atendimento.
+- Limitacao atual: cadastro/inicio de atendimento ainda dependem de rede; offline completo de abertura/cadastro fica para fase futura se necessario.
+
 ### Ponto de retomada
 
 - Instalar/testar o APK debug mais recente no celular.
@@ -238,10 +247,9 @@ C:\develop\LondriClima\apps\mobile\build\app\outputs\flutter-apk\app-debug.apk
 
 ### Proximas fases do APK
 
-1. Confirmar Fase 12.1 no celular real e depois commitar/subir.
-2. Fase 13: modo offline com fila de sincronizacao.
-3. Fase 14: leitura de codigo de barras/QR por equipamento.
-4. Fase 15: polimento visual, icon/app name, checklist real por tipo de servico e APK release.
+1. Confirmar Fase 13 no celular real e depois commitar/subir.
+2. Fase 14: leitura de codigo de barras/QR por equipamento.
+3. Fase 15: polimento visual, icon/app name, checklist real por tipo de servico e APK release.
 
 ## Prioridade aprovada: novo PDF PMOC
 

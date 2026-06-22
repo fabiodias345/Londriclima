@@ -197,4 +197,10 @@ class FakeWorkOrderRepository implements WorkOrderRepository {
       impossibleFields: input.impossibleFields,
     );
   }
+
+  @override
+  Future<int> pendingSyncCount() async => 0;
+
+  @override
+  Future<OfflineSyncResult> syncPending() async => const OfflineSyncResult();
 }

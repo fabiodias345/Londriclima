@@ -228,6 +228,12 @@ class ApiWorkOrderRepository implements WorkOrderRepository {
   }
 
   @override
+  Future<int> pendingSyncCount() async => 0;
+
+  @override
+  Future<OfflineSyncResult> syncPending() async => const OfflineSyncResult();
+
+  @override
   Future<WorkOrderEquipment> saveMachineData(
     WorkOrder order,
     MachineDataInput input,
