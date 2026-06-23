@@ -26,7 +26,7 @@ function renderPreChamados(items) {
   requestList.innerHTML = "";
 
   if (!items.length) {
-    requestList.innerHTML = '<article class="request-card"><p class="request-title">Nenhum pre-chamado pendente.</p></article>';
+    requestList.innerHTML = '<article class="request-card os-empty-state"><p class="request-title">Nenhuma solicitacao pendente.</p><p class="request-details">Use Nova O.S. para criar uma ordem manual ou aguarde pedidos vindos do site.</p></article>';
     return;
   }
 
@@ -37,6 +37,11 @@ function renderPreChamados(items) {
       <div>
         <p class="request-title">\${escapeHtml(item.titulo)}</p>
         <p class="request-meta">\${escapeHtml(item.cliente.nome)} · \${formatPhone(item.cliente.telefone)}</p>
+      </div>
+      <div class="os-card-status">
+        <span>Solicitacao</span>
+        <strong>Proxima acao</strong>
+        <em>Converter em O.S.</em>
       </div>
       <div>
         <p class="request-details">\${escapeHtml(item.detalhes || "Sem detalhes")}</p>
@@ -64,7 +69,7 @@ function renderPreChamados(items) {
           <input name="valor_cobrado" type="number" min="0" step="0.01" placeholder="350,00" />
         </label>
         <div class="request-actions">
-          <button class="approve-button" type="submit">Aprovar e agendar</button>
+          <button class="approve-button" type="submit">Converter em O.S.</button>
           <button class="reject-button" type="button" data-action="rejeitar" data-id="\${item.id}">Rejeitar</button>
         </div>
       </form>

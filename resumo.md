@@ -258,6 +258,38 @@ C:\develop\LondriClima\apps\mobile\build\app\outputs\flutter-apk\app-debug.apk
 1. Confirmar Fase 14 no celular real e depois commitar/subir.
 2. Fase 15: polimento visual, icon/app name, checklist real por tipo de servico e APK release.
 
+## Foco atual: painel web para testar o app
+
+- Prioridade agora: organizar o painel web para testar o fluxo real do app e das O.S.
+- WhatsApp fica aguardando o cliente repassar o chip antes de qualquer integracao.
+
+### Painel de O.S. - Fase 1.6 pronta para commit
+
+- Fase 1 iniciada: menu `Pre-chamados` virou `O.S.`, com abas de fichario e `Dashboard` no lugar visual de `Relatorios`.
+- Fase 1.2 feita localmente: abas `Abertas`, `Agendadas`, `Em atendimento`, `Concluidas` e `Canceladas` agora usam dados reais de `/admin/agenda`.
+- Fase 1.3 feita localmente: O.S. ganhou painel lateral de detalhe e acao principal por status.
+- Fase 1.4 feita localmente: detalhe da O.S. ganhou blocos de historico, execucao e evidencias preparados para checklist/fotos do app.
+- Fase 1.5 feita localmente: area de O.S. virou fichario compacto com lista de cards menores e detalhe lateral fixo; acoes sairam do card e ficaram no detalhe.
+- Fase 1.6 feita localmente: detalhe da O.S. ganhou bloco `Despacho`, valida tecnico/equipe e data/hora, e botao `Enviar para campo` usando `/admin/agenda/ordens/:id` para a O.S. aparecer no app do tecnico.
+- A primeira entrega preserva endpoints/rotas internas existentes para reduzir risco.
+
+### Proximos passos do painel de O.S.
+
+1. Fase 1.7: criar bloco `App do tecnico` no detalhe da O.S. para confirmar se a ordem esta pronta/aparecendo no app.
+2. Validar `Enviar para campo` contra a API mobile: conferir se a O.S. aparece para o tecnico/equipe atribuido.
+3. Ligar historico real da O.S. no detalhe usando eventos do backend.
+4. Ligar checklist, fotos antes/depois, assinatura e finalizacao reais quando o backend expuser os dados completos.
+5. Revisar visual em tela real depois do commit: altura dos cards, detalhe lateral e fluxo de despacho.
+
+### Backlog futuro: pos-venda WhatsApp
+
+- Incluir automacoes de pos-atendimento quando o chip/WhatsApp estiver definido:
+  1. agradecimento apos compra ou servico;
+  2. pesquisa de satisfacao;
+  3. contato 30 dias apos produto/servico;
+  4. mensagem ou audio no aniversario.
+- Nao implementar ate o chip e a estrategia de WhatsApp estarem confirmados.
+
 ## Prioridade aprovada: novo PDF PMOC
 
 Status: desenho aprovado em 20/06/2026. Nao implementar, cadastrar dados ou gerar PDF ate o usuario pedir para continuar.

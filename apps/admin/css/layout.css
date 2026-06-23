@@ -259,6 +259,172 @@ form button,
   background: #fff7ed;
 }
 
+.os-workbench {
+  display: grid;
+  gap: 18px;
+}
+
+.os-workbench-grid {
+  grid-template-columns: minmax(360px, 0.9fr) minmax(420px, 1.1fr);
+  align-items: start;
+}
+
+.os-workbench-grid .os-tabs,
+.os-workbench-grid .os-header,
+.os-workbench-grid .os-toolbar {
+  grid-column: 1 / -1;
+}
+
+.os-tabs,
+.os-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.os-tabs {
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.os-tabs .subnav-button {
+  min-height: 38px;
+  border: 0;
+  border-radius: 6px;
+  padding: 0 12px;
+  color: var(--muted);
+  background: transparent;
+  font-weight: 900;
+}
+
+.os-tabs .subnav-button.active {
+  color: var(--ink);
+  background: var(--warning);
+}
+
+.os-header {
+  align-items: center;
+}
+
+.os-toolbar label {
+  width: min(420px, 100%);
+}
+
+.os-card-status {
+  display: grid;
+  gap: 4px;
+  min-width: 150px;
+  padding: 12px;
+  border: 1px solid rgba(0, 140, 149, 0.18);
+  border-radius: var(--radius);
+  background: rgba(0, 140, 149, 0.07);
+}
+
+.os-card-status span,
+.os-card-status em {
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.os-card-status strong {
+  font-size: 14px;
+}
+
+.os-empty-state {
+  min-height: 120px;
+}
+
+.os-compact-empty {
+  min-height: 104px;
+}
+
+.os-real-card {
+  align-items: stretch;
+  color: var(--ink);
+  background: var(--white);
+}
+
+.os-compact-card {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  min-height: 128px;
+  padding: 16px 18px;
+  cursor: pointer;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+}
+
+.os-compact-card:hover,
+.os-compact-card:focus {
+  border-color: rgba(0, 140, 149, 0.32);
+  box-shadow: inset 4px 0 0 var(--warning);
+  outline: 0;
+}
+
+.os-compact-card.is-selected {
+  box-shadow: inset 4px 0 0 var(--warning);
+  background: #fffaf0;
+}
+
+.os-primary-action.status-aberta {
+  color: var(--white);
+  background: #0f8f74;
+}
+
+.os-primary-action.status-em_deslocamento {
+  color: var(--white);
+  background: #2563eb;
+}
+
+.os-primary-action.status-em_atendimento {
+  color: var(--ink);
+  background: var(--warning);
+}
+
+.os-primary-action.status-concluida {
+  color: var(--white);
+  background: var(--navy);
+}
+
+.os-primary-action.status-cancelada,
+.os-primary-action.status-rejeitada {
+  color: var(--white);
+  background: var(--danger);
+}
+
+.os-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(140px, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+
+.os-compact-meta {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.os-card-grid span {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.os-card-grid strong {
+  color: var(--ink);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
 .status {
   min-height: 22px;
   margin: 0;
@@ -335,6 +501,11 @@ form button,
 
 .request-list {
   display: grid;
+}
+
+.os-workbench-grid .request-list {
+  grid-column: 1;
+  border-right: 1px solid var(--line);
 }
 
 .data-list {
@@ -467,6 +638,170 @@ form button,
 .request-actions {
   display: flex;
   gap: 8px;
+}
+
+.os-detail-panel {
+  display: none;
+  gap: 16px;
+  grid-column: 2;
+  padding: 18px 22px;
+  border-top: 0;
+  position: sticky;
+  top: 18px;
+  background: #f8fafc;
+}
+
+.os-detail-panel.is-open {
+  display: grid;
+}
+
+.os-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.os-detail-header h3 {
+  margin: 4px 0;
+  font-family: "Archivo", sans-serif;
+  font-size: 22px;
+}
+
+.os-detail-header p {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.os-detail-body {
+  display: grid;
+  gap: 14px;
+}
+
+.os-detail-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.os-detail-facts span {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--white);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.os-detail-facts strong {
+  color: var(--ink);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.os-detail-sections {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.os-detail-section {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--white);
+}
+
+.os-detail-section h4 {
+  margin: 0;
+  font-family: "Archivo", sans-serif;
+  font-size: 15px;
+}
+
+.os-dispatch-summary {
+  border-color: rgba(0, 140, 149, 0.22);
+  background: #f7fbfb;
+}
+
+.os-dispatch-status {
+  padding: 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.os-dispatch-status.ready {
+  color: #0f766e;
+  background: #ecfdf5;
+}
+
+.os-dispatch-status.blocked {
+  color: var(--danger);
+  background: #fff7ed;
+}
+
+.os-timeline {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.os-timeline li {
+  display: grid;
+  gap: 2px;
+  padding-left: 14px;
+  border-left: 3px solid var(--line);
+}
+
+.os-timeline li.is-active {
+  border-left-color: var(--warning);
+}
+
+.os-timeline strong,
+.os-execution-summary strong {
+  color: var(--ink);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.os-timeline span,
+.os-execution-summary span,
+.os-evidence-grid span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.os-execution-summary {
+  display: grid;
+  gap: 8px;
+}
+
+.os-execution-summary span {
+  display: grid;
+  gap: 3px;
+}
+
+.os-evidence-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.os-evidence-grid span {
+  padding: 10px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  background: #f8fafc;
 }
 
 .dispatch-form {

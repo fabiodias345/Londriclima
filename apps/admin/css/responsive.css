@@ -84,4 +84,27 @@
   .agenda-month-services strong {
     font-size: 10px;
   }
+
+  .os-workbench-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .os-workbench-grid .request-list,
+  .os-detail-panel {
+    grid-column: 1;
+  }
+
+  .os-workbench-grid .request-list {
+    border-right: 0;
+  }
+
+  .os-detail-panel {
+    position: static;
+  }
+
+  .os-detail-sections,
+  .os-detail-facts,
+  .os-compact-meta {
+    grid-template-columns: 1fr;
+  }
 }

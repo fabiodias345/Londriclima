@@ -12,12 +12,27 @@ const apiBaseUrl = localHosts.includes(window.location.hostname)
     ? \`\${window.location.origin}/api/v1\`
     : "https://api.airmovebr.com.br/api/v1";
 const AGENDA_LOOKAHEAD_DAYS = 180;
+const OS_STATUS_TABS = {
+  abertas: ["aberta"],
+  agendadas: ["aberta"],
+  em_atendimento: ["em_deslocamento", "em_atendimento"],
+  concluidas: ["concluida"],
+  canceladas: ["cancelada", "rejeitada"]
+};
 const loginPanel = document.querySelector("#loginPanel");
 const dashboard = document.querySelector("#dashboard");
 const loginForm = document.querySelector("#loginForm");
 const loginStatus = document.querySelector("#loginStatus");
 const listStatus = document.querySelector("#listStatus");
 const requestList = document.querySelector("#requestList");
+const osTabs = document.querySelector("#osTabs");
+const osSearchInput = document.querySelector("#osSearchInput");
+const newOsShortcutButton = document.querySelector("#newOsShortcutButton");
+const osDetailPanel = document.querySelector("#osDetailPanel");
+const osDetailTitle = document.querySelector("#osDetailTitle");
+const osDetailMeta = document.querySelector("#osDetailMeta");
+const osDetailBody = document.querySelector("#osDetailBody");
+const closeOsDetailButton = document.querySelector("#closeOsDetailButton");
 const pendingCount = document.querySelector("#pendingCount");
 const refreshButton = document.querySelector("#refreshButton");
 const logoutButton = document.querySelector("#logoutButton");
@@ -190,6 +205,9 @@ const fleetReportList = document.querySelector("#fleetReportList");
 const fleetReportExportButton = document.querySelector("#fleetReportExportButton");
 
 let activeView = "preChamados";
+let activeOsTab = "solicitacoes";
+let selectedOsDetailId = "";
+let latestPreChamados = [];
 let latestFleetItems = [];
 let latestVehicleRecords = [];
 let latestClients = [];
@@ -343,7 +361,16 @@ async function loadActiveView() {
     return;
   }
 
-  await loadPreChamados();
+  await loadOsWorkbench();
+}
+
+async function loadOsWorkbench() {
+  await Promise.all([
+    loadPreChamados(),
+    loadAgendaForOsWorkbench()
+  ]);
+
+  setOsTab(activeOsTab);
 }
 
 function setActiveView(view) {
@@ -354,7 +381,7 @@ function setActiveView(view) {
   }
 
   const meta = {
-    preChamados: ["Operacao comercial", "Pre-chamados do site"],
+    preChamados: ["Operacao de O.S.", "O.S."],
     frota: ["Monitoramento operacional", "Localizacao da frota"],
     agenda: ["Despacho de servicos", "Agenda operacional"],
     recorrencias: ["Planos de atividade", "Recorrencias"],
@@ -365,8 +392,8 @@ function setActiveView(view) {
     engenheiros: ["Responsabilidade tecnica", "Engenheiros responsaveis"],
     pmoc: ["Conformidade tecnica", "PMOC"],
     relatoriosAvulsos: ["Atendimento avulso", "Relatorios diretos ao cliente"],
-    relatorios: ["Gestao", "Relatorios do MVP"]
-  }[view] ?? ["Operacao comercial", "Pre-chamados do site"];
+    relatorios: ["Gestao", "Dashboard"]
+  }[view] ?? ["Operacao de O.S.", "O.S."];
 
   viewKicker.textContent = meta[0];
   viewTitle.textContent = meta[1];
@@ -418,9 +445,21 @@ async function loadPreChamados() {
 
   const result = await response.json();
   await loadDispatchOptions();
+  latestPreChamados = result.items || [];
   pendingCount.textContent = result.total;
-  listStatus.textContent = result.total === 1 ? "1 pendente" : \`\${result.total} pendentes\`;
-  renderPreChamados(result.items);
+  listStatus.textContent = result.total === 1 ? "1 solicitacao" : \`\${result.total} solicitacoes\`;
+  renderPreChamados(filterOsRequests(latestPreChamados));
+}
+
+async function loadAgendaForOsWorkbench() {
+  const result = await fetchAdminJson("/admin/agenda", listStatus);
+
+  if (!result) {
+    latestAgendaItems = [];
+    return;
+  }
+
+  latestAgendaItems = result.items || [];
 }
 
 async function loadFrota() {

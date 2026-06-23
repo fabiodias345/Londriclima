@@ -157,22 +157,100 @@ recurrenceList?.addEventListener("click", (event) => {
   void generateRecurrenceOs(button.dataset.id);
 });
 
-requestList?.addEventListener("click", async (event) => {
+osTabs?.addEventListener("click", (event) => {
   const target = event.target;
+  const button = target instanceof Element ? target.closest("[data-os-tab]") : null;
 
-  if (!(target instanceof HTMLButtonElement)) {
+  if (!(button instanceof HTMLButtonElement) || !button.dataset.osTab) {
     return;
   }
 
-  const osId = target.dataset.id;
-  const action = target.dataset.action;
+  setOsTab(button.dataset.osTab);
+});
+
+osSearchInput?.addEventListener("input", () => {
+  if (activeOsTab === "solicitacoes") {
+    renderPreChamados(filterOsRequests(latestPreChamados));
+    return;
+  }
+
+  renderOsAgendaItems(filterOsAgendaItems(latestAgendaItems));
+});
+
+newOsShortcutButton?.addEventListener("click", () => {
+  void openAgendaOsModal();
+});
+
+closeOsDetailButton?.addEventListener("click", closeOsDetail);
+
+requestList?.addEventListener("click", async (event) => {
+  const target = event.target;
+  const actionTarget = target instanceof Element ? target.closest("[data-action]") : null;
+
+  if (!(actionTarget instanceof HTMLElement)) {
+    return;
+  }
+
+  if (actionTarget.dataset.action === "os-open-new") {
+    void openAgendaOsModal();
+    return;
+  }
+
+  if (actionTarget.dataset.action === "ver-os-detalhe" && actionTarget.dataset.id) {
+    openOsDetail(actionTarget.dataset.id);
+    return;
+  }
+
+  if (actionTarget.dataset.action === "editar-agenda-os" && actionTarget.dataset.id) {
+    void openAgendaOsModal(actionTarget.dataset.id);
+    return;
+  }
+
+  const osId = actionTarget.dataset.id;
+  const action = actionTarget.dataset.action;
 
   if (!osId || !action) {
     return;
   }
 
-  target.disabled = true;
+  if (actionTarget instanceof HTMLButtonElement) {
+    actionTarget.disabled = true;
+  }
   await updatePreChamado(osId, action);
+});
+
+requestList?.addEventListener("keydown", (event) => {
+  const target = event.target;
+
+  if (!(target instanceof HTMLElement) || !target.classList.contains("os-compact-card")) {
+    return;
+  }
+
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  event.preventDefault();
+  if (target.dataset.id) {
+    openOsDetail(target.dataset.id);
+  }
+});
+
+osDetailBody?.addEventListener("click", (event) => {
+  const target = event.target;
+  const button = target instanceof Element ? target.closest("[data-action]") : null;
+
+  if (!(button instanceof HTMLButtonElement) || !button.dataset.id) {
+    return;
+  }
+
+  if (button.dataset.action === "editar-agenda-os") {
+    void openAgendaOsModal(button.dataset.id);
+  }
+
+  if (button.dataset.action === "enviar-os-campo") {
+    void dispatchOsToField(button.dataset.id, button);
+  }
 });
 
 requestList?.addEventListener("submit", async (event) => {

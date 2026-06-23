@@ -71,6 +71,389 @@ function setFleetTab(tab) {
   }
 }
 
+function setOsTab(tab) {
+  activeOsTab = tab;
+  closeOsDetail();
+
+  for (const button of osTabs?.querySelectorAll("[data-os-tab]") || []) {
+    button.classList.toggle("active", button.dataset.osTab === tab);
+  }
+
+  if (tab === "solicitacoes") {
+    renderPreChamados(filterOsRequests(latestPreChamados));
+    return;
+  }
+
+  renderOsAgendaItems(filterOsAgendaItems(latestAgendaItems));
+}
+
+function getOsTabLabel(tab) {
+  const labels = {
+    solicitacoes: "Solicitacoes",
+    abertas: "O.S. abertas",
+    agendadas: "O.S. agendadas",
+    em_atendimento: "O.S. em atendimento",
+    concluidas: "O.S. concluidas",
+    canceladas: "O.S. canceladas"
+  };
+
+  return labels[tab] || "O.S.";
+}
+
+function filterOsRequests(items) {
+  const query = normalizeSearch(osSearchInput?.value || "");
+
+  if (activeOsTab !== "solicitacoes") {
+    return [];
+  }
+
+  if (!query) {
+    return items;
+  }
+
+  return items.filter((item) => normalizeSearch([
+    item.titulo,
+    item.cliente?.nome,
+    item.cliente?.telefone,
+    item.detalhes,
+    formatAddress(item.endereco)
+  ].filter(Boolean).join(" ")).includes(query));
+}
+
+function filterOsAgendaItems(items) {
+  const statuses = OS_STATUS_TABS[activeOsTab] || [];
+  const query = normalizeSearch(osSearchInput?.value || "");
+
+  return items.filter((item) => {
+    const matchesStatus = statuses.includes(item.status);
+    const matchesSchedule =
+      activeOsTab !== "agendadas" || Boolean(item.agendada_para);
+    const text = normalizeSearch([
+      item.titulo,
+      item.cliente?.nome,
+      item.equipamento ? formatAgendaEquipment(item.equipamento) : "",
+      item.equipe?.nome,
+      item.tecnico?.nome,
+      formatAddress(item.endereco),
+      formatStatus(item.status)
+    ].filter(Boolean).join(" "));
+
+    return matchesStatus && matchesSchedule && (!query || text.includes(query));
+  });
+}
+
+function renderOsAgendaItems(items) {
+  requestList.innerHTML = "";
+  listStatus.textContent = items.length === 1 ? "1 O.S." : \`\${items.length} O.S.\`;
+
+  if (!items.length) {
+    requestList.innerHTML = \`
+      <article class="request-card os-empty-state os-compact-empty">
+        <p class="request-title">Nenhuma \${getOsTabLabel(activeOsTab).toLowerCase()}.</p>
+        <p class="request-details">Use Nova O.S. ou ajuste a busca para encontrar outra etapa.</p>
+        <button class="secondary-button compact-button" type="button" data-action="os-open-new">Nova O.S.</button>
+      </article>
+    \`;
+    return;
+  }
+
+  for (const item of items) {
+    const card = document.createElement("article");
+    card.className = "request-card os-real-card os-compact-card";
+    card.setAttribute("data-action", "ver-os-detalhe");
+    card.dataset.id = item.id;
+    card.tabIndex = 0;
+    card.setAttribute("role", "button");
+    card.classList.toggle("is-selected", selectedOsDetailId === item.id);
+    card.innerHTML = renderOsCard(item);
+    requestList.appendChild(card);
+  }
+}
+
+function renderOsCard(item) {
+  return \`
+    <div>
+      <p class="request-title">\${escapeHtml(item.titulo)}</p>
+      <p class="request-meta">\${escapeHtml(item.cliente?.nome || "Cliente nao informado")} - \${escapeHtml(formatAddress(item.endereco))}</p>
+    </div>
+    <div class="os-card-status">
+      <span>Status</span>
+      <strong>\${escapeHtml(formatStatus(item.status))}</strong>
+      <em>\${getOsNextAction(item)}</em>
+    </div>
+    <div class="os-card-grid os-compact-meta">
+      \${renderOsCompactMeta(item)}
+    </div>
+  \`;
+}
+
+function renderOsCompactMeta(item) {
+  return \`
+    <span><strong>Equipamento</strong>\${escapeHtml(item.equipamento ? formatAgendaEquipment(item.equipamento) : "Nao definido")}</span>
+    <span><strong>Responsavel</strong>\${escapeHtml(item.equipe?.nome || item.tecnico?.nome || "Nao atribuido")}</span>
+    <span><strong>Data/hora</strong>\${item.agendada_para ? formatDateTime(item.agendada_para) : "Sem horario"}</span>
+  \`;
+}
+
+function openOsDetail(osId) {
+  selectedOsDetailId = osId;
+  const item = latestAgendaItems.find((agendaItem) => agendaItem.id === osId);
+
+  if (!item) {
+    return;
+  }
+
+  renderOsDetail(item);
+  osDetailPanel?.classList.add("is-open");
+  markSelectedOsCard(osId);
+}
+
+function closeOsDetail() {
+  selectedOsDetailId = "";
+  osDetailPanel?.classList.remove("is-open");
+
+  if (osDetailTitle) {
+    osDetailTitle.textContent = "Selecione uma O.S.";
+  }
+
+  if (osDetailMeta) {
+    osDetailMeta.textContent = "Clique em uma O.S. para ver dados e proxima acao.";
+  }
+
+  if (osDetailBody) {
+    osDetailBody.innerHTML = '<p class="request-details">Nenhuma O.S. selecionada.</p>';
+  }
+
+  markSelectedOsCard("");
+}
+
+function markSelectedOsCard(osId) {
+  for (const card of requestList?.querySelectorAll(".os-compact-card") || []) {
+    card.classList.toggle("is-selected", card.dataset.id === osId);
+  }
+}
+
+function renderOsDetail(item) {
+  const primaryAction = getOsPrimaryAction(item);
+
+  if (!osDetailTitle || !osDetailMeta || !osDetailBody) {
+    return;
+  }
+
+  osDetailTitle.textContent = item.titulo || "O.S.";
+  osDetailMeta.textContent = \`\${formatStatus(item.status)} - \${item.cliente?.nome || "Cliente nao informado"}\`;
+  osDetailBody.innerHTML = \`
+    <div class="os-detail-facts">
+      <span><strong>Cliente</strong>\${escapeHtml(item.cliente?.nome || "Nao informado")}</span>
+      <span><strong>Equipamento</strong>\${escapeHtml(item.equipamento ? formatAgendaEquipment(item.equipamento) : "Nao definido")}</span>
+      <span><strong>Responsavel</strong>\${escapeHtml(item.equipe?.nome || item.tecnico?.nome || "Nao atribuido")}</span>
+      <span><strong>Status</strong>\${escapeHtml(formatStatus(item.status))}</span>
+      <span><strong>Data/hora</strong>\${item.agendada_para ? formatDateTime(item.agendada_para) : "Sem horario"}</span>
+      <span><strong>Endereco</strong>\${escapeHtml(formatAddress(item.endereco))}</span>
+    </div>
+    <p class="request-details">\${escapeHtml(item.detalhes || "Sem detalhes")}</p>
+    <div class="os-detail-sections">
+      \${renderOsDispatchSummary(item)}
+      \${renderOsTimeline(item)}
+      \${renderOsExecutionSummary(item)}
+      \${renderOsEvidenceSummary(item)}
+    </div>
+    <div class="request-actions">
+      <button class="approve-button compact-button os-primary-action \${getAgendaStatusClass(item.status)}" type="button" data-action="\${primaryAction.action}" data-id="\${item.id}">\${primaryAction.label}</button>
+      <button class="secondary-button compact-button" type="button" data-action="editar-agenda-os" data-id="\${item.id}">Editar O.S.</button>
+    </div>
+  \`;
+}
+
+function renderOsDispatchSummary(item) {
+  const responsible = item.equipe?.nome || item.tecnico?.nome || "Nao atribuido";
+  const hasResponsible = Boolean(item.equipe?.id || item.tecnico?.id);
+  const hasSchedule = Boolean(item.agendada_para);
+  const ready = hasResponsible && hasSchedule;
+  const status = ready
+    ? "Pronta para aparecer no app do tecnico"
+    : !hasResponsible
+      ? "Tecnico ou equipe obrigatorio"
+      : "Data/hora obrigatoria";
+
+  return \`
+    <section class="os-detail-section os-dispatch-summary">
+      <h4>Despacho</h4>
+      <div class="os-execution-summary">
+        <span><strong>Destino</strong>\${escapeHtml(responsible)}</span>
+        <span><strong>Horario</strong>\${item.agendada_para ? formatDateTime(item.agendada_para) : "Sem horario"}</span>
+        <span class="os-dispatch-status \${ready ? "ready" : "blocked"}"><strong>Status de envio</strong>\${status}</span>
+      </div>
+      <div class="request-actions">
+        <button class="approve-button compact-button os-primary-action \${getAgendaStatusClass(item.status)}" type="button" data-action="enviar-os-campo" data-id="\${item.id}" \${ready ? "" : "disabled"}>Enviar para campo</button>
+        <button class="secondary-button compact-button" type="button" data-action="editar-agenda-os" data-id="\${item.id}">Reatribuir tecnico</button>
+      </div>
+    </section>
+  \`;
+}
+
+async function dispatchOsToField(osId, button) {
+  const item = latestAgendaItems.find((agendaItem) => agendaItem.id === osId);
+
+  if (!item) {
+    return;
+  }
+
+  if (!item.equipe?.id && !item.tecnico?.id) {
+    osDetailMeta.textContent = "Tecnico ou equipe obrigatorio.";
+    return;
+  }
+
+  if (!item.agendada_para) {
+    osDetailMeta.textContent = "Data/hora obrigatoria.";
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = "Enviando...";
+
+  try {
+    const response = await fetch(\`\${apiBaseUrl}/admin/agenda/ordens/\${item.id}\`, {
+      method: "PATCH",
+      headers: {
+        ...authHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        titulo: item.titulo,
+        detalhes: item.detalhes || "",
+        agendada_para: item.agendada_para,
+        equipamento_id: item.equipamento?.id || "",
+        equipe_id: item.equipe?.id || "",
+        tecnico_id: item.tecnico?.id || "",
+        valor_cobrado: item.valor_cobrado ?? undefined
+      })
+    });
+
+    if (await handleUnauthorized(response)) {
+      return;
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      osDetailMeta.textContent = error.message || "Nao foi possivel enviar a O.S. para campo.";
+      return;
+    }
+
+    osDetailMeta.textContent = "O.S. enviada para o app do tecnico.";
+    await loadOsWorkbench();
+    openOsDetail(osId);
+  } catch {
+    osDetailMeta.textContent = "API indisponivel.";
+  } finally {
+    button.disabled = false;
+    button.textContent = "Enviar para campo";
+  }
+}
+
+function renderOsTimeline(item) {
+  const steps = [
+    { label: "Criada", active: true, meta: item.criada_em ? formatDateTime(item.criada_em) : "Registro inicial" },
+    { label: "Agendada", active: Boolean(item.agendada_para), meta: item.agendada_para ? formatDateTime(item.agendada_para) : "Sem horario" },
+    { label: "Em atendimento", active: ["em_deslocamento", "em_atendimento", "concluida"].includes(item.status), meta: formatStatus(item.status) },
+    { label: "Concluida", active: item.status === "concluida", meta: item.status === "concluida" ? "Finalizada" : "Pendente" }
+  ];
+
+  return \`
+    <section class="os-detail-section">
+      <h4>Historico da O.S.</h4>
+      <ol class="os-timeline">
+        \${steps.map((step) => \`
+          <li class="\${step.active ? "is-active" : ""}">
+            <strong>\${step.label}</strong>
+            <span>\${escapeHtml(step.meta)}</span>
+          </li>
+        \`).join("")}
+      </ol>
+    </section>
+  \`;
+}
+
+function renderOsExecutionSummary(item) {
+  const responsible = item.equipe?.nome || item.tecnico?.nome || "Nao atribuido";
+
+  return \`
+    <section class="os-detail-section">
+      <h4>Execucao</h4>
+      <div class="os-execution-summary">
+        <span><strong>Responsavel</strong>\${escapeHtml(responsible)}</span>
+        <span><strong>Checklist</strong>Checklist ainda nao sincronizado</span>
+        <span><strong>Observacao</strong>\${escapeHtml(item.observacao_execucao || item.detalhes || "Sem observacao")}</span>
+      </div>
+    </section>
+  \`;
+}
+
+function renderOsEvidenceSummary(item) {
+  const evidences = item.evidencias || [];
+
+  if (!evidences.length) {
+    return \`
+      <section class="os-detail-section">
+        <h4>Evidencias</h4>
+        <div class="os-evidence-grid">
+          <span>Fotos ainda nao sincronizadas</span>
+        </div>
+      </section>
+    \`;
+  }
+
+  return \`
+    <section class="os-detail-section">
+      <h4>Evidencias</h4>
+      <div class="os-evidence-grid">
+        \${evidences.map((evidence) => \`<span>\${escapeHtml(evidence.tipo || "Foto")} - \${escapeHtml(evidence.criada_em ? formatDateTime(evidence.criada_em) : "sem data")}</span>\`).join("")}
+      </div>
+    </section>
+  \`;
+}
+
+function getOsPrimaryAction(item) {
+  if (item.status === "aberta" && !item.agendada_para) {
+    return { label: "Agendar / atribuir tecnico", action: "editar-agenda-os" };
+  }
+
+  if (item.status === "aberta") {
+    return { label: "Editar agenda", action: "editar-agenda-os" };
+  }
+
+  if (item.status === "em_deslocamento") {
+    return { label: "Acompanhar", action: "editar-agenda-os" };
+  }
+
+  if (item.status === "em_atendimento") {
+    return { label: "Ver execucao", action: "editar-agenda-os" };
+  }
+
+  if (item.status === "concluida") {
+    return { label: "Ver historico", action: "editar-agenda-os" };
+  }
+
+  if (item.status === "cancelada" || item.status === "rejeitada") {
+    return { label: "Revisar motivo", action: "editar-agenda-os" };
+  }
+
+  return { label: "Editar O.S.", action: "editar-agenda-os" };
+}
+
+function getOsNextAction(item) {
+  const actions = {
+    aberta: item.agendada_para ? "Acompanhar agenda" : "Definir horario",
+    em_deslocamento: "Acompanhar tecnico",
+    em_atendimento: "Aguardar finalizacao",
+    concluida: "Ver historico",
+    cancelada: "Revisar motivo",
+    rejeitada: "Revisar solicitacao"
+  };
+
+  return actions[item.status] || "Atualizar O.S.";
+}
+
 function renderOptions(items) {
   return items
     .map((item) => \`<option value="\${item.id}">\${escapeHtml(item.nome)}</option>\`)

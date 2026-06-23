@@ -275,6 +275,147 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(script, /clientesList\.classList\.remove\("hidden"\)/);
 });
 
+test("admin organiza O.S. como fichario operacional", () => {
+  const html = read("apps/admin/index.html");
+  const script = readAdminJs();
+  const styles = readAdminCss();
+
+  assert.match(html, /data-view="preChamados">O\.S\./);
+  assert.doesNotMatch(html, /data-view="preChamados">Pre-chamados/);
+  assert.match(html, /id="osTabs"/);
+  assert.match(html, /data-os-tab="solicitacoes"/);
+  assert.match(html, /data-os-tab="abertas"/);
+  assert.match(html, /data-os-tab="agendadas"/);
+  assert.match(html, /data-os-tab="em_atendimento"/);
+  assert.match(html, /data-os-tab="concluidas"/);
+  assert.match(html, /data-os-tab="canceladas"/);
+  assert.match(html, /id="newOsShortcutButton"/);
+  assert.match(html, /id="osSearchInput"/);
+  assert.match(html, /id="viewTitle">O\.S\./);
+  assert.match(html, /id="viewKicker">Operacao de O\.S\./);
+  assert.match(html, /Solicitacoes/);
+  assert.match(html, /Abertas/);
+  assert.match(html, /Agendadas/);
+  assert.match(html, /Em atendimento/);
+  assert.match(html, /Concluidas/);
+  assert.match(html, /Canceladas/);
+  assert.match(script, /function setOsTab/);
+  assert.match(script, /function filterOsRequests/);
+  assert.match(script, /data-action="os-open-new"/);
+  assert.match(script, /Proxima acao/);
+  assert.match(script, /Converter em O\.S\./);
+  assert.match(styles, /\.os-workbench/);
+  assert.match(styles, /\.os-tabs/);
+  assert.match(styles, /\.os-toolbar/);
+});
+
+test("admin alimenta abas de O.S. com dados reais da agenda", () => {
+  const script = readAdminJs();
+  const styles = readAdminCss();
+
+  assert.match(script, /async function loadOsWorkbench/);
+  assert.match(script, /fetchAdminJson\("\/admin\/agenda", listStatus\)/);
+  assert.match(script, /function filterOsAgendaItems/);
+  assert.match(script, /function renderOsAgendaItems/);
+  assert.match(script, /const OS_STATUS_TABS = /);
+  assert.match(script, /abertas:\s*\["aberta"\]/);
+  assert.match(script, /agendadas:\s*\["aberta"\]/);
+  assert.match(script, /em_atendimento:\s*\["em_deslocamento", "em_atendimento"\]/);
+  assert.match(script, /concluidas:\s*\["concluida"\]/);
+  assert.match(script, /canceladas:\s*\["cancelada", "rejeitada"\]/);
+  assert.match(script, /renderOsCard/);
+  assert.match(script, /data-action="editar-agenda-os"/);
+  assert.match(script, /Equipamento/);
+  assert.match(script, /Responsavel/);
+  assert.match(script, /Data\/hora/);
+  assert.match(script, /filterOsAgendaItems\(latestAgendaItems\)/);
+  assert.match(styles, /\.os-real-card/);
+  assert.match(styles, /\.os-card-grid/);
+});
+
+test("admin abre detalhe lateral da O.S. com acoes por status", () => {
+  const html = read("apps/admin/index.html");
+  const script = readAdminJs();
+  const styles = readAdminCss();
+
+  assert.match(html, /id="osDetailPanel"/);
+  assert.match(html, /id="osDetailTitle"/);
+  assert.match(html, /id="osDetailMeta"/);
+  assert.match(html, /id="osDetailBody"/);
+  assert.match(html, /id="closeOsDetailButton"/);
+  assert.match(script, /let selectedOsDetailId = ""/);
+  assert.match(script, /function openOsDetail/);
+  assert.match(script, /function closeOsDetail/);
+  assert.match(script, /function renderOsDetail/);
+  assert.match(script, /function getOsPrimaryAction/);
+  assert.match(script, /setAttribute\("data-action", "ver-os-detalhe"\)|data-action="ver-os-detalhe"/);
+  assert.match(script, /Agendar \/ atribuir tecnico/);
+  assert.match(script, /Editar agenda/);
+  assert.match(script, /Acompanhar/);
+  assert.match(script, /Ver execucao/);
+  assert.match(script, /Ver historico/);
+  assert.match(script, /Revisar motivo/);
+  assert.match(styles, /\.os-detail-panel/);
+  assert.match(styles, /\.os-detail-panel\.is-open/);
+  assert.match(styles, /\.os-detail-facts/);
+});
+
+test("admin detalhe da O.S. prepara historico execucao e evidencias", () => {
+  const script = readAdminJs();
+  const styles = readAdminCss();
+
+  assert.match(script, /function renderOsTimeline/);
+  assert.match(script, /function renderOsExecutionSummary/);
+  assert.match(script, /function renderOsEvidenceSummary/);
+  assert.match(script, /Historico da O\.S\./);
+  assert.match(script, /Execucao/);
+  assert.match(script, /Evidencias/);
+  assert.match(script, /Criada/);
+  assert.match(script, /Agendada/);
+  assert.match(script, /Em atendimento/);
+  assert.match(script, /Concluida/);
+  assert.match(script, /Checklist ainda nao sincronizado/);
+  assert.match(script, /Fotos ainda nao sincronizadas/);
+  assert.match(styles, /\.os-detail-sections/);
+  assert.match(styles, /\.os-timeline/);
+  assert.match(styles, /\.os-evidence-grid/);
+}
+);
+
+test("admin usa layout de fichario compacto para lista e detalhe de O.S.", () => {
+  const script = readAdminJs();
+  const styles = readAdminCss();
+
+  assert.match(script, /className = "request-card os-real-card os-compact-card"/);
+  assert.match(script, /setAttribute\("data-action", "ver-os-detalhe"\)|data-action="ver-os-detalhe"/);
+  assert.match(script, /renderOsCompactMeta/);
+  assert.match(script, /request-card os-empty-state os-compact-empty/);
+  assert.doesNotMatch(script, /renderOsCard[\s\S]*data-action="editar-agenda-os"[\s\S]*function openOsDetail/);
+  assert.match(styles, /\.os-workbench-grid/);
+  assert.match(styles, /\.os-compact-card/);
+  assert.match(styles, /\.os-compact-card\.is-selected/);
+  assert.match(styles, /\.os-detail-panel/);
+  assert.match(styles, /position: sticky/);
+});
+
+test("admin despacha O.S. para tecnico em campo pelo detalhe", () => {
+  const script = readAdminJs();
+  const styles = readAdminCss();
+
+  assert.match(script, /function renderOsDispatchSummary/);
+  assert.match(script, /async function dispatchOsToField/);
+  assert.match(script, /Despacho/);
+  assert.match(script, /Enviar para campo/);
+  assert.match(script, /Reatribuir tecnico/);
+  assert.match(script, /data-action="enviar-os-campo"/);
+  assert.match(script, /\/admin\/agenda\/ordens\/\$\{item\.id\}/);
+  assert.match(script, /Tecnico ou equipe obrigatorio/);
+  assert.match(script, /Data\/hora obrigatoria/);
+  assert.match(script, /O\.S\. enviada para o app do tecnico/);
+  assert.match(styles, /\.os-dispatch-summary/);
+  assert.match(styles, /\.os-dispatch-status/);
+});
+
 test("admin gerencia tecnicos equipes e responsaveis flexiveis por OS", () => {
   const html = read("apps/admin/index.html");
   const script = readAdminJs();

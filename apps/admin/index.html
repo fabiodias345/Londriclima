@@ -25,7 +25,7 @@
       <nav class="side-nav" aria-label="Menu administrativo">
         <section class="nav-group" aria-label="Operacao">
           <span class="nav-group-title">Operacao</span>
-          <button class="nav-link active" type="button" data-view="preChamados">Pre-chamados</button>
+          <button class="nav-link active" type="button" data-view="preChamados">O.S.</button>
           <button class="nav-link" type="button" data-view="agenda">Agenda</button>
           <button class="nav-link" type="button" data-view="recorrencias">Recorrencias</button>
           <button class="nav-link" type="button" data-view="frota">Frota</button>
@@ -44,7 +44,7 @@
           <span class="nav-group-title">Documentos</span>
           <button class="nav-link" type="button" data-view="pmoc">PMOC</button>
           <button class="nav-link" type="button" data-view="relatoriosAvulsos">Relatorios Avulsos</button>
-          <button class="nav-link" type="button" data-view="relatorios">Relatorios</button>
+          <button class="nav-link" type="button" data-view="relatorios">Dashboard</button>
         </section>
       </nav>
       <div class="sidebar-footer">
@@ -77,24 +77,24 @@
       <section class="dashboard hidden" id="dashboard">
         <header class="topbar">
           <div>
-            <span class="kicker" id="viewKicker">Operacao comercial</span>
-            <h1 id="viewTitle">Pre-chamados do site</h1>
+            <span class="kicker" id="viewKicker">Operacao de O.S.</span>
+            <h1 id="viewTitle">O.S.</h1>
           </div>
           <button class="refresh-button" id="refreshButton" type="button">Atualizar</button>
         </header>
 
         <section class="summary-grid" id="preChamadosSummary" aria-label="Resumo">
           <article>
-            <span>Pendentes</span>
+            <span>Solicitacoes</span>
             <strong id="pendingCount">0</strong>
           </article>
           <article>
-            <span>Origem</span>
-            <strong>Site</strong>
+            <span>Area atual</span>
+            <strong>O.S.</strong>
           </article>
           <article>
             <span>Proxima acao</span>
-            <strong>Aprovar</strong>
+            <strong>Converter</strong>
           </article>
         </section>
 
@@ -222,12 +222,42 @@
           </article>
         </section>
 
-        <section class="worklist" id="preChamadosView">
-          <div class="worklist-header">
-            <h2>Solicitacoes recebidas</h2>
-            <p id="listStatus" role="status">Carregando...</p>
+        <section class="worklist os-workbench os-workbench-grid" id="preChamadosView">
+          <div class="os-tabs" id="osTabs" role="tablist" aria-label="Etapas de O.S.">
+            <button class="subnav-button active" type="button" data-os-tab="solicitacoes">Solicitacoes</button>
+            <button class="subnav-button" type="button" data-os-tab="abertas">Abertas</button>
+            <button class="subnav-button" type="button" data-os-tab="agendadas">Agendadas</button>
+            <button class="subnav-button" type="button" data-os-tab="em_atendimento">Em atendimento</button>
+            <button class="subnav-button" type="button" data-os-tab="concluidas">Concluidas</button>
+            <button class="subnav-button" type="button" data-os-tab="canceladas">Canceladas</button>
+          </div>
+          <div class="worklist-header os-header">
+            <div>
+              <h2>Solicitacoes recebidas</h2>
+              <p id="listStatus" role="status">Carregando...</p>
+            </div>
+            <button class="secondary-button compact-button" id="newOsShortcutButton" type="button" data-action="os-open-new">Nova O.S.</button>
+          </div>
+          <div class="os-toolbar">
+            <label>
+              Buscar O.S.
+              <input id="osSearchInput" type="search" placeholder="Cliente, telefone, endereco ou detalhe" />
+            </label>
           </div>
           <div class="request-list" id="requestList"></div>
+          <aside class="os-detail-panel" id="osDetailPanel" aria-label="Detalhe da O.S.">
+            <div class="os-detail-header">
+              <div>
+                <span class="kicker">Detalhe da O.S.</span>
+                <h3 id="osDetailTitle">Selecione uma O.S.</h3>
+                <p id="osDetailMeta">Clique em uma O.S. para ver dados e proxima acao.</p>
+              </div>
+              <button class="secondary-button compact-button" id="closeOsDetailButton" type="button">Fechar</button>
+            </div>
+            <div class="os-detail-body" id="osDetailBody">
+              <p class="request-details">Nenhuma O.S. selecionada.</p>
+            </div>
+          </aside>
         </section>
 
         <section class="fleet-panel hidden" id="frotaView">
