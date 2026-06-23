@@ -43,6 +43,7 @@ export class AdminAgendaService {
         agendadaPara: true,
         criadaEm: true,
         valorCobrado: true,
+        checklistTipo: true,
         cliente: {
           select: {
             id: true,
@@ -91,6 +92,7 @@ export class AdminAgendaService {
         agendada_para: ordem.agendadaPara?.toISOString() ?? null,
         criada_em: ordem.criadaEm.toISOString(),
         valor_cobrado: ordem.valorCobrado?.toNumber() ?? null,
+        checklist_tipo: ordem.checklistTipo,
         cliente: ordem.cliente,
         endereco: ordem.endereco,
         equipe: ordem.equipe,

@@ -263,7 +263,7 @@ C:\develop\LondriClima\apps\mobile\build\app\outputs\flutter-apk\app-debug.apk
 - Prioridade agora: organizar o painel web para testar o fluxo real do app e das O.S.
 - WhatsApp fica aguardando o cliente repassar o chip antes de qualquer integracao.
 
-### Painel de O.S. - Fase 1.6 pronta para commit
+### Painel de O.S. - Fase 1.7 pronta para commit
 
 - Fase 1 iniciada: menu `Pre-chamados` virou `O.S.`, com abas de fichario e `Dashboard` no lugar visual de `Relatorios`.
 - Fase 1.2 feita localmente: abas `Abertas`, `Agendadas`, `Em atendimento`, `Concluidas` e `Canceladas` agora usam dados reais de `/admin/agenda`.
@@ -271,15 +271,15 @@ C:\develop\LondriClima\apps\mobile\build\app\outputs\flutter-apk\app-debug.apk
 - Fase 1.4 feita localmente: detalhe da O.S. ganhou blocos de historico, execucao e evidencias preparados para checklist/fotos do app.
 - Fase 1.5 feita localmente: area de O.S. virou fichario compacto com lista de cards menores e detalhe lateral fixo; acoes sairam do card e ficaram no detalhe.
 - Fase 1.6 feita localmente: detalhe da O.S. ganhou bloco `Despacho`, valida tecnico/equipe e data/hora, e botao `Enviar para campo` usando `/admin/agenda/ordens/:id` para a O.S. aparecer no app do tecnico.
+- Fase 1.7 feita localmente: detalhe da O.S. ganhou bloco `App do tecnico`, mostrando prontidao para aparecer no app, responsavel, cliente/endereco, maquina e checklist_tipo vindo de `/admin/agenda`.
 - A primeira entrega preserva endpoints/rotas internas existentes para reduzir risco.
 
 ### Proximos passos do painel de O.S.
 
-1. Fase 1.7: criar bloco `App do tecnico` no detalhe da O.S. para confirmar se a ordem esta pronta/aparecendo no app.
-2. Validar `Enviar para campo` contra a API mobile: conferir se a O.S. aparece para o tecnico/equipe atribuido.
-3. Ligar historico real da O.S. no detalhe usando eventos do backend.
-4. Ligar checklist, fotos antes/depois, assinatura e finalizacao reais quando o backend expuser os dados completos.
-5. Revisar visual em tela real depois do commit: altura dos cards, detalhe lateral e fluxo de despacho.
+1. Validar `Enviar para campo` contra a API mobile: conferir se a O.S. aparece para o tecnico/equipe atribuido.
+2. Ligar historico real da O.S. no detalhe usando eventos do backend.
+3. Ligar checklist, fotos antes/depois, assinatura e finalizacao reais quando o backend expuser os dados completos.
+4. Revisar visual em tela real depois do commit: altura dos cards, detalhe lateral e fluxo de despacho.
 
 ### Backlog futuro: pos-venda WhatsApp
 

@@ -254,6 +254,7 @@ function renderOsDetail(item) {
     <p class="request-details">\${escapeHtml(item.detalhes || "Sem detalhes")}</p>
     <div class="os-detail-sections">
       \${renderOsDispatchSummary(item)}
+      \${renderOsTechnicianAppSummary(item)}
       \${renderOsTimeline(item)}
       \${renderOsExecutionSummary(item)}
       \${renderOsEvidenceSummary(item)}
@@ -262,6 +263,37 @@ function renderOsDetail(item) {
       <button class="approve-button compact-button os-primary-action \${getAgendaStatusClass(item.status)}" type="button" data-action="\${primaryAction.action}" data-id="\${item.id}">\${primaryAction.label}</button>
       <button class="secondary-button compact-button" type="button" data-action="editar-agenda-os" data-id="\${item.id}">Editar O.S.</button>
     </div>
+  \`;
+}
+
+function renderOsTechnicianAppSummary(item) {
+  const hasResponsible = Boolean(item.equipe?.id || item.tecnico?.id);
+  const hasSchedule = Boolean(item.agendada_para);
+  const hasClientAddress = Boolean(item.cliente?.id && item.endereco);
+  const hasMachine = Boolean(item.equipamento?.id);
+  const appStatus = ["aberta", "em_deslocamento", "em_atendimento"].includes(item.status);
+  const ready = appStatus && hasResponsible && hasSchedule && hasClientAddress && hasMachine;
+  const machineLabel = item.equipamento ? formatAgendaEquipment(item.equipamento) : "Nenhuma maquina vinculada";
+  const checklistLabel = formatChecklistTipo(item.checklist_tipo);
+
+  return \`
+    <section class="os-detail-section os-app-summary">
+      <h4>App do tecnico</h4>
+      <div class="os-app-readiness \${ready ? "ready" : "blocked"}">
+        <strong>Aparece no app</strong>
+        <span>\${ready ? "Pronta para conferir no celular" : "Complete o despacho para liberar no app"}</span>
+      </div>
+      <div class="os-execution-summary">
+        <span><strong>Status da O.S.</strong>\${appStatus ? "Compativel com app" : "Fora do fluxo do app"}</span>
+        <span><strong>Responsavel atribuido</strong>\${escapeHtml(item.equipe?.nome || item.tecnico?.nome || "Nao atribuido")}</span>
+        <span><strong>Cliente e endereco</strong>\${hasClientAddress ? escapeHtml(formatAddress(item.endereco)) : "Cliente/endereco incompleto"}</span>
+        <span><strong>Maquinas disponiveis</strong>\${escapeHtml(machineLabel)}</span>
+        <span><strong>Checklist do app</strong>\${escapeHtml(checklistLabel)}</span>
+      </div>
+      <div class="request-actions">
+        <button class="secondary-button compact-button" type="button" data-action="editar-agenda-os" data-id="\${item.id}">\${ready ? "Conferir no app" : "Corrigir despacho"}</button>
+      </div>
+    </section>
   \`;
 }
 
@@ -290,6 +322,15 @@ function renderOsDispatchSummary(item) {
       </div>
     </section>
   \`;
+}
+
+function formatChecklistTipo(value) {
+  return {
+    mensal: "Mensal",
+    trimestral: "Trimestral",
+    semestral: "Semestral",
+    anual: "Anual"
+  }[value] || "Mensal";
 }
 
 async function dispatchOsToField(osId, button) {

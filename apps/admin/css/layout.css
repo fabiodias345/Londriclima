@@ -732,6 +732,38 @@ form button,
   background: #f7fbfb;
 }
 
+.os-app-summary {
+  border-color: rgba(37, 99, 235, 0.18);
+  background: #f8fbff;
+}
+
+.os-app-readiness {
+  display: grid;
+  gap: 3px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.os-app-readiness strong {
+  color: var(--ink);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.os-app-readiness.ready {
+  color: #0f766e;
+  background: #ecfdf5;
+}
+
+.os-app-readiness.blocked {
+  color: var(--danger);
+  background: #fff7ed;
+}
+
 .os-dispatch-status {
   padding: 10px;
   border-radius: 8px;

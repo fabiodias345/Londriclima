@@ -416,6 +416,23 @@ test("admin despacha O.S. para tecnico em campo pelo detalhe", () => {
   assert.match(styles, /\.os-dispatch-status/);
 });
 
+test("admin mostra prontidao da O.S. para o app do tecnico", () => {
+  const script = readAdminJs();
+  const styles = readAdminCss();
+
+  assert.match(script, /function renderOsTechnicianAppSummary/);
+  assert.match(script, /App do tecnico/);
+  assert.match(script, /Aparece no app/);
+  assert.match(script, /Responsavel atribuido/);
+  assert.match(script, /Cliente e endereco/);
+  assert.match(script, /Maquinas disponiveis/);
+  assert.match(script, /Checklist do app/);
+  assert.match(script, /Conferir no app/);
+  assert.match(script, /Complete o despacho para liberar no app/);
+  assert.match(styles, /\.os-app-summary/);
+  assert.match(styles, /\.os-app-readiness/);
+});
+
 test("admin gerencia tecnicos equipes e responsaveis flexiveis por OS", () => {
   const html = read("apps/admin/index.html");
   const script = readAdminJs();

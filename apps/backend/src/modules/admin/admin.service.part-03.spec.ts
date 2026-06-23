@@ -186,6 +186,41 @@ test("reprogramarOrdemAgenda atualiza horario e responsaveis de OS operacional",
   });
 });
 
+test("listarAgenda retorna checklist_tipo para conferencia do app tecnico", async () => {
+  const prisma = {
+    ordemServico: {
+      findMany: async () => [
+        {
+          id: "os-1",
+          titulo: "PMOC mensal",
+          problemaRelatado: "Limpeza preventiva",
+          status: OrdemServicoStatus.aberta,
+          agendadaPara: new Date("2026-06-18T13:30:00.000Z"),
+          criadaEm: new Date("2026-06-18T12:00:00.000Z"),
+          valorCobrado: new Prisma.Decimal(280),
+          checklistTipo: ChecklistTipo.trimestral,
+          cliente: { id: "cliente-1", nome: "Hospital Norte", telefone: "43999990000" },
+          endereco: { bairro: "Centro", cidade: "Londrina", uf: "PR" },
+          equipe: null,
+          tecnico: { id: "tecnico-1", nome: "Tecnico Campo" },
+          equipamento: {
+            id: "equipamento-1",
+            patrimonio: "AC1",
+            marca: "Gree",
+            modelo: "Split",
+            localInstalacao: "Recepcao"
+          }
+        }
+      ]
+    }
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.listarAgenda(usuario);
+
+  assert.equal(resposta.items[0].checklist_tipo, ChecklistTipo.trimestral);
+});
+
 test("criarPlanoRecorrencia cadastra rotina operacional para cliente da empresa", async () => {
   const chamadas = {
     createData: undefined as unknown
