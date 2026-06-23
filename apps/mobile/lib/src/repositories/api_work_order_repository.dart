@@ -350,14 +350,39 @@ class ApiWorkOrderRepository implements WorkOrderRepository {
       );
 
       final response = await request.close();
-      await response.drain<void>();
+      final body = await response.transform(utf8.decoder).join();
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw HttpException('$errorPrefix: ${response.statusCode}');
+        final message = _errorMessage(
+          body,
+          fallback: '$errorPrefix: ${response.statusCode}',
+        );
+        if (response.statusCode == HttpStatus.conflict &&
+            _isEvidenceAlreadyRegistered(message)) {
+          return;
+        }
+        throw HttpException(message);
       }
     } finally {
       client.close(force: true);
     }
+  }
+
+  bool _isEvidenceAlreadyRegistered(String message) {
+    final normalized = _normalizeMessage(message);
+    return normalized.contains('evidencia') &&
+        normalized.contains('registrada');
+  }
+
+  String _normalizeMessage(String message) {
+    return message
+        .toLowerCase()
+        .replaceAll(RegExp('[áàâã]'), 'a')
+        .replaceAll(RegExp('[éèê]'), 'e')
+        .replaceAll(RegExp('[íìî]'), 'i')
+        .replaceAll(RegExp('[óòôõ]'), 'o')
+        .replaceAll(RegExp('[úùû]'), 'u')
+        .replaceAll('ç', 'c');
   }
 
   Future<WorkOrder> _updateStatus({

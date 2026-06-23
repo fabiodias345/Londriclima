@@ -11,7 +11,7 @@ void main() {
   test(
     'salvar checklist offline entra na fila e marca OS aguardando sync',
     () async {
-      final remote = _RemoteRepository(failNextChecklist: true);
+      final remote = _RemoteRepository(failChecklistAlways: true);
       final store = MemoryOfflineSyncStore();
       final repository = OfflineWorkOrderRepository(
         remote: remote,
@@ -64,6 +64,38 @@ void main() {
     expect(remote.savedChecklists, 1);
     expect(await repository.pendingSyncCount(), 0);
   });
+
+  test(
+    'listar OS tenta sincronizar checklist pendente antes de carregar',
+    () async {
+      final remote = _RemoteRepository(failNextChecklist: true);
+      final store = MemoryOfflineSyncStore();
+      final repository = OfflineWorkOrderRepository(
+        remote: remote,
+        store: store,
+      );
+      final order = _order();
+
+      await repository.saveChecklist(
+        order,
+        equipmentId: 'EQ-1',
+        checklistType: 'mensal',
+        responses: const [
+          WorkOrderChecklistResponse(
+            code: 'M1',
+            kind: 'checkbox',
+            value: 'true',
+          ),
+        ],
+      );
+
+      final orders = await repository.listMine();
+
+      expect(orders, hasLength(1));
+      expect(remote.savedChecklists, 1);
+      expect(await repository.pendingSyncCount(), 0);
+    },
+  );
 }
 
 WorkOrder _order() {
@@ -88,9 +120,13 @@ WorkOrder _order() {
 }
 
 class _RemoteRepository implements WorkOrderRepository {
-  _RemoteRepository({this.failNextChecklist = false});
+  _RemoteRepository({
+    this.failNextChecklist = false,
+    this.failChecklistAlways = false,
+  });
 
   bool failNextChecklist;
+  bool failChecklistAlways;
   int savedChecklists = 0;
 
   @override
@@ -132,7 +168,7 @@ class _RemoteRepository implements WorkOrderRepository {
     required String checklistType,
     required List<WorkOrderChecklistResponse> responses,
   }) async {
-    if (failNextChecklist) {
+    if (failChecklistAlways || failNextChecklist) {
       failNextChecklist = false;
       throw const SocketException('offline');
     }

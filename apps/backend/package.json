@@ -12,6 +12,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "prisma db seed",
+    "prisma:reset-os": "ts-node prisma/reset_os.ts",
     "prisma:studio": "prisma studio"
   },
   "prisma": {

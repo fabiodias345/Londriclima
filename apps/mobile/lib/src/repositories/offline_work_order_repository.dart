@@ -17,6 +17,11 @@ class OfflineWorkOrderRepository implements WorkOrderRepository {
 
   @override
   Future<List<WorkOrder>> listMine() async {
+    final queuedBeforeLoad = await store.readAll();
+    if (queuedBeforeLoad.isNotEmpty) {
+      await syncPending();
+    }
+
     try {
       _cachedOrders = await remote.listMine();
     } on Object catch (error) {

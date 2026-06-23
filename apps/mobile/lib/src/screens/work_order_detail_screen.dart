@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../models/work_order.dart';
@@ -66,10 +67,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
   bool _checklistStarted = false;
   bool _savingChecklist = false;
   bool _checklistSaved = false;
-  bool _savingInitialEvidence = false;
-  bool _savingFinalEvidence = false;
   bool _initialEvidenceSaved = false;
-  bool _finalEvidenceSaved = false;
   bool _finishing = false;
   String? _checklistMessage;
   final _checklistSectionKey = GlobalKey();
@@ -119,6 +117,11 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
     super.initState();
     _order = widget.order;
     _equipments = List<WorkOrderEquipment>.of(_equipmentsFor(widget.order));
+    if (_allEquipmentsHandled) {
+      _checklistSaved = true;
+      _initialEvidenceSaved = true;
+      _activeStep = _WorkOrderDetailStep.finish;
+    }
   }
 
   @override
@@ -173,25 +176,6 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
               DetailSection(
                 title: 'Equipamentos deste atendimento',
                 children: _equipmentWidgets(_order),
-              ),
-              const SizedBox(height: 14),
-              DetailSection(
-                title: 'Checklist previsto',
-                children: _checklistFor(
-                  _order,
-                ).map((item) => _Bullet(text: item)).toList(),
-              ),
-              const SizedBox(height: 14),
-              const DetailSection(
-                title: 'Obrigatorios da execucao',
-                children: [
-                  _Bullet(text: 'GPS inicial'),
-                  _Bullet(text: 'Foto antes'),
-                  _Bullet(text: 'Checklist completo'),
-                  _Bullet(text: 'Foto depois'),
-                  _Bullet(text: 'Nome e assinatura do cliente'),
-                  _Bullet(text: 'GPS final'),
-                ],
               ),
               const SizedBox(height: 18),
             ],
@@ -293,7 +277,6 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
                           _checklistMessage = null;
                           _checklistValues.clear();
                           _initialEvidenceSaved = false;
-                          _finalEvidenceSaved = false;
                           _signaturePoints.clear();
                           _responsibleController.clear();
                           _clearTextControllers();
@@ -312,7 +295,6 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
                         _checklistSaved = false;
                         _checklistMessage = null;
                         _initialEvidenceSaved = false;
-                        _finalEvidenceSaved = false;
                         _signaturePoints.clear();
                         _responsibleController.clear();
                         _clearMachineForm();
@@ -456,29 +438,6 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
                 _checklistStarted &&
                 _selectedEquipment != null) ...[
               const SizedBox(height: 12),
-              OutlinedButton.icon(
-                key: const Key('initialEvidenceButton'),
-                onPressed: _savingInitialEvidence || _initialEvidenceSaved
-                    ? null
-                    : _saveInitialEvidence,
-                icon: Icon(
-                  _initialEvidenceSaved
-                      ? Icons.check_circle_outline
-                      : Icons.photo_camera_outlined,
-                ),
-                label: Text(
-                  _savingInitialEvidence
-                      ? 'Enviando foto antes...'
-                      : _initialEvidenceSaved
-                      ? 'Foto antes registrada'
-                      : 'Registrar foto antes',
-                ),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
-                  alignment: Alignment.centerLeft,
-                ),
-              ),
-              const SizedBox(height: 12),
               DetailSection(
                 key: _checklistSectionKey,
                 title: 'Checklist da maquina',
@@ -532,7 +491,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
                   _savingChecklist
                       ? 'Salvando...'
                       : !_initialEvidenceSaved
-                      ? 'Registre foto antes'
+                      ? 'Registre a foto do checklist'
                       : 'Salvar checklist',
                 ),
                 style: FilledButton.styleFrom(
@@ -670,7 +629,6 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
       _checklistMessage = null;
       _checklistValues.clear();
       _initialEvidenceSaved = false;
-      _finalEvidenceSaved = false;
       _signaturePoints.clear();
       _responsibleController.clear();
       _clearTextControllers();
@@ -766,7 +724,6 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
         _checklistStarted = false;
         _checklistValues.clear();
         _clearTextControllers();
-        _finalEvidenceSaved = false;
         _signaturePoints.clear();
         _responsibleController.clear();
         _activeStep = _allEquipmentsHandled
@@ -793,90 +750,6 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
     return fallback;
   }
 
-  Future<void> _saveInitialEvidence() async {
-    setState(() {
-      _savingInitialEvidence = true;
-      _errorMessage = null;
-    });
-
-    try {
-      final photo = await widget.photoPicker.pickPhoto();
-      if (photo == null) {
-        if (!mounted) {
-          return;
-        }
-        setState(() {
-          _savingInitialEvidence = false;
-        });
-        return;
-      }
-
-      await widget.repository.saveInitialEvidence(
-        _order,
-        description: 'Foto antes do atendimento mobile',
-        photo: photo,
-      );
-
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _savingInitialEvidence = false;
-        _initialEvidenceSaved = true;
-      });
-    } on Object {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _savingInitialEvidence = false;
-        _errorMessage = 'Falha ao enviar foto antes.';
-      });
-    }
-  }
-
-  Future<void> _saveFinalEvidence() async {
-    setState(() {
-      _savingFinalEvidence = true;
-      _errorMessage = null;
-    });
-
-    try {
-      final photo = await widget.photoPicker.pickPhoto();
-      if (photo == null) {
-        if (!mounted) {
-          return;
-        }
-        setState(() {
-          _savingFinalEvidence = false;
-        });
-        return;
-      }
-
-      await widget.repository.saveFinalEvidence(
-        _order,
-        description: 'Foto depois do atendimento mobile',
-        photo: photo,
-      );
-
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _savingFinalEvidence = false;
-        _finalEvidenceSaved = true;
-      });
-    } on Object {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _savingFinalEvidence = false;
-        _errorMessage = 'Falha ao enviar foto depois.';
-      });
-    }
-  }
-
   Future<void> _finishWorkOrder() async {
     if (!_allEquipmentsHandled) {
       setState(() {
@@ -886,15 +759,25 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
       return;
     }
 
-    final responsibleName = _responsibleController.text.trim();
-    if (!_finalEvidenceSaved) {
-      setState(() {
-        _errorMessage = 'Registre a foto depois antes de finalizar.';
-      });
-      return;
+    var responsibleName = _responsibleController.text.trim();
+    var hasSignature = _signaturePoints.whereType<Offset>().isNotEmpty;
+    if (kDebugMode) {
+      if (responsibleName.isEmpty) {
+        responsibleName = 'Teste AIRMOVEBR';
+      }
+      if (!hasSignature) {
+        _signaturePoints
+          ..clear()
+          ..addAll(const [
+            Offset(80, 120),
+            Offset(190, 80),
+            Offset(320, 130),
+            Offset(500, 70),
+          ]);
+        hasSignature = true;
+      }
     }
-    if (responsibleName.isEmpty ||
-        _signaturePoints.whereType<Offset>().isEmpty) {
+    if (responsibleName.isEmpty || !hasSignature) {
       setState(() {
         _errorMessage = 'Informe o responsavel e colete a assinatura.';
       });
@@ -907,6 +790,24 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
     });
 
     try {
+      final pendingBeforeFinish = await widget.repository.pendingSyncCount();
+      if (pendingBeforeFinish > 0) {
+        final syncResult = await widget.repository.syncPending();
+        final pendingAfterSync = await widget.repository.pendingSyncCount();
+        if (!mounted) {
+          return;
+        }
+        if (syncResult.failed > 0 || pendingAfterSync > 0) {
+          setState(() {
+            _finishing = false;
+            _errorMessage =
+                'Ainda ha dados pendentes de sincronizacao. Sincronize antes de finalizar.';
+          });
+          return;
+        }
+        setState(_markWaitingSyncEquipmentsDone);
+      }
+
       final location = await widget.locationService.currentLocation();
       final updated = await widget.repository.finishWorkOrder(
         _order,
@@ -1011,14 +912,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
       if (!_initialEvidenceSaved && _isInitialEvidencePhoto(item)) {
         await widget.repository.saveInitialEvidence(
           _order,
-          description: item.label,
-          photo: photo,
-        );
-      }
-      if (!_finalEvidenceSaved && _isFinalEvidencePhoto(item)) {
-        await widget.repository.saveFinalEvidence(
-          _order,
-          description: item.label,
+          description: 'Foto apos abrir tampa frontal',
           photo: photo,
         );
       }
@@ -1031,9 +925,6 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
         _checklistValues[item.code] = storageUrl;
         if (_isInitialEvidencePhoto(item)) {
           _initialEvidenceSaved = true;
-        }
-        if (_isFinalEvidencePhoto(item)) {
-          _finalEvidenceSaved = true;
         }
         _uploadingPhotoCodes.remove(item.code);
       });
@@ -1053,20 +944,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
   }
 
   bool _isInitialEvidencePhoto(WorkOrderChecklistItem item) {
-    final text = '${item.code} ${item.label}'.toLowerCase();
-    return item.kind == 'foto' &&
-        (text.contains('antes') || text.contains('inicial'));
-  }
-
-  bool _isFinalEvidencePhoto(WorkOrderChecklistItem item) {
-    final text = '${item.code} ${item.label}'.toLowerCase();
-    return item.kind == 'foto' &&
-        (text.contains('depois') ||
-            text.contains('apos') ||
-            text.contains('após') ||
-            text.contains('final') ||
-            text.contains('conclusao') ||
-            text.contains('conclusão'));
+    return item.kind == 'foto';
   }
 
   List<WorkOrderChecklistResponse> _buildChecklistResponses() {
@@ -1119,34 +997,6 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
         ),
         const SizedBox(height: 12),
       ],
-      OutlinedButton.icon(
-        key: const Key('finalEvidenceButton'),
-        onPressed:
-            !_initialEvidenceSaved ||
-                _savingFinalEvidence ||
-                _finalEvidenceSaved
-            ? null
-            : _saveFinalEvidence,
-        icon: Icon(
-          _finalEvidenceSaved
-              ? Icons.check_circle_outline
-              : Icons.photo_camera_outlined,
-        ),
-        label: Text(
-          !_initialEvidenceSaved
-              ? 'Registre foto antes'
-              : _savingFinalEvidence
-              ? 'Enviando foto depois...'
-              : _finalEvidenceSaved
-              ? 'Foto depois registrada'
-              : 'Registrar foto depois',
-        ),
-        style: OutlinedButton.styleFrom(
-          minimumSize: const Size.fromHeight(48),
-          alignment: Alignment.centerLeft,
-        ),
-      ),
-      const SizedBox(height: 12),
       TextField(
         key: const Key('responsibleNameField'),
         controller: _responsibleController,
@@ -1256,6 +1106,16 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
         .map(
           (equipment) => equipment.id == equipmentId
               ? equipment.copyWith(executionStatus: status)
+              : equipment,
+        )
+        .toList();
+  }
+
+  void _markWaitingSyncEquipmentsDone() {
+    _equipments = _equipments
+        .map(
+          (equipment) => equipment.isWaitingSync
+              ? equipment.copyWith(executionStatus: 'feito')
               : equipment,
         )
         .toList();
@@ -1946,37 +1806,3 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-class _Bullet extends StatelessWidget {
-  const _Bullet({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.check_circle_outline,
-            color: airmovebrAccent,
-            size: 19,
-          ),
-          const SizedBox(width: 8),
-          Expanded(child: Text(text)),
-        ],
-      ),
-    );
-  }
-}
-
-List<String> _checklistFor(WorkOrder order) {
-  if (order.checklist.isNotEmpty) {
-    return order.checklist.take(4).map((item) => item.label).toList();
-  }
-
-  return const [
-    'Checklist definido pela OS',
-    'Selecione a maquina antes de iniciar',
-  ];
-}

@@ -320,6 +320,96 @@ void main() {
     },
   );
 
+  test(
+    'ApiWorkOrderRepository ignora conflito quando foto antes ja existe',
+    () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+
+      final pump = server.listen((request) async {
+        await request.drain<void>();
+        request.response.statusCode = HttpStatus.conflict;
+        request.response.headers.contentType = ContentType.json;
+        request.response.write(
+          jsonEncode({
+            'message': 'Evidencia inicial ja registrada para esta OS.',
+          }),
+        );
+        await request.response.close();
+      });
+
+      final repository = ApiWorkOrderRepository(
+        baseUrl: Uri.parse('http://127.0.0.1:${server.port}'),
+        token: 'token-api',
+      );
+
+      await repository.saveInitialEvidence(
+        WorkOrder(
+          id: 'os-1',
+          clientName: 'Cliente API',
+          address: 'Rua API, 10',
+          equipment: 'Split API',
+          maintenanceType: 'PMOC',
+          scheduledAt: DateTime.now(),
+          status: WorkOrderStatus.inProgress,
+        ),
+        description: 'Foto antes',
+        photo: const ChecklistPhotoFile(
+          filename: 'antes.jpg',
+          mimeType: 'image/jpeg',
+          bytes: [1, 2, 3],
+        ),
+      );
+
+      await pump.cancel();
+      await server.close(force: true);
+    },
+  );
+
+  test(
+    'ApiWorkOrderRepository ignora conflito quando foto depois ja existe',
+    () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+
+      final pump = server.listen((request) async {
+        await request.drain<void>();
+        request.response.statusCode = HttpStatus.conflict;
+        request.response.headers.contentType = ContentType.json;
+        request.response.write(
+          jsonEncode({
+            'message': 'Evidência final já registrada para esta OS.',
+          }),
+        );
+        await request.response.close();
+      });
+
+      final repository = ApiWorkOrderRepository(
+        baseUrl: Uri.parse('http://127.0.0.1:${server.port}'),
+        token: 'token-api',
+      );
+
+      await repository.saveFinalEvidence(
+        WorkOrder(
+          id: 'os-1',
+          clientName: 'Cliente API',
+          address: 'Rua API, 10',
+          equipment: 'Split API',
+          maintenanceType: 'PMOC',
+          scheduledAt: DateTime.now(),
+          status: WorkOrderStatus.inProgress,
+        ),
+        description: 'Foto depois',
+        photo: const ChecklistPhotoFile(
+          filename: 'depois.jpg',
+          mimeType: 'image/jpeg',
+          bytes: [1, 2, 3],
+        ),
+      );
+
+      await pump.cancel();
+      await server.close(force: true);
+    },
+  );
+
   test('ApiWorkOrderRepository envia evidencias e finaliza OS', () async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     final paths = <String>[];

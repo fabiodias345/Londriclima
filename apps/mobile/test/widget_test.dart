@@ -93,13 +93,11 @@ void main() {
     expect(find.text('Evaporadora sala 102'), findsOneWidget);
     expect(find.text('Condensadora cobertura'), findsOneWidget);
 
-    await tester.scrollUntilVisible(find.text('Checklist previsto'), 240);
-
-    expect(find.text('Checklist previsto'), findsOneWidget);
-
-    await tester.scrollUntilVisible(find.text('Obrigatorios da execucao'), 240);
-
-    expect(find.text('Obrigatorios da execucao'), findsOneWidget);
+    expect(find.text('Checklist previsto'), findsNothing);
+    expect(find.text('Obrigatorios da execucao'), findsNothing);
+    expect(find.text('GPS inicial'), findsNothing);
+    expect(find.text('Foto depois'), findsNothing);
+    expect(find.text('Nome e assinatura do cliente'), findsNothing);
 
     await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
 
@@ -277,7 +275,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('checklist_number_S6')), findsOneWidget);
     expect(find.byKey(const Key('checklist_text_S7')), findsOneWidget);
-    expect(find.text('Fotografar filtros antes'), findsOneWidget);
+    expect(find.text('Foto apos abrir tampa frontal'), findsOneWidget);
     expect(find.byKey(const Key('checklist_photo_M4')), findsOneWidget);
     expect(find.byKey(const Key('checklist_final_M16')), findsOneWidget);
   });
@@ -367,10 +365,6 @@ void main() {
     await tester.tap(find.byKey(const Key('checklistReadyButton')));
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.byKey(const Key('initialEvidenceButton')));
-    await tester.tap(find.byKey(const Key('initialEvidenceButton')));
-    await tester.pumpAndSettle();
-
     await tester.tap(find.byKey(const Key('checklist_checkbox_M1')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('checklist_select_M6')));
@@ -446,10 +440,6 @@ void main() {
       scrollable: find.byType(Scrollable).first,
     );
     await tester.tap(find.byKey(const Key('checklistReadyButton')));
-    await tester.pumpAndSettle();
-
-    await tester.ensureVisible(find.byKey(const Key('initialEvidenceButton')));
-    await tester.tap(find.byKey(const Key('initialEvidenceButton')));
     await tester.pumpAndSettle();
 
     await tester.ensureVisible(find.byKey(const Key('checklist_photo_M4')));
@@ -537,9 +527,6 @@ void main() {
     await tester.tap(find.byKey(const Key('checklistReadyButton')));
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.byKey(const Key('initialEvidenceButton')));
-    await tester.tap(find.byKey(const Key('initialEvidenceButton')));
-    await tester.pumpAndSettle();
     await tester.ensureVisible(find.byKey(const Key('checklist_photo_M4')));
     await tester.tap(find.byKey(const Key('checklist_photo_M4')));
     await tester.pumpAndSettle();
@@ -649,9 +636,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('checklistReadyButton')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('initialEvidenceButton')));
+    await tester.ensureVisible(find.byKey(const Key('checklist_photo_M4')));
+    await tester.tap(find.byKey(const Key('checklist_photo_M4')));
     await tester.pumpAndSettle();
-
     await tester.ensureVisible(find.byKey(const Key('saveChecklistButton')));
     await tester.tap(find.byKey(const Key('saveChecklistButton')));
     await tester.pumpAndSettle();
@@ -715,7 +702,7 @@ void main() {
   });
 
   testWidgets(
-    'finalizacao libera foto depois nome e assinatura apos foto antes',
+    'finalizacao libera foto final nome e assinatura apos foto do checklist',
     (tester) async {
       await tester.binding.setSurfaceSize(const Size(900, 1600));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -760,17 +747,13 @@ void main() {
       await tester.tap(find.byKey(const Key('checklistReadyButton')));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const Key('initialEvidenceButton')));
+      expect(find.byKey(const Key('initialEvidenceButton')), findsNothing);
+      await tester.ensureVisible(find.byKey(const Key('checklist_photo_M4')));
+      await tester.tap(find.byKey(const Key('checklist_photo_M4')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('stepTab_finish')));
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.byKey(const Key('finalEvidenceButton')));
-      final finalPhotoButton = tester.widget<OutlinedButton>(
-        find.byKey(const Key('finalEvidenceButton')),
-      );
-      expect(finalPhotoButton.onPressed, isNotNull);
-      await tester.tap(find.byKey(const Key('finalEvidenceButton')));
-      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('finalEvidenceButton')), findsNothing);
       await tester.ensureVisible(find.byKey(const Key('responsibleNameField')));
       await tester.enterText(
         find.byKey(const Key('responsibleNameField')),
@@ -788,7 +771,7 @@ void main() {
         find.byKey(const Key('finishWorkOrderButton')),
       );
 
-      expect(repository.finalEvidenceOrderId, 'OS-API');
+      expect(repository.finalEvidenceOrderId, isNull);
       expect(
         tester
             .widget<TextField>(find.byKey(const Key('responsibleNameField')))
@@ -806,7 +789,9 @@ void main() {
   ) async {
     await tester.binding.setSurfaceSize(const Size(900, 1600));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    final repository = _RepositorioDeTeste(equipments: _singleEquipment);
+    final repository = _RepositorioDeTeste(equipments: _singleEquipment)
+      ..pendingSyncCountValue = 1
+      ..syncResult = const OfflineSyncResult(synced: 1);
     await tester.pumpWidget(
       MaterialApp(
         home: LoginScreen(
@@ -849,9 +834,6 @@ void main() {
     await tester.tap(find.byKey(const Key('checklistReadyButton')));
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.byKey(const Key('initialEvidenceButton')));
-    await tester.tap(find.byKey(const Key('initialEvidenceButton')));
-    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('checklist_checkbox_M1')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('checklist_select_M6')));
@@ -870,9 +852,7 @@ void main() {
     await tester.ensureVisible(find.byKey(const Key('saveChecklistButton')));
     await tester.tap(find.byKey(const Key('saveChecklistButton')));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.byKey(const Key('finalEvidenceButton')));
-    await tester.tap(find.byKey(const Key('finalEvidenceButton')));
-    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('finalEvidenceButton')), findsNothing);
     await tester.ensureVisible(find.byKey(const Key('responsibleNameField')));
     await tester.enterText(
       find.byKey(const Key('responsibleNameField')),
@@ -900,14 +880,12 @@ void main() {
       find.text('Informe o responsavel e colete a assinatura.'),
       findsNothing,
     );
-    expect(
-      find.text('Registre a foto depois antes de finalizar.'),
-      findsNothing,
-    );
+    expect(find.text('Registre a foto depois antes de finalizar.'), findsNothing);
     expect(find.text('Falha ao finalizar OS.'), findsNothing);
 
     expect(repository.initialEvidenceOrderId, 'OS-API');
-    expect(repository.finalEvidenceOrderId, 'OS-API');
+    expect(repository.finalEvidenceOrderId, isNull);
+    expect(repository.syncPendingCalls, 1);
     expect(repository.finishedOrderId, 'OS-API');
     expect(repository.finishInput?.responsibleName, 'Cliente Teste');
     expect(
@@ -968,9 +946,6 @@ void main() {
     await tester.tap(find.byKey(const Key('checklistReadyButton')));
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.byKey(const Key('initialEvidenceButton')));
-    await tester.tap(find.byKey(const Key('initialEvidenceButton')));
-    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('checklist_checkbox_M1')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('checklist_select_M6')));
@@ -989,9 +964,7 @@ void main() {
     await tester.ensureVisible(find.byKey(const Key('saveChecklistButton')));
     await tester.tap(find.byKey(const Key('saveChecklistButton')));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.byKey(const Key('finalEvidenceButton')));
-    await tester.tap(find.byKey(const Key('finalEvidenceButton')));
-    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('finalEvidenceButton')), findsNothing);
     await tester.ensureVisible(find.byKey(const Key('responsibleNameField')));
     await tester.enterText(
       find.byKey(const Key('responsibleNameField')),
@@ -1019,6 +992,78 @@ void main() {
     expect(find.byType(SnackBar), findsOneWidget);
     expect(find.textContaining('Checklist obrigatorio'), findsWidgets);
     expect(find.text('OS finalizada.'), findsNothing);
+  });
+
+  testWidgets('OS ja concluida no app libera finalizacao ao reabrir detalhe', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = _RepositorioDeTeste(
+      status: WorkOrderStatus.inProgress,
+      backendStatus: 'em_atendimento',
+      equipments: const [
+        WorkOrderEquipment(
+          id: 'EQ-102',
+          qrCode: 'QR-102',
+          type: 'Split',
+          brand: 'Samsung',
+          name: 'Evaporadora sala 102',
+          location: 'Sala 102',
+          model: 'Split API',
+          btus: 24000,
+          gas: 'R-410A',
+          serialNumber: 'SN-102',
+          executionStatus: 'feito',
+        ),
+      ],
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LoginScreen(
+          loginGateway: _GatewayDeTeste(repository: repository),
+          locationService: const _LocationServiceTeste(),
+          photoPicker: const _PhotoPickerTeste(),
+        ),
+      ),
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('loginUserField')),
+      'tecnico@airmovebr.local',
+    );
+    await tester.enterText(
+      find.byKey(const Key('loginPasswordField')),
+      '123456',
+    );
+    await tester.tap(find.byKey(const Key('loginSubmitButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cliente API'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('stepTab_finish')));
+    await tester.pumpAndSettle();
+
+    final nameField = tester.widget<TextField>(
+      find.byKey(const Key('responsibleNameField')),
+    );
+    final finishButton = tester.widget<FilledButton>(
+      find.byKey(const Key('finishWorkOrderButton')),
+    );
+
+    expect(nameField.enabled, isTrue);
+    expect(finishButton.onPressed, isNotNull);
+    await tester.runAsync(() async {
+      finishButton.onPressed!();
+      await Future<void>.delayed(const Duration(seconds: 2));
+    });
+    await tester.pumpAndSettle();
+
+    expect(repository.finishedOrderId, 'OS-API');
+    expect(repository.finishInput?.responsibleName, 'Teste AIRMOVEBR');
+    expect(
+      repository.finishInput?.signatureBase64,
+      startsWith('data:image/png;base64,'),
+    );
   });
 
   testWidgets('cadastro de maquina usa seletores e salva dados obrigatorios', (
@@ -1168,9 +1213,15 @@ class _GatewayDeTeste implements MobileLoginGateway {
 }
 
 class _RepositorioDeTeste implements WorkOrderRepository {
-  _RepositorioDeTeste({this.equipments});
+  _RepositorioDeTeste({
+    this.equipments,
+    this.status = WorkOrderStatus.pending,
+    this.backendStatus,
+  });
 
   final List<WorkOrderEquipment>? equipments;
+  final WorkOrderStatus status;
+  final String? backendStatus;
 
   String? startedOrderId;
   String? arrivedOrderId;
@@ -1186,6 +1237,9 @@ class _RepositorioDeTeste implements WorkOrderRepository {
   FinalizeWorkOrderInput? finishInput;
   Object? finishError;
   Object? checklistPhotoError;
+  int pendingSyncCountValue = 0;
+  int syncPendingCalls = 0;
+  OfflineSyncResult syncResult = const OfflineSyncResult();
 
   @override
   Future<List<WorkOrder>> listMine() async {
@@ -1233,7 +1287,7 @@ class _RepositorioDeTeste implements WorkOrderRepository {
           ),
           WorkOrderChecklistItem(
             code: 'M4',
-            label: 'Fotografar filtros antes',
+            label: 'Foto apos abrir tampa frontal',
             kind: 'foto',
           ),
           WorkOrderChecklistItem(
@@ -1260,7 +1314,8 @@ class _RepositorioDeTeste implements WorkOrderRepository {
           ),
         ],
         scheduledAt: DateTime.now(),
-        status: WorkOrderStatus.pending,
+        status: status,
+        backendStatus: backendStatus,
       ),
     ];
   }
@@ -1370,10 +1425,14 @@ class _RepositorioDeTeste implements WorkOrderRepository {
   }
 
   @override
-  Future<int> pendingSyncCount() async => 0;
+  Future<int> pendingSyncCount() async => pendingSyncCountValue;
 
   @override
-  Future<OfflineSyncResult> syncPending() async => const OfflineSyncResult();
+  Future<OfflineSyncResult> syncPending() async {
+    syncPendingCalls += 1;
+    pendingSyncCountValue = syncResult.failed;
+    return syncResult;
+  }
 }
 
 const _singleEquipment = [

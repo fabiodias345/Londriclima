@@ -15,6 +15,13 @@ const STATUS_OS_OPERACIONAIS: OrdemServicoStatus[] = [
   OrdemServicoStatus.em_atendimento
 ];
 
+const STATUS_OS_PAINEL: OrdemServicoStatus[] = [
+  ...STATUS_OS_OPERACIONAIS,
+  OrdemServicoStatus.concluida,
+  OrdemServicoStatus.cancelada,
+  OrdemServicoStatus.rejeitada
+];
+
 @Injectable()
 export class AdminAgendaService {
   constructor(private readonly prisma: PrismaService) {}
@@ -24,7 +31,7 @@ export class AdminAgendaService {
       where: {
         empresaId: usuario.empresa_id,
         status: {
-          in: STATUS_OS_OPERACIONAIS
+          in: STATUS_OS_PAINEL
         }
       },
       orderBy: [
@@ -185,6 +192,7 @@ export class AdminAgendaService {
         localInstalacao: string | null;
       }>;
     };
+    status: OrdemServicoStatus;
     checklistRespostas: Array<{
       equipamentoId: string;
       equipamento?: {
@@ -210,7 +218,9 @@ export class AdminAgendaService {
     const respostasIds = new Set((ordem.checklistRespostas ?? []).map((resposta) => resposta.equipamentoId));
     const osPareceMultiEquipamento =
       equipamentosCliente.length > 1 &&
-      (!ordem.equipamento || [...respostasIds].some((id) => id !== ordem.equipamento?.id));
+      (ordem.status === OrdemServicoStatus.em_atendimento ||
+        !ordem.equipamento ||
+        [...respostasIds].some((id) => id !== ordem.equipamento?.id));
     const equipamentosBase = osPareceMultiEquipamento
       ? equipamentosCliente
       : ordem.equipamento

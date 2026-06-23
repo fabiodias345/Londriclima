@@ -323,6 +323,9 @@ test("admin alimenta abas de O.S. com dados reais da agenda", () => {
   assert.match(script, /em_atendimento:\s*\["em_deslocamento", "em_atendimento"\]/);
   assert.match(script, /concluidas:\s*\["concluida"\]/);
   assert.match(script, /canceladas:\s*\["cancelada", "rejeitada"\]/);
+  assert.match(script, /const AGENDA_OPERATIONAL_STATUSES = \["aberta", "em_deslocamento", "em_atendimento"\]/);
+  assert.match(script, /latestAgendaItems = items/);
+  assert.match(script, /renderAgenda\(operationalItems\)/);
   assert.match(script, /renderOsCard/);
   assert.match(script, /data-action="editar-agenda-os"/);
   assert.match(script, /Equipamento/);

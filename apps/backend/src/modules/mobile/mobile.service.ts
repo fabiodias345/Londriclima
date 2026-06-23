@@ -22,7 +22,7 @@ const checklistMensal: ChecklistItem[] = [
   { codigo: "M1", item: "Desligar pelo controle remoto", tipo: "checkbox" },
   { codigo: "M2", item: "Desligar disjuntor", tipo: "checkbox" },
   { codigo: "M3", item: "Abrir tampa frontal", tipo: "checkbox" },
-  { codigo: "M4", item: "Fotografar filtros antes", tipo: "foto" },
+  { codigo: "M4", item: "Foto apos abrir tampa frontal", tipo: "foto" },
   { codigo: "M5", item: "Retirar filtros", tipo: "checkbox" },
   { codigo: "M6", item: "Condicao dos filtros", tipo: "select", opcoes: ["ok", "danificado", "substituido"] },
   { codigo: "M7", item: "Limpar filtros", tipo: "checkbox" },
@@ -33,7 +33,6 @@ const checklistMensal: ChecklistItem[] = [
   { codigo: "M12", item: "Fechar tampa frontal", tipo: "checkbox" },
   { codigo: "M13", item: "Ligar disjuntor e religar", tipo: "checkbox" },
   { codigo: "M14", item: "Verificar operacao normal", tipo: "select_obs" },
-  { codigo: "M15", item: "Foto apos conclusao", tipo: "foto" },
   { codigo: "M16", item: "Finalizacao", tipo: "finalizacao" }
 ];
 
@@ -41,10 +40,8 @@ const checklistTrimestralExtra: ChecklistItem[] = [
   { codigo: "T1", item: "Desligar pelo controle remoto", tipo: "checkbox" },
   { codigo: "T2", item: "Desligar disjuntor", tipo: "checkbox" },
   { codigo: "T3", item: "Abrir tampa frontal", tipo: "checkbox" },
-  { codigo: "T4", item: "Foto filtros antes", tipo: "foto" },
   { codigo: "T5", item: "Condicao dos filtros", tipo: "select", opcoes: ["ok", "danificado", "substituido"] },
   { codigo: "T6", item: "Limpar e secar filtros", tipo: "checkbox" },
-  { codigo: "T7", item: "Foto serpentina antes", tipo: "foto" },
   { codigo: "T8", item: "Aplicar higienizante", tipo: "checkbox" },
   { codigo: "T9", item: "Limpar serpentina", tipo: "checkbox" },
   { codigo: "T10", item: "Mofo, oxidacao, danos nas aletas", tipo: "select_obs" },
@@ -57,13 +54,11 @@ const checklistTrimestralExtra: ChecklistItem[] = [
   { codigo: "T17", item: "Fechar tampa", tipo: "checkbox" },
   { codigo: "T18", item: "Ligar e religar", tipo: "checkbox" },
   { codigo: "T19", item: "Verificar operacao", tipo: "select_obs" },
-  { codigo: "T20", item: "Foto apos conclusao", tipo: "foto" },
   { codigo: "T21", item: "Finalizacao", tipo: "finalizacao" }
 ];
 
 const checklistSemestralExtra: ChecklistItem[] = [
   { codigo: "S1", item: "Acesso a condensadora", tipo: "checkbox" },
-  { codigo: "S2", item: "Foto condensadora antes", tipo: "foto" },
   { codigo: "S3", item: "Limpar serpentina condensadora", tipo: "checkbox" },
   { codigo: "S4", item: "Oxidacao, entupimento, danos condensadora", tipo: "select_obs" },
   { codigo: "S5", item: "Limpeza ventilador e helice", tipo: "select_obs" },
@@ -74,7 +69,6 @@ const checklistSemestralExtra: ChecklistItem[] = [
   { codigo: "S10", item: "Estado das protecoes eletricas", tipo: "select_obs" },
   { codigo: "S11", item: "Reinstalar componentes", tipo: "checkbox" },
   { codigo: "S12", item: "Religar e verificar operacao completa", tipo: "select_obs" },
-  { codigo: "S13", item: "Foto apos conclusao", tipo: "foto" },
   { codigo: "S14", item: "Finalizacao", tipo: "finalizacao" }
 ];
 
@@ -86,7 +80,6 @@ const checklistAnualExtra: ChecklistItem[] = [
   { codigo: "A5", item: "Conexoes de cobre: vazamentos, oxidacao", tipo: "select_obs" },
   { codigo: "A6", item: "Capacidade atende ao ambiente?", tipo: "select_obs", opcoes: ["sim", "nao"] },
   { codigo: "A7", item: "Relatorio consolidado anual", tipo: "texto" },
-  { codigo: "A8", item: "Foto apos conclusao", tipo: "foto" },
   { codigo: "A9", item: "Finalizacao", tipo: "finalizacao" }
 ];
 

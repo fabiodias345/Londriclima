@@ -51,7 +51,7 @@ function criarOrdemProntaParaFinalizar(overrides: Record<string, unknown> = {}) 
   };
 }
 
-test("identificarEquipamento salva gas refrigerante no equipamento novo", async () => {
+test("identificarEquipamento salva gas refrigerante sem vincular OS multi a uma unica maquina", async () => {
   const chamadas = {
     createData: undefined as unknown,
     updateData: undefined as unknown
@@ -106,9 +106,7 @@ test("identificarEquipamento salva gas refrigerante no equipamento novo", async 
   );
 
   assert.equal((chamadas.createData as { gasRefrigerante: string }).gasRefrigerante, "R-410A");
-  assert.deepEqual(chamadas.updateData, {
-    equipamentoId: "equipamento-1"
-  });
+  assert.equal(chamadas.updateData, undefined);
   assert.equal(resposta.equipamento.gas_refrigerante, "R-410A");
 });
 

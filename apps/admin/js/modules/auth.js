@@ -55,14 +55,15 @@ async function loadAgenda() {
   }
 
   const items = result.items || [];
+  const operationalItems = items.filter((item) => AGENDA_OPERATIONAL_STATUSES.includes(item.status));
   const today = getLocalDateKey(new Date());
 
   latestAgendaItems = items;
-  agendaCount.textContent = result.total;
-  attendanceCount.textContent = items.filter((item) => item.status === "em_atendimento").length;
-  todayCount.textContent = items.filter((item) => item.agendada_para && getAgendaItemDateKey(item) === today).length;
-  agendaStatus.textContent = result.total === 1 ? "1 OS aberta" : \`\${result.total} OS abertas\`;
-  renderAgenda(items);
+  agendaCount.textContent = operationalItems.length;
+  attendanceCount.textContent = operationalItems.filter((item) => item.status === "em_atendimento").length;
+  todayCount.textContent = operationalItems.filter((item) => item.agendada_para && getAgendaItemDateKey(item) === today).length;
+  agendaStatus.textContent = operationalItems.length === 1 ? "1 OS aberta" : \`\${operationalItems.length} OS abertas\`;
+  renderAgenda(operationalItems);
 }
 
 async function loadClientesForAgenda() {

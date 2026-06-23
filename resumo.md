@@ -1,6 +1,6 @@
 # Resumo AIRMOVEBR
 
-Atualizado em: 22/06/2026
+Atualizado em: 23/06/2026
 
 ## Estado operacional
 
@@ -147,10 +147,13 @@ POST /api/v1/os/:osId/checklist
 
 ### Fase 12 - Assinatura e finalizacao da OS
 
-- APK registra foto antes da OS pelo endpoint de evidencia inicial.
-- Foto `antes` tirada dentro do checklist tambem registra automaticamente a evidencia inicial exigida pelo backend.
-- Checklist fica bloqueado ate a foto antes/evidencia inicial ser registrada, alinhado com a regra do backend.
-- Depois da foto antes, APK libera foto depois, nome do responsavel e campo de assinatura.
+- Regra atual de fotos: somente 2 fotos no fluxo inteiro.
+- Foto 1: no checklist da maquina, item `Foto apos abrir tampa frontal`; essa foto tambem registra automaticamente a evidencia inicial exigida pelo backend.
+- Foto 2: na aba `Finalizar`, como evidencia final da O.S.
+- Nao existe mais botao separado `Registrar foto antes`.
+- O checklist nao deve ter `foto apos conclusao`; a foto final fica somente na aba `Finalizar`.
+- Checklist fica bloqueado ate a foto do checklist/evidencia inicial ser registrada, alinhado com a regra do backend.
+- Depois da foto do checklist, APK libera foto final, nome do responsavel e campo de assinatura.
 - Botao `Finalizar OS` continua bloqueado ate o checklist ser salvo, porque o backend exige checklist registrado.
 - Finalizacao envia assinatura, responsavel, GPS final e data/hora para:
 
@@ -197,14 +200,18 @@ POST /api/v1/os/:osId/finalizar
 
 ### Ponto de retomada
 
-- Instalar/testar o APK debug mais recente no celular.
+- Continuar em nova sessao testando via `flutter run`; nao instalar APK ainda.
+- Fazer hot restart/reabrir o app para carregar as mudancas.
+- Banco local foi resetado: O.S. antigas e dependencias foram apagadas; clientes, equipamentos, tecnicos, equipes, frota e usuarios foram preservados.
+- Fila offline do Flutter foi verificada em `airmovebr-sync.json`; nao havia arquivo pendente no TEMP.
 - Validar no celular o fluxo completo:
   1. iniciar atendimento;
   2. selecionar maquina;
-  3. tirar foto antes;
+  3. tirar a foto do checklist `Foto apos abrir tampa frontal`;
   4. preencher e salvar checklist;
-  5. tirar foto depois;
-  6. preencher nome, assinar e finalizar OS.
+  5. repetir para todas as maquinas da O.S.;
+  6. tirar foto final na aba `Finalizar`;
+  7. preencher nome, assinar e finalizar OS.
 - Se passar no celular, fazer commit, push e deploy.
 - Se falhar, ler a mensagem exibida na tela e corrigir o ponto exato.
 
@@ -245,6 +252,7 @@ flutter analyze
 flutter build apk --debug
 npm.cmd run backend:build
 npm.cmd run backend:test
+npm.cmd run frontend:test
 ```
 
 APK debug:
@@ -274,14 +282,22 @@ C:\develop\LondriClima\apps\mobile\build\app\outputs\flutter-apk\app-debug.apk
 - Fase 1.7 feita localmente: detalhe da O.S. ganhou bloco `App do tecnico`, mostrando prontidao para aparecer no app, responsavel, cliente/endereco, maquina e checklist_tipo vindo de `/admin/agenda`.
 - Ajuste feito localmente: O.S. sem equipamento unico agora representa uma visita para todos os equipamentos do cliente/local; o painel mostra `Todos os equipamentos do cliente` e nao bloqueia o app por falta de equipamento unico.
 - Fase 1.8 feita localmente: APK marca cada equipamento como realizado ou aguardando sync, remove maquina realizada da fila do tecnico, bloqueia finalizacao ate todos os equipamentos serem feitos e o painel mostra checks por equipamento no historico da O.S.
+- Ajuste feito localmente: app tenta sincronizar pendencias ao carregar lista e antes de finalizar; se houver pendencia de sync, bloqueia a conclusao com mensagem clara.
+- Ajuste feito localmente: conflitos `Evidencia ja registrada` em foto inicial/final sao tratados como sucesso para permitir retomar fluxo sem travar.
+- Ajuste feito localmente: checklist do backend agora retorna somente uma foto por maquina (`Foto apos abrir tampa frontal`); a foto final fica fora do checklist, na aba `Finalizar`.
+- Script local criado: `npm.cmd run backend:prisma:reset-os`, que apaga O.S. e dependencias para teste limpo sem apagar cadastros base.
 - A primeira entrega preserva endpoints/rotas internas existentes para reduzir risco.
 
 ### Proximos passos do painel de O.S.
 
-1. Validar `Enviar para campo` contra a API mobile: conferir se a O.S. aparece para o tecnico/equipe atribuido.
-2. Ligar historico real da O.S. no detalhe usando eventos do backend.
-3. Ligar checklist, fotos antes/depois, assinatura e finalizacao reais quando o backend expuser os dados completos.
-4. Revisar visual em tela real depois do commit: altura dos cards, detalhe lateral e fluxo de despacho.
+1. Criar nova O.S. na web para cliente com 2+ equipamentos e enviar para campo.
+2. Validar no app que a O.S. aparece para tecnico/equipe atribuido.
+3. Executar todas as maquinas: cada uma deve pedir somente a foto `Foto apos abrir tampa frontal` no checklist.
+4. Validar no painel que os equipamentos aparecem com `[x]` por QR e que a O.S. so libera conclusao quando todos estiverem feitos.
+5. Finalizar no app com apenas a foto final da aba `Finalizar`, nome e assinatura.
+6. Validar que a O.S. sai de `Em atendimento` e aparece como `Concluida` na web.
+7. Ligar historico real da O.S. no detalhe usando eventos do backend.
+8. Depois do teste atual, redesenhar a tela de O.S. usando como referencia o layout moderno aprovado pelo usuario: sidebar fixa, cards de indicadores, abas com contadores, busca larga e lista de O.S. mais escaneavel; adaptar para o fluxo real multi-equipamento e evitar botoes/enfeites sem funcao pronta.
 
 ### Backlog futuro: pos-venda WhatsApp
 

@@ -570,13 +570,23 @@ test("finalizarOs exige checklist registrado", async () => {
   );
 });
 
-test("finalizarOs exige evidencia final", async () => {
+test("finalizarOs permite finalizar sem evidencia final", async () => {
   const tx = {
     ordemServico: {
       findUnique: async () =>
         criarOrdemProntaParaFinalizar({
           evidencias: [{ tipo: EvidenciaTipo.antes }]
-        })
+        }),
+      update: async () => undefined
+    },
+    ordemServicoAssinatura: {
+      create: async () => undefined
+    },
+    ordemServicoEvento: {
+      create: async () => undefined
+    },
+    automacaoAgendada: {
+      createMany: async () => undefined
     }
   };
   const prisma = {
@@ -584,10 +594,9 @@ test("finalizarOs exige evidencia final", async () => {
   };
   const service = criarService(prisma);
 
-  await assert.rejects(
-    () => service.finalizarOs("os-1", finalizarDto, usuario),
-    UnprocessableEntityException
-  );
+  const resposta = await service.finalizarOs("os-1", finalizarDto, usuario);
+
+  assert.equal(resposta.status, OrdemServicoStatus.concluida);
 });
 
 test("finalizarOs rejeita OS ja concluida", async () => {

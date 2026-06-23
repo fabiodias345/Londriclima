@@ -827,10 +827,6 @@ export class OrdensServicoService {
       const possuiEvidenciaInicial = ordemServico.evidencias.some(
         (evidencia) => evidencia.tipo === EvidenciaTipo.antes
       );
-      const possuiEvidenciaFinal = ordemServico.evidencias.some(
-        (evidencia) => evidencia.tipo === EvidenciaTipo.depois
-      );
-
       if (!possuiEvidenciaInicial) {
         throw new UnprocessableEntityException("Evidência inicial ainda não registrada.");
       }
@@ -849,10 +845,6 @@ export class OrdensServicoService {
         if (pendentes.length > 0) {
           throw new UnprocessableEntityException("Finalize todos os equipamentos antes de concluir a OS.");
         }
-      }
-
-      if (!possuiEvidenciaFinal) {
-        throw new UnprocessableEntityException("Evidência final ainda não registrada.");
       }
 
       if (ordemServico.assinatura) {

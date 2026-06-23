@@ -187,10 +187,15 @@ test("reprogramarOrdemAgenda atualiza horario e responsaveis de OS operacional",
 });
 
 test("listarAgenda retorna checklist_tipo para conferencia do app tecnico", async () => {
+  const chamadas = {
+    where: undefined as unknown
+  };
   const prisma = {
     ordemServico: {
-      findMany: async () => [
-        {
+      findMany: async ({ where }: { where: unknown }) => {
+        chamadas.where = where;
+        return [
+          {
           id: "os-1",
           titulo: "PMOC mensal",
           problemaRelatado: "Limpeza preventiva",
@@ -210,8 +215,9 @@ test("listarAgenda retorna checklist_tipo para conferencia do app tecnico", asyn
             modelo: "Split",
             localInstalacao: "Recepcao"
           }
-        }
-      ]
+          }
+        ];
+      }
     }
   };
   const service = criarService(prisma);
@@ -219,6 +225,19 @@ test("listarAgenda retorna checklist_tipo para conferencia do app tecnico", asyn
   const resposta = await service.listarAgenda(usuario);
 
   assert.equal(resposta.items[0].checklist_tipo, ChecklistTipo.trimestral);
+  assert.deepEqual(chamadas.where, {
+    empresaId: "empresa-1",
+    status: {
+      in: [
+        OrdemServicoStatus.aberta,
+        OrdemServicoStatus.em_deslocamento,
+        OrdemServicoStatus.em_atendimento,
+        OrdemServicoStatus.concluida,
+        OrdemServicoStatus.cancelada,
+        OrdemServicoStatus.rejeitada
+      ]
+    }
+  });
 });
 
 test("criarPlanoRecorrencia cadastra rotina operacional para cliente da empresa", async () => {

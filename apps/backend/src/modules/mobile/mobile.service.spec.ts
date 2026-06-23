@@ -94,3 +94,33 @@ test("listarOrdens retorna checklist flat definido pelo backend", async () => {
   assert.ok(ordem.checklist.some((item: { codigo: string }) => item.codigo === "S14"));
   assert.equal(ordem.checklist.some((item: { codigo: string }) => item.codigo === "A1"), false);
 });
+
+test("listarOrdens retorna apenas uma foto no checklist antes da finalizacao", async () => {
+  const prisma = {
+    ordemServico: {
+      findMany: async () => [
+        {
+          id: "os-3",
+          clienteId: "cliente-1",
+          titulo: "PMOC anual",
+          checklistTipo: "anual",
+          status: OrdemServicoStatus.aberta,
+          agendadaPara: new Date("2026-06-22T12:00:00.000Z"),
+          cliente: {
+            nome: "Hospital Norte",
+            equipamentos: []
+          },
+          endereco: null,
+          equipamento: null,
+          responsaveis: []
+        }
+      ]
+    }
+  };
+
+  const resultado = await criarService(prisma).listarOrdens(usuario);
+  const fotos = resultado.items[0].checklist.filter((item: { tipo: string }) => item.tipo === "foto");
+
+  assert.equal(fotos.length, 1);
+  assert.equal(fotos[0].item, "Foto apos abrir tampa frontal");
+});
