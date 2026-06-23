@@ -442,10 +442,60 @@ test("finalizarOs conclui a OS, registra assinatura, evento e automacoes", async
   );
 });
 
-test("finalizarOs exige equipamento identificado", async () => {
+test("finalizarOs permite OS sem equipamento unico quando checklist e evidencias existem", async () => {
+  const chamadas = {
+    assinaturaData: undefined as unknown,
+    updateData: undefined as unknown
+  };
   const tx = {
     ordemServico: {
-      findUnique: async () => criarOrdemProntaParaFinalizar({ equipamento: null })
+      findUnique: async () =>
+        criarOrdemProntaParaFinalizar({
+          equipamento: null,
+          cliente: {
+            equipamentos: [{ id: "equip-1" }, { id: "equip-2" }]
+          },
+          checklistRespostas: [{ equipamentoId: "equip-1" }, { equipamentoId: "equip-2" }]
+        }),
+      update: async ({ data }: { data: unknown }) => {
+        chamadas.updateData = data;
+      }
+    },
+    ordemServicoAssinatura: {
+      create: async ({ data }: { data: unknown }) => {
+        chamadas.assinaturaData = data;
+      }
+    },
+    ordemServicoEvento: {
+      create: async () => {}
+    },
+    automacaoAgendada: {
+      createMany: async () => {}
+    }
+  };
+  const prisma = {
+    $transaction: async (callback: (tx: unknown) => unknown) => callback(tx)
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.finalizarOs("os-1", finalizarDto, usuario);
+
+  assert.equal(resposta.status, OrdemServicoStatus.concluida);
+  assert.equal((chamadas.updateData as { status: OrdemServicoStatus }).status, OrdemServicoStatus.concluida);
+  assert.equal((chamadas.assinaturaData as { nomeResponsavel: string }).nomeResponsavel, "Maria Souza");
+});
+
+test("finalizarOs bloqueia OS multi-equipamento com maquina pendente", async () => {
+  const tx = {
+    ordemServico: {
+      findUnique: async () =>
+        criarOrdemProntaParaFinalizar({
+          equipamento: null,
+          cliente: {
+            equipamentos: [{ id: "equip-1" }, { id: "equip-2" }]
+          },
+          checklistRespostas: [{ equipamentoId: "equip-1" }]
+        })
     }
   };
   const prisma = {
@@ -455,7 +505,7 @@ test("finalizarOs exige equipamento identificado", async () => {
 
   await assert.rejects(
     () => service.finalizarOs("os-1", finalizarDto, usuario),
-    UnprocessableEntityException
+    /Finalize todos os equipamentos/
   );
 });
 

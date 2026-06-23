@@ -48,7 +48,16 @@ export class AdminAgendaService {
           select: {
             id: true,
             nome: true,
-            telefone: true
+            telefone: true,
+            equipamentos: {
+              select: {
+                id: true,
+                patrimonio: true,
+                marca: true,
+                modelo: true,
+                localInstalacao: true
+              }
+            }
           }
         },
         endereco: {
@@ -78,6 +87,20 @@ export class AdminAgendaService {
             modelo: true,
             localInstalacao: true
           }
+        },
+        checklistRespostas: {
+          select: {
+            equipamentoId: true,
+            equipamento: {
+              select: {
+                id: true,
+                patrimonio: true,
+                marca: true,
+                modelo: true,
+                localInstalacao: true
+              }
+            }
+          }
         }
       }
     });
@@ -93,13 +116,125 @@ export class AdminAgendaService {
         criada_em: ordem.criadaEm.toISOString(),
         valor_cobrado: ordem.valorCobrado?.toNumber() ?? null,
         checklist_tipo: ordem.checklistTipo,
-        cliente: ordem.cliente,
+        cliente: {
+          id: ordem.cliente.id,
+          nome: ordem.cliente.nome,
+          telefone: ordem.cliente.telefone
+        },
         endereco: ordem.endereco,
         equipe: ordem.equipe,
         tecnico: ordem.tecnico,
-        equipamento: ordem.equipamento
+        equipamento: ordem.equipamento,
+        equipamentos: this.mapearEquipamentosExecucao(ordem),
+        equipamentos_executados: this.mapearEquipamentosExecutados(ordem)
       }))
     };
+  }
+
+  private mapearEquipamentosExecutados(ordem: {
+    checklistRespostas: Array<{
+      equipamentoId: string;
+      equipamento?: {
+        id: string;
+        patrimonio: string | null;
+        marca: string | null;
+        modelo: string | null;
+        localInstalacao: string | null;
+      } | null;
+    }>;
+  }) {
+    const executados = new Map<
+      string,
+      {
+        id: string;
+        patrimonio: string | null;
+        marca: string | null;
+        modelo: string | null;
+        localInstalacao: string | null;
+        status_execucao: "feito";
+      }
+    >();
+
+    for (const resposta of ordem.checklistRespostas ?? []) {
+      if (!resposta.equipamento) {
+        continue;
+      }
+      executados.set(resposta.equipamento.id, {
+        ...resposta.equipamento,
+        status_execucao: "feito"
+      });
+    }
+
+    return [...executados.values()];
+  }
+
+  private mapearEquipamentosExecucao(ordem: {
+    equipamento: {
+      id: string;
+      patrimonio: string | null;
+      marca: string | null;
+      modelo: string | null;
+      localInstalacao: string | null;
+    } | null;
+    cliente: {
+      equipamentos: Array<{
+        id: string;
+        patrimonio: string | null;
+        marca: string | null;
+        modelo: string | null;
+        localInstalacao: string | null;
+      }>;
+    };
+    checklistRespostas: Array<{
+      equipamentoId: string;
+      equipamento?: {
+        id: string;
+        patrimonio: string | null;
+        marca: string | null;
+        modelo: string | null;
+        localInstalacao: string | null;
+      } | null;
+    }>;
+  }) {
+    const equipamentosMap = new Map<
+      string,
+      {
+        id: string;
+        patrimonio: string | null;
+        marca: string | null;
+        modelo: string | null;
+        localInstalacao: string | null;
+      }
+    >();
+    const equipamentosCliente = ordem.cliente.equipamentos ?? [];
+    const respostasIds = new Set((ordem.checklistRespostas ?? []).map((resposta) => resposta.equipamentoId));
+    const osPareceMultiEquipamento =
+      equipamentosCliente.length > 1 &&
+      (!ordem.equipamento || [...respostasIds].some((id) => id !== ordem.equipamento?.id));
+    const equipamentosBase = osPareceMultiEquipamento
+      ? equipamentosCliente
+      : ordem.equipamento
+        ? [ordem.equipamento]
+        : equipamentosCliente;
+    for (const equipamento of equipamentosBase) {
+      equipamentosMap.set(equipamento.id, equipamento);
+    }
+    for (const resposta of ordem.checklistRespostas ?? []) {
+      if (resposta.equipamento) {
+        equipamentosMap.set(resposta.equipamento.id, resposta.equipamento);
+      }
+    }
+    const equipamentos = [...equipamentosMap.values()];
+    const feitos = new Set((ordem.checklistRespostas ?? []).map((resposta) => resposta.equipamentoId));
+
+    return equipamentos.map((equipamento) => ({
+      id: equipamento.id,
+      patrimonio: equipamento.patrimonio,
+      marca: equipamento.marca,
+      modelo: equipamento.modelo,
+      local_instalacao: equipamento.localInstalacao,
+      status_execucao: feitos.has(equipamento.id) ? "feito" : "pendente"
+    }));
   }
 
   async criarOrdemAgenda(dto: SalvarOsAgendaDto, usuario: AuthenticatedUser) {

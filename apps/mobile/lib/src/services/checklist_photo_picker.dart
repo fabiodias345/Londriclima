@@ -9,8 +9,8 @@ class DeviceChecklistPhotoPicker implements ChecklistPhotoPicker {
   Future<ChecklistPhotoFile?> pickPhoto() async {
     final image = await ImagePicker().pickImage(
       source: ImageSource.camera,
-      imageQuality: 72,
-      maxWidth: 1600,
+      imageQuality: 58,
+      maxWidth: 1280,
     );
 
     if (image == null) {

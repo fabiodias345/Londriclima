@@ -46,7 +46,7 @@ function renderAgendaServiceCard(item) {
         <span>\${item.agendada_para ? formatAgendaTime(item.agendada_para) : "Definir horario"}</span>
       </div>
       <div>
-        <span>\${escapeHtml(item.equipamento ? formatAgendaEquipment(item.equipamento) : "Equipamento nao definido")}</span>
+        <span>\${escapeHtml(item.equipamento ? formatAgendaEquipment(item.equipamento) : "Todos os equipamentos do cliente")}</span>
         <span>\${escapeHtml(item.equipe?.nome || item.tecnico?.nome || "Equipe nao atribuida")}</span>
       </div>
       <button class="secondary-button compact-button" type="button" data-action="editar-agenda-os" data-id="\${item.id}">Editar</button>

@@ -77,6 +77,63 @@ void main() {
     await server.close(force: true);
   });
 
+  test(
+    'ApiWorkOrderRepository le status de execucao por equipamento',
+    () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+
+      final pump = server.listen((request) async {
+        request.response.headers.contentType = ContentType.json;
+        request.response.write(
+          jsonEncode({
+            'items': [
+              {
+                'id': 'os-1',
+                'cliente': 'Cliente API',
+                'endereco': 'Rua API, 10',
+                'equipamento': 'Todos',
+                'tipo': 'PMOC',
+                'data': null,
+                'status': 'em_atendimento',
+                'equipamentos': [
+                  {
+                    'id': 'eq-1',
+                    'nome': 'Sala 1',
+                    'local': 'Sala 1',
+                    'modelo': 'Split',
+                    'status_execucao': 'feito',
+                  },
+                  {
+                    'id': 'eq-2',
+                    'nome': 'Sala 2',
+                    'local': 'Sala 2',
+                    'modelo': 'Split',
+                    'status_execucao': 'pendente',
+                  },
+                ],
+              },
+            ],
+          }),
+        );
+        await request.response.close();
+      });
+
+      final repository = ApiWorkOrderRepository(
+        baseUrl: Uri.parse('http://127.0.0.1:${server.port}'),
+        token: 'token-api',
+      );
+
+      final orders = await repository.listMine();
+
+      expect(orders.single.equipments[0].executionStatus, 'feito');
+      expect(orders.single.equipments[0].isDone, isTrue);
+      expect(orders.single.equipments[1].executionStatus, 'pendente');
+
+      await pump.cancel();
+      await server.close(force: true);
+    },
+  );
+
   test('ApiWorkOrderRepository envia checklist preenchido para API', () async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     late Map<String, dynamic> payload;
@@ -210,6 +267,59 @@ void main() {
     await server.close(force: true);
   });
 
+  test(
+    'ApiWorkOrderRepository mostra erro real ao falhar foto de checklist',
+    () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+
+      final pump = server.listen((request) async {
+        await request.drain<void>();
+        request.response.statusCode = HttpStatus.badRequest;
+        request.response.headers.contentType = ContentType.json;
+        request.response.write(
+          jsonEncode({'message': 'Foto excede o limite de 3 MB.'}),
+        );
+        await request.response.close();
+      });
+
+      final repository = ApiWorkOrderRepository(
+        baseUrl: Uri.parse('http://127.0.0.1:${server.port}'),
+        token: 'token-api',
+      );
+
+      await expectLater(
+        repository.saveChecklistPhoto(
+          WorkOrder(
+            id: 'os-1',
+            clientName: 'Cliente API',
+            address: 'Rua API, 10',
+            equipment: 'Split API',
+            maintenanceType: 'PMOC',
+            scheduledAt: DateTime.now(),
+            status: WorkOrderStatus.inProgress,
+          ),
+          equipmentId: 'eq-1',
+          code: 'M4',
+          photo: const ChecklistPhotoFile(
+            filename: 'filtro.jpg',
+            mimeType: 'image/jpeg',
+            bytes: [1, 2, 3],
+          ),
+        ),
+        throwsA(
+          isA<HttpException>().having(
+            (error) => error.message,
+            'message',
+            contains('Foto excede o limite de 3 MB.'),
+          ),
+        ),
+      );
+
+      await pump.cancel();
+      await server.close(force: true);
+    },
+  );
+
   test('ApiWorkOrderRepository envia evidencias e finaliza OS', () async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     final paths = <String>[];
@@ -299,4 +409,58 @@ void main() {
     await pump.cancel();
     await server.close(force: true);
   });
+
+  test(
+    'ApiWorkOrderRepository mostra mensagem real quando finalizar falha',
+    () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+
+      final pump = server.listen((request) async {
+        await request.drain<void>();
+        request.response.statusCode = HttpStatus.badRequest;
+        request.response.headers.contentType = ContentType.json;
+        request.response.write(
+          jsonEncode({'message': 'Checklist obrigatorio'}),
+        );
+        await request.response.close();
+      });
+
+      final repository = ApiWorkOrderRepository(
+        baseUrl: Uri.parse('http://127.0.0.1:${server.port}'),
+        token: 'token-api',
+      );
+      final order = WorkOrder(
+        id: 'os-1',
+        clientName: 'Cliente API',
+        address: 'Rua API, 10',
+        equipment: 'Split API',
+        maintenanceType: 'PMOC',
+        scheduledAt: DateTime.now(),
+        status: WorkOrderStatus.inProgress,
+      );
+
+      await expectLater(
+        repository.finishWorkOrder(
+          order,
+          FinalizeWorkOrderInput(
+            signatureBase64: 'data:image/png;base64,abc',
+            responsibleName: 'Cliente Teste',
+            latitude: -23.3048,
+            longitude: -51.1701,
+            finalizedAt: DateTime.parse('2026-06-22T10:00:00Z'),
+          ),
+        ),
+        throwsA(
+          isA<HttpException>().having(
+            (error) => error.message,
+            'message',
+            contains('Checklist obrigatorio'),
+          ),
+        ),
+      );
+
+      await pump.cancel();
+      await server.close(force: true);
+    },
+  );
 }

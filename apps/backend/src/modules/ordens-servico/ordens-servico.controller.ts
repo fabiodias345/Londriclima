@@ -21,7 +21,7 @@ import { RegistrarChecklistDto } from "./dto/registrar-checklist.dto";
 import { RegistrarObservacoesDto } from "./dto/registrar-observacoes.dto";
 import { OrdensServicoService } from "./ordens-servico.service";
 
-const LIMITE_FOTO_BYTES = 800 * 1024;
+const LIMITE_FOTO_BYTES = 3 * 1024 * 1024;
 
 export type EvidenciaUploadFile = {
   originalname: string;

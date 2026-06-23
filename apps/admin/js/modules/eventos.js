@@ -189,7 +189,7 @@ function renderOsCard(item) {
 
 function renderOsCompactMeta(item) {
   return \`
-    <span><strong>Equipamento</strong>\${escapeHtml(item.equipamento ? formatAgendaEquipment(item.equipamento) : "Nao definido")}</span>
+    <span><strong>Equipamentos</strong>\${escapeHtml(renderOsEquipmentTarget(item))}</span>
     <span><strong>Responsavel</strong>\${escapeHtml(item.equipe?.nome || item.tecnico?.nome || "Nao atribuido")}</span>
     <span><strong>Data/hora</strong>\${item.agendada_para ? formatDateTime(item.agendada_para) : "Sem horario"}</span>
   \`;
@@ -245,7 +245,7 @@ function renderOsDetail(item) {
   osDetailBody.innerHTML = \`
     <div class="os-detail-facts">
       <span><strong>Cliente</strong>\${escapeHtml(item.cliente?.nome || "Nao informado")}</span>
-      <span><strong>Equipamento</strong>\${escapeHtml(item.equipamento ? formatAgendaEquipment(item.equipamento) : "Nao definido")}</span>
+      <span><strong>Equipamentos</strong>\${escapeHtml(renderOsEquipmentTarget(item))}</span>
       <span><strong>Responsavel</strong>\${escapeHtml(item.equipe?.nome || item.tecnico?.nome || "Nao atribuido")}</span>
       <span><strong>Status</strong>\${escapeHtml(formatStatus(item.status))}</span>
       <span><strong>Data/hora</strong>\${item.agendada_para ? formatDateTime(item.agendada_para) : "Sem horario"}</span>
@@ -270,10 +270,9 @@ function renderOsTechnicianAppSummary(item) {
   const hasResponsible = Boolean(item.equipe?.id || item.tecnico?.id);
   const hasSchedule = Boolean(item.agendada_para);
   const hasClientAddress = Boolean(item.cliente?.id && item.endereco);
-  const hasMachine = Boolean(item.equipamento?.id);
   const appStatus = ["aberta", "em_deslocamento", "em_atendimento"].includes(item.status);
-  const ready = appStatus && hasResponsible && hasSchedule && hasClientAddress && hasMachine;
-  const machineLabel = item.equipamento ? formatAgendaEquipment(item.equipamento) : "Nenhuma maquina vinculada";
+  const ready = appStatus && hasResponsible && hasSchedule && hasClientAddress;
+  const machineLabel = renderOsEquipmentTarget(item);
   const checklistLabel = formatChecklistTipo(item.checklist_tipo);
 
   return \`
@@ -295,6 +294,12 @@ function renderOsTechnicianAppSummary(item) {
       </div>
     </section>
   \`;
+}
+
+function renderOsEquipmentTarget(item) {
+  return item.equipamento
+    ? formatAgendaEquipment(item.equipamento)
+    : "Todos os equipamentos do cliente";
 }
 
 function renderOsDispatchSummary(item) {
@@ -393,11 +398,21 @@ async function dispatchOsToField(osId, button) {
 }
 
 function renderOsTimeline(item) {
+  const equipmentProgress = getOsEquipmentProgress(item);
+  const pendingCount = equipmentProgress.filter((equipment) => equipment.status_execucao !== "feito").length;
   const steps = [
     { label: "Criada", active: true, meta: item.criada_em ? formatDateTime(item.criada_em) : "Registro inicial" },
     { label: "Agendada", active: Boolean(item.agendada_para), meta: item.agendada_para ? formatDateTime(item.agendada_para) : "Sem horario" },
     { label: "Em atendimento", active: ["em_deslocamento", "em_atendimento", "concluida"].includes(item.status), meta: formatStatus(item.status) },
-    { label: "Concluida", active: item.status === "concluida", meta: item.status === "concluida" ? "Finalizada" : "Pendente" }
+    {
+      label: "Concluida",
+      active: item.status === "concluida",
+      meta: item.status === "concluida"
+        ? "Finalizada"
+        : pendingCount > 0
+          ? \`Pendente: \${pendingCount} equipamento(s)\`
+          : "Todos equipamentos concluidos"
+    }
   ];
 
   return \`
@@ -411,8 +426,61 @@ function renderOsTimeline(item) {
           </li>
         \`).join("")}
       </ol>
+      \${renderOsEquipmentProgress(item)}
     </section>
   \`;
+}
+
+function getOsEquipmentProgress(item) {
+  const equipmentsById = new Map();
+
+  if (Array.isArray(item.equipamentos) && item.equipamentos.length) {
+    for (const equipment of item.equipamentos) {
+      equipmentsById.set(equipment.id || formatOsEquipmentQr(equipment), equipment);
+    }
+  }
+
+  if (Array.isArray(item.equipamentos_executados) && item.equipamentos_executados.length) {
+    for (const equipment of item.equipamentos_executados) {
+      equipmentsById.set(equipment.id || formatOsEquipmentQr(equipment), {
+        ...equipment,
+        status_execucao: "feito"
+      });
+    }
+  }
+
+  if (!equipmentsById.size && item.equipamento) {
+    equipmentsById.set(item.equipamento.id || formatOsEquipmentQr(item.equipamento), {
+      ...item.equipamento,
+      status_execucao: item.status === "concluida" ? "feito" : "pendente"
+    });
+  }
+
+  return [...equipmentsById.values()];
+}
+
+function renderOsEquipmentProgress(item) {
+  const equipments = getOsEquipmentProgress(item);
+
+  if (!equipments.length) {
+    return "";
+  }
+
+  return \`
+    <div class="os-equipment-progress">
+      <strong>Equipamentos da O.S.</strong>
+      \${equipments.map((equipment) => \`
+        <span class="\${equipment.status_execucao === "feito" ? "is-done" : ""}">
+          \${equipment.status_execucao === "feito" ? "[x]" : "[ ]"}
+          \${escapeHtml(formatOsEquipmentQr(equipment))}
+        </span>
+      \`).join("")}
+    </div>
+  \`;
+}
+
+function formatOsEquipmentQr(equipment) {
+  return equipment.patrimonio || equipment.codigo_qr || equipment.qr_code || equipment.id || "Sem QR";
 }
 
 function renderOsExecutionSummary(item) {

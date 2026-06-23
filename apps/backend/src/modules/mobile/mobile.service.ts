@@ -141,7 +141,12 @@ export class MobileService {
       cliente: { include: { equipamentos: true } },
       endereco: true,
       equipamento: true,
-      responsaveis: true
+      responsaveis: true,
+      checklistRespostas: {
+        select: {
+          equipamentoId: true
+        }
+      }
     };
   }
 
@@ -174,9 +179,17 @@ export class MobileService {
         gas_refrigerante: equipamento.gasRefrigerante ?? "",
         numero_serie: equipamento.numeroSerie ?? "",
         dados_impossiveis: equipamento.dadosPendentesJustificados ?? [],
-        descricao: this.descreverEquipamento(equipamento)
+        descricao: this.descreverEquipamento(equipamento),
+        status_execucao: this.statusExecucaoEquipamento(ordem, equipamento.id)
       }))
     };
+  }
+
+  private statusExecucaoEquipamento(ordem: any, equipamentoId: string) {
+    const respostas = ordem.checklistRespostas ?? [];
+    return respostas.some((resposta: any) => resposta.equipamentoId === equipamentoId)
+      ? "feito"
+      : "pendente";
   }
 
   private montarChecklist(tipo: ChecklistTipo) {

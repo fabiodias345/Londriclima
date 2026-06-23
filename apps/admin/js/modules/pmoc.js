@@ -215,14 +215,14 @@ async function loadAgendaEquipments(clientId, selectedEquipmentId = "") {
   latestAgendaEquipments = [];
 
   if (!clientId) {
-    agendaOsEquipmentSelect.innerHTML = '<option value="">Sem equipamento definido</option>';
+    agendaOsEquipmentSelect.innerHTML = '<option value="">Todos os equipamentos do cliente</option>';
     return;
   }
 
   const result = await fetchAdminJson(\`/admin/clientes/\${clientId}/equipamentos\`, agendaOsFormStatus);
   latestAgendaEquipments = result?.items || [];
   agendaOsEquipmentSelect.innerHTML =
-    '<option value="">Sem equipamento definido</option>' +
+    '<option value="">Todos os equipamentos do cliente</option>' +
     latestAgendaEquipments
       .map((item) => \`<option value="\${item.id}">\${escapeHtml(formatAgendaEquipment(item))}</option>\`)
       .join("");

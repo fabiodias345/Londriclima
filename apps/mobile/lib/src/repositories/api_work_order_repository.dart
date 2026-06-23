@@ -144,7 +144,11 @@ class ApiWorkOrderRepository implements WorkOrderRepository {
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw HttpException(
-          'Falha ao enviar foto do checklist: ${response.statusCode}',
+          _errorMessage(
+            body,
+            fallback:
+                'Falha ao enviar foto do checklist: ${response.statusCode}',
+          ),
         );
       }
 
@@ -212,10 +216,15 @@ class ApiWorkOrderRepository implements WorkOrderRepository {
       );
 
       final response = await request.close();
-      await response.drain<void>();
+      final body = await response.transform(utf8.decoder).join();
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw HttpException('Falha ao finalizar OS: ${response.statusCode}');
+        throw HttpException(
+          _errorMessage(
+            body,
+            fallback: 'Falha ao finalizar OS: ${response.statusCode}',
+          ),
+        );
       }
 
       return order.copyWith(
@@ -469,6 +478,10 @@ class ApiWorkOrderRepository implements WorkOrderRepository {
             map['serialNumber']?.toString() ??
             '',
         impossibleFields: _impossibleFieldsFromJson(map),
+        executionStatus:
+            map['status_execucao']?.toString() ??
+            map['executionStatus']?.toString() ??
+            'pendente',
       );
     }).toList();
   }
@@ -489,6 +502,10 @@ class ApiWorkOrderRepository implements WorkOrderRepository {
       gas: map['gas_refrigerante']?.toString() ?? '',
       serialNumber: map['numero_serie']?.toString() ?? '',
       impossibleFields: _impossibleFieldsFromJson(map),
+      executionStatus:
+          map['status_execucao']?.toString() ??
+          map['executionStatus']?.toString() ??
+          'pendente',
     );
   }
 

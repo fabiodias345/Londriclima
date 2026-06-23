@@ -273,6 +273,11 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
+                  ..._handledEquipments().map(
+                    (equipment) => _EquipmentItem(equipment: equipment),
+                  ),
+                  if (_handledEquipments().isNotEmpty)
+                    const SizedBox(height: 12),
                   ..._filteredEquipments().map(
                     (equipment) => _SelectableEquipmentItem(
                       key: Key('selectEquipment_${equipment.id}'),
@@ -323,7 +328,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
                   ),
                   if (_filteredEquipments().isEmpty)
                     const Text(
-                      'Nenhuma maquina encontrada.',
+                      'Nenhuma maquina pendente encontrada.',
                       style: TextStyle(color: airmovebrMuted),
                     ),
                 ],
@@ -653,6 +658,10 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
         _errorMessage = 'Maquina nao encontrada para o codigo $normalized.';
         return;
       }
+      if (!equipment.isPending) {
+        _errorMessage = 'Maquina ja realizada nesta OS.';
+        return;
+      }
       _selectedEquipment = equipment;
       _editingMachine = !equipment.hasRequiredMachineData();
       _loadMachineForm(equipment);
@@ -730,21 +739,39 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
     });
 
     try {
+      final pendingBefore = await widget.repository.pendingSyncCount();
       await widget.repository.saveChecklist(
         _order,
         equipmentId: equipment.id,
         checklistType: _order.checklistType,
         responses: _buildChecklistResponses(),
       );
+      final pendingAfter = await widget.repository.pendingSyncCount();
       if (!mounted) {
         return;
       }
 
       setState(() {
+        _markEquipmentExecution(
+          equipment.id,
+          pendingAfter > pendingBefore ? 'aguardando_sync' : 'feito',
+        );
         _savingChecklist = false;
-        _checklistSaved = true;
-        _checklistMessage = 'Checklist salvo.';
-        _activeStep = _WorkOrderDetailStep.finish;
+        _checklistSaved = _allEquipmentsHandled;
+        _checklistMessage = _allEquipmentsHandled
+            ? 'Todos os equipamentos foram concluidos. Pode finalizar a OS.'
+            : 'Maquina concluida. Faltam $_pendingEquipmentCount.';
+        _selectedEquipment = null;
+        _editingMachine = false;
+        _checklistStarted = false;
+        _checklistValues.clear();
+        _clearTextControllers();
+        _finalEvidenceSaved = false;
+        _signaturePoints.clear();
+        _responsibleController.clear();
+        _activeStep = _allEquipmentsHandled
+            ? _WorkOrderDetailStep.finish
+            : _WorkOrderDetailStep.machines;
       });
     } on Object catch (error) {
       if (!mounted) {
@@ -851,6 +878,14 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
   }
 
   Future<void> _finishWorkOrder() async {
+    if (!_allEquipmentsHandled) {
+      setState(() {
+        _errorMessage =
+            'Finalize todos os equipamentos antes de concluir a OS.';
+      });
+      return;
+    }
+
     final responsibleName = _responsibleController.text.trim();
     if (!_finalEvidenceSaved) {
       setState(() {
@@ -890,17 +925,32 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
       setState(() {
         _order = updated;
         _finishing = false;
-        _checklistMessage = 'OS finalizada.';
+        _checklistMessage = updated.status == WorkOrderStatus.waitingSync
+            ? 'Finalizacao aguardando sincronizacao.'
+            : 'OS finalizada.';
       });
-    } on Object {
+      if (updated.status == WorkOrderStatus.waitingSync) {
+        _showSnackBar(
+          'Finalizacao salva offline. Sincronize quando houver rede.',
+        );
+      }
+    } on Object catch (error) {
       if (!mounted) {
         return;
       }
+      final message = _friendlyError(error, 'Falha ao finalizar OS.');
       setState(() {
         _finishing = false;
-        _errorMessage = 'Falha ao finalizar OS.';
+        _errorMessage = message;
       });
+      _showSnackBar(message);
     }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<String> _signatureDataUrl() async {
@@ -987,14 +1037,17 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
         }
         _uploadingPhotoCodes.remove(item.code);
       });
-    } on Object {
+    } on Object catch (error) {
       if (!mounted) {
         return;
       }
 
       setState(() {
         _uploadingPhotoCodes.remove(item.code);
-        _errorMessage = 'Falha ao enviar foto do checklist.';
+        _errorMessage = _friendlyError(
+          error,
+          'Falha ao enviar foto do checklist.',
+        );
       });
     }
   }
@@ -1054,7 +1107,18 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
   }
 
   List<Widget> _finishWidgets() {
+    final blockedByEquipments = !_allEquipmentsHandled;
     return [
+      if (blockedByEquipments) ...[
+        Text(
+          'Finalize todos os equipamentos antes de concluir a OS. Faltam $_pendingEquipmentCount.',
+          style: const TextStyle(
+            color: Color(0xFFB3261E),
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 12),
+      ],
       OutlinedButton.icon(
         key: const Key('finalEvidenceButton'),
         onPressed:
@@ -1116,11 +1180,15 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
       const SizedBox(height: 12),
       FilledButton.icon(
         key: const Key('finishWorkOrderButton'),
-        onPressed: !_checklistSaved || _finishing ? null : _finishWorkOrder,
+        onPressed: blockedByEquipments || !_checklistSaved || _finishing
+            ? null
+            : _finishWorkOrder,
         icon: const Icon(Icons.assignment_turned_in_outlined),
         label: Text(
           !_checklistSaved
-              ? 'Salve o checklist primeiro'
+              ? blockedByEquipments
+                    ? 'Finalize todos os equipamentos'
+                    : 'Salve o checklist primeiro'
               : _finishing
               ? 'Finalizando...'
               : 'Finalizar OS',
@@ -1154,7 +1222,9 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
 
   List<WorkOrderEquipment> _filteredEquipments() {
     final filter = _machineFilter.trim().toLowerCase();
-    final equipments = _equipments;
+    final equipments = _equipments
+        .where((equipment) => equipment.isPending)
+        .toList();
     if (filter.isEmpty) {
       return equipments;
     }
@@ -1168,6 +1238,27 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
       ].join(' ').toLowerCase();
       return searchable.contains(filter);
     }).toList();
+  }
+
+  List<WorkOrderEquipment> _handledEquipments() {
+    return _equipments.where((equipment) => !equipment.isPending).toList();
+  }
+
+  bool get _allEquipmentsHandled =>
+      _equipments.isNotEmpty &&
+      _equipments.every((equipment) => !equipment.isPending);
+
+  int get _pendingEquipmentCount =>
+      _equipments.where((equipment) => equipment.isPending).length;
+
+  void _markEquipmentExecution(String equipmentId, String status) {
+    _equipments = _equipments
+        .map(
+          (equipment) => equipment.id == equipmentId
+              ? equipment.copyWith(executionStatus: status)
+              : equipment,
+        )
+        .toList();
   }
 
   void _loadMachineForm(WorkOrderEquipment equipment) {
@@ -1678,6 +1769,18 @@ class _EquipmentItem extends StatelessWidget {
                   '${equipment.location} - ${equipment.model}',
                   style: const TextStyle(color: airmovebrMuted),
                 ),
+                if (!equipment.isPending) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    equipment.isWaitingSync
+                        ? 'Realizada - aguardando sync'
+                        : 'Realizada',
+                    style: const TextStyle(
+                      color: airmovebrAccent,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

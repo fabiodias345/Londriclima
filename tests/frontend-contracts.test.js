@@ -365,9 +365,16 @@ test("admin detalhe da O.S. prepara historico execucao e evidencias", () => {
   const styles = readAdminCss();
 
   assert.match(script, /function renderOsTimeline/);
+  assert.match(script, /function renderOsEquipmentProgress/);
+  assert.match(script, /function getOsEquipmentProgress/);
+  assert.match(script, /equipamentos_executados/);
+  assert.match(script, /equipmentsById/);
+  assert.match(script, /function formatOsEquipmentQr/);
   assert.match(script, /function renderOsExecutionSummary/);
   assert.match(script, /function renderOsEvidenceSummary/);
   assert.match(script, /Historico da O\.S\./);
+  assert.match(script, /Equipamentos da O\.S\./);
+  assert.match(script, /status_execucao/);
   assert.match(script, /Execucao/);
   assert.match(script, /Evidencias/);
   assert.match(script, /Criada/);
@@ -421,11 +428,14 @@ test("admin mostra prontidao da O.S. para o app do tecnico", () => {
   const styles = readAdminCss();
 
   assert.match(script, /function renderOsTechnicianAppSummary/);
+  assert.match(script, /function renderOsEquipmentTarget/);
   assert.match(script, /App do tecnico/);
   assert.match(script, /Aparece no app/);
   assert.match(script, /Responsavel atribuido/);
   assert.match(script, /Cliente e endereco/);
   assert.match(script, /Maquinas disponiveis/);
+  assert.match(script, /Todos os equipamentos do cliente/);
+  assert.doesNotMatch(script, /const ready = appStatus && hasResponsible && hasSchedule && hasClientAddress && hasMachine/);
   assert.match(script, /Checklist do app/);
   assert.match(script, /Conferir no app/);
   assert.match(script, /Complete o despacho para liberar no app/);

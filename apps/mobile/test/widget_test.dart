@@ -396,7 +396,7 @@ void main() {
     expect(repository.savedChecklistResponses['M6'], 'danificado');
     expect(repository.savedChecklistResponses['S6'], '7.5');
     expect(repository.savedChecklistResponses['S7'], 'R-410A');
-    expect(find.text('Checklist salvo.'), findsOneWidget);
+    expect(find.text('Maquina concluida. Faltam 1.'), findsOneWidget);
   });
 
   testWidgets('item foto envia upload e salva URL no checklist', (
@@ -484,6 +484,68 @@ void main() {
       repository.savedChecklistResponses['M4'],
       '/storage/os/OS-API/checklist/EQ-102/M4.jpg',
     );
+  });
+
+  testWidgets('falha na foto do checklist mostra motivo da API', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = _RepositorioDeTeste()
+      ..checklistPhotoError = const HttpException(
+        'Foto excede o limite de 3 MB.',
+      );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LoginScreen(
+          loginGateway: _GatewayDeTeste(repository: repository),
+          locationService: const _LocationServiceTeste(),
+          photoPicker: const _PhotoPickerTeste(),
+        ),
+      ),
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('loginUserField')),
+      'tecnico@airmovebr.local',
+    );
+    await tester.enterText(
+      find.byKey(const Key('loginPasswordField')),
+      '123456',
+    );
+    await tester.tap(find.byKey(const Key('loginSubmitButton')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Cliente API'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
+    await tester.tap(find.text('Iniciar atendimento'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('machineSearchField')),
+      'sala 102',
+    );
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('selectEquipment_EQ-102')));
+    await tester.tap(find.byKey(const Key('selectEquipment_EQ-102')));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('checklistReadyButton')),
+      240,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.byKey(const Key('checklistReadyButton')));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(const Key('initialEvidenceButton')));
+    await tester.tap(find.byKey(const Key('initialEvidenceButton')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('checklist_photo_M4')));
+    await tester.tap(find.byKey(const Key('checklist_photo_M4')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Foto excede o limite de 3 MB.'), findsOneWidget);
+    expect(find.text('Falha ao enviar foto do checklist.'), findsNothing);
   });
 
   testWidgets('detalhe em atendimento usa abas menores para o fluxo', (
@@ -735,7 +797,7 @@ void main() {
         'Cliente Teste',
       );
       expect(finishButton.onPressed, isNull);
-      expect(find.text('Salve o checklist primeiro'), findsOneWidget);
+      expect(find.text('Finalize todos os equipamentos'), findsOneWidget);
     },
   );
 
@@ -744,7 +806,7 @@ void main() {
   ) async {
     await tester.binding.setSurfaceSize(const Size(900, 1600));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    final repository = _RepositorioDeTeste();
+    final repository = _RepositorioDeTeste(equipments: _singleEquipment);
     await tester.pumpWidget(
       MaterialApp(
         home: LoginScreen(
@@ -855,6 +917,108 @@ void main() {
     expect(repository.finishInput?.latitude, -23.3048);
     expect(repository.finishInput?.longitude, -51.1701);
     expect(find.text('OS finalizada.'), findsOneWidget);
+  });
+
+  testWidgets('falha ao finalizar OS mostra motivo visivel ao tecnico', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = _RepositorioDeTeste(equipments: _singleEquipment)
+      ..finishError = const HttpException('Checklist obrigatorio');
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LoginScreen(
+          loginGateway: _GatewayDeTeste(repository: repository),
+          locationService: const _LocationServiceTeste(),
+          photoPicker: const _PhotoPickerTeste(),
+        ),
+      ),
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('loginUserField')),
+      'tecnico@airmovebr.local',
+    );
+    await tester.enterText(
+      find.byKey(const Key('loginPasswordField')),
+      '123456',
+    );
+    await tester.tap(find.byKey(const Key('loginSubmitButton')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Cliente API'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
+    await tester.tap(find.text('Iniciar atendimento'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('machineSearchField')),
+      'sala 102',
+    );
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('selectEquipment_EQ-102')));
+    await tester.tap(find.byKey(const Key('selectEquipment_EQ-102')));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('checklistReadyButton')),
+      240,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.byKey(const Key('checklistReadyButton')));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(const Key('initialEvidenceButton')));
+    await tester.tap(find.byKey(const Key('initialEvidenceButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('checklist_checkbox_M1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('checklist_select_M6')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('ok').last);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('checklist_number_S6')));
+    await tester.enterText(find.byKey(const Key('checklist_number_S6')), '8');
+    await tester.enterText(
+      find.byKey(const Key('checklist_text_S7')),
+      'R-410A',
+    );
+    await tester.ensureVisible(find.byKey(const Key('checklist_photo_M4')));
+    await tester.tap(find.byKey(const Key('checklist_photo_M4')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('saveChecklistButton')));
+    await tester.tap(find.byKey(const Key('saveChecklistButton')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('finalEvidenceButton')));
+    await tester.tap(find.byKey(const Key('finalEvidenceButton')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('responsibleNameField')));
+    await tester.enterText(
+      find.byKey(const Key('responsibleNameField')),
+      'Cliente Teste',
+    );
+    await tester.ensureVisible(find.byKey(const Key('signaturePad')));
+    final signatureCenter = tester.getCenter(
+      find.byKey(const Key('signaturePad')),
+    );
+    final gesture = await tester.startGesture(signatureCenter);
+    await gesture.moveBy(const Offset(80, 30));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('finishWorkOrderButton')));
+    final finishButton = tester.widget<FilledButton>(
+      find.byKey(const Key('finishWorkOrderButton')),
+    );
+
+    await tester.runAsync(() async {
+      finishButton.onPressed!();
+      await Future<void>.delayed(const Duration(seconds: 2));
+    });
+    await tester.pump();
+
+    expect(find.byType(SnackBar), findsOneWidget);
+    expect(find.textContaining('Checklist obrigatorio'), findsWidgets);
+    expect(find.text('OS finalizada.'), findsNothing);
   });
 
   testWidgets('cadastro de maquina usa seletores e salva dados obrigatorios', (
@@ -1004,6 +1168,10 @@ class _GatewayDeTeste implements MobileLoginGateway {
 }
 
 class _RepositorioDeTeste implements WorkOrderRepository {
+  _RepositorioDeTeste({this.equipments});
+
+  final List<WorkOrderEquipment>? equipments;
+
   String? startedOrderId;
   String? arrivedOrderId;
   String? savedChecklistEquipmentId;
@@ -1016,6 +1184,8 @@ class _RepositorioDeTeste implements WorkOrderRepository {
   String? finalEvidenceOrderId;
   String? finishedOrderId;
   FinalizeWorkOrderInput? finishInput;
+  Object? finishError;
+  Object? checklistPhotoError;
 
   @override
   Future<List<WorkOrder>> listMine() async {
@@ -1025,32 +1195,34 @@ class _RepositorioDeTeste implements WorkOrderRepository {
         clientName: 'Cliente API',
         address: 'Rua da API, 10',
         equipment: 'Split API',
-        equipments: const [
-          WorkOrderEquipment(
-            id: 'EQ-101',
-            qrCode: 'QR-101',
-            type: 'Split',
-            brand: 'LG',
-            name: 'Evaporadora sala 101',
-            location: 'Sala 101',
-            model: 'Split API',
-            btus: 24000,
-            gas: 'R-410A',
-            serialNumber: 'SN-101',
-          ),
-          WorkOrderEquipment(
-            id: 'EQ-102',
-            qrCode: 'QR-102',
-            type: 'Split',
-            brand: 'Samsung',
-            name: 'Evaporadora sala 102',
-            location: 'Sala 102',
-            model: 'Split API',
-            btus: 24000,
-            gas: 'R-410A',
-            serialNumber: 'SN-102',
-          ),
-        ],
+        equipments:
+            equipments ??
+            const [
+              WorkOrderEquipment(
+                id: 'EQ-101',
+                qrCode: 'QR-101',
+                type: 'Split',
+                brand: 'LG',
+                name: 'Evaporadora sala 101',
+                location: 'Sala 101',
+                model: 'Split API',
+                btus: 24000,
+                gas: 'R-410A',
+                serialNumber: 'SN-101',
+              ),
+              WorkOrderEquipment(
+                id: 'EQ-102',
+                qrCode: 'QR-102',
+                type: 'Split',
+                brand: 'Samsung',
+                name: 'Evaporadora sala 102',
+                location: 'Sala 102',
+                model: 'Split API',
+                btus: 24000,
+                gas: 'R-410A',
+                serialNumber: 'SN-102',
+              ),
+            ],
         maintenanceType: 'Limpeza de filtros',
         checklistType: 'semestral',
         checklist: const [
@@ -1132,6 +1304,10 @@ class _RepositorioDeTeste implements WorkOrderRepository {
     required String code,
     required ChecklistPhotoFile photo,
   }) async {
+    final error = checklistPhotoError;
+    if (error != null) {
+      throw error;
+    }
     uploadedPhotoCode = code;
     uploadedPhotoEquipmentId = equipmentId;
     return '/storage/os/${order.id}/checklist/$equipmentId/$code.jpg';
@@ -1160,6 +1336,10 @@ class _RepositorioDeTeste implements WorkOrderRepository {
     WorkOrder order,
     FinalizeWorkOrderInput input,
   ) async {
+    final error = finishError;
+    if (error != null) {
+      throw error;
+    }
     finishedOrderId = order.id;
     finishInput = input;
     return order.copyWith(
@@ -1195,6 +1375,21 @@ class _RepositorioDeTeste implements WorkOrderRepository {
   @override
   Future<OfflineSyncResult> syncPending() async => const OfflineSyncResult();
 }
+
+const _singleEquipment = [
+  WorkOrderEquipment(
+    id: 'EQ-102',
+    qrCode: 'QR-102',
+    type: 'Split',
+    brand: 'Samsung',
+    name: 'Evaporadora sala 102',
+    location: 'Sala 102',
+    model: 'Split API',
+    btus: 24000,
+    gas: 'R-410A',
+    serialNumber: 'SN-102',
+  ),
+];
 
 class _PhotoPickerTeste implements ChecklistPhotoPicker {
   const _PhotoPickerTeste();

@@ -41,13 +41,17 @@ class WorkOrder {
 
   bool get isAtClient => backendStatus == 'em_atendimento';
 
-  WorkOrder copyWith({WorkOrderStatus? status, String? backendStatus}) {
+  WorkOrder copyWith({
+    WorkOrderStatus? status,
+    String? backendStatus,
+    List<WorkOrderEquipment>? equipments,
+  }) {
     return WorkOrder(
       id: id,
       clientName: clientName,
       address: address,
       equipment: equipment,
-      equipments: equipments,
+      equipments: equipments ?? this.equipments,
       maintenanceType: maintenanceType,
       checklistType: checklistType,
       checklist: checklist,
@@ -147,6 +151,7 @@ class WorkOrderEquipment {
     this.gas = '',
     this.serialNumber = '',
     this.impossibleFields = const {},
+    this.executionStatus = 'pendente',
   });
 
   final String id;
@@ -160,6 +165,30 @@ class WorkOrderEquipment {
   final String gas;
   final String serialNumber;
   final Map<String, String> impossibleFields;
+  final String executionStatus;
+
+  bool get isDone => executionStatus == 'feito';
+
+  bool get isWaitingSync => executionStatus == 'aguardando_sync';
+
+  bool get isPending => !isDone && !isWaitingSync;
+
+  WorkOrderEquipment copyWith({String? executionStatus}) {
+    return WorkOrderEquipment(
+      id: id,
+      qrCode: qrCode,
+      type: type,
+      brand: brand,
+      name: name,
+      location: location,
+      model: model,
+      btus: btus,
+      gas: gas,
+      serialNumber: serialNumber,
+      impossibleFields: impossibleFields,
+      executionStatus: executionStatus ?? this.executionStatus,
+    );
+  }
 
   bool hasRequiredMachineData() {
     return missingRequiredFields().isEmpty;

@@ -37,17 +37,29 @@ class OfflineWorkOrderRepository implements WorkOrderRepository {
         .map((item) => item['order_id']?.toString())
         .whereType<String>()
         .toSet();
+    final pendingEquipmentIdsByOrder = _pendingEquipmentIdsByOrder(pending);
 
-    return _cachedOrders
-        .map(
-          (order) => pendingIds.contains(order.id)
-              ? order.copyWith(
-                  status: WorkOrderStatus.waitingSync,
-                  backendStatus: 'aguardando_sync',
-                )
-              : order,
-        )
-        .toList();
+    return _cachedOrders.map((order) {
+      final pendingEquipmentIds =
+          pendingEquipmentIdsByOrder[order.id] ?? const <String>{};
+      final equipments = order.equipments.map((equipment) {
+        return pendingEquipmentIds.contains(equipment.id)
+            ? equipment.copyWith(executionStatus: 'aguardando_sync')
+            : equipment;
+      }).toList();
+
+      if (pendingIds.contains(order.id)) {
+        return order.copyWith(
+          status: WorkOrderStatus.waitingSync,
+          backendStatus: 'aguardando_sync',
+          equipments: equipments,
+        );
+      }
+
+      return equipments.isEmpty
+          ? order
+          : order.copyWith(equipments: equipments);
+    }).toList();
   }
 
   @override
@@ -282,6 +294,28 @@ class OfflineWorkOrderRepository implements WorkOrderRepository {
     return error is SocketException || error is TimeoutException;
   }
 
+  Map<String, Set<String>> _pendingEquipmentIdsByOrder(
+    List<Map<String, dynamic>> pending,
+  ) {
+    final result = <String, Set<String>>{};
+    for (final item in pending) {
+      final kind = item['kind']?.toString();
+      if (kind != 'checklist' && kind != 'checklist_photo') {
+        continue;
+      }
+      final orderId = item['order_id']?.toString();
+      final equipmentId = item['equipment_id']?.toString();
+      if (orderId == null ||
+          orderId.isEmpty ||
+          equipmentId == null ||
+          equipmentId.isEmpty) {
+        continue;
+      }
+      result.putIfAbsent(orderId, () => <String>{}).add(equipmentId);
+    }
+    return result;
+  }
+
   Map<String, dynamic> _orderToJson(WorkOrder order) {
     return {
       'id': order.id,
@@ -293,6 +327,7 @@ class OfflineWorkOrderRepository implements WorkOrderRepository {
       'scheduled_at': order.scheduledAt.toIso8601String(),
       'status': order.status.name,
       'backend_status': order.backendStatus,
+      'equipments': order.equipments.map(_equipmentToJson).toList(),
     };
   }
 
@@ -310,7 +345,52 @@ class OfflineWorkOrderRepository implements WorkOrderRepository {
         orElse: () => WorkOrderStatus.waitingSync,
       ),
       backendStatus: json['backend_status']?.toString(),
+      equipments: _equipmentsFromJson(json['equipments']),
     );
+  }
+
+  Map<String, dynamic> _equipmentToJson(WorkOrderEquipment equipment) {
+    return {
+      'id': equipment.id,
+      'qr_code': equipment.qrCode,
+      'type': equipment.type,
+      'brand': equipment.brand,
+      'name': equipment.name,
+      'location': equipment.location,
+      'model': equipment.model,
+      'btus': equipment.btus,
+      'gas': equipment.gas,
+      'serial_number': equipment.serialNumber,
+      'impossible_fields': equipment.impossibleFields,
+      'execution_status': equipment.executionStatus,
+    };
+  }
+
+  List<WorkOrderEquipment> _equipmentsFromJson(Object? value) {
+    if (value is! List) {
+      return const [];
+    }
+
+    return value.whereType<Map<String, dynamic>>().map((json) {
+      return WorkOrderEquipment(
+        id: json['id'].toString(),
+        qrCode: json['qr_code']?.toString() ?? '',
+        type: json['type']?.toString() ?? '',
+        brand: json['brand']?.toString() ?? '',
+        name: json['name']?.toString() ?? '',
+        location: json['location']?.toString() ?? '',
+        model: json['model']?.toString() ?? '',
+        btus: int.tryParse(json['btus']?.toString() ?? ''),
+        gas: json['gas']?.toString() ?? '',
+        serialNumber: json['serial_number']?.toString() ?? '',
+        impossibleFields:
+            (json['impossible_fields'] as Map?)?.map(
+              (key, value) => MapEntry(key.toString(), value.toString()),
+            ) ??
+            const {},
+        executionStatus: json['execution_status']?.toString() ?? 'pendente',
+      );
+    }).toList();
   }
 
   Map<String, dynamic> _responseToJson(WorkOrderChecklistResponse response) {

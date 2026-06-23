@@ -52,6 +52,9 @@ const TRANSICOES_STATUS: Partial<Record<OrdemServicoEventoAcao, TransicaoStatus>
   }
 };
 
+const LIMITE_FOTO_BYTES = 3 * 1024 * 1024;
+const LIMITE_FOTO_MB = 3;
+
 const EXTENSAO_POR_MIME_TYPE: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/webp": "webp"
@@ -249,13 +252,6 @@ export class OrdensServicoService {
           }
         });
 
-        if (!ordemServico.equipamentoId) {
-          await tx.ordemServico.update({
-            where: { id: osId },
-            data: { equipamentoId: equipamentoAtualizado.id }
-          });
-        }
-
         return equipamentoAtualizado;
       }
 
@@ -278,13 +274,6 @@ export class OrdensServicoService {
           localInstalacao: true,
           dadosPendentesJustificados: true,
           atualizadoEm: true
-        }
-      });
-
-      await tx.ordemServico.update({
-        where: { id: osId },
-        data: {
-          equipamentoId: novoEquipamento.id
         }
       });
 
@@ -336,8 +325,8 @@ export class OrdensServicoService {
       throw new BadRequestException("Formato de arquivo não suportado. Use WebP ou JPEG.");
     }
 
-    if (input.foto.size > 800 * 1024) {
-      throw new BadRequestException("Arquivo excede o limite de 800 KB.");
+    if (input.foto.size > LIMITE_FOTO_BYTES) {
+      throw new BadRequestException(`Arquivo excede o limite de ${LIMITE_FOTO_MB} MB.`);
     }
 
     const ordemServico = await this.prisma.ordemServico.findUnique({
@@ -490,8 +479,8 @@ export class OrdensServicoService {
       throw new BadRequestException("Formato de arquivo nao suportado. Use WebP ou JPEG.");
     }
 
-    if (input.foto.size > 800 * 1024) {
-      throw new BadRequestException("Foto excede o limite de 800 KB.");
+    if (input.foto.size > LIMITE_FOTO_BYTES) {
+      throw new BadRequestException(`Foto excede o limite de ${LIMITE_FOTO_MB} MB.`);
     }
 
     const ordemServico = await this.prisma.ordemServico.findUnique({
@@ -781,6 +770,15 @@ export class OrdensServicoService {
               gasRefrigerante: true
             }
           },
+          cliente: {
+            select: {
+              equipamentos: {
+                select: {
+                  id: true
+                }
+              }
+            }
+          },
           evidencias: {
             select: {
               tipo: true
@@ -794,6 +792,11 @@ export class OrdensServicoService {
           assinatura: {
             select: {
               id: true
+            }
+          },
+          checklistRespostas: {
+            select: {
+              equipamentoId: true
             }
           }
         }
@@ -813,7 +816,7 @@ export class OrdensServicoService {
         throw new UnprocessableEntityException("OS não está com status em_atendimento.");
       }
 
-      if (!ordemServico.equipamento?.marca || !ordemServico.equipamento.modelo) {
+      if (ordemServico.equipamento && (!ordemServico.equipamento.marca || !ordemServico.equipamento.modelo)) {
         throw new UnprocessableEntityException("Identificação do equipamento ainda não registrada.");
       }
 
@@ -834,6 +837,18 @@ export class OrdensServicoService {
 
       if (!ordemServico.checklist?.servicoRealizado) {
         throw new UnprocessableEntityException("Checklist ainda não registrado.");
+      }
+
+      if (!ordemServico.equipamento) {
+        const equipamentos = ordemServico.cliente?.equipamentos ?? [];
+        const equipamentosFeitos = new Set(
+          ordemServico.checklistRespostas.map((resposta) => resposta.equipamentoId)
+        );
+        const pendentes = equipamentos.filter((equipamento) => !equipamentosFeitos.has(equipamento.id));
+
+        if (pendentes.length > 0) {
+          throw new UnprocessableEntityException("Finalize todos os equipamentos antes de concluir a OS.");
+        }
       }
 
       if (!possuiEvidenciaFinal) {

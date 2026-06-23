@@ -263,7 +263,7 @@ C:\develop\LondriClima\apps\mobile\build\app\outputs\flutter-apk\app-debug.apk
 - Prioridade agora: organizar o painel web para testar o fluxo real do app e das O.S.
 - WhatsApp fica aguardando o cliente repassar o chip antes de qualquer integracao.
 
-### Painel de O.S. - Fase 1.7 pronta para commit
+### Painel de O.S. - Fase 1.8 pronta para commit
 
 - Fase 1 iniciada: menu `Pre-chamados` virou `O.S.`, com abas de fichario e `Dashboard` no lugar visual de `Relatorios`.
 - Fase 1.2 feita localmente: abas `Abertas`, `Agendadas`, `Em atendimento`, `Concluidas` e `Canceladas` agora usam dados reais de `/admin/agenda`.
@@ -272,6 +272,8 @@ C:\develop\LondriClima\apps\mobile\build\app\outputs\flutter-apk\app-debug.apk
 - Fase 1.5 feita localmente: area de O.S. virou fichario compacto com lista de cards menores e detalhe lateral fixo; acoes sairam do card e ficaram no detalhe.
 - Fase 1.6 feita localmente: detalhe da O.S. ganhou bloco `Despacho`, valida tecnico/equipe e data/hora, e botao `Enviar para campo` usando `/admin/agenda/ordens/:id` para a O.S. aparecer no app do tecnico.
 - Fase 1.7 feita localmente: detalhe da O.S. ganhou bloco `App do tecnico`, mostrando prontidao para aparecer no app, responsavel, cliente/endereco, maquina e checklist_tipo vindo de `/admin/agenda`.
+- Ajuste feito localmente: O.S. sem equipamento unico agora representa uma visita para todos os equipamentos do cliente/local; o painel mostra `Todos os equipamentos do cliente` e nao bloqueia o app por falta de equipamento unico.
+- Fase 1.8 feita localmente: APK marca cada equipamento como realizado ou aguardando sync, remove maquina realizada da fila do tecnico, bloqueia finalizacao ate todos os equipamentos serem feitos e o painel mostra checks por equipamento no historico da O.S.
 - A primeira entrega preserva endpoints/rotas internas existentes para reduzir risco.
 
 ### Proximos passos do painel de O.S.

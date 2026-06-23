@@ -36,6 +36,10 @@ void main() {
       expect(await repository.pendingSyncCount(), 1);
       expect(orders.single.status, WorkOrderStatus.waitingSync);
       expect(orders.single.backendStatus, 'aguardando_sync');
+      expect(
+        orders.single.equipments.single.executionStatus,
+        'aguardando_sync',
+      );
     },
   );
 
@@ -72,6 +76,14 @@ WorkOrder _order() {
     scheduledAt: DateTime(2026, 6, 22),
     status: WorkOrderStatus.inProgress,
     backendStatus: 'em_atendimento',
+    equipments: const [
+      WorkOrderEquipment(
+        id: 'EQ-1',
+        name: 'Sala 1',
+        location: 'Sala 1',
+        model: 'Split',
+      ),
+    ],
   );
 }
 
