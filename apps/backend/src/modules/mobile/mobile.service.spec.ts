@@ -14,7 +14,7 @@ function criarService(prisma: unknown) {
   return new MobileService(prisma as never);
 }
 
-test("listarOrdens retorna OS do tecnico com equipamentos do atendimento", async () => {
+test("listarOrdens retorna somente equipamento escolhido na OS", async () => {
   const prisma = {
     ordemServico: {
       findMany: async ({ where }: { where: unknown }) => {
@@ -56,6 +56,39 @@ test("listarOrdens retorna OS do tecnico com equipamentos do atendimento", async
 
   assert.equal(resultado.items.length, 1);
   assert.equal(resultado.items[0].cliente, "Hospital Norte");
+  assert.equal(resultado.items[0].equipamentos.length, 1);
+  assert.equal(resultado.items[0].equipamentos[0].nome, "Sala 101");
+});
+
+test("listarOrdens retorna todos equipamentos quando OS nao define equipamento", async () => {
+  const prisma = {
+    ordemServico: {
+      findMany: async () => [
+        {
+          id: "os-todos",
+          clienteId: "cliente-1",
+          titulo: "PMOC completo",
+          status: OrdemServicoStatus.aberta,
+          agendadaPara: new Date("2026-06-22T12:00:00.000Z"),
+          cliente: {
+            nome: "Hospital Norte",
+            equipamentos: [
+              { id: "eq-1", modelo: "Split Hi-Wall", localInstalacao: "Sala 101", capacidadeBtu: 24000 },
+              { id: "eq-2", modelo: "Split Hi-Wall", localInstalacao: "Sala 102", capacidadeBtu: 24000 }
+            ]
+          },
+          endereco: null,
+          equipamento: null,
+          responsaveis: [],
+          checklistRespostas: []
+        }
+      ]
+    }
+  };
+
+  const resultado = await criarService(prisma).listarOrdens(usuario);
+
+  assert.equal(resultado.items[0].equipamentos.length, 2);
   assert.equal(resultado.items[0].equipamentos[0].nome, "Sala 101");
   assert.equal(resultado.items[0].equipamentos[1].nome, "Sala 102");
 });

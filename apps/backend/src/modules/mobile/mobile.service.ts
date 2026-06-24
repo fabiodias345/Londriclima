@@ -230,11 +230,9 @@ export class MobileService {
   }
 
   private toMobileOrder(ordem: any) {
-    const equipamentosBase = ordem.cliente?.equipamentos?.length
-      ? ordem.cliente.equipamentos
-      : ordem.equipamento
-        ? [ordem.equipamento]
-        : [];
+    const equipamentosBase = ordem.equipamento
+      ? [ordem.equipamento]
+      : ordem.cliente?.equipamentos ?? [];
 
     return {
       id: ordem.id,

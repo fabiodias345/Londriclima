@@ -5,8 +5,6 @@ import '../repositories/fleet_repository.dart';
 import '../repositories/work_order_repository.dart';
 import '../services/barcode_scanner_service.dart';
 import '../services/location_service.dart';
-import '../theme/app_theme.dart';
-import '../widgets/status_summary.dart';
 import '../widgets/work_order_card.dart';
 import '../widgets/work_order_filter_bar.dart';
 import 'fueling_screen.dart';
@@ -66,20 +64,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
             return ListView(
               padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
               children: [
-                _Header(total: orders.length),
-                const SizedBox(height: 18),
                 _DashboardActions(
                   onMaintenanceTap: () => setState(() {
                     _showMaintenance = true;
                   }),
                   onFuelingTap: _openFueling,
                 ),
-                const SizedBox(height: 18),
-                StatusSummary(orders: orders),
-                const SizedBox(height: 18),
-                if (!_showMaintenance)
-                  const _StartHint()
-                else ...[
+                if (_showMaintenance) ...[
+                  const SizedBox(height: 24),
+                  Text(
+                    'Ordens de servico',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
                   WorkOrderFilterBar(
                     selected: _filter,
                     onChanged: (value) => setState(() => _filter = value),
@@ -198,49 +197,6 @@ class _DashboardActions extends StatelessWidget {
           label: const Text('Abastecimentos'),
         ),
       ],
-    );
-  }
-}
-
-class _Header extends StatelessWidget {
-  const _Header({required this.total});
-
-  final int total;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Dashboard',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            color: airmovebrText,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          '$total ordens carregadas para trabalho de campo.',
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: airmovebrMuted),
-        ),
-      ],
-    );
-  }
-}
-
-class _StartHint extends StatelessWidget {
-  const _StartHint();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Card(
-      child: Padding(
-        padding: EdgeInsets.all(18),
-        child: Text('Escolha uma acao para comecar.'),
-      ),
     );
   }
 }

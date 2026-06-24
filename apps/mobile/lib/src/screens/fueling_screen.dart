@@ -91,6 +91,7 @@ class _FuelingScreenState extends State<FuelingScreen> {
                       DropdownButtonFormField<FleetVehicle>(
                         key: const Key('fuelVehicleSelect'),
                         initialValue: _selectedVehicle,
+                        isExpanded: true,
                         items: vehicles
                             .map(
                               (vehicle) => DropdownMenuItem(
@@ -99,6 +100,8 @@ class _FuelingScreenState extends State<FuelingScreen> {
                                   vehicle.plate.isEmpty
                                       ? vehicle.name
                                       : '${vehicle.name} - ${vehicle.plate}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             )

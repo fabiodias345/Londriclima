@@ -44,15 +44,17 @@ void main() {
     await tester.tap(find.byKey(const Key('loginSubmitButton')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Dashboard'), findsOneWidget);
     expect(find.byKey(const Key('myMaintenanceButton')), findsOneWidget);
     expect(find.byKey(const Key('fuelingButton')), findsOneWidget);
     expect(find.byType(Image), findsNothing);
-    expect(find.text('Escolha uma acao para comecar.'), findsOneWidget);
+    expect(find.text('Pendentes'), findsNothing);
+    expect(find.text('Em campo'), findsNothing);
+    expect(find.text('Sync'), findsNothing);
     expect(find.byKey(const Key('filterPendingButton')), findsNothing);
 
     await _openMaintenance(tester);
 
+    expect(find.text('Ordens de servico'), findsOneWidget);
     expect(find.byKey(const Key('filterPendingButton')), findsOneWidget);
     expect(find.text('Hoje'), findsOneWidget);
     expect(find.text('Aguardando sync'), findsOneWidget);
@@ -1265,6 +1267,37 @@ void main() {
     expect(fleetRepository.fuelings.single.totalValue, 123.45);
     expect(find.text('Abastecimento salvo.'), findsOneWidget);
   });
+
+  testWidgets('abastecimento nao estoura com nome de carro longo', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(360, 760));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LoginScreen(
+          loginGateway: _GatewayDeTeste(
+            repository: _RepositorioDeTeste(),
+            fleetRepository: _FleetRepositoryCarroLongo(),
+          ),
+        ),
+      ),
+    );
+
+    await tester.enterText(find.byKey(const Key('loginUserField')), 'teste');
+    await tester.enterText(
+      find.byKey(const Key('loginPasswordField')),
+      '123456',
+    );
+    await tester.tap(find.byKey(const Key('loginSubmitButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('fuelingButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('fuelVehicleSelect')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }
 
 Future<void> _openMaintenance(WidgetTester tester) async {
@@ -1294,6 +1327,22 @@ class _GatewayDeTeste implements MobileLoginGateway {
       fleetRepository: fleetRepository ?? FakeFleetRepository(),
     );
   }
+}
+
+class _FleetRepositoryCarroLongo implements FleetRepository {
+  @override
+  Future<List<FleetVehicle>> listVehicles() async {
+    return const [
+      FleetVehicle(
+        id: 'veiculo-longo',
+        name: 'Carro 01 - Manutencao preventiva corretiva instalacao urgente',
+        plate: 'LDC1A23',
+      ),
+    ];
+  }
+
+  @override
+  Future<void> registerFueling(FuelingInput input) async {}
 }
 
 class _RepositorioDeTeste implements WorkOrderRepository {
