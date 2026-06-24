@@ -124,3 +124,71 @@ test("listarOrdens retorna apenas uma foto no checklist antes da finalizacao", a
   assert.equal(fotos.length, 1);
   assert.equal(fotos[0].item, "Foto apos abrir tampa frontal");
 });
+
+test("listarVeiculos retorna carros ativos da empresa para o app", async () => {
+  const prisma = {
+    veiculo: {
+      findMany: async ({ where, orderBy }: { where: unknown; orderBy: unknown }) => {
+        assert.deepEqual(where, { empresaId: usuario.empresa_id, ativo: true });
+        assert.deepEqual(orderBy, { nome: "asc" });
+        return [
+          { id: "veiculo-1", nome: "Carro 01", placa: "ABC1D23" },
+          { id: "veiculo-2", nome: "Carro 02", placa: "XYZ9A87" }
+        ];
+      }
+    }
+  };
+
+  const resultado = await criarService(prisma).listarVeiculos(usuario);
+
+  assert.equal(resultado.total, 2);
+  assert.deepEqual(resultado.items[0], { id: "veiculo-1", nome: "Carro 01", placa: "ABC1D23" });
+});
+
+test("registrarAbastecimento salva somente carro odometro litros e valor", async () => {
+  const chamadas: Record<string, unknown> = {};
+  const prisma = {
+    veiculo: {
+      findFirst: async ({ where }: { where: unknown }) => {
+        chamadas.veiculoWhere = where;
+        return { id: "veiculo-1", nome: "Carro 01", empresaId: usuario.empresa_id };
+      }
+    },
+    veiculoAbastecimento: {
+      findFirst: async ({ where, orderBy }: { where: unknown; orderBy: unknown }) => {
+        chamadas.ultimoWhere = where;
+        chamadas.ultimoOrderBy = orderBy;
+        return { odometroKm: { toNumber: () => 51635 } };
+      },
+      create: async ({ data }: { data: any }) => {
+        chamadas.createData = data;
+        return {
+          id: "abastecimento-1",
+          odometroKm: { toNumber: () => 51700 },
+          litros: { toNumber: () => 20 },
+          valorTotal: { toNumber: () => 120 },
+          precoPorLitro: { toNumber: () => 6 },
+          abastecidoEm: new Date("2026-06-24T12:00:00.000Z")
+        };
+      }
+    }
+  };
+
+  const resultado = await criarService(prisma).registrarAbastecimento(usuario, {
+    veiculo_id: "veiculo-1",
+    odometro_km: 51700,
+    litros: 20,
+    valor_total: 120
+  });
+
+  assert.deepEqual(chamadas.veiculoWhere, {
+    id: "veiculo-1",
+    empresaId: usuario.empresa_id,
+    ativo: true
+  });
+  assert.equal((chamadas.createData as any).usuarioId, usuario.id);
+  assert.equal((chamadas.createData as any).posto, undefined);
+  assert.equal((chamadas.createData as any).observacao, undefined);
+  assert.equal(resultado.veiculo_nome, "Carro 01");
+  assert.equal(resultado.preco_por_litro, 6);
+});

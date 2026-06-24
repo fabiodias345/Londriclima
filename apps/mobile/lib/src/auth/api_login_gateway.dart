@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import '../repositories/api_work_order_repository.dart';
+import '../repositories/api_fleet_repository.dart';
 import '../repositories/offline_work_order_repository.dart';
 import 'mobile_login_gateway.dart';
 
@@ -45,6 +46,7 @@ class ApiLoginGateway implements MobileLoginGateway {
         repository: OfflineWorkOrderRepository(
           remote: ApiWorkOrderRepository(baseUrl: baseUrl, token: token),
         ),
+        fleetRepository: ApiFleetRepository(baseUrl: baseUrl, token: token),
       );
     } finally {
       client.close(force: true);

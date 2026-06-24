@@ -76,6 +76,11 @@ const vehicleList = document.querySelector("#vehicleList");
 const resetVehicleFormButton = document.querySelector("#resetVehicleFormButton");
 const vehicleCount = document.querySelector("#vehicleCount");
 const movingCount = document.querySelector("#movingCount");
+const stoppedCount = document.querySelector("#stoppedCount");
+const fleetMovingSpeed = document.querySelector("#fleetMovingSpeed");
+const fleetStoppedSince = document.querySelector("#fleetStoppedSince");
+const fleetTotalKm = document.querySelector("#fleetTotalKm");
+const fleetAverageEfficiency = document.querySelector("#fleetAverageEfficiency");
 const fuelForm = document.querySelector("#fuelForm");
 const fuelVehicleSelect = document.querySelector("#fuelVehicleSelect");
 const fuelStatus = document.querySelector("#fuelStatus");
@@ -213,6 +218,7 @@ let activeOsTab = "solicitacoes";
 let selectedOsDetailId = "";
 let latestPreChamados = [];
 let latestFleetItems = [];
+let latestFleetReportItems = [];
 let latestVehicleRecords = [];
 let latestClients = [];
 let latestEngineers = [];
@@ -468,6 +474,7 @@ async function loadAgendaForOsWorkbench() {
 
 async function loadFrota() {
   fleetStatus.textContent = "Carregando...";
+  renderFrota([]);
 
   let response;
 
@@ -477,6 +484,7 @@ async function loadFrota() {
     });
   } catch {
     fleetStatus.textContent = "API indisponivel.";
+    renderFrota([]);
     return;
   }
 

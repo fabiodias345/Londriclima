@@ -73,6 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
         MaterialPageRoute<void>(
           builder: (_) => DashboardScreen(
             repository: loginSession.repository,
+            fleetRepository: loginSession.fleetRepository,
             locationService: widget.locationService,
             photoPicker: widget.photoPicker,
             barcodeScanner: widget.barcodeScanner,

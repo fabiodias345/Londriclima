@@ -8,12 +8,12 @@ Atualizado em: 24/06/2026
 - Branch atual: `dev`
 - Commit atual: `a8f872f`
 - `dev`, `main`, `origin/dev` e `origin/main` apontam para o mesmo commit.
-- Arvore de trabalho limpa apos Fase 18.
-- Commit, push, publicacao e deploy Locaweb da Fase 18 feitos pelo usuario.
+- Arvore de trabalho com alteracoes locais das Fases 19 e 20.
+- Commit, push, publicacao e deploy Locaweb da Fase 18 feitos pelo usuario; Fases 19 e 20 ainda nao publicadas.
 
 ## APK tecnico AIRMOVEBR
 
-Status: Fases 1 a 18 concluidas, testadas no celular, testadas na web e publicadas em producao.
+Status: Fases 1 a 18 concluidas e publicadas; Fases 19 e 20 implementadas localmente.
 
 ### Fase 1 - Dashboard mobile
 
@@ -219,7 +219,11 @@ service: airmovebr-backend
 ### Ponto de retomada
 
 - Fase 19 implementada localmente: historico real da O.S. no painel.
-- Proximo passo: testar no painel web com uma O.S. concluida pelo APK; se OK, commitar, publicar e validar producao.
+- Fase 20 implementada localmente: dashboard inicial no APK com botoes Minhas manutencoes e Abastecimentos; tecnico registra abastecimento com carro, odometro, litros e valor total.
+- Backend mobile exposto para frota:
+  - GET /api/v1/mobile/frota/veiculos
+  - POST /api/v1/mobile/frota/abastecimentos
+- Proximo passo: testar visualmente painel e APK; se OK, commitar, publicar e validar producao.
 - Se voltar a mexer no fluxo do app, validar sempre em tres pontos:
   1. APK no celular;
   2. painel web;
@@ -273,7 +277,7 @@ C:\develop\LondriClima\apps\mobile\build\app\outputs\flutter-apk\app-debug.apk
 
 ### Proximas fases do APK
 
-1. Testar e publicar Fase 19.
+1. Testar visualmente e publicar Fases 19 e 20.
 2. Proximas candidatas: polimento visual do APK, checklist real por tipo de servico, APK release.
 
 ## Foco atual: painel web para testar o app
@@ -298,6 +302,7 @@ C:\develop\LondriClima\apps\mobile\build\app\outputs\flutter-apk\app-debug.apk
 - Ajuste publicado na Fase 18: a O.S. concluida pelo APK aparece na aba `Concluidas` do painel; o calendario da Agenda continua mostrando somente O.S. operacionais.
 - Fase 19 feita localmente: `/admin/agenda` agora entrega eventos reais, evidencias, checklist e assinatura; detalhe lateral da O.S. mostra linha do tempo real com tecnico, status, data e GPS.
 - Ajuste visual feito localmente: tela de O.S. redesenhada no modelo aprovado, com sidebar fixa, cards de indicadores, abas com contadores, busca larga e lista de O.S. mais escaneavel.
+- Ajuste visual feito localmente: tela de Frota redesenhada no modelo escuro enviado pelo usuario, reaproveitando API/Leaflet reais, cards de metricas, mapa, lista monitorada e consumo.
 - Script local criado: `npm.cmd run backend:prisma:reset-os`, que apaga O.S. e dependencias para teste limpo sem apagar cadastros base.
 - A primeira entrega preserva endpoints/rotas internas existentes para reduzir risco.
 
@@ -311,7 +316,8 @@ C:\develop\LondriClima\apps\mobile\build\app\outputs\flutter-apk\app-debug.apk
 6. Validar que a O.S. sai de `Em atendimento` e aparece como `Concluida` na web.
 7. Testar visualmente o historico real da Fase 19 no painel.
 8. Validar visualmente o novo layout da tela de O.S. em `http://127.0.0.1:5173/admin/`.
-9. Se OK, commitar, publicar e validar em producao.
+9. Validar visualmente o novo layout da tela de Frota em `http://127.0.0.1:5173/admin/`.
+10. Se OK, commitar, publicar e validar em producao.
 
 ### Backlog futuro: pos-venda WhatsApp
 

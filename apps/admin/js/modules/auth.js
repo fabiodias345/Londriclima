@@ -6,15 +6,14 @@ export const authModule = {
 
 export const authRoot = `
     fleetStatus.textContent = "Nao foi possivel carregar a frota.";
+    renderFrota([]);
     return;
   }
 
   const result = await response.json();
-  const moving = result.items.filter((item) => (item.localizacao?.velocidade_kmh || 0) > 0).length;
 
   latestFleetItems = result.items;
-  vehicleCount.textContent = result.total;
-  movingCount.textContent = moving;
+  updateFleetSummary(result.items);
   fleetStatus.textContent = result.total === 1 ? "1 veiculo" : \`\${result.total} veiculos\`;
   renderFrota(result.items);
   await Promise.all([
@@ -360,7 +359,9 @@ async function loadRelatorioFrota() {
   }
 
   fleetReportStatus.textContent = \`\${result.total_veiculos} veiculos · \${formatNumber(result.km_rodados)} km\`;
-  renderRelatorioFrota(result.items || []);
+  latestFleetReportItems = result.items || [];
+  updateFleetSummary(latestFleetItems);
+  renderRelatorioFrota(latestFleetReportItems);
 }
 
 async function loadRelatoriosAvulsos() {

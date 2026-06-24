@@ -691,3 +691,33 @@ test("admin mostra todos os veiculos no Leaflet e permite zoom por carro", () =>
   assert.doesNotMatch(html, /map-road|Av\. Higienópolis|Av\. Dez de Dezembro|BR-369/);
   assert.doesNotMatch(styles, /\.map-road|\.vehicle-marker/);
 });
+
+test("admin usa layout operacional escuro para frota", () => {
+  const html = read("apps/admin/index.html");
+  const script = readAdminJs();
+  const styles = readAdminCss();
+
+  assert.match(html, /class="summary-grid fleet-summary-grid hidden" id="frotaSummary"/);
+  assert.match(html, /id="fleetTotalKm"/);
+  assert.match(html, /id="fleetAverageEfficiency"/);
+  assert.match(html, /class="fleet-shell hidden" id="frotaView"/);
+  assert.match(html, /class="fleet-map-stage"/);
+  assert.match(html, /class="fleet-map-legend"/);
+  assert.match(html, /fleet-monitor-panel/);
+  assert.match(script, /function updateFleetSummary/);
+  assert.match(script, /function getFleetTotalKm/);
+  assert.match(script, /function getFleetAverageEfficiency/);
+  assert.match(script, /renderFrota\(\[\]\)/);
+  assert.match(script, /fleet-empty-state/);
+  assert.match(script, /O mapa nao usa chave/);
+  assert.match(script, /fleet-card-status/);
+  assert.match(script, /fleet-card-actions/);
+  assert.match(script, /fleet-report-row/);
+  assert.match(styles, /\.fleet-shell/);
+  assert.match(styles, /\.fleet-summary-grid/);
+  assert.match(styles, /\.fleet-stat-card/);
+  assert.match(styles, /\.fleet-map-stage/);
+  assert.match(styles, /\.fleet-monitor-panel/);
+  assert.match(styles, /\.fleet-empty-state/);
+  assert.match(styles, /\.fleet-report-row/);
+});

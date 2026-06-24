@@ -1,25 +1,29 @@
 import 'package:flutter/material.dart';
 
 import '../models/work_order.dart';
+import '../repositories/fleet_repository.dart';
 import '../repositories/work_order_repository.dart';
 import '../services/barcode_scanner_service.dart';
 import '../services/location_service.dart';
 import '../theme/app_theme.dart';
-import 'work_order_detail_screen.dart';
 import '../widgets/status_summary.dart';
 import '../widgets/work_order_card.dart';
 import '../widgets/work_order_filter_bar.dart';
+import 'fueling_screen.dart';
+import 'work_order_detail_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({
     super.key,
     required this.repository,
+    required this.fleetRepository,
     required this.locationService,
     required this.photoPicker,
     required this.barcodeScanner,
   });
 
   final WorkOrderRepository repository;
+  final FleetRepository fleetRepository;
   final LocationService locationService;
   final ChecklistPhotoPicker photoPicker;
   final BarcodeScannerService barcodeScanner;
@@ -32,6 +36,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   WorkOrderFilter _filter = WorkOrderFilter.today;
   late Future<List<WorkOrder>> _ordersFuture;
   bool _syncing = false;
+  bool _showMaintenance = false;
 
   @override
   void initState() {
@@ -63,27 +68,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 _Header(total: orders.length),
                 const SizedBox(height: 18),
+                _DashboardActions(
+                  onMaintenanceTap: () => setState(() {
+                    _showMaintenance = true;
+                  }),
+                  onFuelingTap: _openFueling,
+                ),
+                const SizedBox(height: 18),
                 StatusSummary(orders: orders),
                 const SizedBox(height: 18),
-                WorkOrderFilterBar(
-                  selected: _filter,
-                  onChanged: (value) => setState(() => _filter = value),
-                ),
-                const SizedBox(height: 16),
-                if (snapshot.connectionState == ConnectionState.waiting)
-                  const Center(child: CircularProgressIndicator())
-                else if (visible.isEmpty)
-                  const _EmptyState()
-                else
-                  ...visible.map(
-                    (order) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: WorkOrderCard(
-                        order: order,
-                        onTap: () => _openOrder(order),
+                if (!_showMaintenance)
+                  const _StartHint()
+                else ...[
+                  WorkOrderFilterBar(
+                    selected: _filter,
+                    onChanged: (value) => setState(() => _filter = value),
+                  ),
+                  const SizedBox(height: 16),
+                  if (snapshot.connectionState == ConnectionState.waiting)
+                    const Center(child: CircularProgressIndicator())
+                  else if (visible.isEmpty)
+                    const _EmptyState()
+                  else
+                    ...visible.map(
+                      (order) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: WorkOrderCard(
+                          order: order,
+                          onTap: () => _openOrder(order),
+                        ),
                       ),
                     ),
-                  ),
+                ],
               ],
             );
           },
@@ -108,6 +124,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (mounted) {
       _reload();
     }
+  }
+
+  Future<void> _openFueling() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => FuelingScreen(repository: widget.fleetRepository),
+      ),
+    );
   }
 
   Widget _syncButton() {
@@ -146,6 +170,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
+class _DashboardActions extends StatelessWidget {
+  const _DashboardActions({
+    required this.onMaintenanceTap,
+    required this.onFuelingTap,
+  });
+
+  final VoidCallback onMaintenanceTap;
+  final VoidCallback onFuelingTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        FilledButton.icon(
+          key: const Key('myMaintenanceButton'),
+          onPressed: onMaintenanceTap,
+          icon: const Icon(Icons.assignment_outlined),
+          label: const Text('Minhas manutencoes'),
+        ),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          key: const Key('fuelingButton'),
+          onPressed: onFuelingTap,
+          icon: const Icon(Icons.local_gas_station_outlined),
+          label: const Text('Abastecimentos'),
+        ),
+      ],
+    );
+  }
+}
+
 class _Header extends StatelessWidget {
   const _Header({required this.total});
 
@@ -157,7 +213,7 @@ class _Header extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Minhas manutenções',
+          'Dashboard',
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
             color: airmovebrText,
             fontWeight: FontWeight.w900,
@@ -171,6 +227,20 @@ class _Header extends StatelessWidget {
           ).textTheme.bodyMedium?.copyWith(color: airmovebrMuted),
         ),
       ],
+    );
+  }
+}
+
+class _StartHint extends StatelessWidget {
+  const _StartHint();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Card(
+      child: Padding(
+        padding: EdgeInsets.all(18),
+        child: Text('Escolha uma acao para comecar.'),
+      ),
     );
   }
 }

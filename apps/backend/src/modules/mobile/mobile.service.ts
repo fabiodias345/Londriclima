@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { ChecklistTipo, OrdemServicoStatus } from "@prisma/client";
+import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { ChecklistTipo, OrdemServicoStatus, Prisma } from "@prisma/client";
 import { PrismaService } from "../../database/prisma.service";
+import type { CriarAbastecimentoDto } from "../admin/dto/criar-abastecimento.dto";
 import type { AuthenticatedUser } from "../auth/auth-user";
 
 const statusesCampo = [
@@ -108,6 +109,91 @@ export class MobileService {
     }
 
     return this.toMobileOrder(ordem);
+  }
+
+  async listarVeiculos(user: AuthenticatedUser) {
+    const veiculos = await this.prisma.veiculo.findMany({
+      where: {
+        empresaId: user.empresa_id,
+        ativo: true
+      },
+      orderBy: { nome: "asc" },
+      select: {
+        id: true,
+        nome: true,
+        placa: true
+      }
+    });
+
+    return {
+      total: veiculos.length,
+      items: veiculos.map((veiculo) => ({
+        id: veiculo.id,
+        nome: veiculo.nome,
+        placa: veiculo.placa
+      }))
+    };
+  }
+
+  async registrarAbastecimento(user: AuthenticatedUser, dto: CriarAbastecimentoDto) {
+    const veiculo = await this.prisma.veiculo.findFirst({
+      where: {
+        id: dto.veiculo_id,
+        empresaId: user.empresa_id,
+        ativo: true
+      },
+      select: {
+        id: true,
+        nome: true,
+        empresaId: true
+      }
+    });
+
+    if (!veiculo) {
+      throw new NotFoundException("Veiculo nao encontrado.");
+    }
+
+    const ultimoAbastecimento = await this.prisma.veiculoAbastecimento.findFirst({
+      where: { veiculoId: veiculo.id },
+      orderBy: { odometroKm: "desc" },
+      select: { odometroKm: true }
+    });
+
+    if (ultimoAbastecimento && dto.odometro_km < ultimoAbastecimento.odometroKm.toNumber()) {
+      throw new ConflictException("Odometro nao pode ser menor que o ultimo abastecimento.");
+    }
+
+    const abastecimento = await this.prisma.veiculoAbastecimento.create({
+      data: {
+        empresaId: veiculo.empresaId,
+        veiculoId: veiculo.id,
+        usuarioId: user.id,
+        odometroKm: new Prisma.Decimal(dto.odometro_km),
+        litros: new Prisma.Decimal(dto.litros),
+        valorTotal: new Prisma.Decimal(dto.valor_total),
+        precoPorLitro: new Prisma.Decimal(dto.valor_total / dto.litros),
+        abastecidoEm: new Date()
+      },
+      select: {
+        id: true,
+        odometroKm: true,
+        litros: true,
+        valorTotal: true,
+        precoPorLitro: true,
+        abastecidoEm: true
+      }
+    });
+
+    return {
+      id: abastecimento.id,
+      veiculo_id: veiculo.id,
+      veiculo_nome: veiculo.nome,
+      odometro_km: abastecimento.odometroKm.toNumber(),
+      litros: abastecimento.litros.toNumber(),
+      valor_total: abastecimento.valorTotal.toNumber(),
+      preco_por_litro: abastecimento.precoPorLitro.toNumber(),
+      abastecido_em: abastecimento.abastecidoEm.toISOString()
+    };
   }
 
   private filtroOrdensDoUsuario(user: AuthenticatedUser) {

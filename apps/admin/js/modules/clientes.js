@@ -268,7 +268,7 @@ function renderRelatorioFrota(items) {
 
   for (const item of items) {
     const row = document.createElement("article");
-    row.className = "data-row fuel-row";
+    row.className = "data-row fuel-row fleet-report-row";
     row.innerHTML = \`
       <div>
         <strong>\${escapeHtml(item.nome)}</strong>

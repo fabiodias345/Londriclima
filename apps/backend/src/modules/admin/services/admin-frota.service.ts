@@ -221,7 +221,7 @@ export class AdminFrotaService {
         litros: new Prisma.Decimal(dto.litros),
         valorTotal: new Prisma.Decimal(dto.valor_total),
         precoPorLitro: new Prisma.Decimal(precoPorLitro),
-        abastecidoEm: new Date(dto.abastecido_em),
+        abastecidoEm: dto.abastecido_em ? new Date(dto.abastecido_em) : new Date(),
         posto: dto.posto?.trim() || null,
         observacao: dto.observacao?.trim() || null
       },

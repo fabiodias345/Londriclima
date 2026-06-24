@@ -80,6 +80,7 @@ function renderPreChamados(items) {
 
 function renderFrota(items) {
   fleetList.innerHTML = "";
+  updateFleetSummary(items);
   ensureFleetMap();
   renderFleetMarkers(items);
 
@@ -87,9 +88,19 @@ function renderFrota(items) {
     selectedFleetVehicleId = items.find((item) => item.localizacao)?.id || "";
   }
 
+  if (!items.length) {
+    fleetList.innerHTML = \`
+      <article class="fleet-empty-state">
+        <strong>Nenhum veiculo carregado.</strong>
+        <span>O mapa nao usa chave. Ligue a API local para buscar carros reais.</span>
+      </article>
+    \`;
+    return;
+  }
+
   for (const item of items) {
     const location = item.localizacao;
-    const speed = location?.velocidade_kmh || 0;
+    const speed = Number(location?.velocidade_kmh || 0);
     const moving = speed > 0;
     const card = document.createElement("button");
 
@@ -98,9 +109,20 @@ function renderFrota(items) {
     card.dataset.vehicleId = item.id;
     card.disabled = !location;
     card.innerHTML = \`
-      <strong>\${escapeHtml(item.nome)}</strong>
-      <p>\${escapeHtml(item.placa || "Sem placa")} · \${moving ? "em movimento" : "parado"}</p>
-      <p>\${location ? \`\${speed} km/h · \${formatDate(location.registrado_em)} · abrir no mapa\` : "Sem sinal recente"}</p>
+      <div class="fleet-card-title">
+        <strong>\${escapeHtml(item.nome)}</strong>
+        <span class="fleet-card-status \${moving ? "is-moving" : "is-stopped"}">\${moving ? "Movimento" : "Parado"}</span>
+      </div>
+      <div class="fleet-card-metrics">
+        <span>Placa: <strong>\${escapeHtml(item.placa || "Sem placa")}</strong></span>
+        <span>Vel: <strong>\${speed} km/h</strong></span>
+        <span>Hora: <strong>\${location ? formatFleetTime(location.registrado_em) : "--:--"}</strong></span>
+        <span>Fonte: <strong>GPS</strong></span>
+      </div>
+      <div class="fleet-card-actions">
+        <span>No mapa</span>
+        <span>Detalhes</span>
+      </div>
     \`;
     fleetList.appendChild(card);
   }
@@ -125,6 +147,48 @@ function renderFuelVehicleOptions(items) {
     option.textContent = \`\${item.nome}\${item.placa ? \` - \${item.placa}\` : ""}\`;
     fuelVehicleSelect.appendChild(option);
   }
+}
+
+function updateFleetSummary(items) {
+  const total = items.length;
+  const movingItems = items.filter((item) => Number(item.localizacao?.velocidade_kmh || 0) > 0);
+  const moving = movingItems.length;
+  const stopped = Math.max(total - moving, 0);
+  const speed = movingItems.reduce((sum, item) => sum + Number(item.localizacao?.velocidade_kmh || 0), 0);
+
+  vehicleCount.textContent = total;
+  movingCount.textContent = moving;
+  stoppedCount.textContent = stopped;
+  fleetMovingSpeed.textContent = moving ? \`\${formatNumber(speed)} km/h\` : "0 km/h";
+  fleetStoppedSince.textContent = stopped ? "Sem movimento" : "Frota em rota";
+  fleetTotalKm.textContent = formatNumber(getFleetTotalKm());
+  fleetAverageEfficiency.textContent = getFleetAverageEfficiency();
+}
+
+function getFleetTotalKm() {
+  return latestFleetReportItems.reduce((sum, item) => sum + Number(item.km_rodados || 0), 0);
+}
+
+function getFleetAverageEfficiency() {
+  const validItems = latestFleetReportItems.filter((item) => Number(item.km_por_litro || 0) > 0);
+
+  if (!validItems.length) {
+    return "0";
+  }
+
+  const total = validItems.reduce((sum, item) => sum + Number(item.km_por_litro || 0), 0);
+  return formatNumber(total / validItems.length);
+}
+
+function formatFleetTime(value) {
+  if (!value) {
+    return "--:--";
+  }
+
+  return new Date(value).toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
 }
 
 function ensureFleetMap() {

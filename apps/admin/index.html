@@ -112,18 +112,31 @@
           </article>
         </section>
 
-        <section class="summary-grid hidden" id="frotaSummary" aria-label="Resumo da frota">
-          <article>
+        <section class="summary-grid fleet-summary-grid hidden" id="frotaSummary" aria-label="Resumo da frota">
+          <article class="fleet-stat-card fleet-stat-operational">
             <span>Veiculos ativos</span>
             <strong id="vehicleCount">0</strong>
+            <small>Frota operacional</small>
           </article>
-          <article>
+          <article class="fleet-stat-card fleet-stat-moving">
             <span>Em movimento</span>
             <strong id="movingCount">0</strong>
+            <small id="fleetMovingSpeed">0 km/h</small>
           </article>
-          <article>
-            <span>Fonte</span>
-            <strong>GPS</strong>
+          <article class="fleet-stat-card fleet-stat-stopped">
+            <span>Parados</span>
+            <strong id="stoppedCount">0</strong>
+            <small id="fleetStoppedSince">Sem alerta</small>
+          </article>
+          <article class="fleet-stat-card">
+            <span>KM total</span>
+            <strong id="fleetTotalKm">0</strong>
+            <small>km rodados</small>
+          </article>
+          <article class="fleet-stat-card fleet-stat-efficiency">
+            <span>Eficiencia media</span>
+            <strong id="fleetAverageEfficiency">0</strong>
+            <small>km/L</small>
           </article>
         </section>
 
@@ -278,7 +291,7 @@
           </aside>
         </section>
 
-        <section class="fleet-panel hidden" id="frotaView">
+        <section class="fleet-shell hidden" id="frotaView">
           <div class="subnav" role="tablist" aria-label="Secoes da frota">
             <button class="subnav-button active" type="button" data-fleet-tab="mapa">Mapa</button>
             <button class="subnav-button" type="button" data-fleet-tab="veiculos">Veiculos</button>
@@ -287,9 +300,16 @@
           </div>
 
           <div class="fleet-tab-panel fleet-map-panel" data-fleet-panel="mapa">
-            <div class="fleet-map" id="fleetMap" aria-label="Mapa operacional da frota"></div>
-            <div class="fleet-list">
-              <div class="worklist-header">
+            <div class="fleet-map-stage">
+              <div class="fleet-map" id="fleetMap" aria-label="Mapa operacional da frota"></div>
+              <div class="fleet-map-legend" aria-label="Legenda da frota">
+                <strong>Status</strong>
+                <span><i class="legend-line moving"></i> Em movimento</span>
+                <span><i class="legend-line stopped"></i> Parado</span>
+              </div>
+            </div>
+            <div class="fleet-list fleet-monitor-panel">
+              <div class="worklist-header fleet-monitor-header">
                 <h2>Veiculos monitorados</h2>
                 <p id="fleetStatus" role="status">Carregando...</p>
               </div>

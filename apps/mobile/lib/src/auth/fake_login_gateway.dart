@@ -1,4 +1,5 @@
 import '../data/fake_work_order_repository.dart';
+import '../repositories/fleet_repository.dart';
 import 'mobile_login_gateway.dart';
 
 class FakeLoginGateway implements MobileLoginGateway {
@@ -9,7 +10,10 @@ class FakeLoginGateway implements MobileLoginGateway {
         normalizedUser == 'teste' ||
         normalizedUser == 'tecnico@airmovebr.local';
     if (isDemoUser && password == '123456') {
-      return LoginSession(repository: FakeWorkOrderRepository());
+      return LoginSession(
+        repository: FakeWorkOrderRepository(),
+        fleetRepository: FakeFleetRepository(),
+      );
     }
 
     return null;

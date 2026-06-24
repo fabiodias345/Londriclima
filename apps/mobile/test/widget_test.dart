@@ -8,6 +8,7 @@ import 'package:airmovebr_mobile/src/models/work_order.dart';
 import 'package:airmovebr_mobile/src/services/location_service.dart';
 import 'package:airmovebr_mobile/src/services/barcode_scanner_service.dart';
 import 'package:airmovebr_mobile/src/repositories/work_order_repository.dart';
+import 'package:airmovebr_mobile/src/repositories/fleet_repository.dart';
 import 'package:airmovebr_mobile/src/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -43,10 +44,17 @@ void main() {
     await tester.tap(find.byKey(const Key('loginSubmitButton')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Minhas manutenções'), findsOneWidget);
+    expect(find.text('Dashboard'), findsOneWidget);
+    expect(find.byKey(const Key('myMaintenanceButton')), findsOneWidget);
+    expect(find.byKey(const Key('fuelingButton')), findsOneWidget);
     expect(find.byType(Image), findsNothing);
-    expect(find.text('Hoje'), findsOneWidget);
+    expect(find.text('Escolha uma acao para comecar.'), findsOneWidget);
+    expect(find.byKey(const Key('filterPendingButton')), findsNothing);
+
+    await _openMaintenance(tester);
+
     expect(find.byKey(const Key('filterPendingButton')), findsOneWidget);
+    expect(find.text('Hoje'), findsOneWidget);
     expect(find.text('Aguardando sync'), findsOneWidget);
     expect(find.text('Hospital Norte'), findsOneWidget);
     expect(find.text('3 equipamentos'), findsOneWidget);
@@ -65,6 +73,8 @@ void main() {
     await tester.tap(find.byKey(const Key('loginSubmitButton')));
     await tester.pumpAndSettle();
 
+    await _openMaintenance(tester);
+
     await tester.tap(find.byKey(const Key('filterPendingButton')));
     await tester.pumpAndSettle();
 
@@ -82,6 +92,8 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('loginSubmitButton')));
     await tester.pumpAndSettle();
+
+    await _openMaintenance(tester);
 
     await tester.tap(find.text('Hospital Norte'));
     await tester.pumpAndSettle();
@@ -161,6 +173,8 @@ void main() {
     await tester.tap(find.byKey(const Key('loginSubmitButton')));
     await tester.pumpAndSettle();
 
+    await _openMaintenance(tester);
+
     expect(find.text('Cliente API'), findsOneWidget);
   });
 
@@ -189,6 +203,7 @@ void main() {
     await tester.tap(find.byKey(const Key('loginSubmitButton')));
     await tester.pumpAndSettle();
 
+    await _openMaintenance(tester);
     await tester.tap(find.text('Cliente API'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
@@ -227,6 +242,7 @@ void main() {
     await tester.tap(find.byKey(const Key('loginSubmitButton')));
     await tester.pumpAndSettle();
 
+    await _openMaintenance(tester);
     await tester.tap(find.text('Cliente API'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
@@ -303,6 +319,7 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('loginSubmitButton')));
     await tester.pumpAndSettle();
+    await _openMaintenance(tester);
     await tester.tap(find.text('Cliente API'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
@@ -343,6 +360,7 @@ void main() {
     await tester.tap(find.byKey(const Key('loginSubmitButton')));
     await tester.pumpAndSettle();
 
+    await _openMaintenance(tester);
     await tester.tap(find.text('Cliente API'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
@@ -420,6 +438,7 @@ void main() {
     await tester.tap(find.byKey(const Key('loginSubmitButton')));
     await tester.pumpAndSettle();
 
+    await _openMaintenance(tester);
     await tester.tap(find.text('Cliente API'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
@@ -506,6 +525,7 @@ void main() {
     await tester.tap(find.byKey(const Key('loginSubmitButton')));
     await tester.pumpAndSettle();
 
+    await _openMaintenance(tester);
     await tester.tap(find.text('Cliente API'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
@@ -561,6 +581,7 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('loginSubmitButton')));
     await tester.pumpAndSettle();
+    await _openMaintenance(tester);
     await tester.tap(find.text('Cliente API'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
@@ -622,6 +643,7 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('loginSubmitButton')));
     await tester.pumpAndSettle();
+    await _openMaintenance(tester);
     await tester.tap(find.text('Cliente API'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
@@ -676,6 +698,7 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('loginSubmitButton')));
     await tester.pumpAndSettle();
+    await _openMaintenance(tester);
     await tester.tap(find.text('Cliente API'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
@@ -727,6 +750,7 @@ void main() {
       );
       await tester.tap(find.byKey(const Key('loginSubmitButton')));
       await tester.pumpAndSettle();
+      await _openMaintenance(tester);
       await tester.tap(find.text('Cliente API'));
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
@@ -813,6 +837,7 @@ void main() {
     await tester.tap(find.byKey(const Key('loginSubmitButton')));
     await tester.pumpAndSettle();
 
+    await _openMaintenance(tester);
     await tester.tap(find.text('Cliente API'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
@@ -880,7 +905,10 @@ void main() {
       find.text('Informe o responsavel e colete a assinatura.'),
       findsNothing,
     );
-    expect(find.text('Registre a foto depois antes de finalizar.'), findsNothing);
+    expect(
+      find.text('Registre a foto depois antes de finalizar.'),
+      findsNothing,
+    );
     expect(find.text('Falha ao finalizar OS.'), findsNothing);
 
     expect(repository.initialEvidenceOrderId, 'OS-API');
@@ -925,6 +953,7 @@ void main() {
     await tester.tap(find.byKey(const Key('loginSubmitButton')));
     await tester.pumpAndSettle();
 
+    await _openMaintenance(tester);
     await tester.tap(find.text('Cliente API'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
@@ -1038,6 +1067,7 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('loginSubmitButton')));
     await tester.pumpAndSettle();
+    await _openMaintenance(tester);
     await tester.tap(find.text('Cliente API'));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('stepTab_finish')));
@@ -1090,6 +1120,7 @@ void main() {
     await tester.tap(find.byKey(const Key('loginSubmitButton')));
     await tester.pumpAndSettle();
 
+    await _openMaintenance(tester);
     await tester.tap(find.text('Cliente API'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
@@ -1190,6 +1221,55 @@ void main() {
     );
     expect(checklistButton.onPressed, isNotNull);
   });
+
+  testWidgets('dashboard registra abastecimento simples', (tester) async {
+    final fleetRepository = FakeFleetRepository();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LoginScreen(
+          loginGateway: _GatewayDeTeste(
+            repository: _RepositorioDeTeste(),
+            fleetRepository: fleetRepository,
+          ),
+        ),
+      ),
+    );
+
+    await tester.enterText(find.byKey(const Key('loginUserField')), 'teste');
+    await tester.enterText(
+      find.byKey(const Key('loginPasswordField')),
+      '123456',
+    );
+    await tester.tap(find.byKey(const Key('loginSubmitButton')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('fuelingButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Abastecimento'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('fuelOdometerField')), '51700');
+    await tester.enterText(find.byKey(const Key('fuelLitersField')), '20,5');
+    await tester.enterText(
+      find.byKey(const Key('fuelTotalValueField')),
+      '123,45',
+    );
+    await tester.tap(find.byKey(const Key('saveFuelingButton')));
+    await tester.pumpAndSettle();
+
+    expect(fleetRepository.fuelings, hasLength(1));
+    expect(fleetRepository.fuelings.single.vehicleId, 'veiculo-1');
+    expect(fleetRepository.fuelings.single.odometerKm, 51700);
+    expect(fleetRepository.fuelings.single.liters, 20.5);
+    expect(fleetRepository.fuelings.single.totalValue, 123.45);
+    expect(find.text('Abastecimento salvo.'), findsOneWidget);
+  });
+}
+
+Future<void> _openMaintenance(WidgetTester tester) async {
+  await tester.tap(find.byKey(const Key('myMaintenanceButton')));
+  await tester.pumpAndSettle();
 }
 
 class _GatewayComFalha implements MobileLoginGateway {
@@ -1202,13 +1282,17 @@ class _GatewayComFalha implements MobileLoginGateway {
 }
 
 class _GatewayDeTeste implements MobileLoginGateway {
-  const _GatewayDeTeste({required this.repository});
+  const _GatewayDeTeste({required this.repository, this.fleetRepository});
 
   final WorkOrderRepository repository;
+  final FleetRepository? fleetRepository;
 
   @override
   Future<LoginSession?> login(String user, String password) async {
-    return LoginSession(repository: repository);
+    return LoginSession(
+      repository: repository,
+      fleetRepository: fleetRepository ?? FakeFleetRepository(),
+    );
   }
 }
 

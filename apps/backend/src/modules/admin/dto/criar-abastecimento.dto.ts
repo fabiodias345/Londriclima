@@ -20,8 +20,9 @@ export class CriarAbastecimentoDto {
   @Min(0.01)
   valor_total: number;
 
+  @IsOptional()
   @IsDateString()
-  abastecido_em: string;
+  abastecido_em?: string;
 
   @IsOptional()
   @IsString()
