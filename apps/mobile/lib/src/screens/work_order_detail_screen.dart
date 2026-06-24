@@ -170,6 +170,11 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
                     label: 'Tipo',
                     value: _order.maintenanceType,
                   ),
+                  _InfoRow(
+                    icon: Icons.assignment_outlined,
+                    label: 'Tipo de servico',
+                    value: _order.serviceLabel,
+                  ),
                 ],
               ),
               const SizedBox(height: 14),
@@ -440,15 +445,17 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
               const SizedBox(height: 12),
               DetailSection(
                 key: _checklistSectionKey,
-                title: 'Checklist da maquina',
-                children: _order.checklist.isEmpty
+                title: _order.isCorrective
+                    ? 'Checklist corretivo'
+                    : 'Checklist da maquina',
+                children: _order.effectiveChecklist.isEmpty
                     ? const [
                         Text(
                           'Checklist nao definido para esta OS.',
                           style: TextStyle(color: airmovebrMuted),
                         ),
                       ]
-                    : _order.checklist
+                    : _order.effectiveChecklist
                           .map(
                             (item) => _ChecklistField(
                               item: item,
@@ -948,7 +955,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
   }
 
   List<WorkOrderChecklistResponse> _buildChecklistResponses() {
-    return _order.checklist.map((item) {
+    return _order.effectiveChecklist.map((item) {
       final textValue = _textControllers[item.code]?.text.trim();
       final value = switch (item.kind) {
         'texto' || 'numerico' => textValue ?? '',
@@ -967,7 +974,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
   }
 
   List<String> _missingChecklistItems() {
-    return _order.checklist
+    return _order.effectiveChecklist
         .where((item) {
           if (item.kind == 'finalizacao') {
             return false;

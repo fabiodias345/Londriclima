@@ -328,6 +328,7 @@ class OfflineWorkOrderRepository implements WorkOrderRepository {
       'address': order.address,
       'equipment': order.equipment,
       'maintenance_type': order.maintenanceType,
+      'service_type': order.serviceType,
       'checklist_type': order.checklistType,
       'scheduled_at': order.scheduledAt.toIso8601String(),
       'status': order.status.name,
@@ -343,6 +344,7 @@ class OfflineWorkOrderRepository implements WorkOrderRepository {
       address: json['address'].toString(),
       equipment: json['equipment'].toString(),
       maintenanceType: json['maintenance_type'].toString(),
+      serviceType: json['service_type']?.toString() ?? 'preventiva',
       checklistType: json['checklist_type']?.toString() ?? 'mensal',
       scheduledAt: DateTime.parse(json['scheduled_at'].toString()),
       status: WorkOrderStatus.values.firstWhere(

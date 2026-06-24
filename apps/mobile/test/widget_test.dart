@@ -298,6 +298,58 @@ void main() {
     expect(find.byKey(const Key('checklist_final_M16')), findsOneWidget);
   });
 
+  testWidgets('OS corretiva mostra fluxo corretivo no app', (tester) async {
+    final repository = _RepositorioDeTeste(
+      status: WorkOrderStatus.inProgress,
+      backendStatus: 'em_atendimento',
+      serviceType: 'corretiva',
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LoginScreen(
+          loginGateway: _GatewayDeTeste(repository: repository),
+          locationService: const _LocationServiceTeste(),
+          photoPicker: const _PhotoPickerTeste(),
+        ),
+      ),
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('loginUserField')),
+      'tecnico@airmovebr.local',
+    );
+    await tester.enterText(
+      find.byKey(const Key('loginPasswordField')),
+      '123456',
+    );
+    await tester.tap(find.byKey(const Key('loginSubmitButton')));
+    await tester.pumpAndSettle();
+
+    await _openMaintenance(tester);
+
+    expect(find.text('Corretiva'), findsOneWidget);
+
+    await tester.tap(find.text('Cliente API'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tipo de servico'), findsOneWidget);
+    expect(find.text('Corretiva'), findsWidgets);
+
+    await tester.tap(find.text('Maquinas'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('selectEquipment_EQ-101')));
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(ListView), const Offset(0, -500));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Iniciar checklist'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Checklist corretivo'), findsOneWidget);
+    expect(find.text('Problema encontrado'), findsOneWidget);
+    expect(find.text('Acao realizada'), findsOneWidget);
+    expect(find.text('Desligar pelo controle remoto'), findsNothing);
+  });
+
   testWidgets('ler QR seleciona maquina correspondente', (tester) async {
     final repository = _RepositorioDeTeste();
     await tester.pumpWidget(
@@ -1350,11 +1402,13 @@ class _RepositorioDeTeste implements WorkOrderRepository {
     this.equipments,
     this.status = WorkOrderStatus.pending,
     this.backendStatus,
+    this.serviceType = 'preventiva',
   });
 
   final List<WorkOrderEquipment>? equipments;
   final WorkOrderStatus status;
   final String? backendStatus;
+  final String serviceType;
 
   String? startedOrderId;
   String? arrivedOrderId;
@@ -1411,6 +1465,7 @@ class _RepositorioDeTeste implements WorkOrderRepository {
               ),
             ],
         maintenanceType: 'Limpeza de filtros',
+        serviceType: serviceType,
         checklistType: 'semestral',
         checklist: const [
           WorkOrderChecklistItem(

@@ -434,6 +434,10 @@ class ApiWorkOrderRepository implements WorkOrderRepository {
       equipments: _equipmentsFromJson(json),
       maintenanceType:
           json['tipo']?.toString() ?? json['maintenanceType'].toString(),
+      serviceType:
+          json['tipo_servico']?.toString() ??
+          json['serviceType']?.toString() ??
+          'preventiva',
       checklistType:
           json['checklist_tipo']?.toString() ??
           json['checklistType']?.toString() ??

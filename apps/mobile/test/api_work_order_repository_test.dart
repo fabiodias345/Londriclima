@@ -22,6 +22,7 @@ void main() {
               'endereco': 'Rua API, 10',
               'equipamento': 'Split API',
               'tipo': 'Limpeza de filtros',
+              'tipo_servico': 'corretiva',
               'data': null,
               'status': 'em_atendimento',
               'checklist_tipo': 'semestral',
@@ -66,6 +67,8 @@ void main() {
     );
     expect(orders.single.clientName, 'Cliente API');
     expect(orders.single.status, WorkOrderStatus.inProgress);
+    expect(orders.single.serviceType, 'corretiva');
+    expect(orders.single.serviceLabel, 'Corretiva');
     expect(orders.single.checklistType, 'semestral');
     expect(orders.single.checklist.length, 2);
     expect(orders.single.checklist.last.code, 'S6');

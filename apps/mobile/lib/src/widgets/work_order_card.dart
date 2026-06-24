@@ -51,10 +51,7 @@ class WorkOrderCard extends StatelessWidget {
                 text: order.equipmentCountLabel,
               ),
               const SizedBox(height: 6),
-              _InfoLine(
-                icon: Icons.build_outlined,
-                text: order.maintenanceType,
-              ),
+              _InfoLine(icon: Icons.build_outlined, text: order.serviceLabel),
               const SizedBox(height: 12),
               Row(
                 children: [

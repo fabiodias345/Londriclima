@@ -10,6 +10,7 @@ class WorkOrder {
     required this.equipment,
     this.equipments = const [],
     required this.maintenanceType,
+    this.serviceType = 'preventiva',
     this.checklistType = 'mensal',
     this.checklist = const [],
     required this.scheduledAt,
@@ -23,6 +24,7 @@ class WorkOrder {
   final String equipment;
   final List<WorkOrderEquipment> equipments;
   final String maintenanceType;
+  final String serviceType;
   final String checklistType;
   final List<WorkOrderChecklistItem> checklist;
   final DateTime scheduledAt;
@@ -41,6 +43,20 @@ class WorkOrder {
 
   bool get isAtClient => backendStatus == 'em_atendimento';
 
+  bool get isCorrective => serviceType == 'corretiva';
+
+  String get serviceLabel {
+    if (isCorrective) {
+      return 'Corretiva';
+    }
+
+    return 'Preventiva ${_checklistTypeLabel(checklistType).toLowerCase()}';
+  }
+
+  List<WorkOrderChecklistItem> get effectiveChecklist {
+    return isCorrective ? correctiveChecklist : checklist;
+  }
+
   WorkOrder copyWith({
     WorkOrderStatus? status,
     String? backendStatus,
@@ -53,6 +69,7 @@ class WorkOrder {
       equipment: equipment,
       equipments: equipments ?? this.equipments,
       maintenanceType: maintenanceType,
+      serviceType: serviceType,
       checklistType: checklistType,
       checklist: checklist,
       scheduledAt: scheduledAt,
@@ -74,6 +91,44 @@ class WorkOrder {
   static bool _isSameDay(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
+
+  static String _checklistTypeLabel(String value) {
+    return switch (value) {
+      'trimestral' => 'Trimestral',
+      'semestral' => 'Semestral',
+      'anual' => 'Anual',
+      _ => 'Mensal',
+    };
+  }
+
+  static const correctiveChecklist = [
+    WorkOrderChecklistItem(
+      code: 'C1',
+      label: 'Problema encontrado',
+      kind: 'texto',
+    ),
+    WorkOrderChecklistItem(code: 'C2', label: 'Acao realizada', kind: 'texto'),
+    WorkOrderChecklistItem(
+      code: 'C3',
+      label: 'Foto do atendimento',
+      kind: 'foto',
+    ),
+    WorkOrderChecklistItem(
+      code: 'C4',
+      label: 'Pecas utilizadas',
+      kind: 'texto',
+    ),
+    WorkOrderChecklistItem(
+      code: 'C5',
+      label: 'Observacao final',
+      kind: 'texto',
+    ),
+    WorkOrderChecklistItem(
+      code: 'C6',
+      label: 'Finalizacao',
+      kind: 'finalizacao',
+    ),
+  ];
 }
 
 class WorkOrderChecklistItem {
