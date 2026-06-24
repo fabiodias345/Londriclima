@@ -223,10 +223,13 @@ service: airmovebr-backend
 - Fase atual implementada localmente: Nova OS agora diferencia preventiva/corretiva; preventiva exige periodicidade mensal/trimestral/semestral/anual e grava `checklist_tipo`.
 - Fase 2 local: APK mostra preventiva/corretiva, recebe `tipo_servico` da API e usa checklist corretivo simples em vez do checklist PMOC generico.
 - Fase 3 local: ao finalizar OS de cliente sem PMOC, backend agenda email ao cliente com relatorio tecnico PDF simples; cliente com PMOC nao recebe esse relatorio avulso.
+- Ajuste local: botao redundante `Enviar para campo` removido; OS com tecnico/equipe e data ja fica disponivel para o APK. APK agora abre em `Todas` para nao esconder OS por filtro `Hoje`.
+- Ajuste local: relatorio tecnico sem PMOC passou a mostrar servico realizado, fotos/evidencias, responsavel que assinou e assinatura registrada, com textos mais claros.
+- Proxima fase: substituir o PDF textual do relatorio tecnico sem PMOC por PDF visual com fotos e assinatura embutidas. Criar servico separado para carregar arquivos de `/storage`, desenhar evidencias, assinatura, dados da OS/equipamento e manter o envio de email usando o novo anexo.
 - Backend mobile exposto para frota:
   - GET /api/v1/mobile/frota/veiculos
   - POST /api/v1/mobile/frota/abastecimentos
-- Proximo passo: testar visualmente painel e APK; se OK, commitar, publicar e validar producao.
+- Proximo passo: publicar esta fase e depois implementar o PDF visual com fotos/assinatura embutidas.
 - Se voltar a mexer no fluxo do app, validar sempre em tres pontos:
   1. APK no celular;
   2. painel web;

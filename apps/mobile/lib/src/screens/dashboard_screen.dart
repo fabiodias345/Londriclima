@@ -31,7 +31,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  WorkOrderFilter _filter = WorkOrderFilter.today;
+  WorkOrderFilter _filter = WorkOrderFilter.all;
   late Future<List<WorkOrder>> _ordersFuture;
   bool _syncing = false;
   bool _showMaintenance = false;

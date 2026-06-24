@@ -808,7 +808,11 @@ export class OrdensServicoService {
           },
           checklistRespostas: {
             select: {
-              equipamentoId: true
+              equipamentoId: true,
+              codigo: true,
+              tipo: true,
+              valor: true,
+              observacao: true
             }
           }
         }
@@ -899,7 +903,13 @@ export class OrdensServicoService {
         }
       });
 
-      automacoesFinalizacao = this.montarAutomacoesFinalizacao(ordemServico, osId, finalizadoEm, assinaturaUrl);
+      automacoesFinalizacao = this.montarAutomacoesFinalizacao(
+        ordemServico,
+        osId,
+        finalizadoEm,
+        assinaturaUrl,
+        dto.nome_responsavel_assinatura
+      );
 
       await tx.automacaoAgendada.createMany({
         data: automacoesFinalizacao
@@ -930,10 +940,17 @@ export class OrdensServicoService {
       } | null;
       equipamento?: { id?: string | null; marca?: string | null; modelo?: string | null; gasRefrigerante?: string | null } | null;
       evidencias?: Array<{ tipo: EvidenciaTipo; descricao: string | null; storageUrl: string; criadoEm: Date }>;
+      checklistRespostas?: Array<{
+        codigo: string;
+        tipo: string;
+        valor: string;
+        observacao: string | null;
+      }>;
     },
     osId: string,
     finalizadoEm: Date,
-    assinaturaUrl: string
+    assinaturaUrl: string,
+    nomeResponsavelAssinatura: string
   ): Prisma.AutomacaoAgendadaCreateManyInput[] {
     const base = AUTOMACOES_FINALIZACAO.map((tipo) => ({
       empresaId: ordemServico.empresaId,
@@ -961,8 +978,10 @@ export class OrdensServicoService {
       agendadaPara: ordemServico.agendadaPara ?? null,
       finalizadoEm,
       assinaturaUrl,
+      nomeResponsavelAssinatura,
       equipamento: ordemServico.equipamento ?? null,
-      evidencias: ordemServico.evidencias ?? []
+      evidencias: ordemServico.evidencias ?? [],
+      checklistRespostas: ordemServico.checklistRespostas ?? []
     });
 
     return [
@@ -998,35 +1017,97 @@ export class OrdensServicoService {
     agendadaPara: Date | null;
     finalizadoEm: Date;
     assinaturaUrl: string;
+    nomeResponsavelAssinatura: string;
     equipamento: { marca?: string | null; modelo?: string | null; gasRefrigerante?: string | null } | null;
     evidencias: Array<{ tipo: EvidenciaTipo; descricao: string | null; storageUrl: string; criadoEm: Date }>;
+    checklistRespostas: Array<{ codigo: string; tipo: string; valor: string; observacao: string | null }>;
   }) {
+    const checklistLinhas = this.formatarChecklistRelatorioAtendimento(input.checklistRespostas);
+    const evidenciaLinhas = this.formatarEvidenciasRelatorioAtendimento(input.evidencias);
+
     return this.criarPdfTexto([
       [
-        "AIRMOVEBR - RELATORIO TECNICO",
-        "Atendimento sem PMOC",
+        "AIRMOVEBR - RELATORIO TECNICO DE ATENDIMENTO",
+        "Relatorio de atendimento sem PMOC",
         "",
         `Cliente: ${input.clienteNome}`,
         `OS: ${input.osId}`,
         `Servico: ${input.titulo}`,
-        `Tipo: ${input.tipoServico}`,
-        `Agendado para: ${input.agendadaPara ? input.agendadaPara.toISOString() : "nao informado"}`,
-        `Finalizado em: ${input.finalizadoEm.toISOString()}`,
+        `Tipo de servico: ${this.formatarTipoServicoRelatorio(input.tipoServico)}`,
+        `Agendado para: ${this.formatarDataHoraRelatorio(input.agendadaPara)}`,
+        `Finalizado em: ${this.formatarDataHoraRelatorio(input.finalizadoEm)}`,
         `Equipamento: ${[input.equipamento?.marca, input.equipamento?.modelo].filter(Boolean).join(" ") || "todos do cliente"}`,
         `Gas refrigerante: ${input.equipamento?.gasRefrigerante || "nao informado"}`,
-        `Assinatura responsavel: ${input.assinaturaUrl}`,
         "",
-        "EVIDENCIAS",
-        ...(input.evidencias.length
-          ? input.evidencias.map(
-              (evidencia) =>
-                `${evidencia.tipo}: ${evidencia.descricao || "sem descricao"} - ${evidencia.storageUrl} - ${evidencia.criadoEm.toISOString()}`
-            )
-          : ["Sem evidencias registradas."]),
+        "SERVICO REALIZADO",
+        ...checklistLinhas,
+        "",
+        "FOTOS E EVIDENCIAS",
+        ...evidenciaLinhas,
+        "",
+        "ASSINATURA",
+        `Assinado por: ${input.nomeResponsavelAssinatura}`,
+        `Assinatura registrada: ${input.assinaturaUrl}`,
         "",
         "Obrigado por escolher a AIRMOVEBR."
       ]
     ]);
+  }
+
+  private formatarChecklistRelatorioAtendimento(
+    respostas: Array<{ codigo: string; valor: string; observacao: string | null }>
+  ) {
+    if (!respostas.length) {
+      return ["Sem respostas de checklist registradas."];
+    }
+
+    return respostas.map((resposta) => {
+      const label = this.obterLabelChecklistRelatorio(resposta.codigo);
+      const observacao = resposta.observacao?.trim() ? ` (${resposta.observacao.trim()})` : "";
+      return `${label}: ${resposta.valor || "nao informado"}${observacao}`;
+    });
+  }
+
+  private obterLabelChecklistRelatorio(codigo: string) {
+    return {
+      C1: "Problema encontrado",
+      C2: "Acao realizada",
+      C3: "Foto do atendimento",
+      C4: "Pecas utilizadas",
+      C5: "Observacao final",
+      M4: "Foto inicial"
+    }[codigo] || codigo;
+  }
+
+  private formatarEvidenciasRelatorioAtendimento(
+    evidencias: Array<{ tipo: EvidenciaTipo; descricao: string | null; storageUrl: string; criadoEm: Date }>
+  ) {
+    if (!evidencias.length) {
+      return ["Sem fotos registradas."];
+    }
+
+    return evidencias.map((evidencia) => {
+      const tipo = evidencia.tipo === EvidenciaTipo.antes ? "Foto inicial" : "Foto final";
+      return `${tipo}: ${evidencia.descricao || "sem descricao"} - arquivo: ${evidencia.storageUrl} - ${this.formatarDataHoraRelatorio(evidencia.criadoEm)}`;
+    });
+  }
+
+  private formatarTipoServicoRelatorio(tipo: OrdemServicoTipoServico) {
+    return tipo === OrdemServicoTipoServico.corretiva ? "Corretiva" : "Preventiva";
+  }
+
+  private formatarDataHoraRelatorio(data: Date | null) {
+    if (!data) {
+      return "nao informado";
+    }
+
+    const dia = String(data.getUTCDate()).padStart(2, "0");
+    const mes = String(data.getUTCMonth() + 1).padStart(2, "0");
+    const ano = data.getUTCFullYear();
+    const hora = String(data.getUTCHours()).padStart(2, "0");
+    const minuto = String(data.getUTCMinutes()).padStart(2, "0");
+
+    return `${dia}/${mes}/${ano} ${hora}:${minuto}`;
   }
 
   private criarPdfTexto(paginas: string[][]) {

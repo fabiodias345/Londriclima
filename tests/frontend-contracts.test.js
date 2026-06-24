@@ -442,20 +442,18 @@ test("admin usa layout de fichario compacto para lista e detalhe de O.S.", () =>
   assert.match(styles, /position: sticky/);
 });
 
-test("admin despacha O.S. para tecnico em campo pelo detalhe", () => {
+test("admin mostra despacho da O.S. sem etapa manual redundante", () => {
   const script = readAdminJs();
   const styles = readAdminCss();
 
   assert.match(script, /function renderOsDispatchSummary/);
-  assert.match(script, /async function dispatchOsToField/);
   assert.match(script, /Despacho/);
-  assert.match(script, /Enviar para campo/);
-  assert.match(script, /Reatribuir tecnico/);
-  assert.match(script, /data-action="enviar-os-campo"/);
-  assert.match(script, /\/admin\/agenda\/ordens\/\$\{item\.id\}/);
+  assert.match(script, /Editar despacho/);
+  assert.match(script, /Corrigir despacho/);
+  assert.doesNotMatch(script, /Enviar para campo/);
+  assert.doesNotMatch(script, /data-action="enviar-os-campo"/);
   assert.match(script, /Tecnico ou equipe obrigatorio/);
   assert.match(script, /Data\/hora obrigatoria/);
-  assert.match(script, /O\.S\. enviada para o app do tecnico/);
   assert.match(styles, /\.os-dispatch-summary/);
   assert.match(styles, /\.os-dispatch-status/);
 });

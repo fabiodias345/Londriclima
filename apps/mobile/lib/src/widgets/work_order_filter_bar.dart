@@ -15,6 +15,7 @@ class WorkOrderFilterBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final filters = [
+      _FilterItem(WorkOrderFilter.all, 'Todas', const Key('filterAllButton')),
       _FilterItem(
         WorkOrderFilter.today,
         'Hoje',

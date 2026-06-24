@@ -374,8 +374,7 @@ function renderOsDispatchSummary(item) {
         <span class="os-dispatch-status \${ready ? "ready" : "blocked"}"><strong>Status de envio</strong>\${status}</span>
       </div>
       <div class="request-actions">
-        <button class="approve-button compact-button os-primary-action \${getAgendaStatusClass(item.status)}" type="button" data-action="enviar-os-campo" data-id="\${item.id}" \${ready ? "" : "disabled"}>Enviar para campo</button>
-        <button class="secondary-button compact-button" type="button" data-action="editar-agenda-os" data-id="\${item.id}">Reatribuir tecnico</button>
+        <button class="secondary-button compact-button" type="button" data-action="editar-agenda-os" data-id="\${item.id}">\${ready ? "Editar despacho" : "Corrigir despacho"}</button>
       </div>
     </section>
   \`;
@@ -396,65 +395,6 @@ function formatOsServiceType(item) {
   }
 
   return \`Preventiva \${formatChecklistTipo(item.checklist_tipo).toLowerCase()}\`;
-}
-
-async function dispatchOsToField(osId, button) {
-  const item = latestAgendaItems.find((agendaItem) => agendaItem.id === osId);
-
-  if (!item) {
-    return;
-  }
-
-  if (!item.equipe?.id && !item.tecnico?.id) {
-    osDetailMeta.textContent = "Tecnico ou equipe obrigatorio.";
-    return;
-  }
-
-  if (!item.agendada_para) {
-    osDetailMeta.textContent = "Data/hora obrigatoria.";
-    return;
-  }
-
-  button.disabled = true;
-  button.textContent = "Enviando...";
-
-  try {
-    const response = await fetch(\`\${apiBaseUrl}/admin/agenda/ordens/\${item.id}\`, {
-      method: "PATCH",
-      headers: {
-        ...authHeaders(),
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        titulo: item.titulo,
-        detalhes: item.detalhes || "",
-        agendada_para: item.agendada_para,
-        equipamento_id: item.equipamento?.id || "",
-        equipe_id: item.equipe?.id || "",
-        tecnico_id: item.tecnico?.id || "",
-        valor_cobrado: item.valor_cobrado ?? undefined
-      })
-    });
-
-    if (await handleUnauthorized(response)) {
-      return;
-    }
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      osDetailMeta.textContent = error.message || "Nao foi possivel enviar a O.S. para campo.";
-      return;
-    }
-
-    osDetailMeta.textContent = "O.S. enviada para o app do tecnico.";
-    await loadOsWorkbench();
-    openOsDetail(osId);
-  } catch {
-    osDetailMeta.textContent = "API indisponivel.";
-  } finally {
-    button.disabled = false;
-    button.textContent = "Enviar para campo";
-  }
 }
 
 function renderOsTimeline(item) {

@@ -1,6 +1,6 @@
 enum WorkOrderStatus { pending, inProgress, done, waitingSync, synced }
 
-enum WorkOrderFilter { today, pending, inProgress, done, waitingSync }
+enum WorkOrderFilter { all, today, pending, inProgress, done, waitingSync }
 
 class WorkOrder {
   const WorkOrder({
@@ -80,6 +80,7 @@ class WorkOrder {
 
   bool matches(WorkOrderFilter filter, DateTime now) {
     return switch (filter) {
+      WorkOrderFilter.all => true,
       WorkOrderFilter.today => _isSameDay(scheduledAt, now),
       WorkOrderFilter.pending => status == WorkOrderStatus.pending,
       WorkOrderFilter.inProgress => status == WorkOrderStatus.inProgress,

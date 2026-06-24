@@ -466,7 +466,10 @@ test("finalizarOs agenda relatorio tecnico por email para cliente sem PMOC", asy
               criadoEm: new Date("2026-06-10T11:20:00.000Z")
             }
           ],
-          checklistRespostas: [{ equipamentoId: "equip-1" }]
+          checklistRespostas: [
+            { equipamentoId: "equip-1", codigo: "C1", tipo: "texto", valor: "Motor travado", observacao: null },
+            { equipamentoId: "equip-1", codigo: "C2", tipo: "texto", valor: "Motor destravado e testado", observacao: "Cliente acompanhou" }
+          ]
         }),
       update: async () => undefined
     },
@@ -498,7 +501,13 @@ test("finalizarOs agenda relatorio tecnico por email para cliente sem PMOC", asy
   assert.equal(email?.payload?.total_maquinas, 1);
   assert.equal(email?.payload?.total_os_concluidas, 1);
   assert.match(String(email?.payload?.pdf_filename), /relatorio-tecnico-cliente-avulso-os-1\.pdf/);
-  assert.match(Buffer.from(String(email?.payload?.pdf_base64), "base64").toString("latin1"), /RELATORIO TECNICO/);
+  const pdfText = Buffer.from(String(email?.payload?.pdf_base64), "base64").toString("latin1");
+  assert.match(pdfText, /RELATORIO TECNICO DE ATENDIMENTO/);
+  assert.match(pdfText, /Assinado por: Maria Souza/);
+  assert.match(pdfText, /Problema encontrado: Motor travado/);
+  assert.match(pdfText, /Acao realizada: Motor destravado e testado/);
+  assert.match(pdfText, /Foto inicial: Foto do atendimento/);
+  assert.doesNotMatch(pdfText, /Assinatura responsavel:/);
 });
 
 test("finalizarOs permite OS sem equipamento unico quando checklist e evidencias existem", async () => {

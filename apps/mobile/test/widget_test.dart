@@ -180,6 +180,38 @@ void main() {
     expect(find.text('Cliente API'), findsOneWidget);
   });
 
+  testWidgets('dashboard mostra OS atribuida mesmo fora do filtro hoje', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LoginScreen(
+          loginGateway: _GatewayDeTeste(
+            repository: _RepositorioDeTeste(
+              scheduledAt: DateTime.now().add(const Duration(days: 3)),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('loginUserField')),
+      'tecnico@airmovebr.local',
+    );
+    await tester.enterText(
+      find.byKey(const Key('loginPasswordField')),
+      '123456',
+    );
+    await tester.tap(find.byKey(const Key('loginSubmitButton')));
+    await tester.pumpAndSettle();
+
+    await _openMaintenance(tester);
+
+    expect(find.byKey(const Key('filterAllButton')), findsOneWidget);
+    expect(find.text('Cliente API'), findsOneWidget);
+  });
+
   testWidgets('botao iniciar atendimento muda OS e libera maquinas', (
     tester,
   ) async {
@@ -1403,12 +1435,14 @@ class _RepositorioDeTeste implements WorkOrderRepository {
     this.status = WorkOrderStatus.pending,
     this.backendStatus,
     this.serviceType = 'preventiva',
+    this.scheduledAt,
   });
 
   final List<WorkOrderEquipment>? equipments;
   final WorkOrderStatus status;
   final String? backendStatus;
   final String serviceType;
+  final DateTime? scheduledAt;
 
   String? startedOrderId;
   String? arrivedOrderId;
@@ -1501,7 +1535,7 @@ class _RepositorioDeTeste implements WorkOrderRepository {
             kind: 'texto',
           ),
         ],
-        scheduledAt: DateTime.now(),
+        scheduledAt: scheduledAt ?? DateTime.now(),
         status: status,
         backendStatus: backendStatus,
       ),
