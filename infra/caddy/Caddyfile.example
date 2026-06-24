@@ -9,6 +9,11 @@ http://191.252.226.11 {
 		reverse_proxy backend:3000
 	}
 
+	handle /storage/* {
+		root * /srv
+		file_server
+	}
+
 	redir /admin /admin/
 
 	handle /admin/* {
@@ -26,18 +31,42 @@ http://191.252.226.11 {
 }
 
 airmovebr.com.br {
-	root * /srv/landing
-	file_server
 	encode gzip
+
+	handle /storage/* {
+		root * /srv
+		file_server
+	}
+
+	handle {
+		root * /srv/landing
+		file_server
+	}
 }
 
 admin.airmovebr.com.br {
-	root * /srv/admin
-	file_server
 	encode gzip
+
+	handle /storage/* {
+		root * /srv
+		file_server
+	}
+
+	handle {
+		root * /srv/admin
+		file_server
+	}
 }
 
 api.airmovebr.com.br {
-	reverse_proxy backend:3000
 	encode gzip
+
+	handle /storage/* {
+		root * /srv
+		file_server
+	}
+
+	handle {
+		reverse_proxy backend:3000
+	}
 }
