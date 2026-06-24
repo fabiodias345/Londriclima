@@ -1,7 +1,9 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import {
+  ChecklistTipo,
   OrdemServicoEventoAcao,
   OrdemServicoStatus,
+  OrdemServicoTipoServico,
   Prisma,
   UsuarioRole
 } from "@prisma/client";
@@ -47,6 +49,7 @@ export class AdminAgendaService {
         titulo: true,
         problemaRelatado: true,
         status: true,
+        tipoServico: true,
         agendadaPara: true,
         criadaEm: true,
         valorCobrado: true,
@@ -164,6 +167,7 @@ export class AdminAgendaService {
         titulo: ordem.titulo,
         detalhes: ordem.problemaRelatado,
         status: ordem.status,
+        tipo_servico: ordem.tipoServico,
         agendada_para: ordem.agendadaPara?.toISOString() ?? null,
         criada_em: ordem.criadaEm.toISOString(),
         valor_cobrado: ordem.valorCobrado?.toNumber() ?? null,
@@ -362,6 +366,8 @@ export class AdminAgendaService {
           equipeId: dto.equipe_id || undefined,
           tecnicoId: dto.tecnico_id || undefined,
           status: OrdemServicoStatus.aberta,
+          tipoServico: dto.tipo_servico ?? OrdemServicoTipoServico.preventiva,
+          checklistTipo: this.normalizarChecklistTipo(dto),
           titulo: this.normalizarTextoObrigatorio(dto.titulo, "Titulo da OS e obrigatorio."),
           problemaRelatado: this.normalizarTextoOpcional(dto.detalhes),
           agendadaPara: dto.agendada_para ? new Date(dto.agendada_para) : undefined,
@@ -453,6 +459,14 @@ export class AdminAgendaService {
 
       if (dto.titulo !== undefined) {
         data.titulo = this.normalizarTextoObrigatorio(dto.titulo, "Titulo da OS e obrigatorio.");
+      }
+
+      if (dto.tipo_servico !== undefined) {
+        data.tipoServico = dto.tipo_servico;
+      }
+
+      if (dto.checklist_tipo !== undefined || dto.tipo_servico !== undefined) {
+        data.checklistTipo = this.normalizarChecklistTipo(dto);
       }
 
       if (dto.detalhes !== undefined) {
@@ -568,6 +582,14 @@ export class AdminAgendaService {
   private normalizarTextoOpcional(valor: string | undefined) {
     const texto = valor?.trim();
     return texto || null;
+  }
+
+  private normalizarChecklistTipo(dto: Pick<SalvarOsAgendaDto, "tipo_servico" | "checklist_tipo">) {
+    if (dto.tipo_servico === OrdemServicoTipoServico.corretiva) {
+      return ChecklistTipo.mensal;
+    }
+
+    return dto.checklist_tipo ?? ChecklistTipo.mensal;
   }
 
   private mapearAtualizacaoOrdem(ordem: { id: string; status: OrdemServicoStatus; atualizadaEm: Date }) {

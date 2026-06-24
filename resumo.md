@@ -220,6 +220,7 @@ service: airmovebr-backend
 
 - Fase 19 implementada localmente: historico real da O.S. no painel.
 - Fase 20 implementada localmente: dashboard inicial no APK com botoes Minhas manutencoes e Abastecimentos; tecnico registra abastecimento com carro, odometro, litros e valor total.
+- Fase atual implementada localmente: Nova OS agora diferencia preventiva/corretiva; preventiva exige periodicidade mensal/trimestral/semestral/anual e grava `checklist_tipo`.
 - Backend mobile exposto para frota:
   - GET /api/v1/mobile/frota/veiculos
   - POST /api/v1/mobile/frota/abastecimentos

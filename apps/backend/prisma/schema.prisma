@@ -92,6 +92,11 @@ enum ChecklistTipo {
   anual
 }
 
+enum OrdemServicoTipoServico {
+  preventiva
+  corretiva
+}
+
 model Empresa {
   id        String   @id @default(uuid()) @db.Uuid
   nome      String
@@ -394,6 +399,7 @@ model OrdemServico {
   equipeId  String? @map("equipe_id") @db.Uuid
   tecnicoId String? @map("tecnico_id") @db.Uuid
   status    OrdemServicoStatus @default(pre_chamado)
+  tipoServico OrdemServicoTipoServico @default(preventiva) @map("tipo_servico")
   checklistTipo ChecklistTipo @default(mensal) @map("checklist_tipo")
   titulo    String
   problemaRelatado String? @map("problema_relatado")

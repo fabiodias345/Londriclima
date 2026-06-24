@@ -164,6 +164,10 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(html, /id="agendaOsModal"/);
   assert.match(html, /id="agendaOsForm"/);
   assert.match(html, /name="cliente_id"/);
+  assert.match(html, /name="tipo_servico"/);
+  assert.match(html, /name="checklist_tipo"/);
+  assert.match(html, /Preventiva/);
+  assert.match(html, /Corretiva/);
   assert.match(html, /name="agendada_para"/);
   assert.match(html, /name="tecnico_id"/);
   assert.match(html, /id="recorrenciasView"/);
@@ -202,6 +206,9 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(agendaModule, /summaryId:\s*"agendaSummary"/);
   assert.match(script, /async function submitAgendaOs/);
   assert.match(script, /function openAgendaOsModal/);
+  assert.match(script, /function syncAgendaOsServiceFields/);
+  assert.match(script, /tipo_servico:\s*String\(data\.get\("tipo_servico"\) \|\| "preventiva"\)/);
+  assert.match(script, /checklist_tipo:\s*String\(data\.get\("checklist_tipo"\) \|\| "mensal"\)/);
   assert.match(script, /function renderAgendaMonthGrid/);
   assert.match(script, /function renderAgendaCalendar/);
   assert.match(script, /function renderAgendaDay/);

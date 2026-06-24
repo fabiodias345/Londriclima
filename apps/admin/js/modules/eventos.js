@@ -324,6 +324,7 @@ function renderOsTechnicianAppSummary(item) {
   const ready = appStatus && hasResponsible && hasSchedule && hasClientAddress;
   const machineLabel = renderOsEquipmentTarget(item);
   const checklistLabel = formatChecklistTipo(item.checklist_tipo);
+  const serviceLabel = formatOsServiceType(item);
 
   return \`
     <section class="os-detail-section os-app-summary">
@@ -337,6 +338,7 @@ function renderOsTechnicianAppSummary(item) {
         <span><strong>Responsavel atribuido</strong>\${escapeHtml(item.equipe?.nome || item.tecnico?.nome || "Nao atribuido")}</span>
         <span><strong>Cliente e endereco</strong>\${hasClientAddress ? escapeHtml(formatAddress(item.endereco)) : "Cliente/endereco incompleto"}</span>
         <span><strong>Maquinas disponiveis</strong>\${escapeHtml(machineLabel)}</span>
+        <span><strong>Tipo de servico</strong>\${escapeHtml(serviceLabel)}</span>
         <span><strong>Checklist do app</strong>\${escapeHtml(checklistLabel)}</span>
       </div>
       <div class="request-actions">
@@ -386,6 +388,14 @@ function formatChecklistTipo(value) {
     semestral: "Semestral",
     anual: "Anual"
   }[value] || "Mensal";
+}
+
+function formatOsServiceType(item) {
+  if (item.tipo_servico === "corretiva") {
+    return "Corretiva";
+  }
+
+  return \`Preventiva \${formatChecklistTipo(item.checklist_tipo).toLowerCase()}\`;
 }
 
 async function dispatchOsToField(osId, button) {

@@ -3,6 +3,7 @@ import {
 ChecklistTipo,
 OrdemServicoEventoAcao,
 OrdemServicoStatus,
+OrdemServicoTipoServico,
 PlanoRecorrenciaFrequencia,
 Prisma,
 UsuarioRole
@@ -110,6 +111,8 @@ test("criarOrdemAgenda cria OS aberta para cliente da empresa e registra evento"
     {
       cliente_id: "cliente-1",
       titulo: "Manutencao preventiva",
+      tipo_servico: OrdemServicoTipoServico.preventiva,
+      checklist_tipo: ChecklistTipo.trimestral,
       detalhes: "Limpeza e revisao",
       agendada_para: "2026-06-18T08:00:00.000Z",
       valor_cobrado: 350
@@ -121,6 +124,8 @@ test("criarOrdemAgenda cria OS aberta para cliente da empresa e registra evento"
   assert.equal((chamadas.createData as { clienteId: string }).clienteId, "cliente-1");
   assert.equal((chamadas.createData as { enderecoId: string }).enderecoId, "endereco-1");
   assert.equal((chamadas.createData as { status: OrdemServicoStatus }).status, OrdemServicoStatus.aberta);
+  assert.equal((chamadas.createData as { tipoServico: OrdemServicoTipoServico }).tipoServico, OrdemServicoTipoServico.preventiva);
+  assert.equal((chamadas.createData as { checklistTipo: ChecklistTipo }).checklistTipo, ChecklistTipo.trimestral);
   assert.equal((chamadas.createData as { titulo: string }).titulo, "Manutencao preventiva");
   assert.equal((chamadas.createData as { problemaRelatado: string }).problemaRelatado, "Limpeza e revisao");
   assert.equal((chamadas.createData as { valorCobrado: Prisma.Decimal }).valorCobrado.toNumber(), 350);
@@ -170,12 +175,16 @@ test("reprogramarOrdemAgenda atualiza horario e responsaveis de OS operacional",
     {
       cliente_id: "cliente-1",
       titulo: "Revisao remarcada",
+      tipo_servico: OrdemServicoTipoServico.corretiva,
+      checklist_tipo: ChecklistTipo.anual,
       agendada_para: "2026-06-18T13:30:00.000Z"
     },
     usuario
   );
 
   assert.equal((chamadas.updateData as { titulo: string }).titulo, "Revisao remarcada");
+  assert.equal((chamadas.updateData as { tipoServico: OrdemServicoTipoServico }).tipoServico, OrdemServicoTipoServico.corretiva);
+  assert.equal((chamadas.updateData as { checklistTipo: ChecklistTipo }).checklistTipo, ChecklistTipo.mensal);
   assert.equal((chamadas.updateData as { clienteId: string }).clienteId, "cliente-1");
   assert.equal((chamadas.updateData as { enderecoId: string }).enderecoId, "endereco-1");
   assert.equal((chamadas.updateData as { agendadaPara: Date }).agendadaPara.toISOString(), "2026-06-18T13:30:00.000Z");
@@ -200,6 +209,7 @@ test("listarAgenda retorna checklist_tipo para conferencia do app tecnico", asyn
           titulo: "PMOC mensal",
           problemaRelatado: "Limpeza preventiva",
           status: OrdemServicoStatus.aberta,
+          tipoServico: OrdemServicoTipoServico.preventiva,
           agendadaPara: new Date("2026-06-18T13:30:00.000Z"),
           criadaEm: new Date("2026-06-18T12:00:00.000Z"),
           valorCobrado: new Prisma.Decimal(280),
@@ -224,6 +234,7 @@ test("listarAgenda retorna checklist_tipo para conferencia do app tecnico", asyn
 
   const resposta = await service.listarAgenda(usuario);
 
+  assert.equal(resposta.items[0].tipo_servico, OrdemServicoTipoServico.preventiva);
   assert.equal(resposta.items[0].checklist_tipo, ChecklistTipo.trimestral);
   assert.deepEqual(chamadas.where, {
     empresaId: "empresa-1",

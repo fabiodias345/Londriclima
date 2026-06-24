@@ -239,6 +239,7 @@ export class MobileService {
       cliente: ordem.cliente?.nome ?? "",
       endereco: this.formatarEndereco(ordem.endereco),
       tipo: ordem.titulo,
+      tipo_servico: ordem.tipoServico ?? "preventiva",
       checklist_tipo: ordem.checklistTipo ?? ChecklistTipo.mensal,
       checklist: this.montarChecklist(ordem.checklistTipo ?? ChecklistTipo.mensal),
       status: ordem.status,

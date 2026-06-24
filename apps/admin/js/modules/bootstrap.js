@@ -23,6 +23,9 @@ pmocSearchInput?.addEventListener("input", () => {
   pmocStatus.textContent = results.length === 1 ? "1 cliente encontrado" : \`\${results.length} clientes encontrados\`;
 });
 
+agendaOsServiceTypeSelect?.addEventListener("change", syncAgendaOsServiceFields);
+agendaOsChecklistTypeSelect?.addEventListener("change", syncAgendaOsServiceFields);
+
 pmocSearchResults?.addEventListener("click", (event) => {
   const target = event.target;
   const button = target instanceof Element ? target.closest("[data-action]") : null;

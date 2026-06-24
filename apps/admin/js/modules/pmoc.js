@@ -264,6 +264,8 @@ async function openAgendaOsModal(osId = "") {
 
   if (item) {
     agendaOsForm.elements.cliente_id.value = item.cliente?.id || "";
+    agendaOsForm.elements.tipo_servico.value = item.tipo_servico || "preventiva";
+    agendaOsForm.elements.checklist_tipo.value = item.checklist_tipo || "mensal";
     agendaOsForm.elements.titulo.value = item.titulo || "";
     agendaOsForm.elements.detalhes.value = item.detalhes || "";
     agendaOsForm.elements.agendada_para.value = formatInputDateTime(item.agendada_para);
@@ -272,10 +274,14 @@ async function openAgendaOsModal(osId = "") {
     agendaOsForm.elements.valor_cobrado.value = item.valor_cobrado || "";
     await loadAgendaEquipments(item.cliente?.id || "", item.equipamento?.id || "");
   } else {
+    agendaOsForm.elements.tipo_servico.value = "preventiva";
+    agendaOsForm.elements.checklist_tipo.value = "mensal";
+    agendaOsForm.elements.titulo.value = "Manutencao preventiva mensal";
     agendaOsForm.elements.agendada_para.value = \`\${selectedAgendaDate || getLocalDateKey(new Date())}T08:00\`;
     await loadAgendaEquipments("");
   }
 
+  syncAgendaOsServiceFields();
   agendaOsModal?.classList.remove("hidden");
 }
 
@@ -298,6 +304,8 @@ async function submitAgendaOs(event) {
     equipamento_id: String(data.get("equipamento_id") || ""),
     equipe_id: String(data.get("equipe_id") || ""),
     tecnico_id: String(data.get("tecnico_id") || ""),
+    tipo_servico: String(data.get("tipo_servico") || "preventiva"),
+    checklist_tipo: String(data.get("checklist_tipo") || "mensal"),
     titulo: String(data.get("titulo") || ""),
     detalhes: String(data.get("detalhes") || ""),
     agendada_para: data.get("agendada_para")
@@ -340,6 +348,38 @@ async function submitAgendaOs(event) {
   } finally {
     button.disabled = false;
   }
+}
+
+function syncAgendaOsServiceFields() {
+  const isCorrective = agendaOsServiceTypeSelect?.value === "corretiva";
+  agendaOsChecklistTypeLabel?.classList.toggle("hidden", isCorrective);
+
+  if (agendaOsChecklistTypeSelect) {
+    agendaOsChecklistTypeSelect.disabled = isCorrective;
+  }
+
+  const titleInput = agendaOsForm?.elements?.titulo;
+
+  if (!(titleInput instanceof HTMLInputElement)) {
+    return;
+  }
+
+  const currentTitle = titleInput.value.trim();
+  const defaultTitles = [
+    "Manutencao preventiva mensal",
+    "Manutencao preventiva trimestral",
+    "Manutencao preventiva semestral",
+    "Manutencao preventiva anual",
+    "Manutencao corretiva"
+  ];
+
+  if (currentTitle && !defaultTitles.includes(currentTitle)) {
+    return;
+  }
+
+  titleInput.value = isCorrective
+    ? "Manutencao corretiva"
+    : \`Manutencao preventiva \${agendaOsChecklistTypeSelect?.value || "mensal"}\`;
 }
 
 async function submitRecurrence(event) {
