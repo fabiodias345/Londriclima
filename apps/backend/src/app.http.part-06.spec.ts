@@ -121,18 +121,82 @@ function criarPrismaMock() {
           id: osId,
           titulo: "Limpeza",
           problemaRelatado: "Filtro sujo",
-          status: OrdemServicoStatus.pre_chamado,
+          status: OrdemServicoStatus.concluida,
+          agendadaPara: new Date("2026-06-10T12:00:00.000Z"),
           criadaEm: new Date("2026-06-10T10:00:00.000Z"),
+          valorCobrado: new Prisma.Decimal(250),
+          checklistTipo: "mensal",
           cliente: {
+            id: clienteId,
             nome: "Maria",
             telefone: "43999999999",
-            email: "maria@example.com"
+            email: "maria@example.com",
+            equipamentos: [
+              {
+                id: "equipamento-1",
+                patrimonio: "PMOC-001",
+                marca: "LG",
+                modelo: "Dual Inverter",
+                localInstalacao: "Sala"
+              }
+            ]
           },
           endereco: {
             bairro: "Centro",
             cidade: "Londrina",
             uf: "PR",
             logradouro: "Rua A"
+          },
+          equipe: { id: "equipe-1", nome: "Equipe 1" },
+          tecnico: { id: usuarioId, nome: "Tecnico AIRMOVEBR" },
+          equipamento: {
+            id: "equipamento-1",
+            patrimonio: "PMOC-001",
+            marca: "LG",
+            modelo: "Dual Inverter",
+            localInstalacao: "Sala"
+          },
+          checklistRespostas: [
+            {
+              equipamentoId: "equipamento-1",
+              equipamento: {
+                id: "equipamento-1",
+                patrimonio: "PMOC-001",
+                marca: "LG",
+                modelo: "Dual Inverter",
+                localInstalacao: "Sala"
+              }
+            }
+          ],
+          eventos: [
+            {
+              id: "evento-1",
+              acao: OrdemServicoEventoAcao.finalizar,
+              statusAnterior: OrdemServicoStatus.em_atendimento,
+              statusNovo: OrdemServicoStatus.concluida,
+              latitude: new Prisma.Decimal(-23.3047),
+              longitude: new Prisma.Decimal(-51.1697),
+              registradoEm: new Date("2026-06-10T15:00:00.000Z"),
+              usuario: { id: usuarioId, nome: "Tecnico AIRMOVEBR" }
+            }
+          ],
+          evidencias: [
+            {
+              id: "evidencia-1",
+              tipo: EvidenciaTipo.antes,
+              descricao: "Foto apos abrir tampa frontal",
+              storageUrl: "/storage/os/foto.jpg",
+              criadoEm: new Date("2026-06-10T14:30:00.000Z")
+            }
+          ],
+          checklist: {
+            servicoRealizado: "Limpeza completa",
+            procedimentos: ["limpeza_filtro"],
+            atualizadoEm: new Date("2026-06-10T14:00:00.000Z")
+          },
+          assinatura: {
+            nomeResponsavel: "Cliente Teste",
+            assinadoEm: new Date("2026-06-10T15:05:00.000Z")
           }
         }
       ],
@@ -460,4 +524,21 @@ test("GET /api/v1/admin/agenda responde agenda autenticada", async () => {
 
   assert.equal(response.status, 200);
   assert.equal(body.total, 1);
+  const [item] = body.items as Array<{
+    eventos: unknown[];
+    evidencias: unknown[];
+    checklist: unknown;
+    assinatura: unknown;
+  }>;
+  assert.equal(item.eventos.length, 1);
+  assert.equal(item.evidencias.length, 1);
+  assert.deepEqual(item.checklist, {
+    servico_realizado: "Limpeza completa",
+    procedimentos: ["limpeza_filtro"],
+    atualizado_em: "2026-06-10T14:00:00.000Z"
+  });
+  assert.deepEqual(item.assinatura, {
+    nome_responsavel: "Cliente Teste",
+    assinado_em: "2026-06-10T15:05:00.000Z"
+  });
 });

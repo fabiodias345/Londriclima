@@ -107,4 +107,46 @@
   .os-compact-meta {
     grid-template-columns: 1fr;
   }
+
+  .topbar {
+    padding: 16px 20px;
+    gap: 14px;
+  }
+
+  .admin-top-actions,
+  .os-header,
+  .os-header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  #preChamadosSummary {
+    grid-template-columns: 1fr;
+    padding: 20px 0;
+  }
+
+  .os-page-shell {
+    margin: 0;
+  }
+
+  .os-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+  }
+
+  .os-list-row {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
+
+@media (min-width: 941px) and (max-width: 1280px) {
+  #preChamadosSummary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .os-list-row {
+    grid-template-columns: minmax(280px, 1fr) 190px minmax(320px, 1fr) 84px;
+  }
 }

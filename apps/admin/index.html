@@ -80,21 +80,35 @@
             <span class="kicker" id="viewKicker">Operacao de O.S.</span>
             <h1 id="viewTitle">O.S.</h1>
           </div>
-          <button class="refresh-button" id="refreshButton" type="button">Atualizar</button>
+          <div class="admin-top-actions" aria-label="Acoes do painel">
+            <button class="secondary-button icon-button" type="button" aria-label="Buscar">⌕</button>
+            <button class="secondary-button icon-button" type="button" aria-label="Notificacoes">●</button>
+            <button class="secondary-button icon-button" type="button" aria-label="Configuracoes">⚙</button>
+            <span class="admin-avatar" aria-label="Usuario logado">AD</span>
+            <button class="refresh-button compact-button" id="refreshButton" type="button">Atualizar</button>
+          </div>
         </header>
 
         <section class="summary-grid" id="preChamadosSummary" aria-label="Resumo">
-          <article>
+          <article class="os-summary-card os-summary-blue">
             <span>Solicitacoes</span>
             <strong id="pendingCount">0</strong>
+            <small id="osRequestDelta">Pendentes no site</small>
           </article>
-          <article>
-            <span>Area atual</span>
-            <strong>O.S.</strong>
+          <article class="os-summary-card os-summary-green">
+            <span>Em Atendimento</span>
+            <strong id="osActiveCount">0</strong>
+            <small>Fluxo de campo ativo</small>
           </article>
-          <article>
-            <span>Proxima acao</span>
-            <strong>Converter</strong>
+          <article class="os-summary-card os-summary-orange">
+            <span>Agendadas</span>
+            <strong id="osScheduledCount">0</strong>
+            <small>Com data definida</small>
+          </article>
+          <article class="os-summary-card os-summary-purple">
+            <span>Concluidas (mes)</span>
+            <strong id="osCompletedMonthCount">0</strong>
+            <small>Fechadas no periodo</small>
           </article>
         </section>
 
@@ -222,26 +236,30 @@
           </article>
         </section>
 
-        <section class="worklist os-workbench os-workbench-grid" id="preChamadosView">
+        <section class="worklist os-workbench os-workbench-grid os-page-shell" id="preChamadosView">
           <div class="os-tabs" id="osTabs" role="tablist" aria-label="Etapas de O.S.">
-            <button class="subnav-button active" type="button" data-os-tab="solicitacoes">Solicitacoes</button>
-            <button class="subnav-button" type="button" data-os-tab="abertas">Abertas</button>
-            <button class="subnav-button" type="button" data-os-tab="agendadas">Agendadas</button>
-            <button class="subnav-button" type="button" data-os-tab="em_atendimento">Em atendimento</button>
-            <button class="subnav-button" type="button" data-os-tab="concluidas">Concluidas</button>
-            <button class="subnav-button" type="button" data-os-tab="canceladas">Canceladas</button>
+            <button class="subnav-button active" type="button" data-os-tab="solicitacoes">Solicitacoes <span class="os-count-badge" data-os-count="solicitacoes">0</span></button>
+            <button class="subnav-button" type="button" data-os-tab="abertas">Abertas <span class="os-count-badge" data-os-count="abertas">0</span></button>
+            <button class="subnav-button" type="button" data-os-tab="agendadas">Agendadas <span class="os-count-badge" data-os-count="agendadas">0</span></button>
+            <button class="subnav-button" type="button" data-os-tab="em_atendimento">Em atendimento <span class="os-count-badge" data-os-count="em_atendimento">0</span></button>
+            <button class="subnav-button" type="button" data-os-tab="concluidas">Concluidas <span class="os-count-badge" data-os-count="concluidas">0</span></button>
+            <button class="subnav-button" type="button" data-os-tab="canceladas">Canceladas <span class="os-count-badge" data-os-count="canceladas">0</span></button>
           </div>
           <div class="worklist-header os-header">
             <div>
-              <h2>Solicitacoes recebidas</h2>
+              <h2>Ordens de Servico</h2>
               <p id="listStatus" role="status">Carregando...</p>
             </div>
-            <button class="secondary-button compact-button" id="newOsShortcutButton" type="button" data-action="os-open-new">Nova O.S.</button>
+            <div class="os-header-actions">
+              <button class="secondary-button compact-button" type="button" data-action="os-toggle-filters">Filtros</button>
+              <button class="secondary-button compact-button" type="button" data-action="os-exportar">Exportar</button>
+              <button class="approve-button compact-button" id="newOsShortcutButton" type="button" data-action="os-open-new">+ Nova O.S.</button>
+            </div>
           </div>
           <div class="os-toolbar">
             <label>
-              Buscar O.S.
-              <input id="osSearchInput" type="search" placeholder="Cliente, telefone, endereco ou detalhe" />
+              <span class="visually-hidden">Buscar O.S.</span>
+              <input id="osSearchInput" type="search" placeholder="Buscar por cliente, telefone, endereco ou detalhe do servico..." />
             </label>
           </div>
           <div class="request-list" id="requestList"></div>

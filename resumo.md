@@ -1,19 +1,19 @@
 # Resumo AIRMOVEBR
 
-Atualizado em: 23/06/2026
+Atualizado em: 24/06/2026
 
 ## Estado operacional
 
 - Workspace: `C:\develop\Londriclima`
 - Branch atual: `dev`
-- Commit atual: `75a4b12`
+- Commit atual: `a8f872f`
 - `dev`, `main`, `origin/dev` e `origin/main` apontam para o mesmo commit.
-- Arvore de trabalho contem mudancas da frente mobile/backend ainda nao commitadas.
-- Commit, push e deploy sao feitos manualmente pelo usuario.
+- Arvore de trabalho limpa apos Fase 18.
+- Commit, push, publicacao e deploy Locaweb da Fase 18 feitos pelo usuario.
 
 ## APK tecnico AIRMOVEBR
 
-Status: Fases 1 a 12 concluidas em desenvolvimento local. O teste principal agora deve ser no celular usando a API local.
+Status: Fases 1 a 18 concluidas, testadas no celular, testadas na web e publicadas em producao.
 
 ### Fase 1 - Dashboard mobile
 
@@ -147,13 +147,13 @@ POST /api/v1/os/:osId/checklist
 
 ### Fase 12 - Assinatura e finalizacao da OS
 
-- Regra atual de fotos: somente 2 fotos no fluxo inteiro.
-- Foto 1: no checklist da maquina, item `Foto apos abrir tampa frontal`; essa foto tambem registra automaticamente a evidencia inicial exigida pelo backend.
-- Foto 2: na aba `Finalizar`, como evidencia final da O.S.
+- Regra atual de fotos: a foto operacional fica dentro do checklist da maquina, item `Foto apos abrir tampa frontal`.
+- Essa foto tambem registra automaticamente a evidencia inicial exigida pelo backend.
 - Nao existe mais botao separado `Registrar foto antes`.
-- O checklist nao deve ter `foto apos conclusao`; a foto final fica somente na aba `Finalizar`.
+- Nao existe mais botao `Registrar foto depois` na aba `Finalizar`.
+- Backend nao exige mais `EvidenciaTipo.depois` para finalizar, pois a evidencia visual do atendimento fica no checklist.
 - Checklist fica bloqueado ate a foto do checklist/evidencia inicial ser registrada, alinhado com a regra do backend.
-- Depois da foto do checklist, APK libera foto final, nome do responsavel e campo de assinatura.
+- Depois da foto do checklist, APK libera nome do responsavel e campo de assinatura.
 - Botao `Finalizar OS` continua bloqueado ate o checklist ser salvo, porque o backend exige checklist registrado.
 - Finalizacao envia assinatura, responsavel, GPS final e data/hora para:
 
@@ -168,7 +168,7 @@ POST /api/v1/os/:osId/finalizar
 
 - Corrigido campo `Nome do responsavel`, que estava bloqueado ate salvar checklist.
 - Corrigido campo de assinatura, que estava bloqueado ate salvar checklist.
-- Corrigido botao/foto depois, que estava bloqueado ate salvar checklist.
+- Removido botao/foto depois da finalizacao; finalizar usa apenas nome do responsavel e assinatura.
 - Corrigido salvamento do checklist quando a foto antes ja tinha sido tirada dentro do checklist.
 
 ### Fase 12.1 - UX do fluxo de atendimento
@@ -198,22 +198,32 @@ POST /api/v1/os/:osId/finalizar
 - Se o codigo nao bater, o APK preenche a busca e mostra mensagem de maquina nao encontrada.
 - Android ja tinha permissao de camera no Manifest; build debug validado.
 
+### Fase 18 - Fluxo app resolvido e publicado
+
+- Testado no celular e na web.
+- APK finaliza O.S. sem evidencia final separada.
+- Em debug, se faltar nome/assinatura em O.S. legada travada, o APK usa fallback operacional para destravar teste:
+  - nome: `Teste AIRMOVEBR`;
+  - assinatura: traco fake gerado pelo app.
+- Backend permite finalizar sem `EvidenciaTipo.depois`, mantendo exigencia de evidencia inicial, checklist registrado, nome, assinatura, GPS e data/hora.
+- `/admin/agenda` passou a retornar tambem O.S. `concluida`, `cancelada` e `rejeitada`, para a aba `Concluidas` do painel nao perder a O.S.
+- Calendario da Agenda continua filtrando somente O.S. operacionais: `aberta`, `em_deslocamento`, `em_atendimento`.
+- Deploy Locaweb validado por IP:
+
+```text
+http://191.252.226.11/api/v1/health
+StatusCode 200
+service: airmovebr-backend
+```
+
 ### Ponto de retomada
 
-- Continuar em nova sessao testando via `flutter run`; nao instalar APK ainda.
-- Fazer hot restart/reabrir o app para carregar as mudancas.
-- Banco local foi resetado: O.S. antigas e dependencias foram apagadas; clientes, equipamentos, tecnicos, equipes, frota e usuarios foram preservados.
-- Fila offline do Flutter foi verificada em `airmovebr-sync.json`; nao havia arquivo pendente no TEMP.
-- Validar no celular o fluxo completo:
-  1. iniciar atendimento;
-  2. selecionar maquina;
-  3. tirar a foto do checklist `Foto apos abrir tampa frontal`;
-  4. preencher e salvar checklist;
-  5. repetir para todas as maquinas da O.S.;
-  6. tirar foto final na aba `Finalizar`;
-  7. preencher nome, assinar e finalizar OS.
-- Se passar no celular, fazer commit, push e deploy.
-- Se falhar, ler a mensagem exibida na tela e corrigir o ponto exato.
+- Fase 19 implementada localmente: historico real da O.S. no painel.
+- Proximo passo: testar no painel web com uma O.S. concluida pelo APK; se OK, commitar, publicar e validar producao.
+- Se voltar a mexer no fluxo do app, validar sempre em tres pontos:
+  1. APK no celular;
+  2. painel web;
+  3. deploy/health producao.
 
 ### Pendencias de UX e funcionalidade do APK
 
@@ -263,15 +273,15 @@ C:\develop\LondriClima\apps\mobile\build\app\outputs\flutter-apk\app-debug.apk
 
 ### Proximas fases do APK
 
-1. Confirmar Fase 14 no celular real e depois commitar/subir.
-2. Fase 15: polimento visual, icon/app name, checklist real por tipo de servico e APK release.
+1. Testar e publicar Fase 19.
+2. Proximas candidatas: polimento visual do APK, checklist real por tipo de servico, APK release.
 
 ## Foco atual: painel web para testar o app
 
 - Prioridade agora: organizar o painel web para testar o fluxo real do app e das O.S.
 - WhatsApp fica aguardando o cliente repassar o chip antes de qualquer integracao.
 
-### Painel de O.S. - Fase 1.8 pronta para commit
+### Painel de O.S. - Fase 1.8 concluida e publicada
 
 - Fase 1 iniciada: menu `Pre-chamados` virou `O.S.`, com abas de fichario e `Dashboard` no lugar visual de `Relatorios`.
 - Fase 1.2 feita localmente: abas `Abertas`, `Agendadas`, `Em atendimento`, `Concluidas` e `Canceladas` agora usam dados reais de `/admin/agenda`.
@@ -284,7 +294,10 @@ C:\develop\LondriClima\apps\mobile\build\app\outputs\flutter-apk\app-debug.apk
 - Fase 1.8 feita localmente: APK marca cada equipamento como realizado ou aguardando sync, remove maquina realizada da fila do tecnico, bloqueia finalizacao ate todos os equipamentos serem feitos e o painel mostra checks por equipamento no historico da O.S.
 - Ajuste feito localmente: app tenta sincronizar pendencias ao carregar lista e antes de finalizar; se houver pendencia de sync, bloqueia a conclusao com mensagem clara.
 - Ajuste feito localmente: conflitos `Evidencia ja registrada` em foto inicial/final sao tratados como sucesso para permitir retomar fluxo sem travar.
-- Ajuste feito localmente: checklist do backend agora retorna somente uma foto por maquina (`Foto apos abrir tampa frontal`); a foto final fica fora do checklist, na aba `Finalizar`.
+- Ajuste feito localmente: checklist do backend agora retorna somente uma foto por maquina (`Foto apos abrir tampa frontal`); a aba `Finalizar` ficou apenas com nome do responsavel e assinatura.
+- Ajuste publicado na Fase 18: a O.S. concluida pelo APK aparece na aba `Concluidas` do painel; o calendario da Agenda continua mostrando somente O.S. operacionais.
+- Fase 19 feita localmente: `/admin/agenda` agora entrega eventos reais, evidencias, checklist e assinatura; detalhe lateral da O.S. mostra linha do tempo real com tecnico, status, data e GPS.
+- Ajuste visual feito localmente: tela de O.S. redesenhada no modelo aprovado, com sidebar fixa, cards de indicadores, abas com contadores, busca larga e lista de O.S. mais escaneavel.
 - Script local criado: `npm.cmd run backend:prisma:reset-os`, que apaga O.S. e dependencias para teste limpo sem apagar cadastros base.
 - A primeira entrega preserva endpoints/rotas internas existentes para reduzir risco.
 
@@ -294,10 +307,11 @@ C:\develop\LondriClima\apps\mobile\build\app\outputs\flutter-apk\app-debug.apk
 2. Validar no app que a O.S. aparece para tecnico/equipe atribuido.
 3. Executar todas as maquinas: cada uma deve pedir somente a foto `Foto apos abrir tampa frontal` no checklist.
 4. Validar no painel que os equipamentos aparecem com `[x]` por QR e que a O.S. so libera conclusao quando todos estiverem feitos.
-5. Finalizar no app com apenas a foto final da aba `Finalizar`, nome e assinatura.
+5. Finalizar no app com nome e assinatura.
 6. Validar que a O.S. sai de `Em atendimento` e aparece como `Concluida` na web.
-7. Ligar historico real da O.S. no detalhe usando eventos do backend.
-8. Depois do teste atual, redesenhar a tela de O.S. usando como referencia o layout moderno aprovado pelo usuario: sidebar fixa, cards de indicadores, abas com contadores, busca larga e lista de O.S. mais escaneavel; adaptar para o fluxo real multi-equipamento e evitar botoes/enfeites sem funcao pronta.
+7. Testar visualmente o historico real da Fase 19 no painel.
+8. Validar visualmente o novo layout da tela de O.S. em `http://127.0.0.1:5173/admin/`.
+9. Se OK, commitar, publicar e validar em producao.
 
 ### Backlog futuro: pos-venda WhatsApp
 

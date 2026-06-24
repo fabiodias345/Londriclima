@@ -74,6 +74,8 @@ function setFleetTab(tab) {
 function setOsTab(tab) {
   activeOsTab = tab;
   closeOsDetail();
+  updateOsSummaryCards();
+  updateOsTabCounts();
 
   for (const button of osTabs?.querySelectorAll("[data-os-tab]") || []) {
     button.classList.toggle("active", button.dataset.osTab === tab);
@@ -85,6 +87,44 @@ function setOsTab(tab) {
   }
 
   renderOsAgendaItems(filterOsAgendaItems(latestAgendaItems));
+}
+
+function updateOsSummaryCards() {
+  if (pendingCount) {
+    pendingCount.textContent = latestPreChamados.length;
+  }
+
+  if (osActiveCount) {
+    osActiveCount.textContent = latestAgendaItems.filter((item) => ["em_deslocamento", "em_atendimento"].includes(item.status)).length;
+  }
+
+  if (osScheduledCount) {
+    osScheduledCount.textContent = latestAgendaItems.filter((item) => item.status === "aberta" && item.agendada_para).length;
+  }
+
+  if (osCompletedMonthCount) {
+    const now = new Date();
+    osCompletedMonthCount.textContent = latestAgendaItems.filter((item) => {
+      if (item.status !== "concluida") return false;
+      const date = new Date(item.eventos?.at(-1)?.registrado_em || item.agendada_para || item.criada_em);
+      return !Number.isNaN(date.getTime()) && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+    }).length;
+  }
+}
+
+function updateOsTabCounts() {
+  for (const badge of osTabs?.querySelectorAll("[data-os-count]") || []) {
+    badge.className = "os-count-badge";
+    badge.textContent = getOsTabCount(badge.dataset.osCount || "");
+  }
+}
+
+function getOsTabCount(tab) {
+  if (tab === "solicitacoes") {
+    return latestPreChamados.length;
+  }
+
+  return filterOsAgendaItemsByTab(latestAgendaItems, tab).length;
 }
 
 function getOsTabLabel(tab) {
@@ -121,13 +161,10 @@ function filterOsRequests(items) {
 }
 
 function filterOsAgendaItems(items) {
-  const statuses = OS_STATUS_TABS[activeOsTab] || [];
   const query = normalizeSearch(osSearchInput?.value || "");
+  const tabItems = filterOsAgendaItemsByTab(items, activeOsTab);
 
-  return items.filter((item) => {
-    const matchesStatus = statuses.includes(item.status);
-    const matchesSchedule =
-      activeOsTab !== "agendadas" || Boolean(item.agendada_para);
+  return tabItems.filter((item) => {
     const text = normalizeSearch([
       item.titulo,
       item.cliente?.nome,
@@ -138,8 +175,19 @@ function filterOsAgendaItems(items) {
       formatStatus(item.status)
     ].filter(Boolean).join(" "));
 
-    return matchesStatus && matchesSchedule && (!query || text.includes(query));
+    return !query || text.includes(query);
   });
+}
+
+function filterOsAgendaItemsByTab(items, tab) {
+  const statuses = OS_STATUS_TABS[tab] || [];
+  let filtered = items.filter((item) => statuses.includes(item.status));
+
+  if (tab === "agendadas") {
+    filtered = filtered.filter((item) => item.agendada_para);
+  }
+
+  return filtered;
 }
 
 function renderOsAgendaItems(items) {
@@ -172,17 +220,19 @@ function renderOsAgendaItems(items) {
 
 function renderOsCard(item) {
   return \`
-    <div>
-      <p class="request-title">\${escapeHtml(item.titulo)}</p>
-      <p class="request-meta">\${escapeHtml(item.cliente?.nome || "Cliente nao informado")} - \${escapeHtml(formatAddress(item.endereco))}</p>
-    </div>
-    <div class="os-card-status">
-      <span>Status</span>
-      <strong>\${escapeHtml(formatStatus(item.status))}</strong>
-      <em>\${getOsNextAction(item)}</em>
-    </div>
-    <div class="os-card-grid os-compact-meta">
-      \${renderOsCompactMeta(item)}
+    <div class="os-list-row">
+      <div class="os-list-main">
+        <p class="request-title">\${escapeHtml(item.titulo)}</p>
+        <p class="request-meta">\${escapeHtml(item.cliente?.nome || "Cliente nao informado")}</p>
+        <p class="request-details">\${escapeHtml(formatAddress(item.endereco))}</p>
+      </div>
+      <div class="os-card-status">
+        <strong>\${escapeHtml(formatStatus(item.status))}</strong>
+        <em>\${getOsNextAction(item)}</em>
+      </div>
+      <div class="os-card-grid os-compact-meta">
+        \${renderOsCompactMeta(item)}
+      </div>
     </div>
   \`;
 }
@@ -398,6 +448,12 @@ async function dispatchOsToField(osId, button) {
 }
 
 function renderOsTimeline(item) {
+  const realEvents = renderOsRealEvents(item);
+
+  if (realEvents) {
+    return realEvents;
+  }
+
   const equipmentProgress = getOsEquipmentProgress(item);
   const pendingCount = equipmentProgress.filter((equipment) => equipment.status_execucao !== "feito").length;
   const steps = [
@@ -429,6 +485,59 @@ function renderOsTimeline(item) {
       \${renderOsEquipmentProgress(item)}
     </section>
   \`;
+}
+
+function renderOsRealEvents(item) {
+  const events = Array.isArray(item.eventos) ? item.eventos : [];
+
+  if (!events.length) {
+    return "";
+  }
+
+  return \`
+    <section class="os-detail-section">
+      <h4>Historico da O.S.</h4>
+      <ol class="os-timeline os-real-events">
+        \${events.map((event) => \`
+          <li class="is-active">
+            <strong>\${escapeHtml(formatOsEventAction(event.acao))}</strong>
+            <span>\${escapeHtml(formatOsEventMeta(event))}</span>
+          </li>
+        \`).join("")}
+      </ol>
+      \${renderOsEquipmentProgress(item)}
+    </section>
+  \`;
+}
+
+function formatOsEventAction(action) {
+  return {
+    criar_pre_chamado: "Pre-chamado criado",
+    aprovar: "O.S. aprovada",
+    rejeitar: "O.S. rejeitada",
+    iniciar_rota: "Rota iniciada",
+    iniciar_atendimento: "Atendimento iniciado",
+    cheguei_cliente: "Chegada ao cliente",
+    cancelar: "O.S. cancelada",
+    finalizar: "O.S. concluida"
+  }[action] || "Evento registrado";
+}
+
+function formatOsEventMeta(event) {
+  const parts = [
+    event.registrado_em ? formatDateTime(event.registrado_em) : "Sem data",
+    event.usuario?.nome,
+    event.status_anterior && event.status_novo
+      ? \`\${formatStatus(event.status_anterior)} -> \${formatStatus(event.status_novo)}\`
+      : event.status_novo
+        ? formatStatus(event.status_novo)
+        : "",
+    event.latitude !== null && event.latitude !== undefined && event.longitude !== null && event.longitude !== undefined
+      ? \`GPS \${Number(event.latitude).toFixed(6)}, \${Number(event.longitude).toFixed(6)}\`
+      : ""
+  ].filter(Boolean);
+
+  return parts.join(" - ");
 }
 
 function getOsEquipmentProgress(item) {
@@ -485,13 +594,21 @@ function formatOsEquipmentQr(equipment) {
 
 function renderOsExecutionSummary(item) {
   const responsible = item.equipe?.nome || item.tecnico?.nome || "Nao atribuido";
+  const checklist = item.checklist;
+  const checklistStatus = checklist
+    ? \`Checklist salvo - \${formatDateTime(checklist.atualizado_em)}\`
+    : "Checklist ainda nao sincronizado";
+  const signatureStatus = item.assinatura
+    ? \`Assinatura registrada - \${escapeHtml(item.assinatura.nome_responsavel || "Responsavel nao informado")}\`
+    : "Assinatura nao sincronizada";
 
   return \`
     <section class="os-detail-section">
       <h4>Execucao</h4>
       <div class="os-execution-summary">
         <span><strong>Responsavel</strong>\${escapeHtml(responsible)}</span>
-        <span><strong>Checklist</strong>Checklist ainda nao sincronizado</span>
+        <span><strong>Checklist</strong>\${escapeHtml(checklistStatus)}</span>
+        <span><strong>Assinatura</strong>\${signatureStatus}</span>
         <span><strong>Observacao</strong>\${escapeHtml(item.observacao_execucao || item.detalhes || "Sem observacao")}</span>
       </div>
     </section>
@@ -516,7 +633,7 @@ function renderOsEvidenceSummary(item) {
     <section class="os-detail-section">
       <h4>Evidencias</h4>
       <div class="os-evidence-grid">
-        \${evidences.map((evidence) => \`<span>\${escapeHtml(evidence.tipo || "Foto")} - \${escapeHtml(evidence.criada_em ? formatDateTime(evidence.criada_em) : "sem data")}</span>\`).join("")}
+        \${evidences.map((evidence) => \`<span>\${escapeHtml(evidence.descricao || evidence.tipo || "Foto")} - \${escapeHtml(evidence.criada_em ? formatDateTime(evidence.criada_em) : "sem data")}</span>\`).join("")}
       </div>
     </section>
   \`;

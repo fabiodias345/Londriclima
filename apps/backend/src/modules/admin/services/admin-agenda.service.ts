@@ -108,6 +108,51 @@ export class AdminAgendaService {
               }
             }
           }
+        },
+        eventos: {
+          orderBy: {
+            registradoEm: "asc"
+          },
+          select: {
+            id: true,
+            acao: true,
+            statusAnterior: true,
+            statusNovo: true,
+            latitude: true,
+            longitude: true,
+            registradoEm: true,
+            usuario: {
+              select: {
+                id: true,
+                nome: true
+              }
+            }
+          }
+        },
+        evidencias: {
+          orderBy: {
+            criadoEm: "asc"
+          },
+          select: {
+            id: true,
+            tipo: true,
+            descricao: true,
+            storageUrl: true,
+            criadoEm: true
+          }
+        },
+        checklist: {
+          select: {
+            servicoRealizado: true,
+            procedimentos: true,
+            atualizadoEm: true
+          }
+        },
+        assinatura: {
+          select: {
+            nomeResponsavel: true,
+            assinadoEm: true
+          }
         }
       }
     });
@@ -133,7 +178,37 @@ export class AdminAgendaService {
         tecnico: ordem.tecnico,
         equipamento: ordem.equipamento,
         equipamentos: this.mapearEquipamentosExecucao(ordem),
-        equipamentos_executados: this.mapearEquipamentosExecutados(ordem)
+        equipamentos_executados: this.mapearEquipamentosExecutados(ordem),
+        eventos: (ordem.eventos ?? []).map((evento) => ({
+          id: evento.id,
+          acao: evento.acao,
+          status_anterior: evento.statusAnterior,
+          status_novo: evento.statusNovo,
+          latitude: evento.latitude?.toNumber() ?? null,
+          longitude: evento.longitude?.toNumber() ?? null,
+          registrado_em: evento.registradoEm.toISOString(),
+          usuario: evento.usuario
+        })),
+        evidencias: (ordem.evidencias ?? []).map((evidencia) => ({
+          id: evidencia.id,
+          tipo: evidencia.tipo,
+          descricao: evidencia.descricao,
+          storage_url: evidencia.storageUrl,
+          criada_em: evidencia.criadoEm.toISOString()
+        })),
+        checklist: ordem.checklist
+          ? {
+              servico_realizado: ordem.checklist.servicoRealizado,
+              procedimentos: ordem.checklist.procedimentos,
+              atualizado_em: ordem.checklist.atualizadoEm.toISOString()
+            }
+          : null,
+        assinatura: ordem.assinatura
+          ? {
+              nome_responsavel: ordem.assinatura.nomeResponsavel,
+              assinado_em: ordem.assinatura.assinadoEm.toISOString()
+            }
+          : null
       }))
     };
   }

@@ -368,6 +368,12 @@ test("admin detalhe da O.S. prepara historico execucao e evidencias", () => {
   const styles = readAdminCss();
 
   assert.match(script, /function renderOsTimeline/);
+  assert.match(script, /function renderOsRealEvents/);
+  assert.match(script, /function formatOsEventAction/);
+  assert.match(script, /item\.eventos/);
+  assert.match(script, /status_anterior/);
+  assert.match(script, /status_novo/);
+  assert.match(script, /GPS/);
   assert.match(script, /function renderOsEquipmentProgress/);
   assert.match(script, /function getOsEquipmentProgress/);
   assert.match(script, /equipamentos_executados/);
@@ -385,6 +391,8 @@ test("admin detalhe da O.S. prepara historico execucao e evidencias", () => {
   assert.match(script, /Em atendimento/);
   assert.match(script, /Concluida/);
   assert.match(script, /Checklist ainda nao sincronizado/);
+  assert.match(script, /Checklist salvo/);
+  assert.match(script, /Assinatura registrada/);
   assert.match(script, /Fotos ainda nao sincronizadas/);
   assert.match(styles, /\.os-detail-sections/);
   assert.match(styles, /\.os-timeline/);
@@ -393,15 +401,34 @@ test("admin detalhe da O.S. prepara historico execucao e evidencias", () => {
 );
 
 test("admin usa layout de fichario compacto para lista e detalhe de O.S.", () => {
+  const html = read("apps/admin/index.html");
   const script = readAdminJs();
   const styles = readAdminCss();
 
+  assert.match(html, /class="admin-top-actions"/);
+  assert.match(html, /class="os-summary-card/);
+  assert.match(html, /id="osActiveCount"/);
+  assert.match(html, /id="osScheduledCount"/);
+  assert.match(html, /id="osCompletedMonthCount"/);
+  assert.match(html, /data-os-count="em_atendimento"/);
+  assert.match(html, /data-action="os-toggle-filters"/);
+  assert.match(html, /data-action="os-exportar"/);
   assert.match(script, /className = "request-card os-real-card os-compact-card"/);
   assert.match(script, /setAttribute\("data-action", "ver-os-detalhe"\)|data-action="ver-os-detalhe"/);
   assert.match(script, /renderOsCompactMeta/);
+  assert.match(script, /updateOsSummaryCards/);
+  assert.match(script, /updateOsTabCounts/);
+  assert.match(script, /function getOsTabCount/);
+  assert.match(html, /class="os-count-badge"/);
+  assert.match(script, /os-list-row/);
   assert.match(script, /request-card os-empty-state os-compact-empty/);
   assert.doesNotMatch(script, /renderOsCard[\s\S]*data-action="editar-agenda-os"[\s\S]*function openOsDetail/);
   assert.match(styles, /\.os-workbench-grid/);
+  assert.match(styles, /\.os-page-shell/);
+  assert.match(styles, /\.admin-top-actions/);
+  assert.match(styles, /\.os-summary-card/);
+  assert.match(styles, /\.os-count-badge/);
+  assert.match(styles, /\.os-list-row/);
   assert.match(styles, /\.os-compact-card/);
   assert.match(styles, /\.os-compact-card\.is-selected/);
   assert.match(styles, /\.os-detail-panel/);
