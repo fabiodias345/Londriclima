@@ -222,6 +222,7 @@ service: airmovebr-backend
 - Fase 20 implementada localmente: dashboard inicial no APK com botoes Minhas manutencoes e Abastecimentos; tecnico registra abastecimento com carro, odometro, litros e valor total.
 - Fase atual implementada localmente: Nova OS agora diferencia preventiva/corretiva; preventiva exige periodicidade mensal/trimestral/semestral/anual e grava `checklist_tipo`.
 - Fase 2 local: APK mostra preventiva/corretiva, recebe `tipo_servico` da API e usa checklist corretivo simples em vez do checklist PMOC generico.
+- Fase 3 local: ao finalizar OS de cliente sem PMOC, backend agenda email ao cliente com relatorio tecnico PDF simples; cliente com PMOC nao recebe esse relatorio avulso.
 - Backend mobile exposto para frota:
   - GET /api/v1/mobile/frota/veiculos
   - POST /api/v1/mobile/frota/abastecimentos

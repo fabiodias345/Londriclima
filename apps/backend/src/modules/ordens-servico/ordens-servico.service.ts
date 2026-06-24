@@ -11,6 +11,7 @@ import {
   EvidenciaTipo,
   OrdemServicoEventoAcao,
   OrdemServicoStatus,
+  OrdemServicoTipoServico,
   Prisma
 } from "@prisma/client";
 import { mkdir, writeFile } from "node:fs/promises";
@@ -62,7 +63,6 @@ const EXTENSAO_POR_MIME_TYPE: Record<string, string> = {
 
 const AUTOMACOES_FINALIZACAO = [
   AutomacaoTipo.gerar_pdf,
-  AutomacaoTipo.enviar_email,
   AutomacaoTipo.enviar_whatsapp,
   AutomacaoTipo.recorrencia_180_dias
 ];
@@ -755,6 +755,7 @@ export class OrdensServicoService {
     const finalizadoEm = new Date(dto.finalizado_em);
     const assinaturaBuffer = this.criarBufferAssinatura(dto.assinatura_cliente_base64);
     let assinaturaUrl = "";
+    let automacoesFinalizacao: Prisma.AutomacaoAgendadaCreateManyInput[] = [];
 
     await this.prisma.$transaction(async (tx) => {
       const ordemServico = await tx.ordemServico.findUnique({
@@ -763,8 +764,12 @@ export class OrdensServicoService {
           id: true,
           empresaId: true,
           status: true,
+          titulo: true,
+          tipoServico: true,
+          agendadaPara: true,
           equipamento: {
             select: {
+              id: true,
               marca: true,
               modelo: true,
               gasRefrigerante: true
@@ -772,6 +777,10 @@ export class OrdensServicoService {
           },
           cliente: {
             select: {
+              id: true,
+              nome: true,
+              email: true,
+              pmocAtivo: true,
               equipamentos: {
                 select: {
                   id: true
@@ -781,7 +790,10 @@ export class OrdensServicoService {
           },
           evidencias: {
             select: {
-              tipo: true
+              tipo: true,
+              descricao: true,
+              storageUrl: true,
+              criadoEm: true
             }
           },
           checklist: {
@@ -887,16 +899,10 @@ export class OrdensServicoService {
         }
       });
 
+      automacoesFinalizacao = this.montarAutomacoesFinalizacao(ordemServico, osId, finalizadoEm, assinaturaUrl);
+
       await tx.automacaoAgendada.createMany({
-        data: AUTOMACOES_FINALIZACAO.map((tipo) => ({
-          empresaId: ordemServico.empresaId,
-          ordemServicoId: osId,
-          tipo,
-          executarEm:
-            tipo === AutomacaoTipo.recorrencia_180_dias
-              ? this.somarDias(finalizadoEm, 180)
-              : finalizadoEm
-        }))
+        data: automacoesFinalizacao
       });
     });
 
@@ -905,8 +911,190 @@ export class OrdensServicoService {
       status: OrdemServicoStatus.concluida,
       finalizado_em: finalizadoEm.toISOString(),
       assinatura_url: assinaturaUrl,
-      automacoes_agendadas: AUTOMACOES_FINALIZACAO
+      automacoes_agendadas: automacoesFinalizacao.map((automacao) => automacao.tipo)
     };
+  }
+
+  private montarAutomacoesFinalizacao(
+    ordemServico: {
+      empresaId: string;
+      titulo?: string;
+      tipoServico?: OrdemServicoTipoServico;
+      agendadaPara?: Date | null;
+      cliente?: {
+        id: string;
+        nome: string;
+        email: string | null;
+        pmocAtivo: boolean;
+        equipamentos?: Array<{ id: string }>;
+      } | null;
+      equipamento?: { id?: string | null; marca?: string | null; modelo?: string | null; gasRefrigerante?: string | null } | null;
+      evidencias?: Array<{ tipo: EvidenciaTipo; descricao: string | null; storageUrl: string; criadoEm: Date }>;
+    },
+    osId: string,
+    finalizadoEm: Date,
+    assinaturaUrl: string
+  ): Prisma.AutomacaoAgendadaCreateManyInput[] {
+    const base = AUTOMACOES_FINALIZACAO.map((tipo) => ({
+      empresaId: ordemServico.empresaId,
+      ordemServicoId: osId,
+      tipo,
+      executarEm:
+        tipo === AutomacaoTipo.recorrencia_180_dias
+          ? this.somarDias(finalizadoEm, 180)
+          : finalizadoEm
+    }));
+
+    const cliente = ordemServico.cliente;
+    const deveEnviarRelatorioAvulso = cliente?.email && !cliente.pmocAtivo;
+
+    if (!deveEnviarRelatorioAvulso) {
+      return base;
+    }
+
+    const totalMaquinas = ordemServico.equipamento?.id ? 1 : cliente.equipamentos?.length || 1;
+    const pdf = this.gerarPdfRelatorioAtendimento({
+      osId,
+      clienteNome: cliente.nome,
+      titulo: ordemServico.titulo || "Atendimento tecnico",
+      tipoServico: ordemServico.tipoServico || OrdemServicoTipoServico.preventiva,
+      agendadaPara: ordemServico.agendadaPara ?? null,
+      finalizadoEm,
+      assinaturaUrl,
+      equipamento: ordemServico.equipamento ?? null,
+      evidencias: ordemServico.evidencias ?? []
+    });
+
+    return [
+      ...base,
+      {
+        empresaId: ordemServico.empresaId,
+        ordemServicoId: osId,
+        tipo: AutomacaoTipo.enviar_email,
+        executarEm: finalizadoEm,
+        payload: {
+          tipo: "relatorio_tecnico_avulso",
+          cliente_id: cliente.id,
+          cliente_nome: cliente.nome,
+          cliente_email: cliente.email,
+          data_envio: finalizadoEm.toISOString(),
+          periodo_inicio: ordemServico.agendadaPara?.toISOString() ?? finalizadoEm.toISOString(),
+          periodo_fim: finalizadoEm.toISOString(),
+          total_maquinas: totalMaquinas,
+          total_os_concluidas: 1,
+          os_ids: [osId],
+          pdf_filename: `${this.slugArquivo(`relatorio-tecnico-${cliente.nome}-${osId}`)}.pdf`,
+          pdf_base64: pdf.toString("base64")
+        } satisfies Prisma.JsonObject
+      }
+    ];
+  }
+
+  private gerarPdfRelatorioAtendimento(input: {
+    osId: string;
+    clienteNome: string;
+    titulo: string;
+    tipoServico: OrdemServicoTipoServico;
+    agendadaPara: Date | null;
+    finalizadoEm: Date;
+    assinaturaUrl: string;
+    equipamento: { marca?: string | null; modelo?: string | null; gasRefrigerante?: string | null } | null;
+    evidencias: Array<{ tipo: EvidenciaTipo; descricao: string | null; storageUrl: string; criadoEm: Date }>;
+  }) {
+    return this.criarPdfTexto([
+      [
+        "AIRMOVEBR - RELATORIO TECNICO",
+        "Atendimento sem PMOC",
+        "",
+        `Cliente: ${input.clienteNome}`,
+        `OS: ${input.osId}`,
+        `Servico: ${input.titulo}`,
+        `Tipo: ${input.tipoServico}`,
+        `Agendado para: ${input.agendadaPara ? input.agendadaPara.toISOString() : "nao informado"}`,
+        `Finalizado em: ${input.finalizadoEm.toISOString()}`,
+        `Equipamento: ${[input.equipamento?.marca, input.equipamento?.modelo].filter(Boolean).join(" ") || "todos do cliente"}`,
+        `Gas refrigerante: ${input.equipamento?.gasRefrigerante || "nao informado"}`,
+        `Assinatura responsavel: ${input.assinaturaUrl}`,
+        "",
+        "EVIDENCIAS",
+        ...(input.evidencias.length
+          ? input.evidencias.map(
+              (evidencia) =>
+                `${evidencia.tipo}: ${evidencia.descricao || "sem descricao"} - ${evidencia.storageUrl} - ${evidencia.criadoEm.toISOString()}`
+            )
+          : ["Sem evidencias registradas."]),
+        "",
+        "Obrigado por escolher a AIRMOVEBR."
+      ]
+    ]);
+  }
+
+  private criarPdfTexto(paginas: string[][]) {
+    const objetos = ["<< /Type /Catalog /Pages 2 0 R >>", "", "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"];
+    const pageObjectIds: number[] = [];
+
+    for (const linhas of paginas) {
+      const texto = linhas
+        .flatMap((linha) => this.quebrarLinhaPdf(linha, 96))
+        .slice(0, 46)
+        .map((linha) => `(${this.escaparTextoPdf(linha)}) Tj T*`)
+        .join("\n");
+      const conteudo = `BT\n/F1 10 Tf\n42 790 Td\n13 TL\n${texto}\nET`;
+      const pageObjectId = objetos.length + 1;
+      const contentObjectId = objetos.length + 2;
+      pageObjectIds.push(pageObjectId);
+      objetos.push(
+        `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${contentObjectId} 0 R >>`,
+        `<< /Length ${Buffer.byteLength(conteudo, "latin1")} >>\nstream\n${conteudo}\nendstream`
+      );
+    }
+
+    objetos[1] = `<< /Type /Pages /Kids [${pageObjectIds.map((id) => `${id} 0 R`).join(" ")}] /Count ${pageObjectIds.length} >>`;
+    let pdf = "%PDF-1.4\n";
+    const offsets = [0];
+
+    for (let index = 0; index < objetos.length; index += 1) {
+      offsets.push(Buffer.byteLength(pdf, "latin1"));
+      pdf += `${index + 1} 0 obj\n${objetos[index]}\nendobj\n`;
+    }
+
+    const xrefOffset = Buffer.byteLength(pdf, "latin1");
+    pdf += `xref\n0 ${objetos.length + 1}\n0000000000 65535 f \n`;
+    pdf += offsets
+      .slice(1)
+      .map((offset) => `${String(offset).padStart(10, "0")} 00000 n \n`)
+      .join("");
+    pdf += `trailer\n<< /Size ${objetos.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+
+    return Buffer.from(pdf, "latin1");
+  }
+
+  private quebrarLinhaPdf(texto: string, limite: number) {
+    const linhas: string[] = [];
+    let restante = texto;
+
+    while (restante.length > limite) {
+      linhas.push(restante.slice(0, limite));
+      restante = restante.slice(limite);
+    }
+
+    linhas.push(restante);
+    return linhas;
+  }
+
+  private escaparTextoPdf(texto: string) {
+    return texto.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+  }
+
+  private slugArquivo(valor: string) {
+    const slug = valor
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+
+    return slug || "relatorio-tecnico";
   }
 
   private criarBufferAssinatura(assinaturaBase64: string) {

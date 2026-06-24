@@ -411,7 +411,6 @@ test("finalizarOs conclui a OS, registra assinatura, evento e automacoes", async
     assinatura_url: "/storage/os/os-1/assinatura.png",
     automacoes_agendadas: [
       AutomacaoTipo.gerar_pdf,
-      AutomacaoTipo.enviar_email,
       AutomacaoTipo.enviar_whatsapp,
       AutomacaoTipo.recorrencia_180_dias
     ]
@@ -431,7 +430,6 @@ test("finalizarOs conclui a OS, registra assinatura, evento e automacoes", async
     automacoes.map((automacao) => automacao.tipo),
     [
       AutomacaoTipo.gerar_pdf,
-      AutomacaoTipo.enviar_email,
       AutomacaoTipo.enviar_whatsapp,
       AutomacaoTipo.recorrencia_180_dias
     ]
@@ -440,6 +438,67 @@ test("finalizarOs conclui a OS, registra assinatura, evento e automacoes", async
     automacoes.find((automacao) => automacao.tipo === AutomacaoTipo.recorrencia_180_dias)?.executarEm.toISOString(),
     "2026-12-07T15:05:00.000Z"
   );
+});
+
+test("finalizarOs agenda relatorio tecnico por email para cliente sem PMOC", async () => {
+  const chamadas = {
+    automacoesData: undefined as unknown
+  };
+  const tx = {
+    ordemServico: {
+      findUnique: async () =>
+        criarOrdemProntaParaFinalizar({
+          titulo: "Manutencao corretiva",
+          tipoServico: "corretiva",
+          agendadaPara: new Date("2026-06-10T11:00:00.000Z"),
+          cliente: {
+            id: "cliente-1",
+            nome: "Cliente Avulso",
+            email: "cliente@example.com",
+            pmocAtivo: false,
+            equipamentos: [{ id: "equip-1" }]
+          },
+          evidencias: [
+            {
+              tipo: EvidenciaTipo.antes,
+              descricao: "Foto do atendimento",
+              storageUrl: "/storage/os/os-1/foto.webp",
+              criadoEm: new Date("2026-06-10T11:20:00.000Z")
+            }
+          ],
+          checklistRespostas: [{ equipamentoId: "equip-1" }]
+        }),
+      update: async () => undefined
+    },
+    ordemServicoAssinatura: {
+      create: async () => undefined
+    },
+    ordemServicoEvento: {
+      create: async () => undefined
+    },
+    automacaoAgendada: {
+      createMany: async ({ data }: { data: unknown }) => {
+        chamadas.automacoesData = data;
+      }
+    }
+  };
+  const prisma = {
+    $transaction: async (callback: (tx: unknown) => unknown) => callback(tx)
+  };
+  const service = criarService(prisma);
+
+  await service.finalizarOs("os-1", finalizarDto, usuario);
+
+  const automacoes = chamadas.automacoesData as Array<{ tipo: AutomacaoTipo; payload?: Record<string, unknown> }>;
+  const email = automacoes.find((automacao) => automacao.tipo === AutomacaoTipo.enviar_email);
+  assert.equal(email?.payload?.tipo, "relatorio_tecnico_avulso");
+  assert.equal(email?.payload?.cliente_email, "cliente@example.com");
+  assert.equal(email?.payload?.cliente_nome, "Cliente Avulso");
+  assert.deepEqual(email?.payload?.os_ids, ["os-1"]);
+  assert.equal(email?.payload?.total_maquinas, 1);
+  assert.equal(email?.payload?.total_os_concluidas, 1);
+  assert.match(String(email?.payload?.pdf_filename), /relatorio-tecnico-cliente-avulso-os-1\.pdf/);
+  assert.match(Buffer.from(String(email?.payload?.pdf_base64), "base64").toString("latin1"), /RELATORIO TECNICO/);
 });
 
 test("finalizarOs permite OS sem equipamento unico quando checklist e evidencias existem", async () => {
