@@ -377,6 +377,39 @@ test("listarRelatoriosAvulsos esconde cliente com relatorio apagado ate nova OS"
   assert.deepEqual(resposta.items, []);
 });
 
+test("listarRelatoriosAvulsos mostra OS multi-equipamento pelas respostas do checklist", async () => {
+  const prisma = {
+    cliente: {
+      findMany: async () => [
+        {
+          id: "cliente-1",
+          nome: "Cliente Avulso",
+          email: "cliente@example.com",
+          telefone: "43988887777",
+          atualizadoEm: new Date("2026-06-12T10:00:00.000Z"),
+          equipamentos: [{ id: "equipamento-1", ordensServico: [] }],
+          ordensServico: [
+            {
+              id: "os-multi-1",
+              checklistRespostas: [{ equipamentoId: "equipamento-1" }]
+            }
+          ]
+        }
+      ]
+    },
+    automacaoAgendada: {
+      findMany: async () => []
+    }
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.listarRelatoriosAvulsos(usuario);
+
+  assert.equal(resposta.total, 1);
+  assert.equal(resposta.items[0].total_os_concluidas, 1);
+  assert.equal(resposta.items[0].pronto_para_envio, true);
+});
+
 test("gerarPdfRelatorioAvulsoCliente separa duas manutencoes da mesma maquina", async () => {
   const fotoAntesPath = resolve(process.cwd(), "..", "..", "storage", "os", "os-equipamento-1-corretiva", "evidencias", "antes.jpg");
   const fotoDepoisPath = resolve(process.cwd(), "..", "..", "storage", "os", "os-equipamento-1-corretiva", "evidencias", "depois.jpg");

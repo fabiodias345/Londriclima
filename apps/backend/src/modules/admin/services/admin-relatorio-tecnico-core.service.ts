@@ -573,12 +573,35 @@ export class AdminRelatorioTecnicoCoreService {
               }
             }
           }
+        },
+        ordensServico: {
+          where: {
+            status: OrdemServicoStatus.concluida
+          },
+          select: {
+            id: true,
+            checklistRespostas: {
+              select: {
+                equipamentoId: true
+              }
+            }
+          }
         }
       }
     });
 
     const items = clientes.map((cliente) => {
-      const osConcluidas = cliente.equipamentos.flatMap((equipamento) => equipamento.ordensServico.map((ordem) => ordem.id));
+      const equipamentoIds = new Set(cliente.equipamentos.map((equipamento) => equipamento.id));
+      const osConcluidas = Array.from(
+        new Set([
+          ...cliente.equipamentos.flatMap((equipamento) => equipamento.ordensServico.map((ordem) => ordem.id)),
+          ...(cliente.ordensServico ?? [])
+            .filter((ordem) =>
+              ordem.checklistRespostas.some((resposta) => equipamentoIds.has(resposta.equipamentoId))
+            )
+            .map((ordem) => ordem.id)
+        ])
+      );
       const osApagadas = osApagadasPorCliente.get(cliente.id) ?? new Set<string>();
       const osVisiveis = osConcluidas.filter((ordemId) => !osApagadas.has(ordemId));
       const totalOsConcluidas = osVisiveis.length;
