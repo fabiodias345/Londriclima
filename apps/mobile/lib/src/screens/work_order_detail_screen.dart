@@ -37,6 +37,13 @@ const _gasOptions = ['R-22', 'R-410A', 'R-32', 'R-134a', 'Outro'];
 
 enum _WorkOrderDetailStep { data, machines, checklist, finish }
 
+OutlineInputBorder _fieldBorder(Color color, {double width = 1}) {
+  return OutlineInputBorder(
+    borderRadius: BorderRadius.circular(14),
+    borderSide: BorderSide(color: color, width: width),
+  );
+}
+
 class WorkOrderDetailScreen extends StatefulWidget {
   const WorkOrderDetailScreen({
     super.key,
@@ -91,6 +98,8 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
     for (final key in _machineFieldLabels.keys) key: TextEditingController(),
   };
   final Set<String> _machineImpossibleFields = {};
+  final Set<String> _highlightedMachineFields = {};
+  final Set<String> _highlightedChecklistCodes = {};
   String? _errorMessage;
   _WorkOrderDetailStep _activeStep = _WorkOrderDetailStep.data;
 
@@ -353,6 +362,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
                         impossible: _machineImpossibleFields.contains(
                           entry.key,
                         ),
+                        missing: _highlightedMachineFields.contains(entry.key),
                         numeric: entry.key == 'capacidade_btu',
                         options: switch (entry.key) {
                           'tipo' => _machineTypeOptions,
@@ -363,11 +373,20 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
                           setState(() {
                             if (checked) {
                               _machineImpossibleFields.add(entry.key);
+                              _highlightedMachineFields.remove(entry.key);
                             } else {
                               _machineImpossibleFields.remove(entry.key);
+                              _highlightedMachineFields.remove(entry.key);
                               _machineImpossibleControllers[entry.key]!.clear();
                             }
                           });
+                        },
+                        onChanged: () {
+                          if (_highlightedMachineFields.contains(entry.key)) {
+                            setState(() {
+                              _highlightedMachineFields.remove(entry.key);
+                            });
+                          }
                         },
                       ),
                     ),
@@ -468,8 +487,12 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
                               onChanged: (value) {
                                 setState(() {
                                   _checklistValues[item.code] = value;
+                                  _highlightedChecklistCodes.remove(item.code);
                                 });
                               },
+                              missing: _highlightedChecklistCodes.contains(
+                                item.code,
+                              ),
                               onPhotoPressed: item.kind == 'foto'
                                   ? () => _pickChecklistPhoto(item)
                                   : null,
@@ -570,6 +593,9 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
     final missing = _missingMachineInputFields(input);
     if (missing.isNotEmpty) {
       setState(() {
+        _highlightedMachineFields
+          ..clear()
+          ..addAll(missing);
         _errorMessage =
             'Complete os dados da maquina ou marque impossivel coletar com observacao.';
       });
@@ -578,6 +604,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
 
     setState(() {
       _errorMessage = null;
+      _highlightedMachineFields.clear();
     });
 
     try {
@@ -692,7 +719,10 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
       setState(() {
         _savingChecklist = false;
         _checklistMessage = null;
-        _errorMessage = 'Preencha: ${missing.first}.';
+        _highlightedChecklistCodes
+          ..clear()
+          ..addAll(missing.map((item) => item.code));
+        _errorMessage = 'Preencha: ${missing.first.label}.';
       });
       return;
     }
@@ -701,6 +731,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
       _savingChecklist = true;
       _errorMessage = null;
       _checklistMessage = null;
+      _highlightedChecklistCodes.clear();
     });
 
     try {
@@ -730,6 +761,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
         _editingMachine = false;
         _checklistStarted = false;
         _checklistValues.clear();
+        _highlightedChecklistCodes.clear();
         _clearTextControllers();
         _signaturePoints.clear();
         _responsibleController.clear();
@@ -967,22 +999,19 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
     }).toList();
   }
 
-  List<String> _missingChecklistItems() {
-    return _order.effectiveChecklist
-        .where((item) {
-          if (item.kind == 'finalizacao') {
-            return false;
-          }
-          final textValue = _textControllers[item.code]?.text.trim() ?? '';
-          final value = switch (item.kind) {
-            'texto' || 'numerico' => textValue,
-            'foto' => _checklistValues[item.code] ?? '',
-            _ => _checklistValues[item.code] ?? '',
-          };
-          return value.trim().isEmpty || value == 'false';
-        })
-        .map((item) => item.label)
-        .toList();
+  List<WorkOrderChecklistItem> _missingChecklistItems() {
+    return _order.effectiveChecklist.where((item) {
+      if (item.kind == 'finalizacao') {
+        return false;
+      }
+      final textValue = _textControllers[item.code]?.text.trim() ?? '';
+      final value = switch (item.kind) {
+        'texto' || 'numerico' => textValue,
+        'foto' => _checklistValues[item.code] ?? '',
+        _ => _checklistValues[item.code] ?? '',
+      };
+      return value.trim().isEmpty || value == 'false';
+    }).toList();
   }
 
   List<Widget> _finishWidgets() {
@@ -1135,6 +1164,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
     _machineImpossibleFields
       ..clear()
       ..addAll(equipment.impossibleFields.keys);
+    _highlightedMachineFields.clear();
     for (final entry in _machineImpossibleControllers.entries) {
       entry.value.text = equipment.impossibleFields[entry.key] ?? '';
     }
@@ -1148,6 +1178,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
       controller.clear();
     }
     _machineImpossibleFields.clear();
+    _highlightedMachineFields.clear();
   }
 }
 
@@ -1351,7 +1382,9 @@ class _MachineField extends StatelessWidget {
     required this.controller,
     required this.impossibleController,
     required this.impossible,
+    required this.missing,
     required this.onImpossibleChanged,
+    required this.onChanged,
     this.numeric = false,
     this.options = const [],
   });
@@ -1361,16 +1394,35 @@ class _MachineField extends StatelessWidget {
   final TextEditingController controller;
   final TextEditingController impossibleController;
   final bool impossible;
+  final bool missing;
   final bool numeric;
   final List<String> options;
   final ValueChanged<bool> onImpossibleChanged;
+  final VoidCallback onChanged;
 
   @override
   Widget build(BuildContext context) {
     final currentValue = controller.text.trim();
-    final dropdownOptions = currentValue.isEmpty || options.contains(currentValue)
+    final dropdownOptions =
+        currentValue.isEmpty || options.contains(currentValue)
         ? options
         : [currentValue, ...options];
+    final decoration = InputDecoration(
+      labelText: label,
+      helperText: missing ? 'Falta preencher' : null,
+      helperStyle: const TextStyle(
+        color: airmovebrPrimary,
+        fontWeight: FontWeight.w800,
+      ),
+      fillColor: missing ? airmovebrRequiredMissingFill : null,
+      enabledBorder: missing
+          ? _fieldBorder(airmovebrRequiredMissingBorder, width: 2)
+          : null,
+      focusedBorder: missing ? _fieldBorder(airmovebrPrimary, width: 2) : null,
+      prefixIcon: missing
+          ? const Icon(Icons.info_outline, color: airmovebrPrimary)
+          : null,
+    );
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -1384,13 +1436,14 @@ class _MachineField extends StatelessWidget {
               enabled: !impossible,
               keyboardType: numeric ? TextInputType.number : TextInputType.text,
               textInputAction: TextInputAction.next,
-              decoration: InputDecoration(labelText: label),
+              decoration: decoration,
+              onChanged: (_) => onChanged(),
             )
           else
             DropdownButtonFormField<String>(
               key: Key('machineSelect_$fieldKey'),
               initialValue: currentValue.isEmpty ? null : currentValue,
-              decoration: InputDecoration(labelText: label),
+              decoration: decoration,
               items: dropdownOptions
                   .map(
                     (option) =>
@@ -1402,6 +1455,7 @@ class _MachineField extends StatelessWidget {
                   : (value) {
                       if (value != null) {
                         controller.text = value;
+                        onChanged();
                       }
                     },
             ),
@@ -1438,6 +1492,7 @@ class _ChecklistField extends StatelessWidget {
     required this.textController,
     required this.noteController,
     required this.uploadingPhoto,
+    required this.missing,
     required this.onChanged,
     this.onPhotoPressed,
   });
@@ -1447,32 +1502,49 @@ class _ChecklistField extends StatelessWidget {
   final TextEditingController textController;
   final TextEditingController noteController;
   final bool uploadingPhoto;
+  final bool missing;
   final ValueChanged<String> onChanged;
   final VoidCallback? onPhotoPressed;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+    return Container(
+      key: Key('checklist_item_${item.code}'),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: missing ? airmovebrRequiredMissingFill : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: missing ? airmovebrRequiredMissingBorder : airmovebrBorder,
+          width: missing ? 2 : 1,
+        ),
+      ),
       child: switch (item.kind) {
         'checkbox' => InkWell(
           key: Key('checklist_checkbox_${item.code}'),
           onTap: () => onChanged(value == 'true' ? 'false' : 'true'),
-          child: Row(
-            children: [
-              Checkbox(
-                value: value == 'true',
-                onChanged: (checked) =>
-                    onChanged(checked == true ? 'true' : 'false'),
-              ),
-              Expanded(child: Text(item.label)),
-            ],
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(8, 8, 12, 8),
+            child: Row(
+              children: [
+                Checkbox(
+                  value: value == 'true',
+                  onChanged: (checked) =>
+                      onChanged(checked == true ? 'true' : 'false'),
+                ),
+                Expanded(
+                  child: _ChecklistLabel(label: item.label, missing: missing),
+                ),
+              ],
+            ),
           ),
         ),
         'select' => DropdownButtonFormField<String>(
           key: Key('checklist_select_${item.code}'),
           initialValue: value,
-          decoration: InputDecoration(labelText: item.label),
+          decoration: _checklistDecoration(item.label, missing),
           items: item.options
               .map(
                 (option) =>
@@ -1491,15 +1563,18 @@ class _ChecklistField extends StatelessWidget {
             DropdownButtonFormField<String>(
               key: Key('checklist_select_${item.code}'),
               initialValue: value,
-              decoration: InputDecoration(labelText: item.label),
-              items: (item.options.isEmpty
-                      ? const ['ok', 'nao conforme']
-                      : item.options)
-                  .map(
-                    (option) =>
-                        DropdownMenuItem(value: option, child: Text(option)),
-                  )
-                  .toList(),
+              decoration: _checklistDecoration(item.label, missing),
+              items:
+                  (item.options.isEmpty
+                          ? const ['ok', 'nao conforme']
+                          : item.options)
+                      .map(
+                        (option) => DropdownMenuItem(
+                          value: option,
+                          child: Text(option),
+                        ),
+                      )
+                      .toList(),
               onChanged: (selected) {
                 if (selected != null) {
                   onChanged(selected);
@@ -1521,20 +1596,21 @@ class _ChecklistField extends StatelessWidget {
         'numerico' => TextField(
           key: Key('checklist_number_${item.code}'),
           controller: textController,
-          decoration: InputDecoration(
-            labelText: item.unit == null
-                ? item.label
-                : '${item.label} (${item.unit})',
+          decoration: _checklistDecoration(
+            item.unit == null ? item.label : '${item.label} (${item.unit})',
+            missing,
           ),
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           textInputAction: TextInputAction.next,
+          onChanged: onChanged,
         ),
         'texto' => TextField(
           key: Key('checklist_text_${item.code}'),
           controller: textController,
-          decoration: InputDecoration(labelText: item.label),
+          decoration: _checklistDecoration(item.label, missing),
           textInputAction: TextInputAction.next,
           maxLines: 1,
+          onChanged: onChanged,
         ),
         'foto' => OutlinedButton.icon(
           key: Key('checklist_photo_${item.code}'),
@@ -1554,37 +1630,99 @@ class _ChecklistField extends StatelessWidget {
           style: OutlinedButton.styleFrom(
             minimumSize: const Size.fromHeight(48),
             alignment: Alignment.centerLeft,
+            backgroundColor: missing ? Colors.white : null,
+            foregroundColor: missing ? airmovebrPrimary : null,
+            side: BorderSide(
+              color: missing ? airmovebrRequiredMissingBorder : airmovebrBorder,
+              width: missing ? 2 : 1,
+            ),
           ),
         ),
-        'finalizacao' => Row(
-          key: Key('checklist_final_${item.code}'),
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Icon(Icons.assignment_turned_in_outlined),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(item.label),
-                  const SizedBox(height: 2),
-                  const Text(
-                    'Sera preenchido na finalizacao da OS.',
-                    style: TextStyle(color: airmovebrMuted),
-                  ),
-                ],
+        'finalizacao' => Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            key: Key('checklist_final_${item.code}'),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.assignment_turned_in_outlined),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(item.label),
+                    const SizedBox(height: 2),
+                    const Text(
+                      'Sera preenchido na finalizacao da OS.',
+                      style: TextStyle(color: airmovebrMuted),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         _ => Text(item.label),
       },
     );
   }
 
+  InputDecoration _checklistDecoration(String label, bool missing) {
+    return InputDecoration(
+      labelText: label,
+      helperText: missing ? 'Falta preencher' : null,
+      helperStyle: const TextStyle(
+        color: airmovebrPrimary,
+        fontWeight: FontWeight.w800,
+      ),
+      fillColor: missing ? airmovebrRequiredMissingFill : null,
+      enabledBorder: missing
+          ? _fieldBorder(airmovebrRequiredMissingBorder, width: 2)
+          : null,
+      focusedBorder: missing ? _fieldBorder(airmovebrPrimary, width: 2) : null,
+      prefixIcon: missing
+          ? const Icon(Icons.info_outline, color: airmovebrPrimary)
+          : null,
+    );
+  }
+
   bool _showChecklistObservation(String? selected) {
     final normalized = selected?.toLowerCase().trim() ?? '';
     return normalized.contains('suja') || normalized == 'nao conforme';
+  }
+}
+
+class _ChecklistLabel extends StatelessWidget {
+  const _ChecklistLabel({required this.label, required this.missing});
+
+  final String label;
+  final bool missing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: airmovebrText,
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        if (missing) ...[
+          const SizedBox(height: 2),
+          const Text(
+            'Falta preencher',
+            style: TextStyle(
+              color: airmovebrPrimary,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ],
+    );
   }
 }
 
@@ -1614,12 +1752,20 @@ class _EquipmentItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final missingCount = equipment.missingRequiredFields().length;
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: airmovebrSurface,
-        borderRadius: BorderRadius.circular(8),
+        color: missingCount > 0
+            ? airmovebrRequiredMissingFill
+            : const Color(0xFFF8FBFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: missingCount > 0
+              ? airmovebrRequiredMissingBorder
+              : airmovebrBorder,
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1644,14 +1790,20 @@ class _EquipmentItem extends StatelessWidget {
                 ),
                 if (!equipment.isPending) ...[
                   const SizedBox(height: 4),
-                  Text(
-                    equipment.isWaitingSync
-                        ? 'Realizada - aguardando sync'
+                  _StatusPill(
+                    label: equipment.isWaitingSync
+                        ? 'Aguardando sync'
                         : 'Realizada',
-                    style: const TextStyle(
-                      color: airmovebrAccent,
-                      fontWeight: FontWeight.w800,
-                    ),
+                    color: equipment.isWaitingSync
+                        ? airmovebrWarning
+                        : airmovebrSuccess,
+                  ),
+                ] else if (missingCount > 0) ...[
+                  const SizedBox(height: 6),
+                  _StatusPill(
+                    label: '$missingCount dados faltando',
+                    color: airmovebrPrimary,
+                    backgroundColor: Colors.white,
                   ),
                 ],
               ],
@@ -1677,6 +1829,7 @@ class _SelectableEquipmentItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final missingCount = equipment.missingRequiredFields().length;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: OutlinedButton(
@@ -1684,11 +1837,22 @@ class _SelectableEquipmentItem extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           alignment: Alignment.centerLeft,
           padding: const EdgeInsets.all(12),
+          backgroundColor: missingCount > 0
+              ? airmovebrRequiredMissingFill
+              : selected
+              ? const Color(0xFFE9F8FC)
+              : Colors.white,
           side: BorderSide(
-            color: selected ? airmovebrPrimary : const Color(0xFFD8DEE8),
+            color: missingCount > 0
+                ? airmovebrRequiredMissingBorder
+                : selected
+                ? airmovebrPrimary
+                : const Color(0xFFD8DEE8),
             width: selected ? 2 : 1,
           ),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1723,6 +1887,16 @@ class _SelectableEquipmentItem extends StatelessWidget {
                     ].where((item) => item.isNotEmpty).join(' - '),
                     style: const TextStyle(color: airmovebrMuted),
                   ),
+                  const SizedBox(height: 6),
+                  _StatusPill(
+                    label: missingCount > 0
+                        ? '$missingCount dados faltando'
+                        : 'Pronta para checklist',
+                    color: missingCount > 0
+                        ? airmovebrPrimary
+                        : airmovebrSuccess,
+                    backgroundColor: Colors.white,
+                  ),
                 ],
               ),
             ),
@@ -1740,11 +1914,24 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final statusColor = switch (order.status) {
+      WorkOrderStatus.done || WorkOrderStatus.synced => airmovebrSuccess,
+      WorkOrderStatus.waitingSync => airmovebrWarning,
+      WorkOrderStatus.inProgress => airmovebrAccent,
+      WorkOrderStatus.pending => Colors.white70,
+    };
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: airmovebrPrimary,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x33073A55),
+            blurRadius: 20,
+            offset: Offset(0, 10),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1765,11 +1952,60 @@ class _Header extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            order.status.label,
-            style: const TextStyle(color: Colors.white70),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _StatusPill(
+                label: order.status.label,
+                color: statusColor,
+                backgroundColor: Colors.white,
+              ),
+              _StatusPill(
+                label: order.serviceLabel,
+                color: airmovebrPrimary,
+                backgroundColor: const Color(0xFFEAF4FF),
+              ),
+              _StatusPill(
+                label: order.equipmentCountLabel,
+                color: airmovebrPrimary,
+                backgroundColor: const Color(0xFFEAF4FF),
+              ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({
+    required this.label,
+    required this.color,
+    this.backgroundColor,
+  });
+
+  final String label;
+  final Color color;
+  final Color? backgroundColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: backgroundColor ?? color.withAlpha(31),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withAlpha(71)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w900,
+        ),
       ),
     );
   }

@@ -11,6 +11,7 @@ import 'package:airmovebr_mobile/src/repositories/work_order_repository.dart';
 import 'package:airmovebr_mobile/src/repositories/fleet_repository.dart';
 import 'package:airmovebr_mobile/src/screens/login_screen.dart';
 import 'package:airmovebr_mobile/src/screens/work_order_detail_screen.dart';
+import 'package:airmovebr_mobile/src/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -757,6 +758,63 @@ void main() {
       findsOneWidget,
     );
     expect(repository.savedChecklistResponses, isEmpty);
+  });
+
+  testWidgets('dados obrigatorios faltando ficam destacados em azul claro', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = _RepositorioDeTeste(
+      status: WorkOrderStatus.inProgress,
+      backendStatus: 'em_atendimento',
+      equipments: const [
+        WorkOrderEquipment(
+          id: 'EQ-INCOMPLETA',
+          name: 'Evaporadora quarto',
+          location: 'Quarto',
+          model: '',
+        ),
+      ],
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LoginScreen(
+          loginGateway: _GatewayDeTeste(repository: repository),
+          locationService: const _LocationServiceTeste(),
+          photoPicker: const _PhotoPickerTeste(),
+        ),
+      ),
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('loginUserField')),
+      'tecnico@airmovebr.local',
+    );
+    await tester.enterText(
+      find.byKey(const Key('loginPasswordField')),
+      '123456',
+    );
+    await tester.tap(find.byKey(const Key('loginSubmitButton')));
+    await tester.pumpAndSettle();
+    await _openMaintenance(tester);
+    await tester.tap(find.text('Cliente API'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('stepTab_machines')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('selectEquipment_EQ-INCOMPLETA')));
+    await tester.pumpAndSettle();
+    tester
+        .widget<FilledButton>(find.byKey(const Key('saveMachineButton')))
+        .onPressed
+        ?.call();
+    await tester.pumpAndSettle();
+
+    final missingField = tester.widget<TextField>(
+      find.byKey(const Key('machineField_modelo')),
+    );
+    expect(missingField.decoration?.fillColor, airmovebrRequiredMissingFill);
+    expect(find.text('Falta preencher'), findsWidgets);
   });
 
   testWidgets('campos simples do checklist usam avancar no teclado', (
