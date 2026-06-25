@@ -1976,14 +1976,17 @@ export class AdminRelatorioTecnicoCoreService {
       const texto = this.montarConteudoTextoRelatorioAvulso(pagina.linhas, Boolean(imageObjectIds.length));
       const comandosImagem = imageObjectIds
         .map((_, index) => {
-          const x = 42 + (index % 2) * 260;
-          const y = 75 + Math.floor(index / 2) * 125;
+          const tresImagens = imageObjectIds.length <= 3;
+          const width = tresImagens ? 160 : 220;
+          const height = tresImagens ? 100 : 110;
+          const x = tresImagens ? 42 + index * 176 : 42 + (index % 2) * 260;
+          const y = tresImagens ? 75 : 75 + Math.floor(index / 2) * 125;
           return [
             "q",
             "0.80 0.84 0.90 RG",
             "1 w",
-            `${x} ${y} 220 110 re S`,
-            `220 0 0 110 ${x} ${y} cm`,
+            `${x} ${y} ${width} ${height} re S`,
+            `${width} 0 0 ${height} ${x} ${y} cm`,
             `/Im${index + 1} Do`,
             "Q"
           ].join("\n");
@@ -2059,15 +2062,23 @@ export class AdminRelatorioTecnicoCoreService {
       }
 
       if (this.ehLinhaTabelaRelatorioAvulso(linha)) {
-        const linhasQuebradas = this.quebrarLinhaPdf(linha, 88);
-        const altura = Math.max(22, linhasQuebradas.length * 11 + 10);
+        const celulas = this.separarLinhaTabelaRelatorioAvulso(linha);
+        const labelQuebrado = this.quebrarLinhaPdf(celulas.label, 30);
+        const valorQuebrado = this.quebrarLinhaPdf(celulas.valor, 60);
+        const totalLinhas = Math.max(labelQuebrado.length, valorQuebrado.length);
+        const altura = Math.max(22, totalLinhas * 11 + 10);
         const cabecalho = /^Campo\s+Informacao$/i.test(linha.trim());
         const fill = cabecalho ? "0.94 0.95 0.96" : "1 1 1";
+        comandos.push(`% ${this.normalizarTextoPdf(linha)}`);
         comandos.push(`${fill} rg\n42 ${y - altura + 6} 528 ${altura} re f`);
         comandos.push("0.82 0.85 0.88 RG\n0.6 w");
         comandos.push(`42 ${y - altura + 6} 528 ${altura} re S`);
-        linhasQuebradas.forEach((parte, index) => {
+        comandos.push(`232 ${y - altura + 6} m 232 ${y + 6} l S`);
+        labelQuebrado.forEach((parte, index) => {
           comandos.push(this.comandoTextoPdf(parte, 54, y - 8 - index * 11, 8.5, cabecalho ? "F2" : "F1", "0.12 0.16 0.22"));
+        });
+        valorQuebrado.forEach((parte, index) => {
+          comandos.push(this.comandoTextoPdf(parte, 244, y - 8 - index * 11, 8.5, cabecalho ? "F2" : "F1", "0.12 0.16 0.22"));
         });
         y -= altura;
         continue;
@@ -2098,6 +2109,20 @@ export class AdminRelatorioTecnicoCoreService {
     return /\S\s{2,}\S/.test(linha) || /^[^:]{2,30}:\s+\S/.test(linha);
   }
 
+  private separarLinhaTabelaRelatorioAvulso(linha: string) {
+    const porEspacos = linha.match(/^(.{1,35}?)\s{2,}(.+)$/);
+    if (porEspacos) {
+      return { label: porEspacos[1].trim(), valor: porEspacos[2].trim() };
+    }
+
+    const porDoisPontos = linha.match(/^([^:]{2,30}):\s+(.+)$/);
+    if (porDoisPontos) {
+      return { label: porDoisPontos[1].trim(), valor: porDoisPontos[2].trim() };
+    }
+
+    return { label: linha, valor: "" };
+  }
+
   private obterLinhasEquipamentoRelatorioAvulso(maquina: PreviaRelatorioAvulsoCliente["maquinas"][number]) {
     return [
       this.formatarLinhaCampoPmoc("Identificador Interno", maquina.patrimonio || maquina.codigo_barras || "nao informado"),
@@ -2118,6 +2143,7 @@ export class AdminRelatorioTecnicoCoreService {
     }
 
     const imagens: Buffer[] = [];
+    const urls = new Set<string>();
 
     for (const evidencia of ordem.evidencias) {
       if (!evidencia.storage_url) {
@@ -2126,6 +2152,19 @@ export class AdminRelatorioTecnicoCoreService {
 
       const imagem = this.carregarArquivoStorage(evidencia.storage_url);
       if (imagem) {
+        urls.add(evidencia.storage_url);
+        imagens.push(imagem);
+      }
+    }
+
+    for (const resposta of ordem.checklist_respostas ?? []) {
+      if (!resposta.valor?.startsWith("/storage/") || urls.has(resposta.valor)) {
+        continue;
+      }
+
+      const imagem = this.carregarArquivoStorage(resposta.valor);
+      if (imagem) {
+        urls.add(resposta.valor);
         imagens.push(imagem);
       }
     }

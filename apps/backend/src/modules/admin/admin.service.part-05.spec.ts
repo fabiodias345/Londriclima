@@ -222,10 +222,30 @@ test("gerarPdfRelatorioAvulsoCliente usa respostas reais da corretiva sem checkl
 
 test("gerarPdfRelatorioAvulsoCliente imprime checklist preventivo do app com respostas humanas", async () => {
   const equipamento = criarEquipamentoPmocTeste("equipamento-1", "Sala", "AV-001", "SN-AV-1", "2026-06-11T12:00:00.000Z");
+  const fotoFiltroPath = resolve(process.cwd(), "..", "..", "storage", "os", "os-1", "checklist", "equipamento-1", "M4.jpg");
+  const fotoCondensadoraPath = resolve(process.cwd(), "..", "..", "storage", "os", "os-1", "checklist", "equipamento-1", "S3.jpg");
+  const fotoEvaporadoraPath = resolve(process.cwd(), "..", "..", "storage", "os", "os-1", "evidencias", "evaporadora.jpg");
+  mkdirSync(dirname(fotoFiltroPath), { recursive: true });
+  mkdirSync(dirname(fotoEvaporadoraPath), { recursive: true });
+  writeFileSync(fotoFiltroPath, Buffer.from([0xff, 0xd8, 0xff, 0xd9, 0x00]));
+  writeFileSync(fotoCondensadoraPath, Buffer.from([0xff, 0xd8, 0xff, 0xd9, 0x01]));
+  writeFileSync(fotoEvaporadoraPath, Buffer.from([0xff, 0xd8, 0xff, 0xd9, 0x02]));
+  equipamento.ordensServico[0].evidencias = [
+    {
+      id: "ev-evaporadora",
+      tipo: "depois",
+      descricao: "Foto da evaporadora limpa",
+      storageUrl: "/storage/os/os-1/evidencias/evaporadora.jpg",
+      mimeType: "image/jpeg",
+      tamanhoBytes: 1000,
+      criadoEm: new Date("2026-06-11T12:00:00.000Z")
+    }
+  ];
   equipamento.ordensServico[0].checklistRespostas = [
     { codigo: "M1", tipo: "checkbox", valor: "Sim", observacao: null },
     { codigo: "M2", tipo: "checkbox", valor: "Nao", observacao: "controle sem pilha" },
     { codigo: "M4", tipo: "foto", valor: "/storage/os/os-1/checklist/equipamento-1/M4.jpg", observacao: null },
+    { codigo: "S3", tipo: "foto", valor: "/storage/os/os-1/checklist/equipamento-1/S3.jpg", observacao: null },
     { codigo: "S6", tipo: "numerico", valor: "7.5", observacao: "pressao ok" }
   ] as typeof equipamento.ordensServico[number]["checklistRespostas"];
   const prisma = {
@@ -246,13 +266,18 @@ test("gerarPdfRelatorioAvulsoCliente imprime checklist preventivo do app com res
   };
   const service = criarService(prisma);
 
-  const resposta = await service.gerarPdfRelatorioAvulsoCliente("cliente-1", usuario);
-  const pdf = resposta.buffer.toString("latin1");
+  try {
+    const resposta = await service.gerarPdfRelatorioAvulsoCliente("cliente-1", usuario);
+    const pdf = resposta.buffer.toString("latin1");
 
-  assert.match(pdf, /EPIs utilizados\s+Sim/);
-  assert.match(pdf, /Desligar pelo controle remoto\s+Nao \\?\(controle sem pilha\\?\)/);
-  assert.match(pdf, /Pressao do fluido refrigerante\s+7\.5 \\?\(pressao ok\\?\)/);
-  assert.doesNotMatch(pdf, /M4\.jpg/);
+    assert.match(pdf, /EPIs utilizados\s+Sim/);
+    assert.match(pdf, /Desligar pelo controle remoto\s+Nao \\?\(controle sem pilha\\?\)/);
+    assert.match(pdf, /Pressao do fluido refrigerante\s+7\.5 \\?\(pressao ok\\?\)/);
+    assert.equal((pdf.match(/\/Subtype \/Image/g) ?? []).length, 3);
+    assert.doesNotMatch(pdf, /M4\.jpg|S3\.jpg/);
+  } finally {
+    rmSync(resolve(process.cwd(), "..", "..", "storage", "os", "os-1"), { recursive: true, force: true });
+  }
 });
 
 test("gerarPdfRelatorioAvulsoCliente nao imprime foto pendente quando evidencia nao tem arquivo", async () => {

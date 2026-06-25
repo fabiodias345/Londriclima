@@ -1849,7 +1849,7 @@ class _ChecklistField extends StatelessWidget {
             _ChecklistLabel(label: item.label, missing: missing),
             const SizedBox(height: 10),
             Row(
-              children: ['Sim', 'Nao', 'N/A'].map((option) {
+              children: ['Sim', 'Nao'].map((option) {
                 final selected = value == option;
                 return Expanded(
                   child: Padding(

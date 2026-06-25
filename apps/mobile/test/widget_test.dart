@@ -326,6 +326,7 @@ void main() {
     expect(find.text('Medicoes', skipOffstage: false), findsOneWidget);
     expect(find.text('Desligar pelo controle remoto'), findsOneWidget);
     expect(find.byKey(const Key('checklist_choice_M1_Sim')), findsOneWidget);
+    expect(find.byKey(const Key('checklist_choice_M1_N/A')), findsNothing);
     expect(find.text('Condicao dos filtros'), findsOneWidget);
     expect(find.byKey(const Key('checklist_select_M6')), findsOneWidget);
 
