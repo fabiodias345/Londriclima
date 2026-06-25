@@ -1908,21 +1908,16 @@ export class AdminRelatorioTecnicoCoreService {
   ) {
     const ordens = maquina.os_concluidas.length ? maquina.os_concluidas : [null];
 
-    return ordens.map((ordem, ordemIndice) => {
+    return ordens.flatMap((ordem, ordemIndice) => {
       const inicio = ordem?.agendada_para ?? ordem?.concluida_em ?? null;
       const fim = ordem?.concluida_em ?? null;
       const servicoRealizado = this.obterLinhasServicoRelatorioAvulso(ordem);
-
-      const linhas = [
+      const cabecalho = [
         `MAQUINA N:${String(indice + 1).padStart(3, "0")}`,
         `MANUTENCAO N:${String(ordemIndice + 1).padStart(3, "0")} DE ${String(ordens.length).padStart(3, "0")}`,
-        "",
-        "DADOS DO EQUIPAMENTO",
-        this.formatarLinhaCampoPmoc("Campo", "Informacao"),
-        ...this.obterLinhasEquipamentoRelatorioAvulso(maquina),
-        "",
-        "SERVICO EXECUTADO",
-        this.formatarLinhaCampoPmoc("Campo", "Informacao"),
+        ""
+      ];
+      const linhasServico = [
         `OS: ${ordem?.titulo || "nao informada"}`,
         this.formatarLinhaCampoPmoc(
           "Data e Horario",
@@ -1930,25 +1925,53 @@ export class AdminRelatorioTecnicoCoreService {
         ),
         this.formatarLinhaCampoPmoc("Tecnico", ordem?.tecnico?.nome || ordem?.equipe?.nome || "nao informado"),
         this.formatarLinhaCampoPmoc("Problema relatado", ordem?.problema_relatado || "nao informado"),
-        ...servicoRealizado.map(([label, valor]) => this.formatarLinhaCampoPmoc(label, valor)),
-        "",
-        "EVIDENCIAS E VALIDACAO",
-        this.formatarLinhaCampoPmoc("Campo", "Informacao"),
-        this.formatarLinhaCampoPmoc("Fotos", this.formatarEvidenciasPmoc(ordem)),
-        this.formatarLinhaCampoPmoc("Coordenadas GPS", this.formatarGpsPmoc(ordem)),
-        this.formatarLinhaCampoPmoc("Assinatura do Cliente", ordem?.assinatura?.nome_responsavel || "pendente"),
-        "",
-        "OBSERVACOES",
-        ...(ordem?.observacoes.length ? ordem.observacoes.map((observacao) => observacao.texto) : ["Sem observacoes visiveis."]),
-        "",
-        "DECLARACAO DE CONCLUSAO",
-        "Declaro para os devidos fins que o servico descrito neste relatorio foi executado integralmente, sem pendencias registradas na emissao."
+        ...servicoRealizado.map(([label, valor]) => this.formatarLinhaCampoPmoc(label, valor))
       ];
+      const primeiroBlocoServico = linhasServico.slice(0, 14);
+      const demaisBlocosServico = this.dividirLinhasRelatorioAvulso(linhasServico.slice(14), 18);
+      const paginas: PaginaPdfTexto[] = [{
+        linhas: [
+          ...cabecalho,
+          "DADOS DO EQUIPAMENTO",
+          this.formatarLinhaCampoPmoc("Campo", "Informacao"),
+          ...this.obterLinhasEquipamentoRelatorioAvulso(maquina),
+          "",
+          "SERVICO EXECUTADO",
+          this.formatarLinhaCampoPmoc("Campo", "Informacao"),
+          ...primeiroBlocoServico
+        ]
+      }];
 
-      return {
-        linhas,
+      demaisBlocosServico.forEach((bloco) => {
+        paginas.push({
+          linhas: [
+            ...cabecalho,
+            "SERVICO EXECUTADO - CONTINUACAO",
+            this.formatarLinhaCampoPmoc("Campo", "Informacao"),
+            ...bloco
+          ]
+        });
+      });
+
+      paginas.push({
+        linhas: [
+          ...cabecalho,
+          "EVIDENCIAS E VALIDACAO",
+          this.formatarLinhaCampoPmoc("Campo", "Informacao"),
+          this.formatarLinhaCampoPmoc("Fotos", this.formatarEvidenciasPmoc(ordem)),
+          this.formatarLinhaCampoPmoc("Coordenadas GPS", this.formatarGpsPmoc(ordem)),
+          this.formatarLinhaCampoPmoc("Assinatura do Cliente", ordem?.assinatura?.nome_responsavel || "pendente"),
+          "",
+          "OBSERVACOES",
+          ...(ordem?.observacoes.length ? ordem.observacoes.map((observacao) => observacao.texto) : ["Sem observacoes visiveis."]),
+          "",
+          "DECLARACAO DE CONCLUSAO",
+          "Declaro para os devidos fins que o servico descrito neste relatorio foi executado integralmente, sem pendencias registradas na emissao."
+        ],
         imagens: this.carregarImagensRelatorioAvulso(ordem)
-      };
+      });
+
+      return paginas;
     });
   }
 
@@ -1965,7 +1988,7 @@ export class AdminRelatorioTecnicoCoreService {
     for (const pagina of paginas) {
       const imageObjectIds: number[] = [];
 
-      for (const imagem of (pagina.imagens ?? []).slice(0, 4)) {
+      for (const imagem of (pagina.imagens ?? []).slice(0, 3)) {
         const imageObjectId = objetos.length + 1;
         imageObjectIds.push(imageObjectId);
         objetos.push(this.criarObjetoImagemPdf(imagem));
@@ -2022,6 +2045,16 @@ export class AdminRelatorioTecnicoCoreService {
     pdf += `trailer\n<< /Size ${objetos.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
 
     return Buffer.from(pdf, "latin1");
+  }
+
+  private dividirLinhasRelatorioAvulso(linhas: string[], tamanho: number) {
+    const blocos: string[][] = [];
+
+    for (let index = 0; index < linhas.length; index += tamanho) {
+      blocos.push(linhas.slice(index, index + tamanho));
+    }
+
+    return blocos;
   }
 
   private montarConteudoTextoRelatorioAvulso(linhas: string[], reservarEspacoImagens: boolean) {

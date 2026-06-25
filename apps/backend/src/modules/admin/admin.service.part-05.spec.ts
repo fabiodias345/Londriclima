@@ -234,6 +234,7 @@ test("gerarPdfRelatorioAvulsoCliente imprime checklist preventivo do app com res
     { codigo: "M1", tipo: "checkbox", valor: "Sim", observacao: null },
     { codigo: "M2", tipo: "checkbox", valor: "Nao", observacao: "controle sem pilha" },
     { codigo: "M4", tipo: "foto", valor: "/storage/os/os-1/checklist/equipamento-1/M4.jpg", observacao: null },
+    { codigo: "M5", tipo: "checkbox", valor: "Sim", observacao: null },
     { codigo: "M18", tipo: "foto", valor: "/storage/os/os-1/checklist/equipamento-1/M18.jpg", observacao: null },
     { codigo: "S3", tipo: "foto", valor: "/storage/os/os-1/checklist/equipamento-1/S3.jpg", observacao: null },
     { codigo: "S6", tipo: "numerico", valor: "7.5", observacao: "pressao ok" }
@@ -262,6 +263,7 @@ test("gerarPdfRelatorioAvulsoCliente imprime checklist preventivo do app com res
 
     assert.match(pdf, /EPIs utilizados\s+Sim/);
     assert.match(pdf, /Desligar pelo controle remoto\s+Nao \\?\(controle sem pilha\\?\)/);
+    assert.match(pdf, /Lavar filtros\s+Sim/);
     assert.match(pdf, /Pressao do fluido refrigerante\s+7\.5 \\?\(pressao ok\\?\)/);
     assert.equal((pdf.match(/\/Subtype \/Image/g) ?? []).length, 3);
     assert.doesNotMatch(pdf, /M4\.jpg|S3\.jpg/);

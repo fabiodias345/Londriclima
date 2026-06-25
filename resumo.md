@@ -6,20 +6,19 @@ Este arquivo deve registrar somente o que falta fazer ou validar. Historico impl
 
 ## Proximo foco
 
-1. Reparar primeiro o PDF avulso/corretivo:
-   - corrigir dados reais;
-   - separar totalmente PMOC, engenheiro e checklist preventivo;
-   - validar PDF real baixado.
-2. Depois retomar validacao do APK com os tecnicos em uso real de campo.
+1. Validar no APK o novo checklist preventivo em uso real de campo.
+2. Baixar e conferir PDF avulso real gerado com respostas e fotos do app.
 3. Alinhar o backend do checklist com `checklist.md` sempre que a especificacao mudar.
 
 ## App tecnico - pendencias futuras
 
-- Revisar a regra final de fotos por periodicidade:
-  - mensal;
-  - trimestral;
-  - semestral com foto da condensadora limpa;
-  - anual com foto da condensadora limpa.
+- Checklist preventivo ajustado no backend:
+  - sem opcao N/A;
+  - mensal com foto inicial;
+  - trimestral com foto inicial e foto da evaporadora limpa depois de ruido/fluxo de ar;
+  - semestral/anual com foto inicial, foto da evaporadora limpa e foto da condensadora limpa;
+  - foto da condensadora limpa abaixo de religado e verificado;
+  - ligar disjuntor fica no final dos checklists acumulados, acima de religado e verificado quando existir.
 - Melhorar a finalizacao da O.S.:
   - resumo antes da assinatura;
   - area de assinatura maior;
@@ -42,11 +41,12 @@ Este arquivo deve registrar somente o que falta fazer ou validar. Historico impl
 
 ## Relatorios futuros
 
-- Marco para reparar PDF:
-  - primeiro corrigir dados reais do avulso/corretivo;
-  - separar totalmente PMOC, engenheiro e checklist preventivo;
-  - depois refazer layout visual.
-- Refazer o PDF avulso/corretivo com layout visual profissional usando dados reais:
+- PDF avulso/corretivo ja deve usar respostas reais do app e fotos do checklist preventivo.
+- Conferir no PDF real a ordem atual:
+  - foto da evaporadora limpa depois de ruido/fluxo de ar;
+  - foto da condensadora limpa depois de religado e verificado;
+  - ligar disjuntor acima de religado e verificado em semestral/anual.
+- Continuar refinando layout visual profissional usando dados reais:
   - cliente;
   - endereco;
   - O.S.;
