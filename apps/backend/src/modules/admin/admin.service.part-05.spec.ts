@@ -7,6 +7,8 @@ Prisma,
 UsuarioRole
 } from "@prisma/client";
 import * as assert from "node:assert/strict";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 import { test } from "node:test";
 import { AdminService } from "./admin.service";
 
@@ -259,6 +261,83 @@ test("enviarRelatorioAvulsoCliente agenda email direto ao cliente com copia inte
   assert.match(String(payload.pdf_filename), /^relatorio-tecnico-cliente-avulso\.pdf$/);
   assert.match(String(payload.pdf_base64), /^[A-Za-z0-9+/]+=*$/);
   assert.deepEqual(payload.os_ids, ["os-equipamento-1"]);
+});
+
+test("gerarPdfRelatorioAvulsoCliente separa duas manutencoes da mesma maquina", async () => {
+  const fotoAntesPath = resolve(process.cwd(), "..", "..", "storage", "os", "os-equipamento-1-corretiva", "evidencias", "antes.jpg");
+  const fotoDepoisPath = resolve(process.cwd(), "..", "..", "storage", "os", "os-equipamento-1-corretiva", "evidencias", "depois.jpg");
+  mkdirSync(dirname(fotoAntesPath), { recursive: true });
+  writeFileSync(fotoAntesPath, Buffer.from([0xff, 0xd8, 0xff, 0xd9, 0x00]));
+  writeFileSync(fotoDepoisPath, Buffer.from([0xff, 0xd8, 0xff, 0xd9, 0x00]));
+  const equipamento = criarEquipamentoPmocTeste("equipamento-1", "Sala", "AV-001", "SN-AV-1", "2026-06-11T12:00:00.000Z");
+  equipamento.ordensServico.unshift({
+    ...equipamento.ordensServico[0],
+    id: "os-equipamento-1-corretiva",
+    titulo: "Corretiva compressor",
+    problemaRelatado: "Compressor queimado",
+    agendadaPara: new Date("2026-06-12T09:00:00.000Z"),
+    concluidaEm: new Date("2026-06-12T10:30:00.000Z"),
+    evidencias: [
+      {
+        id: "ev-antes-corretiva",
+        tipo: "antes",
+        descricao: "Foto do compressor antes da troca",
+        storageUrl: "/storage/os/os-equipamento-1-corretiva/evidencias/antes.jpg",
+        mimeType: "image/jpeg",
+        tamanhoBytes: 1000,
+        criadoEm: new Date("2026-06-12T09:00:00.000Z")
+      },
+      {
+        id: "ev-depois-corretiva",
+        tipo: "depois",
+        descricao: "Foto do compressor depois da troca",
+        storageUrl: "/storage/os/os-equipamento-1-corretiva/evidencias/depois.jpg",
+        mimeType: "image/jpeg",
+        tamanhoBytes: 1000,
+        criadoEm: new Date("2026-06-12T10:30:00.000Z")
+      }
+    ],
+    checklistRespostas: [
+      { codigo: "C1", tipo: "texto", valor: "queimou o compressor", observacao: null },
+      { codigo: "C2", tipo: "texto", valor: "trocado o mesmo", observacao: null },
+      { codigo: "C4", tipo: "texto", valor: "compressor", observacao: null }
+    ]
+  });
+  const prisma = {
+    cliente: {
+      findFirst: async () => ({
+        id: "cliente-1",
+        nome: "Cliente Avulso",
+        tipo: "pf",
+        documento: "12345678900",
+        telefone: "43988887777",
+        email: "cliente@example.com",
+        pmocAtivo: false,
+        atualizadoEm: new Date("2026-06-12T10:00:00.000Z"),
+        enderecos: [{ cidade: "Londrina", uf: "PR", bairro: "Centro" }],
+        equipamentos: [equipamento]
+      })
+    }
+  };
+  const service = criarService(prisma);
+
+  try {
+    const pdf = await service.gerarPdfRelatorioAvulsoCliente("cliente-1", usuario);
+    const textoPdf = pdf.buffer.toString("latin1");
+
+    assert.match(textoPdf, /MANUTENCAO N:001 DE 002/);
+    assert.match(textoPdf, /MANUTENCAO N:002 DE 002/);
+    assert.match(textoPdf, /OS: Corretiva compressor/);
+    assert.match(textoPdf, /Problema encontrado\s+queimou o compressor/);
+    assert.match(textoPdf, /Acao realizada\s+trocado o mesmo/);
+    assert.match(textoPdf, /Pecas utilizadas\s+compressor/);
+    assert.match(textoPdf, /OS: PMOC mensal/);
+    assert.match(textoPdf, /Antes --- antes\.jpg/);
+    assert.match(textoPdf, /Depois --- depois\.jpg/);
+    assert.match(textoPdf, /\/Subtype \/Image/);
+  } finally {
+    rmSync(resolve(process.cwd(), "..", "..", "storage", "os", "os-equipamento-1-corretiva"), { recursive: true, force: true });
+  }
 });
 
 function criarEquipamentoPmocTeste(id: string, localInstalacao: string, patrimonio: string, numeroSerie: string, inicioIso: string) {

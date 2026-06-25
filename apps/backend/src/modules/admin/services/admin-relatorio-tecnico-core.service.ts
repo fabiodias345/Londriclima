@@ -11,6 +11,9 @@ import {
 } from "@prisma/client";
 import { ConfigService } from "@nestjs/config";
 import { createHash, randomBytes } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { basename, join, resolve } from "node:path";
+import { deflateSync, inflateSync } from "node:zlib";
 import { PrismaService } from "../../../database/prisma.service";
 import { AuthenticatedUser } from "../../auth/auth-user";
 import { AprovarPreChamadoDto } from "../dto/aprovar-pre-chamado.dto";
@@ -36,6 +39,7 @@ import { AdminPmocPdfRendererService } from "./admin-pmoc-pdf-renderer.service";
 
 type PreviaPmocCliente = Awaited<ReturnType<AdminRelatorioTecnicoCoreService["obterPreviaPmocCliente"]>>;
 type PreviaRelatorioAvulsoCliente = Awaited<ReturnType<AdminRelatorioTecnicoCoreService["obterPreviaRelatorioAvulsoCliente"]>>;
+type PaginaPdfTexto = { linhas: string[]; imagens?: Buffer[] };
 
 @Injectable()
 export class AdminRelatorioTecnicoCoreService {
@@ -1678,7 +1682,7 @@ export class AdminRelatorioTecnicoCoreService {
   }
 
   private gerarPdfBasicoRelatorioAvulso(previa: PreviaRelatorioAvulsoCliente) {
-    const paginas: string[][] = [this.montarCapaRelatorioAvulso(previa)];
+    const paginas: Array<string[] | PaginaPdfTexto> = [this.montarCapaRelatorioAvulso(previa)];
 
     if (!previa.maquinas.length) {
       paginas.push([
@@ -1690,7 +1694,7 @@ export class AdminRelatorioTecnicoCoreService {
     }
 
     for (const [indice, maquina] of previa.maquinas.entries()) {
-      paginas.push(this.montarPaginaMaquinaRelatorioAvulso(maquina, indice));
+      paginas.push(...this.montarPaginasMaquinaRelatorioAvulso(maquina, indice));
     }
 
     return this.criarPdfTexto(paginas);
@@ -1725,58 +1729,85 @@ export class AdminRelatorioTecnicoCoreService {
     ];
   }
 
-  private montarPaginaMaquinaRelatorioAvulso(
+  private montarPaginasMaquinaRelatorioAvulso(
     maquina: PreviaRelatorioAvulsoCliente["maquinas"][number],
     indice: number
   ) {
-    const primeiraOs = maquina.os_concluidas[0] ?? null;
-    const inicio = primeiraOs?.agendada_para ?? primeiraOs?.concluida_em ?? null;
-    const fim = primeiraOs?.concluida_em ?? null;
-    const servicoRealizado = this.obterLinhasServicoRelatorioAvulso(primeiraOs);
+    const ordens = maquina.os_concluidas.length ? maquina.os_concluidas : [null];
 
-    return [
-      `MAQUINA N:${String(indice + 1).padStart(3, "0")}`,
-      "",
-      "DADOS DO EQUIPAMENTO",
-      this.formatarLinhaMaquinaPmoc(maquina),
-      "",
-      "SERVICO EXECUTADO",
-      `OS: ${primeiraOs?.titulo || "nao informada"}`,
-      `Data: ${this.formatarDataPmoc(primeiraOs?.concluida_em ?? null)} - ${this.formatarHoraPmoc(inicio)} -> ${this.formatarHoraPmoc(fim)} (${this.calcularDuracaoPmoc(inicio, fim)})`,
-      `Tecnico: ${primeiraOs?.tecnico?.nome || primeiraOs?.equipe?.nome || "nao informado"}`,
-      `Problema relatado: ${primeiraOs?.problema_relatado || "nao informado"}`,
-      "",
-      "SERVICO REALIZADO",
-      this.formatarLinhaCampoPmoc("Campo", "Informacao"),
-      ...servicoRealizado.map(([label, valor]) => this.formatarLinhaCampoPmoc(label, valor)),
-      "",
-      `Evidencias: ${this.formatarEvidenciasPmoc(primeiraOs)}`,
-      `GPS: ${this.formatarGpsPmoc(primeiraOs)}`,
-      `Assinatura do Cliente: ${primeiraOs?.assinatura?.nome_responsavel || "pendente"}`,
-      "",
-      "OBSERVACOES",
-      ...(primeiraOs?.observacoes.length ? primeiraOs.observacoes.map((observacao) => observacao.texto) : ["Sem observacoes visiveis."])
-    ];
+    return ordens.map((ordem, ordemIndice) => {
+      const inicio = ordem?.agendada_para ?? ordem?.concluida_em ?? null;
+      const fim = ordem?.concluida_em ?? null;
+      const servicoRealizado = this.obterLinhasServicoRelatorioAvulso(ordem);
+
+      const linhas = [
+        `MAQUINA N:${String(indice + 1).padStart(3, "0")}`,
+        `MANUTENCAO N:${String(ordemIndice + 1).padStart(3, "0")} DE ${String(ordens.length).padStart(3, "0")}`,
+        "",
+        "DADOS DO EQUIPAMENTO",
+        this.formatarLinhaMaquinaPmoc(maquina),
+        "",
+        "SERVICO EXECUTADO",
+        `OS: ${ordem?.titulo || "nao informada"}`,
+        `Data: ${this.formatarDataPmoc(ordem?.concluida_em ?? null)} - ${this.formatarHoraPmoc(inicio)} -> ${this.formatarHoraPmoc(fim)} (${this.calcularDuracaoPmoc(inicio, fim)})`,
+        `Tecnico: ${ordem?.tecnico?.nome || ordem?.equipe?.nome || "nao informado"}`,
+        `Problema relatado: ${ordem?.problema_relatado || "nao informado"}`,
+        "",
+        "SERVICO REALIZADO",
+        this.formatarLinhaCampoPmoc("Campo", "Informacao"),
+        ...servicoRealizado.map(([label, valor]) => this.formatarLinhaCampoPmoc(label, valor)),
+        "",
+        `Evidencias: ${this.formatarEvidenciasPmoc(ordem)}`,
+        `GPS: ${this.formatarGpsPmoc(ordem)}`,
+        `Assinatura do Cliente: ${ordem?.assinatura?.nome_responsavel || "pendente"}`,
+        "",
+        "OBSERVACOES",
+        ...(ordem?.observacoes.length ? ordem.observacoes.map((observacao) => observacao.texto) : ["Sem observacoes visiveis."])
+      ];
+
+      return {
+        linhas,
+        imagens: this.carregarImagensRelatorioAvulso(ordem)
+      };
+    });
   }
 
-  private criarPdfTexto(paginas: string[][]) {
+  private criarPdfTexto(paginasEntrada: Array<string[] | PaginaPdfTexto>) {
+    const paginas = paginasEntrada.map((pagina) => Array.isArray(pagina) ? { linhas: pagina, imagens: [] } : pagina);
     const objetos = ["<< /Type /Catalog /Pages 2 0 R >>", "", "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"];
     const pageObjectIds: number[] = [];
-    const contentObjectIds: number[] = [];
 
-    for (const linhas of paginas) {
-      const texto = linhas
+    for (const pagina of paginas) {
+      const imageObjectIds: number[] = [];
+
+      for (const imagem of (pagina.imagens ?? []).slice(0, 4)) {
+        const imageObjectId = objetos.length + 1;
+        imageObjectIds.push(imageObjectId);
+        objetos.push(this.criarObjetoImagemPdf(imagem));
+      }
+
+      const xObjects = imageObjectIds.map((id, index) => `/Im${index + 1} ${id} 0 R`).join(" ");
+      const recursosImagem = xObjects ? `/XObject << ${xObjects} >>` : "";
+      const texto = pagina.linhas
         .flatMap((linha) => this.quebrarLinhaPdf(linha, 96))
-        .slice(0, 46)
+        .slice(0, imageObjectIds.length ? 34 : 46)
         .map((linha) => `(${this.escaparTextoPdf(linha)}) Tj T*`)
         .join("\n");
-      const conteudo = `BT\n/F1 10 Tf\n42 790 Td\n13 TL\n${texto}\nET`;
+      const comandosImagem = imageObjectIds
+        .map((_, index) => {
+          const x = 42 + (index % 2) * 260;
+          const y = 75 + Math.floor(index / 2) * 125;
+          return `q\n220 0 0 110 ${x} ${y} cm\n/Im${index + 1} Do\nQ`;
+        })
+        .join("\n");
+      const conteudo = [`BT\n/F1 10 Tf\n42 790 Td\n13 TL\n${texto}\nET`, comandosImagem]
+        .filter(Boolean)
+        .join("\n");
       const pageObjectId = objetos.length + 1;
       const contentObjectId = objetos.length + 2;
       pageObjectIds.push(pageObjectId);
-      contentObjectIds.push(contentObjectId);
       objetos.push(
-        `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${contentObjectId} 0 R >>`,
+        `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> ${recursosImagem} >> /Contents ${contentObjectId} 0 R >>`,
         `<< /Length ${Buffer.byteLength(conteudo, "latin1")} >>\nstream\n${conteudo}\nendstream`
       );
     }
@@ -1799,6 +1830,209 @@ export class AdminRelatorioTecnicoCoreService {
     pdf += `trailer\n<< /Size ${objetos.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
 
     return Buffer.from(pdf, "latin1");
+  }
+
+  private carregarImagensRelatorioAvulso(
+    ordem: PreviaRelatorioAvulsoCliente["maquinas"][number]["os_concluidas"][number] | null
+  ) {
+    if (!ordem) {
+      return [];
+    }
+
+    const imagens: Buffer[] = [];
+
+    for (const evidencia of ordem.evidencias) {
+      const imagem = this.carregarArquivoStorage(evidencia.storage_url);
+      if (imagem) {
+        imagens.push(imagem);
+      }
+    }
+
+    return imagens;
+  }
+
+  private carregarArquivoStorage(storageUrl: string) {
+    if (!storageUrl.startsWith("/storage/")) {
+      return null;
+    }
+
+    const partes = storageUrl.replace(/^\/storage\//, "").split("/").filter(Boolean);
+    const caminho = resolve(this.resolveStorageRoot(), join(...partes));
+
+    try {
+      return readFileSync(caminho);
+    } catch {
+      return null;
+    }
+  }
+
+  private resolveStorageRoot() {
+    const cwd = process.cwd();
+
+    if (basename(cwd) === "backend") {
+      return resolve(cwd, "..", "..", "storage");
+    }
+
+    return resolve(cwd, "storage");
+  }
+
+  private criarObjetoImagemPdf(buffer: Buffer) {
+    const imagem = this.normalizarImagemPdf(buffer);
+
+    return `<< /Type /XObject /Subtype /Image /Width ${imagem.width} /Height ${imagem.height} /ColorSpace /DeviceRGB /BitsPerComponent 8${imagem.filtro} /Length ${imagem.dados.length} >>\nstream\n${imagem.dados.toString("latin1")}\nendstream`;
+  }
+
+  private normalizarImagemPdf(buffer: Buffer) {
+    if (this.ehJpeg(buffer)) {
+      return {
+        dados: buffer,
+        ...this.obterDimensoesJpeg(buffer),
+        filtro: " /Filter /DCTDecode"
+      };
+    }
+
+    if (this.ehPng(buffer)) {
+      const png = this.converterPngParaRgb(buffer);
+      if (png) {
+        return {
+          dados: deflateSync(png.rgb),
+          width: png.width,
+          height: png.height,
+          filtro: " /Filter /FlateDecode"
+        };
+      }
+    }
+
+    return {
+      dados: Buffer.from([255, 255, 255]),
+      width: 1,
+      height: 1,
+      filtro: ""
+    };
+  }
+
+  private ehJpeg(buffer: Buffer) {
+    return buffer.length > 4 && buffer[0] === 0xff && buffer[1] === 0xd8;
+  }
+
+  private ehPng(buffer: Buffer) {
+    return buffer.length > 24 && buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  }
+
+  private converterPngParaRgb(buffer: Buffer) {
+    let offset = 8;
+    let width = 0;
+    let height = 0;
+    let bitDepth = 0;
+    let colorType = 0;
+    const idat: Buffer[] = [];
+
+    while (offset < buffer.length - 8) {
+      const length = buffer.readUInt32BE(offset);
+      const type = buffer.subarray(offset + 4, offset + 8).toString("ascii");
+      const data = buffer.subarray(offset + 8, offset + 8 + length);
+
+      if (type === "IHDR") {
+        width = data.readUInt32BE(0);
+        height = data.readUInt32BE(4);
+        bitDepth = data[8];
+        colorType = data[9];
+      }
+
+      if (type === "IDAT") {
+        idat.push(data);
+      }
+
+      if (type === "IEND") {
+        break;
+      }
+
+      offset += length + 12;
+    }
+
+    const channels = colorType === 6 ? 4 : colorType === 2 ? 3 : 0;
+    if (!width || !height || bitDepth !== 8 || !channels || !idat.length) {
+      return null;
+    }
+
+    const raw = inflateSync(Buffer.concat(idat));
+    const stride = width * channels;
+    const linhas: Buffer[] = [];
+    let rawOffset = 0;
+    let anterior = Buffer.alloc(stride);
+
+    for (let y = 0; y < height; y += 1) {
+      const filtro = raw[rawOffset];
+      rawOffset += 1;
+      const atual = Buffer.from(raw.subarray(rawOffset, rawOffset + stride));
+      rawOffset += stride;
+      this.aplicarFiltroPng(atual, anterior, filtro, channels);
+      linhas.push(atual);
+      anterior = atual;
+    }
+
+    const rgb = Buffer.alloc(width * height * 3);
+    let destino = 0;
+
+    for (const linha of linhas) {
+      for (let index = 0; index < linha.length; index += channels) {
+        rgb[destino++] = linha[index];
+        rgb[destino++] = linha[index + 1];
+        rgb[destino++] = linha[index + 2];
+      }
+    }
+
+    return { width, height, rgb };
+  }
+
+  private aplicarFiltroPng(linha: Buffer, anterior: Buffer, filtro: number, bytesPorPixel: number) {
+    for (let index = 0; index < linha.length; index += 1) {
+      const esquerda = index >= bytesPorPixel ? linha[index - bytesPorPixel] : 0;
+      const acima = anterior[index] ?? 0;
+      const acimaEsquerda = index >= bytesPorPixel ? anterior[index - bytesPorPixel] : 0;
+      let ajuste = 0;
+
+      if (filtro === 1) ajuste = esquerda;
+      if (filtro === 2) ajuste = acima;
+      if (filtro === 3) ajuste = Math.floor((esquerda + acima) / 2);
+      if (filtro === 4) ajuste = this.paethPng(esquerda, acima, acimaEsquerda);
+
+      linha[index] = (linha[index] + ajuste) & 0xff;
+    }
+  }
+
+  private paethPng(esquerda: number, acima: number, acimaEsquerda: number) {
+    const estimativa = esquerda + acima - acimaEsquerda;
+    const distanciaEsquerda = Math.abs(estimativa - esquerda);
+    const distanciaAcima = Math.abs(estimativa - acima);
+    const distanciaAcimaEsquerda = Math.abs(estimativa - acimaEsquerda);
+
+    if (distanciaEsquerda <= distanciaAcima && distanciaEsquerda <= distanciaAcimaEsquerda) return esquerda;
+    if (distanciaAcima <= distanciaAcimaEsquerda) return acima;
+    return acimaEsquerda;
+  }
+
+  private obterDimensoesJpeg(buffer: Buffer) {
+    for (let offset = 2; offset < buffer.length - 9; ) {
+      if (buffer[offset] !== 0xff) {
+        offset += 1;
+        continue;
+      }
+
+      const marker = buffer[offset + 1];
+      const length = buffer.readUInt16BE(offset + 2);
+
+      if (marker >= 0xc0 && marker <= 0xc3) {
+        return {
+          height: buffer.readUInt16BE(offset + 5),
+          width: buffer.readUInt16BE(offset + 7)
+        };
+      }
+
+      offset += 2 + length;
+    }
+
+    return { width: 1, height: 1 };
   }
 
   private obterLinhasServicoRelatorioAvulso(
