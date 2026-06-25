@@ -123,20 +123,20 @@ test("listarOrdens retorna checklist flat definido pelo backend", async () => {
   assert.ok(Array.isArray(ordem.checklist));
   assert.equal(ordem.checklist[0].codigo, "M1");
   assert.equal(ordem.checklist[0].tipo, "checkbox");
-  assert.ok(ordem.checklist.some((item: { codigo: string }) => item.codigo === "T21"));
-  assert.ok(ordem.checklist.some((item: { codigo: string }) => item.codigo === "S14"));
+  assert.ok(ordem.checklist.some((item: { codigo: string }) => item.codigo === "T1"));
+  assert.ok(ordem.checklist.some((item: { codigo: string }) => item.codigo === "S6"));
   assert.equal(ordem.checklist.some((item: { codigo: string }) => item.codigo === "A1"), false);
 });
 
-test("listarOrdens retorna apenas uma foto no checklist antes da finalizacao", async () => {
+test("listarOrdens retorna checklist mensal operacional com EPIs filtro e temperaturas", async () => {
   const prisma = {
     ordemServico: {
       findMany: async () => [
         {
-          id: "os-3",
+          id: "os-mensal",
           clienteId: "cliente-1",
-          titulo: "PMOC anual",
-          checklistTipo: "anual",
+          titulo: "PMOC mensal",
+          checklistTipo: "mensal",
           status: OrdemServicoStatus.aberta,
           agendadaPara: new Date("2026-06-22T12:00:00.000Z"),
           cliente: {
@@ -152,10 +152,58 @@ test("listarOrdens retorna apenas uma foto no checklist antes da finalizacao", a
   };
 
   const resultado = await criarService(prisma).listarOrdens(usuario);
-  const fotos = resultado.items[0].checklist.filter((item: { tipo: string }) => item.tipo === "foto");
+  const checklist = resultado.items[0].checklist;
 
-  assert.equal(fotos.length, 1);
-  assert.equal(fotos[0].item, "Foto apos abrir tampa frontal");
+  assert.deepEqual(
+    checklist.map((item: { codigo: string }) => item.codigo),
+    ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "M9", "M10", "M11", "M12", "M13", "M14", "M15", "M17", "M18", "M16"]
+  );
+  assert.equal(checklist[0].item, "EPIs utilizados");
+  assert.equal(checklist[3].item, "Foto inicial");
+  assert.deepEqual(checklist[8].opcoes, ["Interna limpa", "Interna suja"]);
+  assert.deepEqual(checklist[9].opcoes, ["Bandeja limpa", "Bandeja suja"]);
+  assert.equal(checklist[14].item, "Temperatura de entrada do ar");
+  assert.equal(checklist[14].unidade, "°C");
+  assert.equal(checklist[15].item, "Temperatura de insuflamento");
+});
+
+test("listarOrdens compoe checklists acumulados sem duplicar seguranca fotos e finalizacao", async () => {
+  const tipos = ["mensal", "trimestral", "semestral", "anual"];
+  const prisma = {
+    ordemServico: {
+      findMany: async () =>
+        tipos.map((checklistTipo) => ({
+          id: `os-${checklistTipo}`,
+          clienteId: "cliente-1",
+          titulo: `PMOC ${checklistTipo}`,
+          checklistTipo,
+          status: OrdemServicoStatus.aberta,
+          agendadaPara: new Date("2026-06-22T12:00:00.000Z"),
+          cliente: {
+            nome: "Hospital Norte",
+            equipamentos: []
+          },
+          endereco: null,
+          equipamento: null,
+          responsaveis: []
+        }))
+    }
+  };
+
+  const resultado = await criarService(prisma).listarOrdens(usuario);
+  const porTipo = Object.fromEntries(resultado.items.map((item: any) => [item.checklist_tipo, item.checklist]));
+  const codigos = (tipo: string) => porTipo[tipo].map((item: { codigo: string }) => item.codigo);
+  const fotos = (tipo: string) => porTipo[tipo].filter((item: { tipo: string }) => item.tipo === "foto");
+  const finalizacoes = (tipo: string) => porTipo[tipo].filter((item: { tipo: string }) => item.tipo === "finalizacao");
+
+  assert.equal(fotos("mensal").length, 1);
+  assert.equal(fotos("trimestral").length, 1);
+  assert.equal(fotos("semestral").length, 2);
+  assert.equal(fotos("anual").length, 2);
+  assert.ok(fotos("semestral").some((item: { item: string }) => item.item === "Foto da condensadora limpa"));
+  assert.equal(finalizacoes("anual").length, 1);
+  assert.equal(codigos("trimestral").filter((codigo: string) => codigo === "M3").length, 1);
+  assert.equal(new Set(codigos("anual")).size, codigos("anual").length);
 });
 
 test("listarVeiculos retorna carros ativos da empresa para o app", async () => {

@@ -913,7 +913,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
       if (!_initialEvidenceSaved && _isInitialEvidencePhoto(item)) {
         await widget.repository.saveInitialEvidence(
           _order,
-          description: 'Foto apos abrir tampa frontal',
+          description: 'Foto inicial',
           photo: photo,
         );
       }
@@ -945,7 +945,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
   }
 
   bool _isInitialEvidencePhoto(WorkOrderChecklistItem item) {
-    return item.kind == 'foto';
+    return item.kind == 'foto' && item.code == 'M4';
   }
 
   List<WorkOrderChecklistResponse> _buildChecklistResponses() {
@@ -1489,7 +1489,9 @@ class _ChecklistField extends StatelessWidget {
               key: Key('checklist_select_${item.code}'),
               initialValue: value,
               decoration: InputDecoration(labelText: item.label),
-              items: const ['ok', 'nao conforme']
+              items: (item.options.isEmpty
+                      ? const ['ok', 'nao conforme']
+                      : item.options)
                   .map(
                     (option) =>
                         DropdownMenuItem(value: option, child: Text(option)),
@@ -1501,14 +1503,16 @@ class _ChecklistField extends StatelessWidget {
                 }
               },
             ),
-            const SizedBox(height: 8),
-            TextField(
-              key: Key('checklist_obs_${item.code}'),
-              controller: noteController,
-              decoration: const InputDecoration(labelText: 'Observacao'),
-              textInputAction: TextInputAction.next,
-              maxLines: 1,
-            ),
+            if (_showChecklistObservation(value)) ...[
+              const SizedBox(height: 8),
+              TextField(
+                key: Key('checklist_obs_${item.code}'),
+                controller: noteController,
+                decoration: const InputDecoration(labelText: 'Observacao'),
+                textInputAction: TextInputAction.next,
+                maxLines: 1,
+              ),
+            ],
           ],
         ),
         'numerico' => TextField(
@@ -1573,6 +1577,11 @@ class _ChecklistField extends StatelessWidget {
         _ => Text(item.label),
       },
     );
+  }
+
+  bool _showChecklistObservation(String? selected) {
+    final normalized = selected?.toLowerCase().trim() ?? '';
+    return normalized.contains('suja') || normalized == 'nao conforme';
   }
 }
 

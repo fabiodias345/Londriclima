@@ -20,47 +20,39 @@ type ChecklistItem = {
 };
 
 const checklistMensal: ChecklistItem[] = [
-  { codigo: "M1", item: "Desligar pelo controle remoto", tipo: "checkbox" },
-  { codigo: "M2", item: "Desligar disjuntor", tipo: "checkbox" },
-  { codigo: "M3", item: "Abrir tampa frontal", tipo: "checkbox" },
-  { codigo: "M4", item: "Foto apos abrir tampa frontal", tipo: "foto" },
-  { codigo: "M5", item: "Retirar filtros", tipo: "checkbox" },
-  { codigo: "M6", item: "Condicao dos filtros", tipo: "select", opcoes: ["ok", "danificado", "substituido"] },
-  { codigo: "M7", item: "Limpar filtros", tipo: "checkbox" },
+  { codigo: "M1", item: "EPIs utilizados", tipo: "checkbox" },
+  { codigo: "M2", item: "Desligar pelo controle remoto", tipo: "checkbox" },
+  { codigo: "M3", item: "Disjuntores desligados e ambiente protegido", tipo: "checkbox" },
+  { codigo: "M4", item: "Foto inicial", tipo: "foto" },
+  { codigo: "M5", item: "Retirar filtro", tipo: "checkbox" },
+  { codigo: "M6", item: "Condicoes do filtro", tipo: "select", opcoes: ["limpo", "sujo", "danificado"] },
+  { codigo: "M7", item: "Limpar filtro", tipo: "checkbox" },
   { codigo: "M8", item: "Aguardar secagem", tipo: "checkbox" },
-  { codigo: "M9", item: "Inspecao interior: mofo, sujidade, odor", tipo: "select_obs" },
-  { codigo: "M10", item: "Bandeja de condensado", tipo: "select_obs" },
+  { codigo: "M9", item: "Inspecao interna", tipo: "select_obs", opcoes: ["Interna limpa", "Interna suja"] },
+  { codigo: "M10", item: "Bandeja do condensado", tipo: "select_obs", opcoes: ["Bandeja limpa", "Bandeja suja"] },
   { codigo: "M11", item: "Reinstalar filtros", tipo: "checkbox" },
-  { codigo: "M12", item: "Fechar tampa frontal", tipo: "checkbox" },
-  { codigo: "M13", item: "Ligar disjuntor e religar", tipo: "checkbox" },
-  { codigo: "M14", item: "Verificar operacao normal", tipo: "select_obs" },
+  { codigo: "M12", item: "Fechar tampa", tipo: "checkbox" },
+  { codigo: "M13", item: "Ligar disjuntor", tipo: "checkbox" },
+  { codigo: "M14", item: "Funcao Dry se existir por 10 minutos", tipo: "select", opcoes: ["realizado", "nao existe"] },
+  { codigo: "M15", item: "Temperatura de entrada do ar", tipo: "numerico", unidade: "°C" },
+  { codigo: "M17", item: "Temperatura de insuflamento", tipo: "numerico", unidade: "°C" },
+  { codigo: "M18", item: "Observacoes gerais", tipo: "texto" },
   { codigo: "M16", item: "Finalizacao", tipo: "finalizacao" }
 ];
 
 const checklistTrimestralExtra: ChecklistItem[] = [
-  { codigo: "T1", item: "Desligar pelo controle remoto", tipo: "checkbox" },
-  { codigo: "T2", item: "Desligar disjuntor", tipo: "checkbox" },
-  { codigo: "T3", item: "Abrir tampa frontal", tipo: "checkbox" },
-  { codigo: "T5", item: "Condicao dos filtros", tipo: "select", opcoes: ["ok", "danificado", "substituido"] },
-  { codigo: "T6", item: "Limpar e secar filtros", tipo: "checkbox" },
-  { codigo: "T8", item: "Aplicar higienizante", tipo: "checkbox" },
-  { codigo: "T9", item: "Limpar serpentina", tipo: "checkbox" },
-  { codigo: "T10", item: "Mofo, oxidacao, danos nas aletas", tipo: "select_obs" },
-  { codigo: "T11", item: "Bandeja de condensado", tipo: "select_obs" },
-  { codigo: "T12", item: "Dreno de escoamento", tipo: "select_obs" },
-  { codigo: "T13", item: "Gabinete e vedacoes", tipo: "select_obs" },
-  { codigo: "T14", item: "Ruidos e vibracoes", tipo: "select_obs" },
-  { codigo: "T15", item: "Fluxo de ar pelas aletas", tipo: "select_obs" },
-  { codigo: "T16", item: "Reinstalar filtros", tipo: "checkbox" },
-  { codigo: "T17", item: "Fechar tampa", tipo: "checkbox" },
-  { codigo: "T18", item: "Ligar e religar", tipo: "checkbox" },
-  { codigo: "T19", item: "Verificar operacao", tipo: "select_obs" },
-  { codigo: "T21", item: "Finalizacao", tipo: "finalizacao" }
+  { codigo: "T1", item: "Aplicar higienizante", tipo: "checkbox" },
+  { codigo: "T2", item: "Limpar serpentina evaporadora", tipo: "checkbox" },
+  { codigo: "T3", item: "Dreno de escoamento", tipo: "select_obs" },
+  { codigo: "T4", item: "Gabinete e vedacoes", tipo: "select_obs" },
+  { codigo: "T5", item: "Ruidos e vibracoes", tipo: "select_obs" },
+  { codigo: "T6", item: "Fluxo de ar pelas aletas", tipo: "select_obs" }
 ];
 
 const checklistSemestralExtra: ChecklistItem[] = [
   { codigo: "S1", item: "Acesso a condensadora", tipo: "checkbox" },
-  { codigo: "S3", item: "Limpar serpentina condensadora", tipo: "checkbox" },
+  { codigo: "S2", item: "Limpar serpentina condensadora", tipo: "checkbox" },
+  { codigo: "S3", item: "Foto da condensadora limpa", tipo: "foto" },
   { codigo: "S4", item: "Oxidacao, entupimento, danos condensadora", tipo: "select_obs" },
   { codigo: "S5", item: "Limpeza ventilador e helice", tipo: "select_obs" },
   { codigo: "S6", item: "Pressao do fluido refrigerante", tipo: "numerico", unidade: "bar/psi" },
@@ -69,8 +61,7 @@ const checklistSemestralExtra: ChecklistItem[] = [
   { codigo: "S9", item: "Corrente eletrica de operacao", tipo: "numerico", unidade: "A" },
   { codigo: "S10", item: "Estado das protecoes eletricas", tipo: "select_obs" },
   { codigo: "S11", item: "Reinstalar componentes", tipo: "checkbox" },
-  { codigo: "S12", item: "Religar e verificar operacao completa", tipo: "select_obs" },
-  { codigo: "S14", item: "Finalizacao", tipo: "finalizacao" }
+  { codigo: "S12", item: "Religar e verificar operacao completa", tipo: "select_obs" }
 ];
 
 const checklistAnualExtra: ChecklistItem[] = [
@@ -80,8 +71,7 @@ const checklistAnualExtra: ChecklistItem[] = [
   { codigo: "A4", item: "Isolamento termico das tubulacoes", tipo: "select_obs" },
   { codigo: "A5", item: "Conexoes de cobre: vazamentos, oxidacao", tipo: "select_obs" },
   { codigo: "A6", item: "Capacidade atende ao ambiente?", tipo: "select_obs", opcoes: ["sim", "nao"] },
-  { codigo: "A7", item: "Relatorio consolidado anual", tipo: "texto" },
-  { codigo: "A9", item: "Finalizacao", tipo: "finalizacao" }
+  { codigo: "A7", item: "Relatorio consolidado anual", tipo: "texto" }
 ];
 
 @Injectable()
@@ -271,16 +261,19 @@ export class MobileService {
   }
 
   private montarChecklist(tipo: ChecklistTipo) {
+    const finalizacao = checklistMensal.find((item) => item.tipo === "finalizacao")!;
+    const mensalSemFinalizacao = checklistMensal.filter((item) => item.tipo !== "finalizacao");
+
     if (tipo === ChecklistTipo.anual) {
-      return [...checklistMensal, ...checklistTrimestralExtra, ...checklistSemestralExtra, ...checklistAnualExtra];
+      return [...mensalSemFinalizacao, ...checklistTrimestralExtra, ...checklistSemestralExtra, ...checklistAnualExtra, finalizacao];
     }
 
     if (tipo === ChecklistTipo.semestral) {
-      return [...checklistMensal, ...checklistTrimestralExtra, ...checklistSemestralExtra];
+      return [...mensalSemFinalizacao, ...checklistTrimestralExtra, ...checklistSemestralExtra, finalizacao];
     }
 
     if (tipo === ChecklistTipo.trimestral) {
-      return [...checklistMensal, ...checklistTrimestralExtra];
+      return [...mensalSemFinalizacao, ...checklistTrimestralExtra, finalizacao];
     }
 
     return checklistMensal;
