@@ -38,6 +38,12 @@ void main() {
                   'tipo': 'numerico',
                   'unidade': 'bar/psi',
                 },
+                {
+                  'codigo': 'S13',
+                  'item': 'Observacao',
+                  'tipo': 'texto',
+                  'obrigatorio': false,
+                },
               ],
               'equipamentos': [
                 {
@@ -70,10 +76,11 @@ void main() {
     expect(orders.single.serviceType, 'corretiva');
     expect(orders.single.serviceLabel, 'Corretiva');
     expect(orders.single.checklistType, 'semestral');
-    expect(orders.single.checklist.length, 2);
-    expect(orders.single.checklist.last.code, 'S6');
-    expect(orders.single.checklist.last.kind, 'numerico');
-    expect(orders.single.checklist.last.unit, 'bar/psi');
+    expect(orders.single.checklist.length, 3);
+    expect(orders.single.checklist[1].kind, 'numerico');
+    expect(orders.single.checklist[1].unit, 'bar/psi');
+    expect(orders.single.checklist.last.code, 'S13');
+    expect(orders.single.checklist.last.required, isFalse);
     expect(orders.single.equipments.single.name, 'Evaporadora API');
 
     await pump.cancel();

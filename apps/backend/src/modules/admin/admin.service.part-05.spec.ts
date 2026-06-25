@@ -224,27 +224,17 @@ test("gerarPdfRelatorioAvulsoCliente imprime checklist preventivo do app com res
   const equipamento = criarEquipamentoPmocTeste("equipamento-1", "Sala", "AV-001", "SN-AV-1", "2026-06-11T12:00:00.000Z");
   const fotoFiltroPath = resolve(process.cwd(), "..", "..", "storage", "os", "os-1", "checklist", "equipamento-1", "M4.jpg");
   const fotoCondensadoraPath = resolve(process.cwd(), "..", "..", "storage", "os", "os-1", "checklist", "equipamento-1", "S3.jpg");
-  const fotoEvaporadoraPath = resolve(process.cwd(), "..", "..", "storage", "os", "os-1", "evidencias", "evaporadora.jpg");
+  const fotoEvaporadoraPath = resolve(process.cwd(), "..", "..", "storage", "os", "os-1", "checklist", "equipamento-1", "M18.jpg");
   mkdirSync(dirname(fotoFiltroPath), { recursive: true });
-  mkdirSync(dirname(fotoEvaporadoraPath), { recursive: true });
   writeFileSync(fotoFiltroPath, Buffer.from([0xff, 0xd8, 0xff, 0xd9, 0x00]));
   writeFileSync(fotoCondensadoraPath, Buffer.from([0xff, 0xd8, 0xff, 0xd9, 0x01]));
   writeFileSync(fotoEvaporadoraPath, Buffer.from([0xff, 0xd8, 0xff, 0xd9, 0x02]));
-  equipamento.ordensServico[0].evidencias = [
-    {
-      id: "ev-evaporadora",
-      tipo: "depois",
-      descricao: "Foto da evaporadora limpa",
-      storageUrl: "/storage/os/os-1/evidencias/evaporadora.jpg",
-      mimeType: "image/jpeg",
-      tamanhoBytes: 1000,
-      criadoEm: new Date("2026-06-11T12:00:00.000Z")
-    }
-  ];
+  equipamento.ordensServico[0].evidencias = [];
   equipamento.ordensServico[0].checklistRespostas = [
     { codigo: "M1", tipo: "checkbox", valor: "Sim", observacao: null },
     { codigo: "M2", tipo: "checkbox", valor: "Nao", observacao: "controle sem pilha" },
     { codigo: "M4", tipo: "foto", valor: "/storage/os/os-1/checklist/equipamento-1/M4.jpg", observacao: null },
+    { codigo: "M18", tipo: "foto", valor: "/storage/os/os-1/checklist/equipamento-1/M18.jpg", observacao: null },
     { codigo: "S3", tipo: "foto", valor: "/storage/os/os-1/checklist/equipamento-1/S3.jpg", observacao: null },
     { codigo: "S6", tipo: "numerico", valor: "7.5", observacao: "pressao ok" }
   ] as typeof equipamento.ordensServico[number]["checklistRespostas"];

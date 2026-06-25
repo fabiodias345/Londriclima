@@ -466,6 +466,7 @@ class ApiWorkOrderRepository implements WorkOrderRepository {
             ? rawOptions.map((option) => option.toString()).toList()
             : const [],
         unit: map['unidade']?.toString() ?? map['unit']?.toString(),
+        required: map['obrigatorio'] != false && map['required'] != false,
       );
     }).toList();
   }

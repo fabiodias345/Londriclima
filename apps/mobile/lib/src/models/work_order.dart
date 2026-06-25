@@ -139,6 +139,7 @@ class WorkOrderChecklistItem {
     required this.kind,
     this.options = const [],
     this.unit,
+    this.required = true,
   });
 
   final String code;
@@ -146,6 +147,7 @@ class WorkOrderChecklistItem {
   final String kind;
   final List<String> options;
   final String? unit;
+  final bool required;
 }
 
 class WorkOrderChecklistResponse {

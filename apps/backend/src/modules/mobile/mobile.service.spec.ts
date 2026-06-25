@@ -165,6 +165,54 @@ test("listarOrdens retorna checklist mensal operacional com EPIs filtro e temper
   assert.equal(checklist[14].item, "Temperatura de entrada do ar");
   assert.equal(checklist[14].unidade, "°C");
   assert.equal(checklist[15].item, "Temperatura de insuflamento");
+  assert.equal(checklist[16].item, "Foto da evaporadora limpa");
+  assert.equal(checklist[16].tipo, "foto");
+});
+
+test("listarOrdens retorna checklist trimestral e semestral com respostas sim nao profissionais", async () => {
+  const prisma = {
+    ordemServico: {
+      findMany: async () => [
+        {
+          id: "os-semestral",
+          clienteId: "cliente-1",
+          titulo: "PMOC semestral",
+          checklistTipo: "semestral",
+          status: OrdemServicoStatus.aberta,
+          agendadaPara: new Date("2026-06-22T12:00:00.000Z"),
+          cliente: { nome: "Hospital Norte", equipamentos: [] },
+          endereco: null,
+          equipamento: null,
+          responsaveis: []
+        }
+      ]
+    }
+  };
+
+  const resultado = await criarService(prisma).listarOrdens(usuario);
+  const porCodigo = Object.fromEntries(
+    resultado.items[0].checklist.map((item: { codigo: string; item: string; tipo: string; unidade?: string; obrigatorio?: boolean }) => [
+      item.codigo,
+      {
+        item: item.item,
+        tipo: item.tipo,
+        ...(item.unidade ? { unidade: item.unidade } : {}),
+        ...(item.obrigatorio === false ? { obrigatorio: false } : {})
+      }
+    ])
+  );
+
+  assert.deepEqual(porCodigo.T3, { item: "Dreno limpo", tipo: "checkbox" });
+  assert.deepEqual(porCodigo.T4, { item: "Gabinete limpo", tipo: "checkbox" });
+  assert.deepEqual(porCodigo.T5, { item: "Ruido", tipo: "checkbox" });
+  assert.deepEqual(porCodigo.T6, { item: "Fluxo de ar pelas aletas normal", tipo: "checkbox" });
+  assert.deepEqual(porCodigo.S4, { item: "Oxidacao, danos ou entupimentos", tipo: "checkbox" });
+  assert.deepEqual(porCodigo.S5, { item: "Efetuado limpeza geral", tipo: "checkbox" });
+  assert.deepEqual(porCodigo.S8, { item: "Efetuado inspecao eletrica conexoes", tipo: "checkbox" });
+  assert.deepEqual(porCodigo.S9, { item: "Corrente", tipo: "numerico", unidade: "A" });
+  assert.deepEqual(porCodigo.S10, { item: "Protecoes eletricas funcionando", tipo: "checkbox" });
+  assert.deepEqual(porCodigo.S12, { item: "Religado e verificado", tipo: "checkbox" });
+  assert.deepEqual(porCodigo.S13, { item: "Observacao", tipo: "texto", obrigatorio: false });
 });
 
 test("listarOrdens compoe checklists acumulados sem duplicar seguranca fotos e finalizacao", async () => {
@@ -196,11 +244,12 @@ test("listarOrdens compoe checklists acumulados sem duplicar seguranca fotos e f
   const fotos = (tipo: string) => porTipo[tipo].filter((item: { tipo: string }) => item.tipo === "foto");
   const finalizacoes = (tipo: string) => porTipo[tipo].filter((item: { tipo: string }) => item.tipo === "finalizacao");
 
-  assert.equal(fotos("mensal").length, 1);
-  assert.equal(fotos("trimestral").length, 1);
-  assert.equal(fotos("semestral").length, 2);
-  assert.equal(fotos("anual").length, 2);
+  assert.equal(fotos("mensal").length, 2);
+  assert.equal(fotos("trimestral").length, 2);
+  assert.equal(fotos("semestral").length, 3);
+  assert.equal(fotos("anual").length, 3);
   assert.ok(fotos("semestral").some((item: { item: string }) => item.item === "Foto da condensadora limpa"));
+  assert.ok(fotos("semestral").some((item: { item: string }) => item.item === "Foto da evaporadora limpa"));
   assert.equal(finalizacoes("anual").length, 1);
   assert.equal(codigos("trimestral").filter((codigo: string) => codigo === "M3").length, 1);
   assert.equal(new Set(codigos("anual")).size, codigos("anual").length);

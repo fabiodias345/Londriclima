@@ -1008,19 +1008,18 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
       'foto' => _checklistValues[item.code] ?? '',
       _ => _checklistValues[item.code] ?? '',
     };
-    if (_isNegativeChecklistChoice(value)) {
+    if (!item.required && value.trim().isEmpty) {
+      return true;
+    }
+    if (_requiresChecklistObservation(item.code, value)) {
       return (_noteControllers[item.code]?.text.trim() ?? '').isNotEmpty;
     }
     return value.trim().isNotEmpty && value != 'false';
   }
 
-  bool _isNegativeChecklistChoice(String value) {
-    return value.trim().toLowerCase() == 'nao';
-  }
-
   List<WorkOrderChecklistItem> get _requiredChecklistItems {
     return _order.effectiveChecklist
-        .where((item) => item.kind != 'finalizacao')
+        .where((item) => item.required && item.kind != 'finalizacao')
         .toList();
   }
 
@@ -1874,7 +1873,7 @@ class _ChecklistField extends StatelessWidget {
                 );
               }).toList(),
             ),
-            if (_showChecklistObservation(value)) ...[
+            if (_showChecklistObservation(item, value)) ...[
               const SizedBox(height: 8),
               TextField(
                 key: Key('checklist_obs_${item.code}'),
@@ -1929,7 +1928,7 @@ class _ChecklistField extends StatelessWidget {
                 }
               },
             ),
-            if (_showChecklistObservation(value)) ...[
+            if (_showChecklistObservation(item, value)) ...[
               const SizedBox(height: 8),
               TextField(
                 key: Key('checklist_obs_${item.code}'),
@@ -2034,12 +2033,24 @@ class _ChecklistField extends StatelessWidget {
     );
   }
 
-  bool _showChecklistObservation(String? selected) {
+  bool _showChecklistObservation(
+    WorkOrderChecklistItem item,
+    String? selected,
+  ) {
     final normalized = selected?.toLowerCase().trim() ?? '';
-    return normalized == 'nao' ||
+    return _requiresChecklistObservation(item.code, selected) ||
         normalized.contains('suja') ||
         normalized == 'nao conforme';
   }
+}
+
+bool _requiresChecklistObservation(String code, String? selected) {
+  final normalized = selected?.toLowerCase().trim() ?? '';
+  if (code == 'T5' || code == 'S4') {
+    return normalized == 'sim';
+  }
+
+  return normalized == 'nao';
 }
 
 class _ChecklistGroupHeader extends StatelessWidget {
