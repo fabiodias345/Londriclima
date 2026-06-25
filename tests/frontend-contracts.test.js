@@ -484,6 +484,8 @@ test("admin mostra prontidao da O.S. para o app do tecnico", () => {
   assert.match(script, /Checklist do app/);
   assert.match(script, /Conferir no app/);
   assert.match(script, /Complete o despacho para liberar no app/);
+  assert.match(script, /O\.S\. concluida no app/);
+  assert.match(script, /Ver execucao/);
   assert.match(styles, /\.os-app-summary/);
   assert.match(styles, /\.os-app-readiness/);
 });

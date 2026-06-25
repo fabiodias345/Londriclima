@@ -322,20 +322,28 @@ function renderOsTechnicianAppSummary(item) {
   const hasSchedule = Boolean(item.agendada_para);
   const hasClientAddress = Boolean(item.cliente?.id && item.endereco);
   const appStatus = ["aberta", "em_deslocamento", "em_atendimento"].includes(item.status);
-  const ready = appStatus && hasResponsible && hasSchedule && hasClientAddress;
+  const isDone = item.status === "concluida";
+  const ready = (appStatus && hasResponsible && hasSchedule && hasClientAddress) || isDone;
   const machineLabel = renderOsEquipmentTarget(item);
   const checklistLabel = formatChecklistTipo(item.checklist_tipo);
   const serviceLabel = formatOsServiceType(item);
+  const readinessText = isDone
+    ? "O.S. concluida no app"
+    : ready
+      ? "Pronta para conferir no celular"
+      : "Complete o despacho para liberar no app";
+  const statusText = isDone ? "Concluida no app" : appStatus ? "Compativel com app" : "Fora do fluxo do app";
+  const actionText = isDone ? "Ver execucao" : ready ? "Conferir no app" : "Corrigir despacho";
 
   return \`
     <section class="os-detail-section os-app-summary">
       <h4>App do tecnico</h4>
       <div class="os-app-readiness \${ready ? "ready" : "blocked"}">
         <strong>Aparece no app</strong>
-        <span>\${ready ? "Pronta para conferir no celular" : "Complete o despacho para liberar no app"}</span>
+        <span>\${readinessText}</span>
       </div>
       <div class="os-execution-summary">
-        <span><strong>Status da O.S.</strong>\${appStatus ? "Compativel com app" : "Fora do fluxo do app"}</span>
+        <span><strong>Status da O.S.</strong>\${statusText}</span>
         <span><strong>Responsavel atribuido</strong>\${escapeHtml(item.equipe?.nome || item.tecnico?.nome || "Nao atribuido")}</span>
         <span><strong>Cliente e endereco</strong>\${hasClientAddress ? escapeHtml(formatAddress(item.endereco)) : "Cliente/endereco incompleto"}</span>
         <span><strong>Maquinas disponiveis</strong>\${escapeHtml(machineLabel)}</span>
@@ -343,7 +351,7 @@ function renderOsTechnicianAppSummary(item) {
         <span><strong>Checklist do app</strong>\${escapeHtml(checklistLabel)}</span>
       </div>
       <div class="request-actions">
-        <button class="secondary-button compact-button" type="button" data-action="editar-agenda-os" data-id="\${item.id}">\${ready ? "Conferir no app" : "Corrigir despacho"}</button>
+        <button class="secondary-button compact-button" type="button" data-action="editar-agenda-os" data-id="\${item.id}">\${actionText}</button>
       </div>
     </section>
   \`;
