@@ -336,6 +336,10 @@ export class AdminService {
     return this.relatoriosService.enviarRelatorioAvulsoCliente(clienteId, usuario);
   }
 
+  async apagarRelatorioAvulsoCliente(clienteId: string, usuario: AuthenticatedUser) {
+    return this.relatoriosService.apagarRelatorioAvulsoCliente(clienteId, usuario);
+  }
+
   async criarEngenheiroResponsavel(dto: SalvarEngenheiroResponsavelDto, usuario: AuthenticatedUser) {
     return this.engenheirosService.criarEngenheiroResponsavel(dto, usuario);
   }

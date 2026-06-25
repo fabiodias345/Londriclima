@@ -670,6 +670,47 @@ export class AdminRelatorioTecnicoCoreService {
     };
   }
 
+  async apagarRelatorioAvulsoCliente(clienteId: string, usuario: AuthenticatedUser) {
+    const cliente = await this.prisma.cliente.findFirst({
+      where: {
+        id: clienteId,
+        empresaId: usuario.empresa_id
+      },
+      select: {
+        id: true,
+        nome: true,
+        pmocAtivo: true
+      }
+    });
+
+    if (!cliente) {
+      throw new NotFoundException("Cliente nao encontrado.");
+    }
+
+    if (cliente.pmocAtivo) {
+      throw new BadRequestException("Cliente possui PMOC ativo. Use o fluxo PMOC.");
+    }
+
+    const resultado = await this.prisma.automacaoAgendada.deleteMany({
+      where: {
+        empresaId: usuario.empresa_id,
+        tipo: AutomacaoTipo.enviar_email,
+        AND: [
+          { payload: { path: ["tipo"], equals: "relatorio_tecnico_avulso" } },
+          { payload: { path: ["cliente_id"], equals: clienteId } }
+        ]
+      }
+    });
+
+    return {
+      cliente: {
+        id: cliente.id,
+        nome: cliente.nome
+      },
+      relatorios_apagados: resultado.count
+    };
+  }
+
   async criarEngenheiroResponsavel(dto: SalvarEngenheiroResponsavelDto, usuario: AuthenticatedUser) {
     return this.engenheirosService.criarEngenheiroResponsavel(dto, usuario);
   }

@@ -206,6 +206,14 @@ export class AdminController {
     return this.adminService.enviarRelatorioAvulsoCliente(clienteId, usuario);
   }
 
+  @Delete("relatorios-avulsos/clientes/:clienteId")
+  apagarRelatorioAvulsoCliente(
+    @Param("clienteId", new ParseUUIDPipe()) clienteId: string,
+    @CurrentUser() usuario: AuthenticatedUser
+  ) {
+    return this.adminService.apagarRelatorioAvulsoCliente(clienteId, usuario);
+  }
+
   @Get("engenheiros")
   listarEngenheirosResponsaveis(@CurrentUser() usuario: AuthenticatedUser) {
     return this.adminService.listarEngenheirosResponsaveis(usuario);

@@ -263,6 +263,40 @@ test("enviarRelatorioAvulsoCliente agenda email direto ao cliente com copia inte
   assert.deepEqual(payload.os_ids, ["os-equipamento-1"]);
 });
 
+test("apagarRelatorioAvulsoCliente remove envios gerados do cliente", async () => {
+  const chamadas = {
+    deleteWhere: undefined as unknown
+  };
+  const prisma = {
+    cliente: {
+      findFirst: async () => ({
+        id: "cliente-1",
+        nome: "Cliente Avulso",
+        pmocAtivo: false
+      })
+    },
+    automacaoAgendada: {
+      deleteMany: async ({ where }: { where: unknown }) => {
+        chamadas.deleteWhere = where;
+        return { count: 2 };
+      }
+    }
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.apagarRelatorioAvulsoCliente("cliente-1", usuario);
+
+  assert.equal(resposta.relatorios_apagados, 2);
+  assert.deepEqual(chamadas.deleteWhere, {
+    empresaId: "empresa-1",
+    tipo: AutomacaoTipo.enviar_email,
+    AND: [
+      { payload: { path: ["tipo"], equals: "relatorio_tecnico_avulso" } },
+      { payload: { path: ["cliente_id"], equals: "cliente-1" } }
+    ]
+  });
+});
+
 test("gerarPdfRelatorioAvulsoCliente separa duas manutencoes da mesma maquina", async () => {
   const fotoAntesPath = resolve(process.cwd(), "..", "..", "storage", "os", "os-equipamento-1-corretiva", "evidencias", "antes.jpg");
   const fotoDepoisPath = resolve(process.cwd(), "..", "..", "storage", "os", "os-equipamento-1-corretiva", "evidencias", "depois.jpg");

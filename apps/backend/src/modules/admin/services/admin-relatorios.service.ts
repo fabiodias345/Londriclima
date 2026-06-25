@@ -38,4 +38,8 @@ export class AdminRelatoriosService {
   async enviarRelatorioAvulsoCliente(clienteId: string, usuario: AuthenticatedUser) {
     return this.core.enviarRelatorioAvulsoCliente(clienteId, usuario);
   }
+
+  async apagarRelatorioAvulsoCliente(clienteId: string, usuario: AuthenticatedUser) {
+    return this.core.apagarRelatorioAvulsoCliente(clienteId, usuario);
+  }
 }

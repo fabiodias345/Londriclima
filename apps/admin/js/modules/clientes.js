@@ -313,6 +313,7 @@ function renderRelatoriosAvulsos(items) {
       <div class="data-row-actions">
         <button class="secondary-button compact-button" type="button" data-action="avulso-pdf" data-id="\${item.id}">PDF</button>
         <button class="approve-button compact-button" type="button" data-action="avulso-enviar" data-id="\${item.id}" \${item.pronto_para_envio ? "" : "disabled"}>Enviar</button>
+        <button class="secondary-button compact-button danger-button" type="button" data-action="avulso-apagar" data-id="\${item.id}">Apagar relatorio</button>
       </div>
     \`;
     relatoriosAvulsosList.appendChild(row);
@@ -375,6 +376,43 @@ async function enviarRelatorioAvulso(clientId, button) {
   } finally {
     button.disabled = false;
     button.textContent = "Enviar";
+  }
+}
+
+async function apagarRelatorioAvulso(clientId, button) {
+  const confirmado = window.confirm("Apagar relatorio avulso gerado para este cliente?");
+
+  if (!confirmado) {
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = "Apagando...";
+  relatoriosAvulsosStatus.textContent = "Apagando relatorio avulso...";
+
+  try {
+    const response = await fetch(\`\${apiBaseUrl}/admin/relatorios-avulsos/clientes/\${clientId}\`, {
+      method: "DELETE",
+      headers: authHeaders()
+    });
+
+    if (await handleUnauthorized(response)) {
+      return;
+    }
+
+    if (!response.ok) {
+      relatoriosAvulsosStatus.textContent = "Nao foi possivel apagar o relatorio.";
+      return;
+    }
+
+    const result = await response.json().catch(() => ({}));
+    relatoriosAvulsosStatus.textContent = \`\${result.relatorios_apagados || 0} relatorio(s) apagado(s).\`;
+    await loadRelatoriosAvulsos();
+  } catch {
+    relatoriosAvulsosStatus.textContent = "API indisponivel ao apagar relatorio.";
+  } finally {
+    button.disabled = false;
+    button.textContent = "Apagar relatorio";
   }
 }
 

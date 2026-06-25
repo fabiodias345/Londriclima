@@ -71,6 +71,10 @@ relatoriosAvulsosList?.addEventListener("click", (event) => {
   if (button.dataset.action === "avulso-enviar") {
     void enviarRelatorioAvulso(button.dataset.id, button);
   }
+
+  if (button.dataset.action === "avulso-apagar") {
+    void apagarRelatorioAvulso(button.dataset.id, button);
+  }
 });
 
 agendaCalendar?.addEventListener("click", (event) => {

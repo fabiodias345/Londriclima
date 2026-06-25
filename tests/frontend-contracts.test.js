@@ -242,8 +242,12 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(script, /async function loadRelatoriosAvulsos/);
   assert.match(script, /openRelatorioAvulsoPdf/);
   assert.match(script, /enviarRelatorioAvulso/);
+  assert.match(script, /apagarRelatorioAvulso/);
   assert.match(script, /\/admin\/relatorios-avulsos\/clientes\/\$\{clientId\}\/pdf/);
   assert.match(script, /\/admin\/relatorios-avulsos\/clientes\/\$\{clientId\}\/enviar/);
+  assert.match(script, /\/admin\/relatorios-avulsos\/clientes\/\$\{clientId\}/);
+  assert.match(script, /data-action="avulso-apagar"/);
+  assert.match(script, /Apagar relatorio/);
   assert.match(script, /https:\/\/viacep\.com\.br\/ws\/\$\{cep\}\/json\//);
   assert.match(script, /cep:\s*onlyDigits\(String\(data\.get\("cep"\)/);
   assert.match(script, /clientForm\.elements\.logradouro\.value = address\.logradouro/);

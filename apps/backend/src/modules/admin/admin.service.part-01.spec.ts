@@ -303,6 +303,11 @@ test("AdminService delega relatorios nao-PMOC para service especializado", async
       clienteId,
       user
     }),
+    apagarRelatorioAvulsoCliente: async (clienteId: string, user: typeof usuario) => ({
+      metodo: "apagarRelatorioAvulsoCliente",
+      clienteId,
+      user
+    }),
     obterRelatorios: async (user: typeof usuario, data: Date) => ({ metodo: "obterRelatorios", user, data })
   } as unknown as AdminRelatoriosService;
   const service = new AdminService(
@@ -336,6 +341,11 @@ test("AdminService delega relatorios nao-PMOC para service especializado", async
   });
   assert.deepEqual(await service.enviarRelatorioAvulsoCliente("cliente-1", usuario), {
     metodo: "enviarRelatorioAvulsoCliente",
+    clienteId: "cliente-1",
+    user: usuario
+  });
+  assert.deepEqual(await service.apagarRelatorioAvulsoCliente("cliente-1", usuario), {
+    metodo: "apagarRelatorioAvulsoCliente",
     clienteId: "cliente-1",
     user: usuario
   });
