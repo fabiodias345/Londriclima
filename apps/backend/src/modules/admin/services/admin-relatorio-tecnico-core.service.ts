@@ -1925,6 +1925,10 @@ export class AdminRelatorioTecnicoCoreService {
     const imagens: Buffer[] = [];
 
     for (const evidencia of ordem.evidencias) {
+      if (!evidencia.storage_url) {
+        continue;
+      }
+
       const imagem = this.carregarArquivoStorage(evidencia.storage_url);
       if (imagem) {
         imagens.push(imagem);
@@ -2194,7 +2198,13 @@ export class AdminRelatorioTecnicoCoreService {
       return "Nenhuma evidencia registrada.";
     }
 
-    return ordem.evidencias
+    const evidenciasComArquivo = ordem.evidencias.filter((evidencia) => Boolean(evidencia.storage_url));
+
+    if (!evidenciasComArquivo.length) {
+      return "Nenhuma evidencia registrada.";
+    }
+
+    return evidenciasComArquivo
       .map((evidencia) => {
         const rotulo = evidencia.tipo === "antes" ? "Antes" : evidencia.tipo === "depois" ? "Depois" : "Foto";
         return `${rotulo} --- ${this.obterNomeArquivoPmoc(evidencia.storage_url)}`;

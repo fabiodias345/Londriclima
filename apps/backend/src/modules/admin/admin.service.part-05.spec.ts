@@ -220,9 +220,9 @@ test("gerarPdfRelatorioAvulsoCliente usa respostas reais da corretiva sem checkl
   assert.doesNotMatch(pdf, /C3\.jpg|C6|pendente/);
 });
 
-test("gerarPdfRelatorioAvulsoCliente nao imprime foto pendente quando existe uma evidencia", async () => {
+test("gerarPdfRelatorioAvulsoCliente nao imprime foto pendente quando evidencia nao tem arquivo", async () => {
   const equipamento = criarEquipamentoPmocTeste("equipamento-1", "Sala", "AV-001", "SN-AV-1", "2026-06-11T12:00:00.000Z");
-  equipamento.ordensServico[0].evidencias = [equipamento.ordensServico[0].evidencias[0]];
+  equipamento.ordensServico[0].evidencias[1].storageUrl = null as never;
   const prisma = {
     cliente: {
       findFirst: async () => ({
