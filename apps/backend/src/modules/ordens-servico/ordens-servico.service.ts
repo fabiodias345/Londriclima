@@ -23,6 +23,7 @@ import { FinalizarOsDto } from "./dto/finalizar-os.dto";
 import { IdentificarEquipamentoDto } from "./dto/identificar-equipamento.dto";
 import { RegistrarChecklistDto } from "./dto/registrar-checklist.dto";
 import { RegistrarObservacoesDto } from "./dto/registrar-observacoes.dto";
+import { OrdensServicoRelatorioTecnicoRenderer } from "./ordens-servico-relatorio-tecnico-renderer";
 import type { EvidenciaUploadFile } from "./ordens-servico.controller";
 
 type TransicaoStatus = {
@@ -82,6 +83,8 @@ type RegistrarFotoChecklistInput = {
 
 @Injectable()
 export class OrdensServicoService {
+  private readonly relatorioTecnicoRenderer = new OrdensServicoRelatorioTecnicoRenderer();
+
   constructor(private readonly prisma: PrismaService) {}
 
   async atualizarStatus(osId: string, dto: AtualizarStatusOsDto, usuario: AuthenticatedUser) {
@@ -1022,149 +1025,10 @@ export class OrdensServicoService {
     evidencias: Array<{ tipo: EvidenciaTipo; descricao: string | null; storageUrl: string; criadoEm: Date }>;
     checklistRespostas: Array<{ codigo: string; tipo: string; valor: string; observacao: string | null }>;
   }) {
-    const checklistLinhas = this.formatarChecklistRelatorioAtendimento(input.checklistRespostas);
-    const evidenciaLinhas = this.formatarEvidenciasRelatorioAtendimento(input.evidencias);
-
-    return this.criarPdfTexto([
-      [
-        "AIRMOVEBR - RELATORIO TECNICO DE ATENDIMENTO",
-        "Relatorio de atendimento sem PMOC",
-        "",
-        `Cliente: ${input.clienteNome}`,
-        `OS: ${input.osId}`,
-        `Servico: ${input.titulo}`,
-        `Tipo de servico: ${this.formatarTipoServicoRelatorio(input.tipoServico)}`,
-        `Agendado para: ${this.formatarDataHoraRelatorio(input.agendadaPara)}`,
-        `Finalizado em: ${this.formatarDataHoraRelatorio(input.finalizadoEm)}`,
-        `Equipamento: ${[input.equipamento?.marca, input.equipamento?.modelo].filter(Boolean).join(" ") || "todos do cliente"}`,
-        `Gas refrigerante: ${input.equipamento?.gasRefrigerante || "nao informado"}`,
-        "",
-        "SERVICO REALIZADO",
-        ...checklistLinhas,
-        "",
-        "FOTOS E EVIDENCIAS",
-        ...evidenciaLinhas,
-        "",
-        "ASSINATURA",
-        `Assinado por: ${input.nomeResponsavelAssinatura}`,
-        `Assinatura registrada: ${input.assinaturaUrl}`,
-        "",
-        "Obrigado por escolher a AIRMOVEBR."
-      ]
-    ]);
-  }
-
-  private formatarChecklistRelatorioAtendimento(
-    respostas: Array<{ codigo: string; valor: string; observacao: string | null }>
-  ) {
-    if (!respostas.length) {
-      return ["Sem respostas de checklist registradas."];
-    }
-
-    return respostas.map((resposta) => {
-      const label = this.obterLabelChecklistRelatorio(resposta.codigo);
-      const observacao = resposta.observacao?.trim() ? ` (${resposta.observacao.trim()})` : "";
-      return `${label}: ${resposta.valor || "nao informado"}${observacao}`;
+    return this.relatorioTecnicoRenderer.renderizar({
+      ...input,
+      storageRoot: this.resolveStorageRoot()
     });
-  }
-
-  private obterLabelChecklistRelatorio(codigo: string) {
-    return {
-      C1: "Problema encontrado",
-      C2: "Acao realizada",
-      C3: "Foto do atendimento",
-      C4: "Pecas utilizadas",
-      C5: "Observacao final",
-      M4: "Foto inicial"
-    }[codigo] || codigo;
-  }
-
-  private formatarEvidenciasRelatorioAtendimento(
-    evidencias: Array<{ tipo: EvidenciaTipo; descricao: string | null; storageUrl: string; criadoEm: Date }>
-  ) {
-    if (!evidencias.length) {
-      return ["Sem fotos registradas."];
-    }
-
-    return evidencias.map((evidencia) => {
-      const tipo = evidencia.tipo === EvidenciaTipo.antes ? "Foto inicial" : "Foto final";
-      return `${tipo}: ${evidencia.descricao || "sem descricao"} - arquivo: ${evidencia.storageUrl} - ${this.formatarDataHoraRelatorio(evidencia.criadoEm)}`;
-    });
-  }
-
-  private formatarTipoServicoRelatorio(tipo: OrdemServicoTipoServico) {
-    return tipo === OrdemServicoTipoServico.corretiva ? "Corretiva" : "Preventiva";
-  }
-
-  private formatarDataHoraRelatorio(data: Date | null) {
-    if (!data) {
-      return "nao informado";
-    }
-
-    const dia = String(data.getUTCDate()).padStart(2, "0");
-    const mes = String(data.getUTCMonth() + 1).padStart(2, "0");
-    const ano = data.getUTCFullYear();
-    const hora = String(data.getUTCHours()).padStart(2, "0");
-    const minuto = String(data.getUTCMinutes()).padStart(2, "0");
-
-    return `${dia}/${mes}/${ano} ${hora}:${minuto}`;
-  }
-
-  private criarPdfTexto(paginas: string[][]) {
-    const objetos = ["<< /Type /Catalog /Pages 2 0 R >>", "", "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"];
-    const pageObjectIds: number[] = [];
-
-    for (const linhas of paginas) {
-      const texto = linhas
-        .flatMap((linha) => this.quebrarLinhaPdf(linha, 96))
-        .slice(0, 46)
-        .map((linha) => `(${this.escaparTextoPdf(linha)}) Tj T*`)
-        .join("\n");
-      const conteudo = `BT\n/F1 10 Tf\n42 790 Td\n13 TL\n${texto}\nET`;
-      const pageObjectId = objetos.length + 1;
-      const contentObjectId = objetos.length + 2;
-      pageObjectIds.push(pageObjectId);
-      objetos.push(
-        `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${contentObjectId} 0 R >>`,
-        `<< /Length ${Buffer.byteLength(conteudo, "latin1")} >>\nstream\n${conteudo}\nendstream`
-      );
-    }
-
-    objetos[1] = `<< /Type /Pages /Kids [${pageObjectIds.map((id) => `${id} 0 R`).join(" ")}] /Count ${pageObjectIds.length} >>`;
-    let pdf = "%PDF-1.4\n";
-    const offsets = [0];
-
-    for (let index = 0; index < objetos.length; index += 1) {
-      offsets.push(Buffer.byteLength(pdf, "latin1"));
-      pdf += `${index + 1} 0 obj\n${objetos[index]}\nendobj\n`;
-    }
-
-    const xrefOffset = Buffer.byteLength(pdf, "latin1");
-    pdf += `xref\n0 ${objetos.length + 1}\n0000000000 65535 f \n`;
-    pdf += offsets
-      .slice(1)
-      .map((offset) => `${String(offset).padStart(10, "0")} 00000 n \n`)
-      .join("");
-    pdf += `trailer\n<< /Size ${objetos.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
-
-    return Buffer.from(pdf, "latin1");
-  }
-
-  private quebrarLinhaPdf(texto: string, limite: number) {
-    const linhas: string[] = [];
-    let restante = texto;
-
-    while (restante.length > limite) {
-      linhas.push(restante.slice(0, limite));
-      restante = restante.slice(limite);
-    }
-
-    linhas.push(restante);
-    return linhas;
-  }
-
-  private escaparTextoPdf(texto: string) {
-    return texto.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
   }
 
   private slugArquivo(valor: string) {

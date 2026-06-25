@@ -502,11 +502,15 @@ test("finalizarOs agenda relatorio tecnico por email para cliente sem PMOC", asy
   assert.equal(email?.payload?.total_os_concluidas, 1);
   assert.match(String(email?.payload?.pdf_filename), /relatorio-tecnico-cliente-avulso-os-1\.pdf/);
   const pdfText = Buffer.from(String(email?.payload?.pdf_base64), "base64").toString("latin1");
-  assert.match(pdfText, /RELATORIO TECNICO DE ATENDIMENTO/);
+  assert.match(pdfText, /RELATORIO TECNICO VISUAL/);
   assert.match(pdfText, /Assinado por: Maria Souza/);
   assert.match(pdfText, /Problema encontrado: Motor travado/);
   assert.match(pdfText, /Acao realizada: Motor destravado e testado/);
   assert.match(pdfText, /Foto inicial: Foto do atendimento/);
+  assert.match(pdfText, /\/Subtype \/Image/);
+  assert.doesNotMatch(pdfText, /OS: os-1/);
+  assert.doesNotMatch(pdfText, /\/storage\/os\/os-1\/foto\.webp/);
+  assert.doesNotMatch(pdfText, /\/storage\/os\/os-1\/assinatura\.png/);
   assert.doesNotMatch(pdfText, /Assinatura responsavel:/);
 });
 
