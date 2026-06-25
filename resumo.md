@@ -467,6 +467,16 @@ Depois das fases basicas da OS, concluir o app tecnico para executar manutencoes
 - operar offline e sincronizar sem duplicar manutencoes;
 - alimentar o historico usado pelo PDF PMOC de cada maquina.
 
+## Ideia aprovada para relatorio final
+
+- O relatorio final precisa ter apresentacao profissional, porque ele representa a cara da AIRMOVEBR para o cliente.
+- Usar o HTML de referencia como direcao visual, nao como arquivo fixo: corrigir encoding, remover textos mockados e alimentar tudo com dados reais do backend.
+- Manter banco e APIs como estao; a mudanca principal deve ficar na camada de geracao/renderizacao do PDF.
+- Comecar pelo relatorio avulso/corretiva: capa simples, blocos por secao, tabela de equipamento, servico executado, servico realizado, evidencias reais, GPS e assinatura.
+- Depois aplicar o mesmo padrao visual ao PMOC, preservando a regra de uma pagina por maquina e sem misturar OS/clientes.
+- Nao imprimir campos falsos como foto pendente; se a evidencia nao existir, omitir ou mostrar texto claro de ausencia.
+- Antes de publicar, gerar PDF real de teste e conferir visualmente o arquivo final baixado.
+
 ## Pendencias de codigo
 
 Meta: manter arquivos proprios com no maximo 500 linhas. Lockfiles, codigo gerado e dependencias externas nao entram nessa regra.
