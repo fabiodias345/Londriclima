@@ -1,6 +1,6 @@
 # Memoria AIRMOVEBR
 
-Atualizado em: 21/06/2026
+Atualizado em: 25/06/2026
 
 ## Contexto
 
@@ -8,198 +8,117 @@ Atualizado em: 21/06/2026
 - Dominio: `airmovebr.com.br`.
 - Repositorio: `https://github.com/fabiodias345/Londriclima.git`.
 - Workspace local: `C:\develop\LondriClima`.
-- Produto: plataforma para operacao de refrigeracao e climatizacao, com caminho para SaaS multiempresa.
-- Restricao da fase atual: uma empresa piloto, custo baixo, sem superdimensionar infraestrutura.
+- Produto: plataforma operacional para climatizacao, O.S., PMOC, frota e relatorios.
+- Prioridade atual: app tecnico e painel funcionando para operacao real antes de evoluir SaaS.
 
-## Estado Git
+## Stack
 
-- Branch local padrao atual: `dev`.
-- Branches remotas alinhadas: `dev`, `main`, `seg`.
-- Branches devem permanecer alinhadas no mesmo commit antes de deploy.
-
-## Identidade
-
-- Usar marca comercial AIRMOVEBR nas interfaces e dados demo.
-- Evitar nomes visiveis `LondriClima` para usuario final.
-- Login seed atual: `tecnico@airmovebr.local / 123456`.
-- Nomes tecnicos internos legados podem permanecer se renomear quebrar Docker, Prisma, Git ou ambiente local.
-
-## Stack Atual
-
-- Backend: Node.js, NestJS, TypeScript.
-- Banco: PostgreSQL, Prisma.
+- Backend: NestJS, TypeScript, Prisma, PostgreSQL.
 - Admin: HTML, CSS, JavaScript, Leaflet.
 - Landing: HTML, CSS, JavaScript.
 - Mobile: Flutter Android.
-- Infra: Docker Compose local/producao.
-- Testes: `node:test`, Nest Testing, ESLint.
+- Infra: Docker Compose local/producao em VM Locaweb.
+- Testes: Flutter test/analyze, node:test, Nest Testing e contratos frontend.
 
-## Fluxo Operacional
-
-```text
-site -> pre-chamado -> admin -> OS -> tecnico -> evidencias/checklist/GPS -> relatorios
-```
-
-## Feito no Produto
-
-- API REST com autenticao JWT e refresh token.
-- Multiempresa por `empresa_id`.
-- Clientes, enderecos, equipamentos e engenheiros responsaveis.
-- OS com status, eventos, GPS, evidencias, checklist e assinatura.
-- Admin com login, agenda, clientes, frota, relatorios e PMOC.
-- Landing publica com pre-chamado.
-- APK Flutter com login, dashboard, filtros, detalhe de OS, lista de equipamentos e inicio de servico com GPS.
-- API mobile para listar OS do tecnico logado.
-- Seed local de OS demo para testar o APK na maquina local.
-- Consulta publica de equipamento protegida por senha.
-- Frota com mapa Leaflet, consumo e abastecimentos.
-- Testes de backend e contratos do frontend.
-
-## Mobile Atual
-
-Frente em desenvolvimento por fases, testada no celular pelo usuario.
-
-Concluido:
-
-1. Dashboard mobile com dados fake e filtros.
-2. Tela de detalhe da OS.
-3. Suporte a varias maquinas no mesmo local.
-4. Login real via API quando `MOBILE_API_BASE_URL` e informado.
-5. Inicio de atendimento com GPS usando `iniciar_atendimento`.
-6. Chegada ao cliente com GPS usando `cheguei_cliente`.
-7. Checklist definido pela recorrencia e enviado flat pelo backend.
-8. Selecao/confirmacao da maquina antes do checklist.
-9. Renderizacao do checklist flat por tipo de campo no app.
-10. Salvamento do checklist preenchido por maquina.
-
-Arquivos principais:
+## Fluxo operacional
 
 ```text
-apps/mobile/lib/src/
-apps/backend/src/modules/mobile/
-apps/backend/prisma/seed_mobile_demo.ts
+site -> pre-chamado -> admin -> O.S. -> app tecnico -> checklist/fotos/GPS/assinatura -> relatorios/PMOC
 ```
 
-Decisao de checklist:
+## Decisoes ativas
 
-- Tecnico nao escolhe periodicidade no app.
-- Periodicidade/checklist deve vir da OS, definida pelo admin/plano de recorrencia.
-- Banco possui enum limpo `checklist_tipo`: `mensal`, `trimestral`, `semestral`, `anual`.
-- Backend envia checklist flat ja expandido para o mobile; o app apenas renderiza os itens.
-- Debito tecnico consciente: OS antigas ou criadas fora da recorrencia podem cair no default `mensal` ate o admin expor seletor claro para `checklist_tipo`.
+- Marca visivel: AIRMOVEBR.
+- O app tecnico nao escolhe periodicidade; a O.S. traz `checklist_tipo`.
+- O backend monta o checklist flat e o app apenas renderiza/salva.
+- Uma O.S. pode atender varias maquinas do mesmo cliente/local.
+- A O.S. so deve concluir depois de todos os equipamentos pendentes serem executados.
+- GPS e por evento operacional, nao rastreamento continuo do tecnico.
+- Frota deve usar rastreador/IMEI dedicado, nao celular do tecnico.
+- PMOC nao pode misturar maquinas, O.S. ou fotos entre clientes.
 
-Comando local atual:
+## Estado atual do app tecnico
+
+- Login real via API.
+- Dashboard de O.S.
+- Filtros e detalhe.
+- Inicio de atendimento com GPS.
+- Selecao/cadastro de maquina.
+- Cadastro obrigatorio da maquina com justificativa para dado impossivel.
+- Checklist preventivo definido pelo backend.
+- Checklist corretivo simples para O.S. corretiva.
+- Fotos dentro do checklist.
+- Salvamento de checklist por maquina.
+- Finalizacao com nome, assinatura, GPS e data/hora.
+- Fila offline para checklist/fotos/finalizacao.
+- Scanner QR/codigo de barras.
+- Abastecimento de frota.
+- UX recente:
+  - layout mais moderno;
+  - pendencias em azul claro;
+  - checklist por grupos;
+  - progresso e proxima pendencia;
+  - botao fixo para salvar checklist;
+  - maquinas separadas por pendentes/prontas/concluidas.
+
+## Checklist preventivo
+
+- Fonte de referencia: `checklist.md`.
+- Composicao:
+  - Mensal = itens mensais.
+  - Trimestral = mensal + extras trimestrais.
+  - Semestral = mensal + trimestral + extras semestrais.
+  - Anual = mensal + trimestral + semestral + extras anuais.
+- Nao duplicar desligamento, seguranca, fotos equivalentes, medicoes ou finalizacao.
+- Semestral e anual precisam da foto extra da condensadora limpa.
+
+## Painel admin
+
+- Admin gerencia clientes, equipamentos, agenda/O.S., recorrencias, frota, relatorios e PMOC.
+- O.S. precisa permitir corrigir erro operacional com editar/cancelar/apagar conforme regra aprovada.
+- Planos preventivos precisam manter editar e apagar.
+- O painel deve ser usado para gerar O.S. real e validar o app no campo.
+
+## PMOC e relatorios
+
+- PMOC atual existe no backend com previa, PDF, assinatura do engenheiro e envio final.
+- PDF profissional por maquina ainda e evolucao futura.
+- Relatorio avulso/corretivo deve ser a primeira base visual nova antes de aplicar ao PMOC.
+- Relatorio nao-PMOC nao deve puxar dados de PMOC nem engenheiro.
+
+## Infra
+
+- Producao: Locaweb Cloud.
+- IP: `191.252.226.11`.
+- Repo na VM: `/opt/airmovebr/repo`.
+- URLs:
+  - `https://airmovebr.com.br/`
+  - `https://admin.airmovebr.com.br/`
+  - `https://api.airmovebr.com.br/api/v1/health`
+
+## Pendencias futuras
+
+1. Validar checklist novo no celular real.
+2. Ajustar regra final de fotos por periodicidade.
+3. Melhorar finalizacao da O.S. no app.
+4. Validar editar/apagar planos preventivos e O.S. geradas errado.
+5. Gerar APK novo.
+6. Publicar app/backend/admin quando aprovado.
+7. Refazer PDF avulso visual com fotos e assinatura reais.
+8. Depois aplicar padrao visual ao PMOC.
+
+## Comandos uteis
 
 ```text
 cd C:\develop\LondriClima\apps\mobile
 flutter run --dart-define=MOBILE_API_BASE_URL=http://10.91.93.11:3000
-```
-
-Credenciais locais:
-
-```text
-tecnico@airmovebr.local / 123456
-```
-
-Validacoes recentes:
-
-```text
 flutter test
 flutter analyze
 flutter build apk --debug
+```
+
+```text
 npm.cmd run backend:build
-```
-
-Proximas fases mobile:
-
-1. Fotos dentro dos itens do checklist.
-2. Foto depois quando exigida pelo item.
-3. Assinatura do cliente e finalizar OS.
-4. Offline/sync.
-5. Codigo de barras/QR por equipamento.
-
-## PMOC Atual
-
-- PMOC organizado por cliente.
-- Previa oficial no backend.
-- Geracao de PDF PMOC pelo backend.
-- Relatorio PMOC persistido com status, token, hash, cliente e engenheiro.
-- Dossie PMOC exibe Jan-Dez; vermelho indica mes ja enviado ao engenheiro, verde indica mes pendente.
-- Pagina publica de assinatura para engenheiro.
-- Admin solicita assinatura sem mostrar token ao operador.
-- Engenheiro baixa/recebe o PDF, assina no Gov.br e envia o PDF assinado pela pagina publica.
-- Confirmacao so agenda e-mail final ao cliente quando o PDF assinado for recebido.
-
-Endpoints principais:
-
-```text
-GET  /api/v1/admin/pmoc/clientes/:clienteId/previa
-GET  /api/v1/admin/pmoc/clientes/:clienteId/pdf
-POST /api/v1/admin/pmoc/clientes/:clienteId/assinatura-engenheiro
-GET  /api/v1/site/pmoc/assinaturas/:token
-POST /api/v1/site/pmoc/assinaturas/:token/confirmar
-```
-
-## Automacoes e E-mail
-
-- Modulo de automacoes processa itens pendentes por lote.
-- SMTP envia:
-  - link de assinatura ao engenheiro;
-  - relatorio PMOC final assinado ao cliente.
-- E-mail final do cliente:
-  - assunto com mes/ano e nome do cliente;
-  - texto profissional;
-  - nome, CPF e CREA do engenheiro;
-  - PDF assinado no Gov.br em anexo.
-- Payload final inclui cliente, engenheiro, data, hash, nome do arquivo e PDF assinado em base64.
-
-## Infra Producao
-
-- VM: Locaweb Cloud Ubuntu 24.04.3 LTS.
-- IP esperado: `191.252.226.11`.
-- Deploy na VM: `/opt/airmovebr/repo`.
-- Usuario operacional: `airmovebr`.
-- Backend/PostgreSQL ja validados internamente em Docker.
-- Producao atual online:
-  - `https://airmovebr.com.br/`
-  - `https://admin.airmovebr.com.br/`
-  - `https://api.airmovebr.com.br/api/v1/health`
-- Para o desenvolvimento do APK, a prioridade atual e usar a maquina local.
-
-DNS desejado:
-
-```text
-airmovebr.com.br       -> 191.252.226.11
-admin.airmovebr.com.br -> 191.252.226.11
-api.airmovebr.com.br   -> 191.252.226.11
-```
-
-## Proximos Passos
-
-1. Testar Fase 10 do APK no celular usando API local.
-2. Implementar fotos dentro dos itens do checklist.
-3. Implementar assinatura e finalizacao da OS.
-4. Implementar modo offline/sync.
-5. Implementar assinatura e finalizacao da OS.
-6. Depois do fluxo local estar bom, apontar APK para `https://api.airmovebr.com.br`.
-7. Retestar formulario publico de pre-chamado pelo dominio e confirmar entrada no painel.
-8. Configurar SMTP real em `.env.production`.
-9. Testar fluxo PMOC completo fora do local.
-10. Evoluir PDF PMOC profissional por maquina.
-
-## Regras de Negocio
-
-- OS so deve concluir com equipamento identificado, evidencias, checklist, assinatura e GPS de encerramento.
-- GPS deve ser por eventos de acao, nao rastreamento continuo.
-- PMOC deve separar dados por cliente e nao misturar maquinas/OS.
-- Dados sensiveis nao devem aparecer em logs ou commits.
-- Banco de producao nao deve ter porta publica.
-
-## Comandos de Validacao
-
-```text
-npm.cmd run backend:lint
 npm.cmd run backend:test
-npm.cmd run backend:build
 npm.cmd run frontend:test
 ```

@@ -1,123 +1,105 @@
-# Checklists de Manutenção de Ar-Condicionado — PMOC
+# Checklists PMOC - AIRMOVEBR
 
-> Documento elaborado conforme Portaria MS 3.523/98 e NBR 13971.
+Documento de referencia para os checklists preventivos do app tecnico.
 
----
+## Regras gerais
 
-## Legenda de tipos de campo
+- O tecnico nao escolhe a periodicidade no app.
+- A periodicidade vem da O.S. ou do plano preventivo: `mensal`, `trimestral`, `semestral` ou `anual`.
+- O backend envia o checklist flat ja expandido para o app.
+- O app apenas renderiza, valida preenchimento e salva respostas.
+- Checklists maiores incluem os anteriores sem repetir itens iguais:
+  - Trimestral = Mensal + extras trimestrais.
+  - Semestral = Mensal + Trimestral + extras semestrais.
+  - Anual = Mensal + Trimestral + Semestral + extras anuais.
+- Observacao de `select_obs` deve aparecer somente quando a resposta indicar problema/sujeira.
+- Medicoes devem ser por valor numerico, nao por pergunta "bom/ruim".
 
-| Tipo | Descrição |
-|------|-----------|
-| `checkbox` | Confirmação de etapa executada |
-| `select` | Opções fixas: ok / não conforme / danificado / substituído |
-| `select + obs` | Select com campo de observação livre |
-| `numerico` | Valor numérico com unidade (A, bar, psi) |
-| `texto` | Campo de texto livre |
-| `foto` | Captura de imagem vinculada ao item |
-| `finalizacao` | Bloco final: data, técnico, assinatura |
+## Tipos de campo
 
----
+| Tipo | Uso |
+| --- | --- |
+| `checkbox` | Confirmar etapa executada |
+| `select` | Escolha fixa sem observacao |
+| `select_obs` | Escolha fixa com observacao condicional |
+| `numerico` | Valor medido com unidade |
+| `texto` | Texto livre |
+| `foto` | Foto vinculada ao item |
+| `finalizacao` | Bloco final de assinatura/finalizacao da O.S. |
 
-## Checklist Mensal — Limpeza de Filtros
+## Mensal - limpeza de filtros
 
-| # | Item | Tipo |
-|---|------|------|
-| 1 | Desligar pelo controle remoto | `checkbox` |
-| 2 | Desligar disjuntor | `checkbox` |
-| 3 | Abrir tampa frontal | `checkbox` |
-| 4 | Fotografar filtros antes | `foto` |
-| 5 | Retirar filtros | `checkbox` |
-| 6 | Condição dos filtros | `select` (ok / danificado / substituído) |
-| 7 | Limpar filtros | `checkbox` |
-| 8 | Aguardar secagem | `checkbox` |
-| 9 | Inspeção interior: mofo, sujidade, odor | `select + obs` |
-| 10 | Bandeja de condensado | `select + obs` |
-| 11 | Reinstalar filtros | `checkbox` |
-| 12 | Fechar tampa frontal | `checkbox` |
-| 13 | Ligar disjuntor e religar | `checkbox` |
-| 14 | Verificar operação normal | `select + obs` |
-| 15 | Foto após conclusão | `foto` |
-| 16 | Finalização | `finalizacao` |
+| Codigo | Item | Tipo | Opcoes/observacao |
+| --- | --- | --- | --- |
+| M1 | EPIs utilizados | `checkbox` | Confirmar antes do servico |
+| M2 | Desligar pelo controle remoto | `checkbox` |  |
+| M3 | Disjuntores desligados e ambiente protegido | `checkbox` | Inclui ambiente desocupado ou protecao adequada |
+| M4 | Foto inicial | `foto` | Foto do estado antes da limpeza |
+| M5 | Retirar filtro | `checkbox` |  |
+| M6 | Condicoes do filtro | `select` | limpo / sujo / danificado |
+| M7 | Limpar filtro | `checkbox` |  |
+| M8 | Aguardar secagem | `checkbox` |  |
+| M9 | Inspecao interna | `select_obs` | Interna limpa / Interna suja. Observacao somente se suja |
+| M10 | Bandeja do condensado | `select_obs` | Bandeja limpa / Bandeja suja. Observacao somente se suja |
+| M11 | Reinstalar filtros | `checkbox` |  |
+| M12 | Fechar tampa | `checkbox` |  |
+| M13 | Ligar disjuntor | `checkbox` |  |
+| M14 | Funcao Dry se existir por 10 minutos | `select` | realizado / nao existe |
+| M15 | Temperatura de entrada do ar | `numerico` | unidade: `C` |
+| M17 | Temperatura de insuflamento | `numerico` | unidade: `C` |
+| M18 | Observacoes gerais | `texto` |  |
+| M16 | Finalizacao | `finalizacao` | Nome, assinatura, GPS e data/hora da O.S. |
 
----
+## Trimestral - extras
 
-## Checklist Trimestral — Serpentina e Inspeção Geral
+Inclui todos os itens mensais, sem duplicar desligamento, seguranca, filtros, medicoes ou finalizacao.
 
-| # | Item | Tipo |
-|---|------|------|
-| 1 | Desligar pelo controle remoto | `checkbox` |
-| 2 | Desligar disjuntor | `checkbox` |
-| 3 | Abrir tampa frontal | `checkbox` |
-| 4 | Foto filtros antes | `foto` |
-| 5 | Condição dos filtros | `select` (ok / danificado / substituído) |
-| 6 | Limpar e secar filtros | `checkbox` |
-| 7 | Foto serpentina antes | `foto` |
-| 8 | Aplicar higienizante | `checkbox` |
-| 9 | Limpar serpentina | `checkbox` |
-| 10 | Mofo, oxidação, danos nas aletas | `select + obs` |
-| 11 | Bandeja de condensado | `select + obs` |
-| 12 | Dreno de escoamento | `select + obs` |
-| 13 | Gabinete e vedações | `select + obs` |
-| 14 | Ruídos e vibrações | `select + obs` |
-| 15 | Fluxo de ar pelas aletas | `select + obs` |
-| 16 | Reinstalar filtros | `checkbox` |
-| 17 | Fechar tampa | `checkbox` |
-| 18 | Ligar e religar | `checkbox` |
-| 19 | Verificar operação | `select + obs` |
-| 20 | Foto após conclusão | `foto` |
-| 21 | Finalização | `finalizacao` |
+| Codigo | Item | Tipo | Opcoes/observacao |
+| --- | --- | --- | --- |
+| T1 | Aplicar higienizante | `checkbox` |  |
+| T2 | Limpar serpentina evaporadora | `checkbox` |  |
+| T3 | Dreno de escoamento | `select_obs` | ok / nao conforme |
+| T4 | Gabinete e vedacoes | `select_obs` | ok / nao conforme |
+| T5 | Ruidos e vibracoes | `select_obs` | ok / nao conforme |
+| T6 | Fluxo de ar pelas aletas | `select_obs` | ok / nao conforme |
 
----
+## Semestral - extras
 
-## Checklist Semestral — Manutenção Completa
+Inclui Mensal + Trimestral + os itens abaixo.
 
-> Inclui todos os itens do Trimestral, mais os itens abaixo.
+| Codigo | Item | Tipo | Opcoes/observacao |
+| --- | --- | --- | --- |
+| S1 | Acesso a condensadora | `checkbox` |  |
+| S2 | Limpar serpentina condensadora | `checkbox` |  |
+| S3 | Foto da condensadora limpa | `foto` | Foto extra da condensadora apos limpeza |
+| S4 | Oxidacao, entupimento, danos condensadora | `select_obs` | ok / nao conforme |
+| S5 | Limpeza ventilador e helice | `select_obs` | ok / nao conforme |
+| S6 | Pressao do fluido refrigerante | `numerico` | unidade: `bar/psi` |
+| S7 | Tipo de fluido refrigerante | `texto` | Ex.: R-22, R-410A, R-32 |
+| S8 | Inspecao eletrica: conexoes, bornes, cabos | `select_obs` | ok / nao conforme |
+| S9 | Corrente eletrica de operacao | `numerico` | unidade: `A` |
+| S10 | Estado das protecoes eletricas | `select_obs` | ok / nao conforme |
+| S11 | Reinstalar componentes | `checkbox` |  |
+| S12 | Religar e verificar operacao completa | `select_obs` | ok / nao conforme |
 
-| # | Item | Tipo |
-|---|------|------|
-| S1 | Acesso à condensadora | `checkbox` |
-| S2 | Foto condensadora antes | `foto` |
-| S3 | Limpar serpentina condensadora | `checkbox` |
-| S4 | Oxidação, entupimento, danos condensadora | `select + obs` |
-| S5 | Limpeza ventilador e hélice | `select + obs` |
-| S6 | Pressão do fluido refrigerante | `numerico` (bar / psi) + `select` (ok / fora do especificado) |
-| S7 | Tipo de fluido refrigerante | `texto` (R-22, R-410A…) |
-| S8 | Inspeção elétrica: conexões, bornes, cabos | `select + obs` |
-| S9 | Corrente elétrica de operação | `numerico` (A) |
-| S10 | Estado das proteções elétricas | `select + obs` |
-| S11 | Reinstalar componentes | `checkbox` |
-| S12 | Religar e verificar operação completa | `select + obs` |
-| S13 | Foto após conclusão | `foto` |
-| S14 | Finalização | `finalizacao` |
+## Anual - extras
 
----
+Inclui Mensal + Trimestral + Semestral + os itens abaixo.
 
-## Checklist Anual — Relatório Consolidado
+| Codigo | Item | Tipo | Opcoes/observacao |
+| --- | --- | --- | --- |
+| A1 | Quantidade de intervencoes no ano | `numerico` |  |
+| A2 | Avaliacao de desempenho geral | `texto` |  |
+| A3 | Fixacoes mecanicas evaporadora/condensadora | `select_obs` | ok / nao conforme |
+| A4 | Isolamento termico das tubulacoes | `select_obs` | ok / nao conforme |
+| A5 | Conexoes de cobre: vazamentos, oxidacao | `select_obs` | ok / nao conforme |
+| A6 | Capacidade atende ao ambiente? | `select_obs` | sim / nao |
+| A7 | Relatorio consolidado anual | `texto` | Observacao tecnica anual |
 
-> Inclui todos os itens do Semestral, mais os itens abaixo.
+## Pontos de atencao
 
-| # | Item | Tipo |
-|---|------|------|
-| A1 | Quantidade de intervenções no ano | `numerico` |
-| A2 | Avaliação de desempenho geral | `texto` |
-| A3 | Fixações mecânicas evaporadora/condensadora | `select + obs` |
-| A4 | Isolamento térmico das tubulações | `select + obs` |
-| A5 | Conexões de cobre: vazamentos, oxidação | `select + obs` |
-| A6 | Capacidade atende ao ambiente? | `select` (sim / não) + `texto` (parecer técnico) |
-| A7 | Relatório consolidado anual | bloco exportável → `PDF` |
-| A8 | Foto após conclusão | `foto` |
-| A9 | Finalização | `finalizacao` |
-
----
-
-## Resumo quantitativo
-
-| Tipo | Ocorrências |
-|------|-------------|
-| `checkbox` | 18 |
-| `select` | 4 |
-| `select + obs` | 15 |
-| `numerico` | 3 |
-| `texto` | 2 |
-| `foto` | 8 |
-| `finalizacao` | 4 |
+- O checklist mensal precisa continuar facil no sol: campos grandes, contraste alto e pendencias em azul claro.
+- A regra de fotos deve ser conferida no aparelho real:
+  - Mensal e trimestral devem manter as fotos combinadas para a operacao.
+  - Semestral e anual precisam da foto extra da condensadora limpa.
+- Qualquer mudanca neste arquivo deve ser refletida no backend que monta o checklist mobile.

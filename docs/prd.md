@@ -1,20 +1,20 @@
 # PRD - AIRMOVEBR Digital
 
-Versao: 1.5.0  
-Atualizado em: 21/06/2026  
+Versao: 1.6.0
+Atualizado em: 25/06/2026
 Cliente piloto: AIRMOVEBR - Londrina/PR
 
 ## Visao
 
-Plataforma de Field Service Management para manutencao, instalacao e PMOC de ar-condicionado.
+Plataforma de Field Service Management para manutencao, instalacao, frota, relatorios e PMOC de ar-condicionado.
 
 Fluxo principal:
 
 ```text
-site -> pre-chamado -> admin -> OS -> tecnico -> evidencias/checklist/GPS -> relatorios/PMOC
+site -> pre-chamado -> admin -> O.S. -> tecnico -> evidencias/checklist/GPS/assinatura -> relatorios/PMOC
 ```
 
-O produto deve atender primeiro a operacao real da AIRMOVEBR e evoluir depois para SaaS multiempresa.
+O produto deve resolver primeiro a operacao real da AIRMOVEBR e depois evoluir para SaaS multiempresa.
 
 ## Modulos
 
@@ -26,46 +26,54 @@ O produto deve atender primeiro a operacao real da AIRMOVEBR e evoluir depois pa
 
 ### Painel admin
 
-- Gerenciar clientes, equipamentos, agenda, OS, frota, relatorios e PMOC.
+- Gerenciar clientes, equipamentos, agenda, O.S., recorrencias, frota, relatorios e PMOC.
 - Operar em `https://admin.airmovebr.com.br/`.
-- Criar/aprovar pre-chamados e acompanhar execucao.
+- Criar O.S. preventiva/corretiva.
+- Enviar O.S. para campo.
+- Corrigir erro operacional com editar/cancelar/apagar conforme regra aprovada.
 
 ### Backend
 
 - API NestJS com JWT, Prisma e PostgreSQL.
 - Operar localmente em `http://localhost:3000/api/v1`.
 - Operar em producao em `https://api.airmovebr.com.br/api/v1`.
-- Manter regras de negocio no servidor, mesmo quando o app tiver validacoes locais.
+- Manter regras de negocio no servidor, mesmo quando o app validar localmente.
+- Montar checklist flat por tipo de O.S. e periodicidade.
 
 ### App tecnico Android
 
-Estado atual: em desenvolvimento por fases.
+Estado atual: fluxo operacional em evolucao visual e funcional.
 
-Concluido:
+Ja implementado:
 
-1. Login fake local.
-2. Login real por API.
-3. Dashboard de OS do tecnico.
-4. Filtros por status/data.
-5. Detalhe da OS.
-6. Listagem de varias maquinas no mesmo atendimento.
-7. Inicio de servico com GPS.
-8. Chegada ao cliente com GPS.
-9. Recebimento de checklist flat definido pelo backend.
-10. Selecao de maquina antes do checklist.
-11. Renderizacao do checklist por tipo de campo.
-12. Salvamento do checklist preenchido por maquina.
+1. Login fake local e login real por API.
+2. Dashboard de O.S.
+3. Filtros por status/data.
+4. Detalhe da O.S.
+5. Listagem de varias maquinas no mesmo atendimento.
+6. Inicio de atendimento com GPS.
+7. Selecao/cadastro de maquina antes do checklist.
+8. Cadastro obrigatorio da maquina com justificativa para dado impossivel.
+9. Checklist flat vindo do backend.
+10. Checklist preventivo por periodicidade.
+11. Checklist corretivo simples.
+12. Fotos dentro do checklist.
+13. Salvamento de checklist por maquina.
+14. Finalizacao com nome, assinatura, GPS e data/hora.
+15. Fila offline para checklist/fotos/finalizacao.
+16. Scanner QR/codigo de barras.
+17. Registro de abastecimento.
+18. UX de campo com contraste melhor, pendencias em azul claro, grupos de checklist, progresso e botao fixo.
 
 Pendente:
 
-1. Fotos dentro dos itens do checklist.
-2. Assinatura do cliente.
-3. Finalizacao da OS.
-4. Offline/sync.
-5. Codigo de barras/QR por equipamento.
-6. APK release.
+1. Validar no aparelho real sob sol.
+2. Ajustar regra final de fotos por periodicidade.
+3. Melhorar finalizacao da O.S. no app.
+4. Gerar APK novo aprovado.
+5. Publicar em producao.
 
-## Stack Real Atual
+## Stack ativa
 
 | Camada | Tecnologia |
 | --- | --- |
@@ -78,44 +86,58 @@ Pendente:
 | Infra | Docker local e VM Locaweb Cloud |
 | Testes | Node test, Nest Testing, ESLint, Flutter test |
 
-Tecnologias antigas citadas em documentos anteriores, como FastAPI, React/Tailwind, Drift e Supabase, nao representam o estado atual implementado. Podem voltar como decisao futura, mas nao devem ser tratadas como arquitetura ativa.
+Tecnologias antigas citadas em documentos anteriores, como FastAPI, React/Tailwind, Drift e Supabase, nao representam a arquitetura ativa.
 
-## Estado da OS
+## Estado da O.S.
 
 ```text
 pre_chamado
   +-- rejeitar -> rejeitada
   +-- aprovar  -> aberta
                  +-- iniciar_atendimento -> em_atendimento
-                 +-- cancelar        -> cancelada
-                 +-- finalizar       -> concluida
+                 +-- cancelar            -> cancelada
+                 +-- finalizar           -> concluida
 ```
 
 Regras:
 
-- OS concluida nao deve ser reaberta.
+- O.S. concluida nao deve ser reaberta.
 - GPS e capturado por evento, nao por rastreamento continuo.
 - Celular do tecnico nao deve ser usado como rastreador de frota.
 - Para rastreamento continuo de veiculo, usar hardware dedicado.
-- Antes de finalizar, a API deve validar evidencias, checklist, assinatura e GPS final.
+- Antes de finalizar, a API deve validar checklist, fotos exigidas, assinatura e GPS final.
 
-## Fluxo Mobile Alvo
+## Fluxo mobile alvo
 
 ```text
 1. Login
-2. Listar minhas OS
-3. Abrir detalhe da OS
+2. Listar minhas O.S.
+3. Abrir detalhe da O.S.
 4. Iniciar atendimento com GPS
 5. Selecionar equipamento existente ou cadastrar novo
 6. Completar cadastro obrigatorio da maquina ou justificar dado impossivel
-7. Foto antes
-8. Checklist por periodicidade
-9. Observacoes e ocorrencias
-10. Foto depois
-11. Assinatura do cliente
-12. Finalizar OS com GPS
-13. Sincronizar pendencias
+7. Preencher checklist por periodicidade/tipo de servico
+8. Registrar fotos exigidas pelo checklist
+9. Salvar checklist da maquina
+10. Repetir para todas as maquinas da O.S.
+11. Assinar com responsavel
+12. Finalizar O.S. com GPS
+13. Sincronizar pendencias quando necessario
 ```
+
+## Checklist preventivo
+
+- Fonte de referencia: `checklist.md`.
+- O tecnico nao escolhe periodicidade no app.
+- A O.S. deve trazer `checklist_tipo` definido pelo admin ou pela recorrencia.
+- O backend deve enviar checklist flat ja expandido:
+  - mensal;
+  - trimestral = mensal + trimestral;
+  - semestral = mensal + trimestral + semestral;
+  - anual = mensal + trimestral + semestral + anual.
+- Nao duplicar pedidos entre periodicidades.
+- Medicoes devem receber valores reais.
+- Pendencias devem ficar visiveis em azul claro.
 
 ## PMOC
 
@@ -124,12 +146,10 @@ Requisitos:
 - PMOC sempre separado por cliente e endereco.
 - Nao misturar maquinas de clientes diferentes.
 - Cada equipamento deve ter historico proprio.
-- O tecnico nao escolhe a periodicidade do checklist no app; a OS deve trazer o `checklist_tipo` definido pelo admin ou pela recorrencia.
-- O backend deve enviar o checklist flat ja expandido para o mobile, incluindo herancas entre mensal, trimestral, semestral e anual.
-- O PDF profissional deve listar maquinas, atividades, periodicidade, registros e assinaturas.
 - O app deve alimentar o historico PMOC com checklist, fotos e ocorrencias por equipamento.
+- PDF profissional deve listar maquinas, atividades, periodicidade, registros e assinaturas.
 
-Estado atual:
+Estado:
 
 - Previa PMOC no backend.
 - PDF PMOC atual no backend.
@@ -145,12 +165,13 @@ Dentro do MVP:
 - Admin.
 - Backend.
 - Login tecnico.
-- OS no app.
+- O.S. no app.
 - GPS por eventos.
 - Fotos e checklist.
-- Assinatura do cliente.
+- Assinatura do responsavel.
 - PDF/relatorio.
 - PMOC basico.
+- Frota basica com veiculos e abastecimentos.
 
 Fora do MVP:
 
@@ -162,19 +183,20 @@ Fora do MVP:
 - Rastreamento continuo pelo celular.
 - Multiempresa comercial ativa com varios clientes SaaS.
 
-## Criterios de Aceite Mobile
+## Criterios de aceite mobile
 
 - Tecnico loga com conta real.
-- Tecnico ve somente OS vinculadas a ele/equipe.
-- Uma OS com varias maquinas mostra todas as maquinas.
+- Tecnico ve somente O.S. vinculadas a ele/equipe.
+- Uma O.S. com varias maquinas mostra todas as maquinas.
 - Iniciar atendimento grava GPS e muda status no backend.
 - Tecnico seleciona/cadastra maquina e completa dados obrigatorios antes do checklist.
-- Checklist nao permite finalizar incompleto.
-- Fotos antes/depois sao obrigatorias.
+- Checklist nao permite salvar incompleto.
+- Fotos exigidas pelo checklist sao obrigatorias.
 - Finalizacao exige assinatura e GPS final.
 - Se ficar sem internet, app guarda pendencias e sincroniza depois.
+- Interface deve ser legivel em campo e sob sol.
 
-## Comandos de Validacao
+## Comandos de validacao
 
 Backend:
 
@@ -193,10 +215,10 @@ flutter analyze
 flutter build apk --debug
 ```
 
-## Decisoes Operacionais
+## Decisoes operacionais
 
 - Commit, push e deploy sao manuais pelo usuario.
 - Segredos nao devem ir para Git.
 - Arquivos proprios devem ficar preferencialmente abaixo de 500 linhas.
 - A maquina local e o ambiente principal para testar o APK nesta etapa.
-- Producao esta online, mas so deve receber o APK depois do fluxo local ficar bom.
+- Producao esta online, mas so deve receber mudancas depois do fluxo local ficar bom.
