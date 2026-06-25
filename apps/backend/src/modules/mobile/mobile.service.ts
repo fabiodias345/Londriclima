@@ -264,18 +264,20 @@ export class MobileService {
 
   private montarChecklist(tipo: ChecklistTipo) {
     const finalizacao = checklistMensal.find((item) => item.tipo === "finalizacao")!;
-    const mensalSemFinalizacao = checklistMensal.filter((item) => item.tipo !== "finalizacao");
+    const ligarDisjuntor = checklistMensal.find((item) => item.codigo === "M13")!;
+    const mensalSemFinalizacao = checklistMensal.filter((item) => item.tipo !== "finalizacao" && item.codigo !== "M13");
+    const semestralExtra = checklistSemestralExtra.flatMap((item) => (item.codigo === "S12" ? [ligarDisjuntor, item] : [item]));
 
     if (tipo === ChecklistTipo.anual) {
-      return [...mensalSemFinalizacao, ...checklistTrimestralExtra, ...checklistSemestralExtra, ...checklistAnualExtra, finalizacao];
+      return [...mensalSemFinalizacao, ...checklistTrimestralExtra, ...semestralExtra, ...checklistAnualExtra, finalizacao];
     }
 
     if (tipo === ChecklistTipo.semestral) {
-      return [...mensalSemFinalizacao, ...checklistTrimestralExtra, ...checklistSemestralExtra, finalizacao];
+      return [...mensalSemFinalizacao, ...checklistTrimestralExtra, ...semestralExtra, finalizacao];
     }
 
     if (tipo === ChecklistTipo.trimestral) {
-      return [...mensalSemFinalizacao, ...checklistTrimestralExtra, finalizacao];
+      return [...mensalSemFinalizacao, ...checklistTrimestralExtra, ligarDisjuntor, finalizacao];
     }
 
     return checklistMensal;

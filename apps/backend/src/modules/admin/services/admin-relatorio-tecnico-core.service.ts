@@ -2393,15 +2393,19 @@ export class AdminRelatorioTecnicoCoreService {
   }
 
   private ordenarRespostasRelatorioAvulso<T extends { codigo: string }>(respostas: T[]) {
+    const ordem = this.obterOrdemRespostasRelatorioAvulso(respostas);
     return [...respostas].sort((a, b) => {
-      const ordemA = this.obterOrdemRespostaRelatorioAvulso(a.codigo);
-      const ordemB = this.obterOrdemRespostaRelatorioAvulso(b.codigo);
-      return ordemA === ordemB ? a.codigo.localeCompare(b.codigo) : ordemA - ordemB;
+      const ordemA = ordem.indexOf(a.codigo);
+      const ordemB = ordem.indexOf(b.codigo);
+      const posicaoA = ordemA === -1 ? 999 : ordemA;
+      const posicaoB = ordemB === -1 ? 999 : ordemB;
+      return posicaoA === posicaoB ? a.codigo.localeCompare(b.codigo) : posicaoA - posicaoB;
     });
   }
 
-  private obterOrdemRespostaRelatorioAvulso(codigo: string) {
-    const ordem = [
+  private obterOrdemRespostasRelatorioAvulso(respostas: Array<{ codigo: string }>) {
+    const acumulado = respostas.some((resposta) => /^[TSA]/.test(resposta.codigo));
+    const ordemMensal = [
       "M1",
       "M2",
       "M3",
@@ -2414,10 +2418,17 @@ export class AdminRelatorioTecnicoCoreService {
       "M10",
       "M11",
       "M12",
-      "M13",
       "M14",
       "M15",
-      "M17",
+      "M17"
+    ];
+
+    if (!acumulado) {
+      return [...ordemMensal, "M13", "M16"];
+    }
+
+    return [
+      ...ordemMensal,
       "T1",
       "T2",
       "T3",
@@ -2435,6 +2446,7 @@ export class AdminRelatorioTecnicoCoreService {
       "S9",
       "S10",
       "S11",
+      "M13",
       "S12",
       "S3",
       "S13",
@@ -2447,8 +2459,6 @@ export class AdminRelatorioTecnicoCoreService {
       "A7",
       "M16"
     ];
-    const index = ordem.indexOf(codigo);
-    return index === -1 ? 999 : index;
   }
 
   private obterLabelRespostaRelatorioAvulso(codigo: string) {
