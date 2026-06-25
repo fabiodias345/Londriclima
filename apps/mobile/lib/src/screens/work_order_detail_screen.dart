@@ -804,15 +804,9 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
         if (!mounted) {
           return;
         }
-        if (syncResult.failed > 0 || pendingAfterSync > 0) {
-          setState(() {
-            _finishing = false;
-            _errorMessage =
-                'Ainda ha dados pendentes de sincronizacao. Sincronize antes de finalizar.';
-          });
-          return;
+        if (syncResult.failed == 0 && pendingAfterSync == 0) {
+          setState(_markWaitingSyncEquipmentsDone);
         }
-        setState(_markWaitingSyncEquipmentsDone);
       }
 
       final location = await widget.locationService.currentLocation();

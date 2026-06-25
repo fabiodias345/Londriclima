@@ -10,6 +10,7 @@ import 'package:airmovebr_mobile/src/services/barcode_scanner_service.dart';
 import 'package:airmovebr_mobile/src/repositories/work_order_repository.dart';
 import 'package:airmovebr_mobile/src/repositories/fleet_repository.dart';
 import 'package:airmovebr_mobile/src/screens/login_screen.dart';
+import 'package:airmovebr_mobile/src/screens/work_order_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -1011,6 +1012,83 @@ void main() {
     expect(find.text('OS finalizada.'), findsOneWidget);
   });
 
+  testWidgets('finalizacao offline entra na fila mesmo com checklist pendente', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = _RepositorioDeTeste(
+      equipments: const [
+        WorkOrderEquipment(
+          id: 'EQ-102',
+          qrCode: 'QR-102',
+          type: 'Split',
+          brand: 'Samsung',
+          name: 'Evaporadora sala 102',
+          location: 'Sala 102',
+          model: 'Split API',
+          btus: 24000,
+          gas: 'R-410A',
+          serialNumber: 'SN-102',
+          executionStatus: 'aguardando_sync',
+        ),
+      ],
+      status: WorkOrderStatus.inProgress,
+      backendStatus: 'em_atendimento',
+    )
+      ..pendingSyncCountValue = 1
+      ..syncResult = const OfflineSyncResult(failed: 1)
+      ..finishWaitingSync = true;
+    final order = (await repository.listMine()).single;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: WorkOrderDetailScreen(
+          order: order,
+          repository: repository,
+          locationService: const _LocationServiceTeste(),
+          photoPicker: const _PhotoPickerTeste(),
+          barcodeScanner: const _BarcodeScannerTeste(null),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(const Key('responsibleNameField')));
+    await tester.enterText(
+      find.byKey(const Key('responsibleNameField')),
+      'Cliente Teste',
+    );
+    await tester.ensureVisible(find.byKey(const Key('signaturePad')));
+    final signatureCenter = tester.getCenter(
+      find.byKey(const Key('signaturePad')),
+    );
+    final gesture = await tester.startGesture(signatureCenter);
+    await gesture.moveBy(const Offset(80, 30));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('finishWorkOrderButton')));
+    final finishButton = tester.widget<FilledButton>(
+      find.byKey(const Key('finishWorkOrderButton')),
+    );
+    expect(finishButton.onPressed, isNotNull);
+    await tester.runAsync(() async {
+      finishButton.onPressed!();
+      await Future<void>.delayed(const Duration(seconds: 2));
+    });
+    await tester.pumpAndSettle();
+
+    expect(repository.syncPendingCalls, 1);
+    expect(repository.finishedOrderId, 'OS-API');
+    expect(
+      find.text(
+        'Ainda ha dados pendentes de sincronizacao. Sincronize antes de finalizar.',
+      ),
+      findsNothing,
+    );
+    expect(find.text('Finalizacao aguardando sincronizacao.'), findsOneWidget);
+  });
+
   testWidgets('falha ao finalizar OS mostra motivo visivel ao tecnico', (
     tester,
   ) async {
@@ -1458,6 +1536,7 @@ class _RepositorioDeTeste implements WorkOrderRepository {
   FinalizeWorkOrderInput? finishInput;
   Object? finishError;
   Object? checklistPhotoError;
+  bool finishWaitingSync = false;
   int pendingSyncCountValue = 0;
   int syncPendingCalls = 0;
   OfflineSyncResult syncResult = const OfflineSyncResult();
@@ -1619,6 +1698,12 @@ class _RepositorioDeTeste implements WorkOrderRepository {
     }
     finishedOrderId = order.id;
     finishInput = input;
+    if (finishWaitingSync) {
+      return order.copyWith(
+        status: WorkOrderStatus.waitingSync,
+        backendStatus: 'aguardando_sync',
+      );
+    }
     return order.copyWith(
       status: WorkOrderStatus.done,
       backendStatus: 'concluida',
