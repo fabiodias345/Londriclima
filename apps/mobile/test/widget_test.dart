@@ -318,6 +318,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Checklist da maquina'), findsOneWidget);
+    expect(find.byKey(const Key('checklistProgressSummary')), findsOneWidget);
+    expect(find.text('0/5 preenchidos'), findsOneWidget);
+    expect(find.text('Seguranca', skipOffstage: false), findsOneWidget);
+    expect(find.text('Fotos', skipOffstage: false), findsOneWidget);
+    expect(find.text('Filtro e limpeza', skipOffstage: false), findsOneWidget);
+    expect(find.text('Medicoes', skipOffstage: false), findsOneWidget);
     expect(find.text('Desligar pelo controle remoto'), findsOneWidget);
     expect(find.byKey(const Key('checklist_checkbox_M1')), findsOneWidget);
     expect(find.text('Condicao dos filtros'), findsOneWidget);
@@ -802,8 +808,15 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('stepTab_machines')));
     await tester.pumpAndSettle();
+
+    expect(find.text('Com dados faltando'), findsOneWidget);
+    expect(find.text('7 pendencias'), findsWidgets);
     await tester.tap(find.byKey(const Key('selectEquipment_EQ-INCOMPLETA')));
     await tester.pumpAndSettle();
+
+    expect(find.text('Falta preencher'), findsWidgets);
+    expect(find.text('Modelo'), findsWidgets);
+    expect(find.text('Tipo'), findsWidgets);
     tester
         .widget<FilledButton>(find.byKey(const Key('saveMachineButton')))
         .onPressed
@@ -1075,28 +1088,29 @@ void main() {
   ) async {
     await tester.binding.setSurfaceSize(const Size(900, 1200));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    final repository = _RepositorioDeTeste(
-      equipments: const [
-        WorkOrderEquipment(
-          id: 'EQ-102',
-          qrCode: 'QR-102',
-          type: 'Split',
-          brand: 'Samsung',
-          name: 'Evaporadora sala 102',
-          location: 'Sala 102',
-          model: 'Split API',
-          btus: 24000,
-          gas: 'R-410A',
-          serialNumber: 'SN-102',
-          executionStatus: 'aguardando_sync',
-        ),
-      ],
-      status: WorkOrderStatus.inProgress,
-      backendStatus: 'em_atendimento',
-    )
-      ..pendingSyncCountValue = 1
-      ..syncResult = const OfflineSyncResult(failed: 1)
-      ..finishWaitingSync = true;
+    final repository =
+        _RepositorioDeTeste(
+            equipments: const [
+              WorkOrderEquipment(
+                id: 'EQ-102',
+                qrCode: 'QR-102',
+                type: 'Split',
+                brand: 'Samsung',
+                name: 'Evaporadora sala 102',
+                location: 'Sala 102',
+                model: 'Split API',
+                btus: 24000,
+                gas: 'R-410A',
+                serialNumber: 'SN-102',
+                executionStatus: 'aguardando_sync',
+              ),
+            ],
+            status: WorkOrderStatus.inProgress,
+            backendStatus: 'em_atendimento',
+          )
+          ..pendingSyncCountValue = 1
+          ..syncResult = const OfflineSyncResult(failed: 1)
+          ..finishWaitingSync = true;
     final order = (await repository.listMine()).single;
 
     await tester.pumpWidget(

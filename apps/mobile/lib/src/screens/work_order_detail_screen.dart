@@ -78,7 +78,9 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
   bool _finishing = false;
   String? _checklistMessage;
   final _checklistSectionKey = GlobalKey();
+  final ScrollController _scrollController = ScrollController();
   final Map<String, String> _checklistValues = {};
+  final Map<String, GlobalKey> _checklistItemKeys = {};
   final List<Offset?> _signaturePoints = [];
   final TextEditingController _responsibleController = TextEditingController();
   final Set<String> _uploadingPhotoCodes = {};
@@ -117,6 +119,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
     for (final controller in _machineImpossibleControllers.values) {
       controller.dispose();
     }
+    _scrollController.dispose();
     _responsibleController.dispose();
     super.dispose();
   }
@@ -137,8 +140,10 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Detalhes da OS')),
+      bottomNavigationBar: _bottomActionBar(),
       body: SafeArea(
         child: ListView(
+          controller: _scrollController,
           padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
           children: [
             _Header(order: _order),
@@ -271,34 +276,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  ..._handledEquipments().map(
-                    (equipment) => _EquipmentItem(equipment: equipment),
-                  ),
-                  if (_handledEquipments().isNotEmpty)
-                    const SizedBox(height: 12),
-                  ..._filteredEquipments().map(
-                    (equipment) => _SelectableEquipmentItem(
-                      key: Key('selectEquipment_${equipment.id}'),
-                      equipment: equipment,
-                      selected: _selectedEquipment?.id == equipment.id,
-                      onTap: () {
-                        setState(() {
-                          _selectedEquipment = equipment;
-                          _editingMachine = !equipment.hasRequiredMachineData();
-                          _loadMachineForm(equipment);
-                          _checklistStarted = false;
-                          _checklistSaved = false;
-                          _checklistMessage = null;
-                          _checklistValues.clear();
-                          _initialEvidenceSaved = false;
-                          _signaturePoints.clear();
-                          _responsibleController.clear();
-                          _clearTextControllers();
-                          _activeStep = _WorkOrderDetailStep.machines;
-                        });
-                      },
-                    ),
-                  ),
+                  ..._machineSelectionWidgets(),
                   OutlinedButton.icon(
                     key: const Key('newMachineButton'),
                     onPressed: () {
@@ -342,6 +320,11 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
                       value:
                           '${_selectedEquipment!.name} - ${_selectedEquipment!.model}',
                     ),
+                    if (_selectedEquipment!.missingRequiredFields().isNotEmpty)
+                      _MachineMissingSummary(
+                        missingFields: _selectedEquipment!
+                            .missingRequiredFields(),
+                      ),
                   ],
                 ),
               ],
@@ -474,31 +457,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
                           style: TextStyle(color: airmovebrMuted),
                         ),
                       ]
-                    : _order.effectiveChecklist
-                          .map(
-                            (item) => _ChecklistField(
-                              item: item,
-                              value: _checklistValues[item.code],
-                              textController: _controllerFor(item.code),
-                              noteController: _noteControllerFor(item.code),
-                              uploadingPhoto: _uploadingPhotoCodes.contains(
-                                item.code,
-                              ),
-                              onChanged: (value) {
-                                setState(() {
-                                  _checklistValues[item.code] = value;
-                                  _highlightedChecklistCodes.remove(item.code);
-                                });
-                              },
-                              missing: _highlightedChecklistCodes.contains(
-                                item.code,
-                              ),
-                              onPhotoPressed: item.kind == 'foto'
-                                  ? () => _pickChecklistPhoto(item)
-                                  : null,
-                            ),
-                          )
-                          .toList(),
+                    : _checklistWidgets(),
               ),
               const SizedBox(height: 12),
               if (_checklistMessage != null) ...[
@@ -511,25 +470,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
                 ),
                 const SizedBox(height: 12),
               ],
-              FilledButton.icon(
-                key: const Key('saveChecklistButton'),
-                onPressed: _savingChecklist || !_initialEvidenceSaved
-                    ? null
-                    : _saveChecklist,
-                icon: const Icon(Icons.save_outlined),
-                label: Text(
-                  _savingChecklist
-                      ? 'Salvando...'
-                      : !_initialEvidenceSaved
-                      ? 'Registre a foto do checklist'
-                      : 'Salvar checklist',
-                ),
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(52),
-                  backgroundColor: airmovebrAccent,
-                  foregroundColor: Colors.white,
-                ),
-              ),
+              const SizedBox(height: 84),
             ],
             if (_order.isAtClient &&
                 _activeStep == _WorkOrderDetailStep.finish) ...[
@@ -540,6 +481,57 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
         ),
       ),
     );
+  }
+
+  Widget? _bottomActionBar() {
+    final showChecklistAction =
+        _order.isAtClient &&
+        _activeStep == _WorkOrderDetailStep.checklist &&
+        _checklistStarted &&
+        _selectedEquipment != null;
+    if (!showChecklistAction) {
+      return null;
+    }
+
+    return SafeArea(
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          border: Border(top: BorderSide(color: airmovebrBorder)),
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x1A061C2A),
+              blurRadius: 18,
+              offset: Offset(0, -6),
+            ),
+          ],
+        ),
+        child: FilledButton.icon(
+          key: const Key('saveChecklistButton'),
+          onPressed: _savingChecklist || !_initialEvidenceSaved
+              ? null
+              : _saveChecklist,
+          icon: const Icon(Icons.save_outlined),
+          label: Text(_saveChecklistButtonLabel),
+          style: FilledButton.styleFrom(
+            minimumSize: const Size.fromHeight(56),
+            backgroundColor: airmovebrAccent,
+            foregroundColor: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
+  String get _saveChecklistButtonLabel {
+    if (_savingChecklist) {
+      return 'Salvando...';
+    }
+    if (!_initialEvidenceSaved) {
+      return 'Registre a foto do checklist';
+    }
+    return 'Salvar checklist';
   }
 
   bool get _canStart => _order.status == WorkOrderStatus.pending && !_starting;
@@ -724,6 +716,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
           ..addAll(missing.map((item) => item.code));
         _errorMessage = 'Preencha: ${missing.first.label}.';
       });
+      _scrollToChecklistItem(missing.first.code);
       return;
     }
 
@@ -1001,17 +994,31 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
 
   List<WorkOrderChecklistItem> _missingChecklistItems() {
     return _order.effectiveChecklist.where((item) {
-      if (item.kind == 'finalizacao') {
-        return false;
-      }
-      final textValue = _textControllers[item.code]?.text.trim() ?? '';
-      final value = switch (item.kind) {
-        'texto' || 'numerico' => textValue,
-        'foto' => _checklistValues[item.code] ?? '',
-        _ => _checklistValues[item.code] ?? '',
-      };
-      return value.trim().isEmpty || value == 'false';
+      return !_isChecklistItemComplete(item);
     }).toList();
+  }
+
+  bool _isChecklistItemComplete(WorkOrderChecklistItem item) {
+    if (item.kind == 'finalizacao') {
+      return true;
+    }
+    final textValue = _textControllers[item.code]?.text.trim() ?? '';
+    final value = switch (item.kind) {
+      'texto' || 'numerico' => textValue,
+      'foto' => _checklistValues[item.code] ?? '',
+      _ => _checklistValues[item.code] ?? '',
+    };
+    return value.trim().isNotEmpty && value != 'false';
+  }
+
+  List<WorkOrderChecklistItem> get _requiredChecklistItems {
+    return _order.effectiveChecklist
+        .where((item) => item.kind != 'finalizacao')
+        .toList();
+  }
+
+  int get _completedChecklistCount {
+    return _requiredChecklistItems.where(_isChecklistItemComplete).length;
   }
 
   List<Widget> _finishWidgets() {
@@ -1090,6 +1097,68 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
     return _noteControllers.putIfAbsent(code, TextEditingController.new);
   }
 
+  List<Widget> _checklistWidgets() {
+    final widgets = <Widget>[];
+    String? currentGroup;
+
+    widgets.add(
+      _ChecklistProgressSummary(
+        completed: _completedChecklistCount,
+        total: _requiredChecklistItems.length,
+        nextMissing: _missingChecklistItems().firstOrNull?.label,
+      ),
+    );
+
+    for (final item in _order.effectiveChecklist) {
+      final group = _checklistGroupFor(item);
+      if (group != currentGroup) {
+        widgets.add(_ChecklistGroupHeader(label: group));
+        currentGroup = group;
+      }
+
+      widgets.add(
+        _ChecklistField(
+          itemKey: _checklistItemKey(item.code),
+          item: item,
+          value: _checklistValues[item.code],
+          textController: _controllerFor(item.code),
+          noteController: _noteControllerFor(item.code),
+          uploadingPhoto: _uploadingPhotoCodes.contains(item.code),
+          onChanged: (value) {
+            setState(() {
+              _checklistValues[item.code] = value;
+              _highlightedChecklistCodes.remove(item.code);
+            });
+          },
+          missing: _highlightedChecklistCodes.contains(item.code),
+          onPhotoPressed: item.kind == 'foto'
+              ? () => _pickChecklistPhoto(item)
+              : null,
+        ),
+      );
+    }
+
+    return widgets;
+  }
+
+  GlobalKey _checklistItemKey(String code) {
+    return _checklistItemKeys.putIfAbsent(code, GlobalKey.new);
+  }
+
+  void _scrollToChecklistItem(String code) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = _checklistItemKeys[code]?.currentContext;
+      if (context == null) {
+        return;
+      }
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 260),
+        alignment: 0.12,
+      );
+    });
+  }
+
   void _clearTextControllers() {
     for (final controller in _textControllers.values) {
       controller.clear();
@@ -1118,6 +1187,69 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
       ].join(' ').toLowerCase();
       return searchable.contains(filter);
     }).toList();
+  }
+
+  List<Widget> _machineSelectionWidgets() {
+    final pending = _filteredEquipments();
+    final incomplete = pending
+        .where((equipment) => !equipment.hasRequiredMachineData())
+        .toList();
+    final ready = pending
+        .where((equipment) => equipment.hasRequiredMachineData())
+        .toList();
+    final handled = _handledEquipments();
+
+    return [
+      if (incomplete.isNotEmpty) ...[
+        _MachineListHeader(
+          title: 'Com dados faltando',
+          count: incomplete.length,
+          color: airmovebrPrimary,
+        ),
+        ...incomplete.map(_selectableMachineCard),
+      ],
+      if (ready.isNotEmpty) ...[
+        _MachineListHeader(
+          title: 'Prontas para checklist',
+          count: ready.length,
+          color: airmovebrSuccess,
+        ),
+        ...ready.map(_selectableMachineCard),
+      ],
+      if (handled.isNotEmpty) ...[
+        _MachineListHeader(
+          title: 'Concluidas',
+          count: handled.length,
+          color: airmovebrMuted,
+        ),
+        ...handled.map((equipment) => _EquipmentItem(equipment: equipment)),
+        const SizedBox(height: 4),
+      ],
+    ];
+  }
+
+  Widget _selectableMachineCard(WorkOrderEquipment equipment) {
+    return _SelectableEquipmentItem(
+      key: Key('selectEquipment_${equipment.id}'),
+      equipment: equipment,
+      selected: _selectedEquipment?.id == equipment.id,
+      onTap: () {
+        setState(() {
+          _selectedEquipment = equipment;
+          _editingMachine = !equipment.hasRequiredMachineData();
+          _loadMachineForm(equipment);
+          _checklistStarted = false;
+          _checklistSaved = false;
+          _checklistMessage = null;
+          _checklistValues.clear();
+          _initialEvidenceSaved = false;
+          _signaturePoints.clear();
+          _responsibleController.clear();
+          _clearTextControllers();
+          _activeStep = _WorkOrderDetailStep.machines;
+        });
+      },
+    );
   }
 
   List<WorkOrderEquipment> _handledEquipments() {
@@ -1375,6 +1507,117 @@ class _SignaturePainter extends CustomPainter {
   }
 }
 
+class _MachineListHeader extends StatelessWidget {
+  const _MachineListHeader({
+    required this.title,
+    required this.count,
+    required this.color,
+  });
+
+  final String title;
+  final int count;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(2, 10, 2, 8),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: color,
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(width: 8),
+          _StatusPill(
+            label: count == 1 ? '1 maquina' : '$count maquinas',
+            color: color,
+            backgroundColor: Colors.white,
+          ),
+          const SizedBox(width: 10),
+          const Expanded(child: Divider(color: airmovebrBorder)),
+        ],
+      ),
+    );
+  }
+}
+
+class _MachineMissingSummary extends StatelessWidget {
+  const _MachineMissingSummary({required this.missingFields});
+
+  final List<String> missingFields;
+
+  @override
+  Widget build(BuildContext context) {
+    if (missingFields.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: airmovebrRequiredMissingFill,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: airmovebrRequiredMissingBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.info_outline, color: airmovebrPrimary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Falta preencher',
+                      style: TextStyle(
+                        color: airmovebrPrimary,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    Text(
+                      missingFields.length == 1
+                          ? '1 pendencia'
+                          : '${missingFields.length} pendencias',
+                      style: const TextStyle(color: airmovebrMuted),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: missingFields
+                .map(
+                  (field) => _StatusPill(
+                    label: _machineFieldLabel(field),
+                    color: airmovebrPrimary,
+                    backgroundColor: Colors.white,
+                  ),
+                )
+                .toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _machineFieldLabel(String field) {
+  return _machineFieldLabels[field] ?? field;
+}
+
 class _MachineField extends StatelessWidget {
   const _MachineField({
     required this.fieldKey,
@@ -1485,8 +1728,78 @@ class _MachineField extends StatelessWidget {
   }
 }
 
+class _ChecklistProgressSummary extends StatelessWidget {
+  const _ChecklistProgressSummary({
+    required this.completed,
+    required this.total,
+    required this.nextMissing,
+  });
+
+  final int completed;
+  final int total;
+  final String? nextMissing;
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = total == 0 ? 0.0 : completed / total;
+    return Container(
+      key: const Key('checklistProgressSummary'),
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE9F8FC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: airmovebrBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.task_alt_outlined, color: airmovebrPrimary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  total == 0
+                      ? 'Sem itens obrigatorios'
+                      : '$completed/$total preenchidos',
+                  style: const TextStyle(
+                    color: airmovebrText,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 8,
+              backgroundColor: Colors.white,
+              valueColor: const AlwaysStoppedAnimation<Color>(airmovebrSuccess),
+            ),
+          ),
+          if (nextMissing != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              'Proxima pendencia: $nextMissing',
+              style: const TextStyle(
+                color: airmovebrPrimary,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _ChecklistField extends StatelessWidget {
   const _ChecklistField({
+    required this.itemKey,
     required this.item,
     required this.value,
     required this.textController,
@@ -1497,6 +1810,7 @@ class _ChecklistField extends StatelessWidget {
     this.onPhotoPressed,
   });
 
+  final Key itemKey;
   final WorkOrderChecklistItem item;
   final String? value;
   final TextEditingController textController;
@@ -1509,7 +1823,7 @@ class _ChecklistField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      key: Key('checklist_item_${item.code}'),
+      key: itemKey,
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -1692,6 +2006,83 @@ class _ChecklistField extends StatelessWidget {
   }
 }
 
+class _ChecklistGroupHeader extends StatelessWidget {
+  const _ChecklistGroupHeader({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(2, 8, 2, 8),
+      child: Row(
+        children: [
+          Icon(_checklistGroupIcon(label), color: airmovebrPrimary, size: 20),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              color: airmovebrPrimary,
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(width: 10),
+          const Expanded(child: Divider(color: airmovebrBorder)),
+        ],
+      ),
+    );
+  }
+}
+
+String _checklistGroupFor(WorkOrderChecklistItem item) {
+  final label = item.label.toLowerCase();
+  if (item.kind == 'foto') {
+    return 'Fotos';
+  }
+  if (item.kind == 'numerico' ||
+      label.contains('temperatura') ||
+      label.contains('pressao') ||
+      label.contains('fluido')) {
+    return 'Medicoes';
+  }
+  if (label.contains('epi') ||
+      label.contains('deslig') ||
+      label.contains('disjuntor') ||
+      label.contains('ambiente')) {
+    return 'Seguranca';
+  }
+  if (item.kind == 'finalizacao' ||
+      label.contains('fechar') ||
+      label.startsWith('ligar') ||
+      label.contains(' ligar') ||
+      label.contains('dry')) {
+    return 'Fechamento';
+  }
+  if (label.contains('interna') ||
+      label.contains('bandeja') ||
+      label.contains('bandeija') ||
+      label.contains('condensadora')) {
+    return 'Inspecao';
+  }
+  if (label.contains('filtro') || label.contains('secagem')) {
+    return 'Filtro e limpeza';
+  }
+  return 'Geral';
+}
+
+IconData _checklistGroupIcon(String label) {
+  return switch (label) {
+    'Seguranca' => Icons.health_and_safety_outlined,
+    'Fotos' => Icons.photo_camera_outlined,
+    'Filtro e limpeza' => Icons.filter_alt_outlined,
+    'Inspecao' => Icons.search_outlined,
+    'Medicoes' => Icons.device_thermostat_outlined,
+    'Fechamento' => Icons.assignment_turned_in_outlined,
+    _ => Icons.checklist_rounded,
+  };
+}
+
 class _ChecklistLabel extends StatelessWidget {
   const _ChecklistLabel({required this.label, required this.missing});
 
@@ -1801,7 +2192,9 @@ class _EquipmentItem extends StatelessWidget {
                 ] else if (missingCount > 0) ...[
                   const SizedBox(height: 6),
                   _StatusPill(
-                    label: '$missingCount dados faltando',
+                    label: missingCount == 1
+                        ? '1 pendencia'
+                        : '$missingCount pendencias',
                     color: airmovebrPrimary,
                     backgroundColor: Colors.white,
                   ),
@@ -1890,7 +2283,9 @@ class _SelectableEquipmentItem extends StatelessWidget {
                   const SizedBox(height: 6),
                   _StatusPill(
                     label: missingCount > 0
-                        ? '$missingCount dados faltando'
+                        ? missingCount == 1
+                              ? '1 pendencia'
+                              : '$missingCount pendencias'
                         : 'Pronta para checklist',
                     color: missingCount > 0
                         ? airmovebrPrimary
