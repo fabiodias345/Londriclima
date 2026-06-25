@@ -156,7 +156,7 @@ test("listarOrdens retorna checklist mensal operacional com EPIs filtro e temper
 
   assert.deepEqual(
     checklist.map((item: { codigo: string }) => item.codigo),
-    ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "M9", "M10", "M11", "M12", "M13", "M14", "M15", "M17", "M18", "M16"]
+    ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "M9", "M10", "M11", "M12", "M13", "M14", "M15", "M17", "M16"]
   );
   assert.equal(checklist[0].item, "EPIs utilizados");
   assert.equal(checklist[3].item, "Foto inicial");
@@ -165,8 +165,6 @@ test("listarOrdens retorna checklist mensal operacional com EPIs filtro e temper
   assert.equal(checklist[14].item, "Temperatura de entrada do ar");
   assert.equal(checklist[14].unidade, "°C");
   assert.equal(checklist[15].item, "Temperatura de insuflamento");
-  assert.equal(checklist[16].item, "Foto da evaporadora limpa");
-  assert.equal(checklist[16].tipo, "foto");
 });
 
 test("listarOrdens retorna checklist trimestral e semestral com respostas sim nao profissionais", async () => {
@@ -213,6 +211,48 @@ test("listarOrdens retorna checklist trimestral e semestral com respostas sim na
   assert.deepEqual(porCodigo.S10, { item: "Protecoes eletricas funcionando", tipo: "checkbox" });
   assert.deepEqual(porCodigo.S12, { item: "Religado e verificado", tipo: "checkbox" });
   assert.deepEqual(porCodigo.S13, { item: "Observacao", tipo: "texto", obrigatorio: false });
+  assert.deepEqual(
+    resultado.items[0].checklist.map((item: { codigo: string }) => item.codigo),
+    [
+      "M1",
+      "M2",
+      "M3",
+      "M4",
+      "M5",
+      "M6",
+      "M7",
+      "M8",
+      "M9",
+      "M10",
+      "M11",
+      "M12",
+      "M13",
+      "M14",
+      "M15",
+      "M17",
+      "T1",
+      "T2",
+      "T3",
+      "T4",
+      "T5",
+      "T6",
+      "M18",
+      "S1",
+      "S2",
+      "S4",
+      "S5",
+      "S6",
+      "S7",
+      "S8",
+      "S9",
+      "S10",
+      "S11",
+      "S12",
+      "S3",
+      "S13",
+      "M16"
+    ]
+  );
 });
 
 test("listarOrdens compoe checklists acumulados sem duplicar seguranca fotos e finalizacao", async () => {
@@ -244,7 +284,7 @@ test("listarOrdens compoe checklists acumulados sem duplicar seguranca fotos e f
   const fotos = (tipo: string) => porTipo[tipo].filter((item: { tipo: string }) => item.tipo === "foto");
   const finalizacoes = (tipo: string) => porTipo[tipo].filter((item: { tipo: string }) => item.tipo === "finalizacao");
 
-  assert.equal(fotos("mensal").length, 2);
+  assert.equal(fotos("mensal").length, 1);
   assert.equal(fotos("trimestral").length, 2);
   assert.equal(fotos("semestral").length, 3);
   assert.equal(fotos("anual").length, 3);

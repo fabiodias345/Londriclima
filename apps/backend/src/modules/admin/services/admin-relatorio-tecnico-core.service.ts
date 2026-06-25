@@ -2157,7 +2157,7 @@ export class AdminRelatorioTecnicoCoreService {
       }
     }
 
-    for (const resposta of ordem.checklist_respostas ?? []) {
+    for (const resposta of this.ordenarRespostasRelatorioAvulso(ordem.checklist_respostas ?? [])) {
       if (!resposta.valor?.startsWith("/storage/") || urls.has(resposta.valor)) {
         continue;
       }
@@ -2361,7 +2361,7 @@ export class AdminRelatorioTecnicoCoreService {
       checklist_respostas?: Array<{ codigo: string; valor: string; observacao: string | null }>;
     }) | null
   ) {
-    const linhas = (ordem?.checklist_respostas ?? [])
+    const linhas = this.ordenarRespostasRelatorioAvulso(ordem?.checklist_respostas ?? [])
       .filter((resposta) => this.deveExibirRespostaRelatorioAvulso(resposta))
       .map((resposta) => {
         const observacao = resposta.observacao?.trim() ? ` (${resposta.observacao.trim()})` : "";
@@ -2390,6 +2390,65 @@ export class AdminRelatorioTecnicoCoreService {
     }
 
     return true;
+  }
+
+  private ordenarRespostasRelatorioAvulso<T extends { codigo: string }>(respostas: T[]) {
+    return [...respostas].sort((a, b) => {
+      const ordemA = this.obterOrdemRespostaRelatorioAvulso(a.codigo);
+      const ordemB = this.obterOrdemRespostaRelatorioAvulso(b.codigo);
+      return ordemA === ordemB ? a.codigo.localeCompare(b.codigo) : ordemA - ordemB;
+    });
+  }
+
+  private obterOrdemRespostaRelatorioAvulso(codigo: string) {
+    const ordem = [
+      "M1",
+      "M2",
+      "M3",
+      "M4",
+      "M5",
+      "M6",
+      "M7",
+      "M8",
+      "M9",
+      "M10",
+      "M11",
+      "M12",
+      "M13",
+      "M14",
+      "M15",
+      "M17",
+      "T1",
+      "T2",
+      "T3",
+      "T4",
+      "T5",
+      "T6",
+      "M18",
+      "S1",
+      "S2",
+      "S4",
+      "S5",
+      "S6",
+      "S7",
+      "S8",
+      "S9",
+      "S10",
+      "S11",
+      "S12",
+      "S3",
+      "S13",
+      "A1",
+      "A2",
+      "A3",
+      "A4",
+      "A5",
+      "A6",
+      "A7",
+      "M16"
+    ];
+    const index = ordem.indexOf(codigo);
+    return index === -1 ? 999 : index;
   }
 
   private obterLabelRespostaRelatorioAvulso(codigo: string) {

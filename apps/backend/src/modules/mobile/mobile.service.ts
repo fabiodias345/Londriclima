@@ -37,7 +37,6 @@ const checklistMensal: ChecklistItem[] = [
   { codigo: "M14", item: "Funcao Dry se existir por 10 minutos", tipo: "select", opcoes: ["realizado", "nao existe"] },
   { codigo: "M15", item: "Temperatura de entrada do ar", tipo: "numerico", unidade: "°C" },
   { codigo: "M17", item: "Temperatura de insuflamento", tipo: "numerico", unidade: "°C" },
-  { codigo: "M18", item: "Foto da evaporadora limpa", tipo: "foto" },
   { codigo: "M16", item: "Finalizacao", tipo: "finalizacao" }
 ];
 
@@ -47,13 +46,13 @@ const checklistTrimestralExtra: ChecklistItem[] = [
   { codigo: "T3", item: "Dreno limpo", tipo: "checkbox" },
   { codigo: "T4", item: "Gabinete limpo", tipo: "checkbox" },
   { codigo: "T5", item: "Ruido", tipo: "checkbox" },
-  { codigo: "T6", item: "Fluxo de ar pelas aletas normal", tipo: "checkbox" }
+  { codigo: "T6", item: "Fluxo de ar pelas aletas normal", tipo: "checkbox" },
+  { codigo: "M18", item: "Foto da evaporadora limpa", tipo: "foto" }
 ];
 
 const checklistSemestralExtra: ChecklistItem[] = [
   { codigo: "S1", item: "Acesso a condensadora", tipo: "checkbox" },
   { codigo: "S2", item: "Limpar serpentina condensadora", tipo: "checkbox" },
-  { codigo: "S3", item: "Foto da condensadora limpa", tipo: "foto" },
   { codigo: "S4", item: "Oxidacao, danos ou entupimentos", tipo: "checkbox" },
   { codigo: "S5", item: "Efetuado limpeza geral", tipo: "checkbox" },
   { codigo: "S6", item: "Pressao do fluido refrigerante", tipo: "numerico", unidade: "bar/psi" },
@@ -63,6 +62,7 @@ const checklistSemestralExtra: ChecklistItem[] = [
   { codigo: "S10", item: "Protecoes eletricas funcionando", tipo: "checkbox" },
   { codigo: "S11", item: "Reinstalar componentes", tipo: "checkbox" },
   { codigo: "S12", item: "Religado e verificado", tipo: "checkbox" },
+  { codigo: "S3", item: "Foto da condensadora limpa", tipo: "foto" },
   { codigo: "S13", item: "Observacao", tipo: "texto", obrigatorio: false }
 ];
 
