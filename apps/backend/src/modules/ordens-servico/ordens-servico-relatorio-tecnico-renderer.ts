@@ -28,12 +28,12 @@ export class OrdensServicoRelatorioTecnicoRenderer {
 
     return this.criarPdfVisual(
       [
-        "AIRMOVEBR - RELATORIO TECNICO VISUAL",
-        "Relatorio tecnico de atendimento sem PMOC",
+        "AIRMOVEBR - RELATORIO DE MANUTENCAO",
+        "Atendimento de manutencao",
         "",
         `Cliente: ${input.clienteNome}`,
         `Servico: ${input.titulo}`,
-        `Tipo de servico: ${this.formatarTipoServico(input.tipoServico)}`,
+        `Natureza do atendimento: ${this.formatarTipoServico(input.tipoServico)}`,
         `Agendado para: ${this.formatarDataHora(input.agendadaPara)}`,
         `Finalizado em: ${this.formatarDataHora(input.finalizadoEm)}`,
         `Equipamento: ${[input.equipamento?.marca, input.equipamento?.modelo].filter(Boolean).join(" ") || "todos do cliente"}`,
@@ -59,11 +59,27 @@ export class OrdensServicoRelatorioTecnicoRenderer {
       return ["Sem respostas de checklist registradas."];
     }
 
-    return respostas.map((resposta) => {
-      const label = this.obterLabelChecklist(resposta.codigo);
-      const observacao = resposta.observacao?.trim() ? ` (${resposta.observacao.trim()})` : "";
-      return `${label}: ${resposta.valor || "nao informado"}${observacao}`;
-    });
+    return respostas
+      .filter((resposta) => this.deveExibirRespostaChecklist(resposta))
+      .map((resposta) => {
+        const label = this.obterLabelChecklist(resposta.codigo);
+        const observacao = resposta.observacao?.trim() ? ` (${resposta.observacao.trim()})` : "";
+        return `${label}: ${resposta.valor.trim()}${observacao}`;
+      });
+  }
+
+  private deveExibirRespostaChecklist(resposta: { codigo: string; valor: string }) {
+    const valor = resposta.valor?.trim() ?? "";
+
+    if (!valor || /^pendente$/i.test(valor)) {
+      return false;
+    }
+
+    if (resposta.codigo === "C3" || valor.startsWith("/storage/")) {
+      return false;
+    }
+
+    return true;
   }
 
   private obterLabelChecklist(codigo: string) {

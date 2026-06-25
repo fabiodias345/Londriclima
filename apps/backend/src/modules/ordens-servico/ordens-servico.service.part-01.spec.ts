@@ -468,7 +468,17 @@ test("finalizarOs agenda relatorio tecnico por email para cliente sem PMOC", asy
           ],
           checklistRespostas: [
             { equipamentoId: "equip-1", codigo: "C1", tipo: "texto", valor: "Motor travado", observacao: null },
-            { equipamentoId: "equip-1", codigo: "C2", tipo: "texto", valor: "Motor destravado e testado", observacao: "Cliente acompanhou" }
+            { equipamentoId: "equip-1", codigo: "C2", tipo: "texto", valor: "Motor destravado e testado", observacao: "Cliente acompanhou" },
+            {
+              equipamentoId: "equip-1",
+              codigo: "C3",
+              tipo: "foto",
+              valor: "/storage/os/os-1/checklist/equip-1/C3.jpg",
+              observacao: null
+            },
+            { equipamentoId: "equip-1", codigo: "C4", tipo: "texto", valor: "Produtos de limpeza", observacao: null },
+            { equipamentoId: "equip-1", codigo: "C5", tipo: "texto", valor: "Funcionando", observacao: null },
+            { equipamentoId: "equip-1", codigo: "C6", tipo: "texto", valor: "pendente", observacao: null }
           ]
         }),
       update: async () => undefined
@@ -502,13 +512,20 @@ test("finalizarOs agenda relatorio tecnico por email para cliente sem PMOC", asy
   assert.equal(email?.payload?.total_os_concluidas, 1);
   assert.match(String(email?.payload?.pdf_filename), /relatorio-tecnico-cliente-avulso-os-1\.pdf/);
   const pdfText = Buffer.from(String(email?.payload?.pdf_base64), "base64").toString("latin1");
-  assert.match(pdfText, /RELATORIO TECNICO VISUAL/);
+  assert.match(pdfText, /RELATORIO DE MANUTENCAO/);
+  assert.match(pdfText, /Natureza do atendimento: Corretiva/);
   assert.match(pdfText, /Assinado por: Maria Souza/);
   assert.match(pdfText, /Problema encontrado: Motor travado/);
   assert.match(pdfText, /Acao realizada: Motor destravado e testado/);
+  assert.match(pdfText, /Pecas utilizadas: Produtos de limpeza/);
+  assert.match(pdfText, /Observacao final: Funcionando/);
   assert.match(pdfText, /Foto inicial: Foto do atendimento/);
   assert.match(pdfText, /\/Subtype \/Image/);
+  assert.doesNotMatch(pdfText, /Foto do atendimento: \/storage/);
+  assert.doesNotMatch(pdfText, /C3\.jpg|C6: pendente/);
   assert.doesNotMatch(pdfText, /OS: os-1/);
+  assert.doesNotMatch(pdfText, /Preventiva/);
+  assert.doesNotMatch(pdfText, /Engenheiro|CREA|ART|PMOC/);
   assert.doesNotMatch(pdfText, /\/storage\/os\/os-1\/foto\.webp/);
   assert.doesNotMatch(pdfText, /\/storage\/os\/os-1\/assinatura\.png/);
   assert.doesNotMatch(pdfText, /Assinatura responsavel:/);

@@ -233,11 +233,11 @@ test("processarPendentes envia relatorio tecnico avulso direto ao cliente com co
     from: "AIRMOVEBR <noreply@example.com>",
     to: "cliente@example.com",
     bcc: "airmovebr2@gmail.com",
-    subject: "Relatório técnico - Cliente Avulso",
+    subject: "Relatório de manutenção - Cliente Avulso",
     text: [
       "Prezado(a) Cliente Avulso,",
       "",
-      "Encaminhamos em anexo o relatório técnico referente ao atendimento realizado pela AIRMOVEBR.",
+      "Encaminhamos em anexo o relatório de manutenção referente ao atendimento realizado pela AIRMOVEBR.",
       "",
       "Atendimento finalizado em: 11/06/2026 12:00",
       "Máquinas atendidas: 1",

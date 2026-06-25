@@ -228,11 +228,11 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
         from,
         to: dados.cliente_email,
         ...(internalCopyEmail ? { bcc: internalCopyEmail } : {}),
-        subject: `Relatório técnico - ${dados.cliente_nome}`,
+        subject: `Relatório de manutenção - ${dados.cliente_nome}`,
         text: [
           `Prezado(a) ${dados.cliente_nome},`,
           "",
-          "Encaminhamos em anexo o relatório técnico referente ao atendimento realizado pela AIRMOVEBR.",
+          "Encaminhamos em anexo o relatório de manutenção referente ao atendimento realizado pela AIRMOVEBR.",
           "",
           `Atendimento finalizado em: ${this.formatarDataEmail(dados.periodo_fim ?? dados.data_envio)}`,
           `Máquinas atendidas: ${dados.total_maquinas}`,
