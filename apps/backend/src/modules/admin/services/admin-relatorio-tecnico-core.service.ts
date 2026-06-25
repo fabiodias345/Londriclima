@@ -532,6 +532,20 @@ export class AdminRelatorioTecnicoCoreService {
   }
 
   async listarRelatoriosAvulsos(usuario: AuthenticatedUser) {
+    const relatoriosApagados = await this.prisma.automacaoAgendada.findMany({
+      where: {
+        empresaId: usuario.empresa_id,
+        tipo: AutomacaoTipo.enviar_email,
+        payload: {
+          path: ["tipo"],
+          equals: "relatorio_tecnico_avulso_apagado"
+        }
+      },
+      select: {
+        payload: true
+      }
+    });
+    const osApagadasPorCliente = this.mapearOsRelatoriosAvulsosApagados(relatoriosApagados);
     const clientes = await this.prisma.cliente.findMany({
       where: {
         empresaId: usuario.empresa_id,
@@ -564,7 +578,10 @@ export class AdminRelatorioTecnicoCoreService {
     });
 
     const items = clientes.map((cliente) => {
-      const totalOsConcluidas = cliente.equipamentos.reduce((total, equipamento) => total + equipamento.ordensServico.length, 0);
+      const osConcluidas = cliente.equipamentos.flatMap((equipamento) => equipamento.ordensServico.map((ordem) => ordem.id));
+      const osApagadas = osApagadasPorCliente.get(cliente.id) ?? new Set<string>();
+      const osVisiveis = osConcluidas.filter((ordemId) => !osApagadas.has(ordemId));
+      const totalOsConcluidas = osVisiveis.length;
 
       return {
         id: cliente.id,
@@ -576,7 +593,7 @@ export class AdminRelatorioTecnicoCoreService {
         total_os_concluidas: totalOsConcluidas,
         pronto_para_envio: Boolean(cliente.email) && totalOsConcluidas > 0
       };
-    });
+    }).filter((item) => item.total_os_concluidas > 0);
 
     return {
       total: items.length,
@@ -671,25 +688,8 @@ export class AdminRelatorioTecnicoCoreService {
   }
 
   async apagarRelatorioAvulsoCliente(clienteId: string, usuario: AuthenticatedUser) {
-    const cliente = await this.prisma.cliente.findFirst({
-      where: {
-        id: clienteId,
-        empresaId: usuario.empresa_id
-      },
-      select: {
-        id: true,
-        nome: true,
-        pmocAtivo: true
-      }
-    });
-
-    if (!cliente) {
-      throw new NotFoundException("Cliente nao encontrado.");
-    }
-
-    if (cliente.pmocAtivo) {
-      throw new BadRequestException("Cliente possui PMOC ativo. Use o fluxo PMOC.");
-    }
+    const previa = await this.obterPreviaRelatorioAvulsoCliente(clienteId, usuario);
+    const osIds = previa.maquinas.flatMap((maquina) => maquina.os_concluidas.map((ordem) => ordem.id));
 
     const resultado = await this.prisma.automacaoAgendada.deleteMany({
       where: {
@@ -702,17 +702,59 @@ export class AdminRelatorioTecnicoCoreService {
       }
     });
 
+    await this.prisma.automacaoAgendada.create({
+      data: {
+        empresaId: usuario.empresa_id,
+        tipo: AutomacaoTipo.enviar_email,
+        status: AutomacaoStatus.concluida,
+        executarEm: new Date(),
+        payload: {
+          tipo: "relatorio_tecnico_avulso_apagado",
+          cliente_id: previa.cliente.id,
+          cliente_nome: previa.cliente.nome,
+          apagado_em: new Date().toISOString(),
+          os_ids: osIds
+        } satisfies Prisma.JsonObject
+      }
+    });
+
     return {
       cliente: {
-        id: cliente.id,
-        nome: cliente.nome
+        id: previa.cliente.id,
+        nome: previa.cliente.nome
       },
-      relatorios_apagados: resultado.count
+      relatorios_apagados: Math.max(resultado.count, osIds.length)
     };
   }
 
   async criarEngenheiroResponsavel(dto: SalvarEngenheiroResponsavelDto, usuario: AuthenticatedUser) {
     return this.engenheirosService.criarEngenheiroResponsavel(dto, usuario);
+  }
+
+  private mapearOsRelatoriosAvulsosApagados(relatorios: Array<{ payload: Prisma.JsonValue }>) {
+    const porCliente = new Map<string, Set<string>>();
+
+    for (const relatorio of relatorios) {
+      if (!relatorio.payload || typeof relatorio.payload !== "object" || Array.isArray(relatorio.payload)) {
+        continue;
+      }
+
+      const payload = relatorio.payload as Record<string, unknown>;
+      const clienteId = typeof payload.cliente_id === "string" ? payload.cliente_id : "";
+      const osIds = Array.isArray(payload.os_ids)
+        ? payload.os_ids.filter((item): item is string => typeof item === "string")
+        : [];
+
+      if (!clienteId || !osIds.length) {
+        continue;
+      }
+
+      const atual = porCliente.get(clienteId) ?? new Set<string>();
+      osIds.forEach((osId) => atual.add(osId));
+      porCliente.set(clienteId, atual);
+    }
+
+    return porCliente;
   }
 
   async atualizarEngenheiroResponsavel(

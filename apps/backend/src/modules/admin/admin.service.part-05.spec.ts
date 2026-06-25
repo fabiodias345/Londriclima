@@ -265,20 +265,33 @@ test("enviarRelatorioAvulsoCliente agenda email direto ao cliente com copia inte
 
 test("apagarRelatorioAvulsoCliente remove envios gerados do cliente", async () => {
   const chamadas = {
-    deleteWhere: undefined as unknown
+    deleteWhere: undefined as unknown,
+    createData: undefined as unknown
   };
+  const equipamento = criarEquipamentoPmocTeste("equipamento-1", "Sala", "AV-001", "SN-AV-1", "2026-06-11T12:00:00.000Z");
   const prisma = {
     cliente: {
       findFirst: async () => ({
         id: "cliente-1",
         nome: "Cliente Avulso",
-        pmocAtivo: false
+        tipo: "pf",
+        documento: "12345678900",
+        telefone: "43988887777",
+        email: "cliente@example.com",
+        pmocAtivo: false,
+        atualizadoEm: new Date("2026-06-12T10:00:00.000Z"),
+        enderecos: [{ cidade: "Londrina", uf: "PR", bairro: "Centro" }],
+        equipamentos: [equipamento]
       })
     },
     automacaoAgendada: {
       deleteMany: async ({ where }: { where: unknown }) => {
         chamadas.deleteWhere = where;
         return { count: 2 };
+      },
+      create: async ({ data }: { data: unknown }) => {
+        chamadas.createData = data;
+        return { id: "automacao-apagada" };
       }
     }
   };
@@ -295,6 +308,45 @@ test("apagarRelatorioAvulsoCliente remove envios gerados do cliente", async () =
       { payload: { path: ["cliente_id"], equals: "cliente-1" } }
     ]
   });
+  const createData = chamadas.createData as { status: string; payload: Record<string, unknown> };
+  assert.equal(createData.status, "concluida");
+  assert.equal(createData.payload.tipo, "relatorio_tecnico_avulso_apagado");
+  assert.deepEqual(createData.payload.os_ids, ["os-equipamento-1"]);
+});
+
+test("listarRelatoriosAvulsos esconde cliente com relatorio apagado ate nova OS", async () => {
+  const equipamento = criarEquipamentoPmocTeste("equipamento-1", "Sala", "AV-001", "SN-AV-1", "2026-06-11T12:00:00.000Z");
+  const prisma = {
+    cliente: {
+      findMany: async () => [
+        {
+          id: "cliente-1",
+          nome: "Cliente Avulso",
+          email: "cliente@example.com",
+          telefone: "43988887777",
+          atualizadoEm: new Date("2026-06-12T10:00:00.000Z"),
+          equipamentos: [{ id: equipamento.id, ordensServico: [{ id: "os-equipamento-1" }] }]
+        }
+      ]
+    },
+    automacaoAgendada: {
+      findMany: async () => [
+        {
+          payload: {
+            tipo: "relatorio_tecnico_avulso_apagado",
+            cliente_id: "cliente-1",
+            os_ids: ["os-equipamento-1"]
+          }
+        }
+      ]
+    }
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.listarRelatoriosAvulsos(usuario);
+
+  assert.equal(resposta.total, 0);
+  assert.deepEqual(resposta.items, []);
 });
 
 test("gerarPdfRelatorioAvulsoCliente separa duas manutencoes da mesma maquina", async () => {
