@@ -103,6 +103,14 @@ export class AdminController {
     return this.adminService.reprogramarOrdemAgenda(osId, dto, usuario);
   }
 
+  @Delete("agenda/ordens/:osId")
+  apagarOrdemAgenda(
+    @Param("osId", new ParseUUIDPipe()) osId: string,
+    @CurrentUser() usuario: AuthenticatedUser
+  ) {
+    return this.adminService.apagarOrdemAgenda(osId, usuario);
+  }
+
   @Get("planos-recorrencia")
   listarPlanosRecorrencia(@CurrentUser() usuario: AuthenticatedUser) {
     return this.adminService.listarPlanosRecorrencia(usuario);

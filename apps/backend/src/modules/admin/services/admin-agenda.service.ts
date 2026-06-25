@@ -509,6 +509,99 @@ export class AdminAgendaService {
     });
   }
 
+  async apagarOrdemAgenda(osId: string, usuario: AuthenticatedUser) {
+    const ordem = await this.prisma.ordemServico.findFirst({
+      where: {
+        id: osId,
+        empresaId: usuario.empresa_id
+      },
+      select: {
+        id: true,
+        clienteId: true,
+        checklist: {
+          select: {
+            id: true
+          }
+        }
+      }
+    });
+
+    if (!ordem) {
+      throw new NotFoundException("OS nao encontrada.");
+    }
+
+    const checklistIds = ordem.checklist?.id ? [ordem.checklist.id] : [];
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.planoRecorrencia.updateMany({
+        where: {
+          ultimoOsId: ordem.id
+        },
+        data: {
+          ultimoOsId: null
+        }
+      });
+      await tx.automacaoAgendada.deleteMany({
+        where: {
+          ordemServicoId: ordem.id
+        }
+      });
+      await tx.ordemServicoResponsavel.deleteMany({
+        where: {
+          ordemServicoId: ordem.id
+        }
+      });
+      await tx.ordemServicoPeca.deleteMany({
+        where: {
+          checklistId: {
+            in: checklistIds
+          }
+        }
+      });
+      await tx.ordemServicoChecklistResposta.deleteMany({
+        where: {
+          ordemServicoId: ordem.id
+        }
+      });
+      await tx.ordemServicoChecklist.deleteMany({
+        where: {
+          ordemServicoId: ordem.id
+        }
+      });
+      await tx.ordemServicoEvidencia.deleteMany({
+        where: {
+          ordemServicoId: ordem.id
+        }
+      });
+      await tx.ordemServicoAssinatura.deleteMany({
+        where: {
+          ordemServicoId: ordem.id
+        }
+      });
+      await tx.ordemServicoObservacao.deleteMany({
+        where: {
+          ordemServicoId: ordem.id
+        }
+      });
+      await tx.ordemServicoEvento.deleteMany({
+        where: {
+          ordemServicoId: ordem.id
+        }
+      });
+      await tx.ordemServico.delete({
+        where: {
+          id: ordem.id
+        }
+      });
+    });
+
+    return {
+      id: ordem.id,
+      cliente_id: ordem.clienteId,
+      apagada: true
+    };
+  }
+
   private async validarDestinoAgenda(
     tx: Pick<Prisma.TransactionClient, "equipamento" | "equipe" | "usuario">,
     dto: SalvarOsAgendaDto,

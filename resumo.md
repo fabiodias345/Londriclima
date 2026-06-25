@@ -554,3 +554,27 @@ http://191.252.226.11/api/v1/health
 - Nao expor senhas, tokens, segredos JWT, chaves privadas ou banco.
 - Manter o PostgreSQL de producao sem porta publica.
 - Nao versionar PDFs assinados de `apps/backend/storage/`.
+
+
+# oque vamos fazer agora?
+Notes:
+Fase 1: congelar o contrato do PDF avulso
+Definir exatamente quais campos entram: cliente, endereço, máquina, OS, técnico, datas, problema, ação, peças, observação, evidências, GPS e assinatura.
+
+Fase 2: criar o novo layout visual do PDF avulso
+Trocar o PDF texto por blocos profissionais: cabeçalho AIRMOVEBR, seções, tabela da máquina, serviço executado, serviço realizado, evidências e assinatura.
+
+Fase 3: validar com uma OS real
+Criar/finalizar 1 OS corretiva no app, gerar PDF novo e conferir se aparece só aquela OS, com foto real, GPS real e assinatura real.
+
+Fase 4: corrigir edge cases
+Sem foto, sem GPS, sem assinatura, duas OS na mesma máquina, duas máquinas no mesmo cliente. Nada pode misturar nem inventar dado.
+
+Fase 5: guardar histórico do relatório
+Salvar o vínculo relatório -> cliente -> máquina -> OS, para saber exatamente de onde veio cada PDF.
+
+Fase 6: aplicar o mesmo padrão ao PMOC
+Só depois do avulso aprovado, levar o visual para PMOC mantendo página por máquina e separação por cliente.
+
+Fase 7: envio e rastreio
+Envio por e-mail, status enviado/baixado, reenvio e auditoria.

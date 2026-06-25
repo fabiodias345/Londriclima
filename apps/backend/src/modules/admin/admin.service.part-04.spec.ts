@@ -219,6 +219,91 @@ test("apagarEquipamento exige maquina da empresa", async () => {
   await assert.rejects(() => service.apagarEquipamento("equipamento-1", usuario), NotFoundException);
 });
 
+test("apagarOrdemAgenda remove ordem e historico operacional vinculado", async () => {
+  const chamadas = [] as { tabela: string; where: unknown; data?: unknown }[];
+  const tx = {
+    planoRecorrencia: {
+      updateMany: async ({ where, data }: { where: unknown; data: unknown }) =>
+        chamadas.push({ tabela: "planoRecorrencia", where, data })
+    },
+    automacaoAgendada: {
+      deleteMany: async ({ where }: { where: unknown }) => chamadas.push({ tabela: "automacaoAgendada", where })
+    },
+    ordemServicoResponsavel: {
+      deleteMany: async ({ where }: { where: unknown }) => chamadas.push({ tabela: "ordemServicoResponsavel", where })
+    },
+    ordemServicoPeca: {
+      deleteMany: async ({ where }: { where: unknown }) => chamadas.push({ tabela: "ordemServicoPeca", where })
+    },
+    ordemServicoChecklistResposta: {
+      deleteMany: async ({ where }: { where: unknown }) => chamadas.push({ tabela: "ordemServicoChecklistResposta", where })
+    },
+    ordemServicoChecklist: {
+      deleteMany: async ({ where }: { where: unknown }) => chamadas.push({ tabela: "ordemServicoChecklist", where })
+    },
+    ordemServicoEvidencia: {
+      deleteMany: async ({ where }: { where: unknown }) => chamadas.push({ tabela: "ordemServicoEvidencia", where })
+    },
+    ordemServicoAssinatura: {
+      deleteMany: async ({ where }: { where: unknown }) => chamadas.push({ tabela: "ordemServicoAssinatura", where })
+    },
+    ordemServicoObservacao: {
+      deleteMany: async ({ where }: { where: unknown }) => chamadas.push({ tabela: "ordemServicoObservacao", where })
+    },
+    ordemServicoEvento: {
+      deleteMany: async ({ where }: { where: unknown }) => chamadas.push({ tabela: "ordemServicoEvento", where })
+    },
+    ordemServico: {
+      delete: async ({ where }: { where: unknown }) => chamadas.push({ tabela: "ordemServico", where })
+    }
+  };
+  const prisma = {
+    ordemServico: {
+      findFirst: async () => ({
+        id: "os-1",
+        clienteId: "cliente-1",
+        checklist: {
+          id: "checklist-1"
+        }
+      })
+    },
+    $transaction: async (callback: (tx: unknown) => unknown) => callback(tx)
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.apagarOrdemAgenda("os-1", usuario);
+
+  assert.deepEqual(resposta, {
+    id: "os-1",
+    cliente_id: "cliente-1",
+    apagada: true
+  });
+  assert.deepEqual(chamadas.map((item) => item.tabela), [
+    "planoRecorrencia",
+    "automacaoAgendada",
+    "ordemServicoResponsavel",
+    "ordemServicoPeca",
+    "ordemServicoChecklistResposta",
+    "ordemServicoChecklist",
+    "ordemServicoEvidencia",
+    "ordemServicoAssinatura",
+    "ordemServicoObservacao",
+    "ordemServicoEvento",
+    "ordemServico"
+  ]);
+});
+
+test("apagarOrdemAgenda exige OS da empresa", async () => {
+  const prisma = {
+    ordemServico: {
+      findFirst: async () => null
+    }
+  };
+  const service = criarService(prisma);
+
+  await assert.rejects(() => service.apagarOrdemAgenda("os-1", usuario), NotFoundException);
+});
+
 test("obterPreviaPmocCliente retorna cliente, engenheiro, maquinas e OS concluidas separadas", async () => {
   const prisma = {
     cliente: {

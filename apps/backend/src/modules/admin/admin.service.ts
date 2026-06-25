@@ -194,6 +194,10 @@ export class AdminService {
     return this.agendaService.reprogramarOrdemAgenda(osId, dto, usuario);
   }
 
+  async apagarOrdemAgenda(osId: string, usuario: AuthenticatedUser) {
+    return this.agendaService.apagarOrdemAgenda(osId, usuario);
+  }
+
   async listarPlanosRecorrencia(usuario: AuthenticatedUser) {
     return this.recorrenciaService.listarPlanosRecorrencia(usuario);
   }

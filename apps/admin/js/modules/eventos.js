@@ -312,6 +312,7 @@ function renderOsDetail(item) {
     <div class="request-actions">
       <button class="approve-button compact-button os-primary-action \${getAgendaStatusClass(item.status)}" type="button" data-action="\${primaryAction.action}" data-id="\${item.id}">\${primaryAction.label}</button>
       <button class="secondary-button compact-button" type="button" data-action="editar-agenda-os" data-id="\${item.id}">Editar O.S.</button>
+      <button class="secondary-button compact-button danger-button" type="button" data-action="apagar-agenda-os" data-id="\${item.id}">Apagar O.S.</button>
     </div>
   \`;
 }
@@ -693,6 +694,48 @@ async function deleteEquipe(equipeId) {
     await loadEquipes();
   } catch {
     equipeFormStatus.textContent = "API indisponivel.";
+  }
+}
+
+async function deleteAgendaOs(osId, button = null) {
+  const item = latestAgendaItems.find((agendaItem) => agendaItem.id === osId);
+  const title = item?.titulo || "esta O.S.";
+
+  if (!window.confirm(\`Apagar \${title}? Esta acao nao pode ser desfeita.\`)) {
+    return;
+  }
+
+  if (button) {
+    button.disabled = true;
+  }
+
+  listStatus.textContent = "Apagando O.S...";
+
+  try {
+    const response = await fetch(\`\${apiBaseUrl}/admin/agenda/ordens/\${osId}\`, {
+      method: "DELETE",
+      headers: authHeaders()
+    });
+
+    if (await handleUnauthorized(response)) {
+      return;
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      listStatus.textContent = error.message || "Nao foi possivel apagar a O.S.";
+      return;
+    }
+
+    closeOsDetail();
+    listStatus.textContent = "O.S. apagada.";
+    await loadAgenda();
+  } catch {
+    listStatus.textContent = "API indisponivel.";
+  } finally {
+    if (button) {
+      button.disabled = false;
+    }
   }
 }
 

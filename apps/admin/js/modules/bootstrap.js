@@ -254,6 +254,10 @@ osDetailBody?.addEventListener("click", (event) => {
   if (button.dataset.action === "editar-agenda-os") {
     void openAgendaOsModal(button.dataset.id);
   }
+
+  if (button.dataset.action === "apagar-agenda-os") {
+    void deleteAgendaOs(button.dataset.id, button);
+  }
 });
 
 requestList?.addEventListener("submit", async (event) => {
