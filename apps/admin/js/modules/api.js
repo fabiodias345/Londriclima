@@ -230,6 +230,7 @@ let latestEquipes = [];
 let latestAgendaItems = [];
 let latestAgendaEquipments = [];
 let latestRecurrenceItems = [];
+let recurrenceEditingPlanId = "";
 let latestReports = null;
 let selectedFleetVehicleId = "";
 let selectedAgendaDate = "";

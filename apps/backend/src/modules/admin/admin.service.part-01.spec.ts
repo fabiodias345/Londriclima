@@ -39,7 +39,8 @@ test("AdminService delega agenda e recorrencias para services especializados", a
     listarPlanosRecorrencia: async (user: typeof usuario) => ({ metodo: "listarPlanosRecorrencia", user }),
     criarPlanoRecorrencia: async (dto: unknown, user: typeof usuario) => ({ metodo: "criarPlanoRecorrencia", dto, user }),
     atualizarPlanoRecorrencia: async (planoId: string, dto: unknown, user: typeof usuario) => ({ metodo: "atualizarPlanoRecorrencia", planoId, dto, user }),
-    gerarOrdemPlanoRecorrencia: async (planoId: string, user: typeof usuario) => ({ metodo: "gerarOrdemPlanoRecorrencia", planoId, user })
+    gerarOrdemPlanoRecorrencia: async (planoId: string, user: typeof usuario) => ({ metodo: "gerarOrdemPlanoRecorrencia", planoId, user }),
+    apagarPlanoRecorrencia: async (planoId: string, user: typeof usuario) => ({ metodo: "apagarPlanoRecorrencia", planoId, user })
   } as unknown as AdminRecorrenciaService;
   const service = new AdminService({} as never, undefined, agendaService, recorrenciaService);
 
@@ -61,6 +62,11 @@ test("AdminService delega agenda e recorrencias para services especializados", a
   });
   assert.deepEqual(await service.gerarOrdemPlanoRecorrencia("plano-1", usuario), {
     metodo: "gerarOrdemPlanoRecorrencia",
+    planoId: "plano-1",
+    user: usuario
+  });
+  assert.deepEqual(await service.apagarPlanoRecorrencia("plano-1", usuario), {
+    metodo: "apagarPlanoRecorrencia",
     planoId: "plano-1",
     user: usuario
   });

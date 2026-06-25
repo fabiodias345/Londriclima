@@ -1,4 +1,5 @@
 ﻿import { BadRequestException } from "@nestjs/common";
+import { NotFoundException } from "@nestjs/common";
 import {
 ChecklistTipo,
 OrdemServicoEventoAcao,
@@ -363,6 +364,52 @@ test("gerarOrdemPlanoRecorrencia cria OS e avanca proxima execucao", async () =>
     atualizado_em: "2026-06-18T12:00:00.000Z",
     proxima_execucao: "2026-08-01T11:00:00.000Z"
   });
+});
+
+test("apagarPlanoRecorrencia remove plano da empresa", async () => {
+  const chamadas = {
+    deleteWhere: undefined as unknown
+  };
+  const prisma = {
+    planoRecorrencia: {
+      findFirst: async ({ where }: { where: unknown }) => {
+        assert.deepEqual(where, {
+          id: "plano-1",
+          empresaId: "empresa-1"
+        });
+        return {
+          id: "plano-1",
+          clienteId: "cliente-1"
+        };
+      },
+      delete: async ({ where }: { where: unknown }) => {
+        chamadas.deleteWhere = where;
+      }
+    }
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.apagarPlanoRecorrencia("plano-1", usuario);
+
+  assert.deepEqual(chamadas.deleteWhere, {
+    id: "plano-1"
+  });
+  assert.deepEqual(resposta, {
+    id: "plano-1",
+    cliente_id: "cliente-1",
+    apagado: true
+  });
+});
+
+test("apagarPlanoRecorrencia exige plano da empresa", async () => {
+  const prisma = {
+    planoRecorrencia: {
+      findFirst: async () => null
+    }
+  };
+  const service = criarService(prisma);
+
+  await assert.rejects(() => service.apagarPlanoRecorrencia("plano-1", usuario), NotFoundException);
 });
 
 test("criarCliente exige telefone com DDD", async () => {

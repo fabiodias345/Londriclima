@@ -85,9 +85,11 @@ function renderRecurrenceCard(item) {
         <span>Responsavel</span>
         <strong>\${escapeHtml(item.equipe?.nome || item.tecnico?.nome || "Definir na agenda")}</strong>
       </div>
-      <button class="secondary-button compact-button" type="button" data-action="gerar-recorrencia-os" data-id="\${item.id}">
-        Gerar OS
-      </button>
+      <div class="request-actions">
+        <button class="secondary-button compact-button" type="button" data-action="editar-recorrencia" data-id="\${item.id}">Editar</button>
+        <button class="secondary-button compact-button danger-button" type="button" data-action="apagar-recorrencia" data-id="\${item.id}">Apagar</button>
+        <button class="secondary-button compact-button" type="button" data-action="gerar-recorrencia-os" data-id="\${item.id}">Gerar OS</button>
+      </div>
     </article>
   \`;
 }

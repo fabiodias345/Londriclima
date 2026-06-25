@@ -222,6 +222,10 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(script, /async function submitRecurrence/);
   assert.match(script, /function renderRecorrencias/);
   assert.match(script, /function renderRecurrenceCard/);
+  assert.match(script, /data-action="editar-recorrencia"/);
+  assert.match(script, /data-action="apagar-recorrencia"/);
+  assert.match(script, /function editRecurrence/);
+  assert.match(script, /async function deleteRecurrence/);
   assert.match(script, /Todos os equipamentos/);
   assert.match(script, /equipamento_id:\s*String\(data\.get\("equipamento_id"\) \|\| ""\)/);
   assert.match(script, /function generateRecurrenceOs/);

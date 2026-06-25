@@ -405,13 +405,17 @@ async function submitRecurrence(event) {
     valor_cobrado: data.get("valor_cobrado") ? Number(data.get("valor_cobrado")) : undefined,
     ativo: true
   });
+  const path = recurrenceEditingPlanId
+    ? \`/admin/planos-recorrencia/\${recurrenceEditingPlanId}\`
+    : "/admin/planos-recorrencia";
+  const method = recurrenceEditingPlanId ? "PATCH" : "POST";
 
   button.disabled = true;
   recurrenceFormStatus.textContent = "Salvando plano...";
 
   try {
-    const response = await fetch(\`\${apiBaseUrl}/admin/planos-recorrencia\`, {
-      method: "POST",
+    const response = await fetch(\`\${apiBaseUrl}\${path}\`, {
+      method,
       headers: {
         ...authHeaders(),
         "Content-Type": "application/json"
@@ -429,9 +433,7 @@ async function submitRecurrence(event) {
       return;
     }
 
-    recurrenceForm.reset();
-    recurrenceForm.elements.titulo.value = "PMOC preventivo";
-    recurrenceForm.elements.proxima_execucao.value = \`\${getLocalDateKey(new Date())}T08:00\`;
+    resetRecurrenceForm();
     await loadRecorrencias();
     recurrenceFormStatus.textContent = "Plano salvo.";
   } catch {

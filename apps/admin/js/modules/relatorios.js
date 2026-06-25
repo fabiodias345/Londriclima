@@ -11,6 +11,83 @@ export const relatoriosRoot = `
   }
 }
 
+async function editRecurrence(planId) {
+  const item = latestRecurrenceItems.find((plan) => plan.id === planId);
+
+  if (!item || !(recurrenceForm instanceof HTMLFormElement)) {
+    return;
+  }
+
+  recurrenceEditingPlanId = item.id;
+  recurrenceForm.elements.cliente_id.value = item.cliente?.id || "";
+  await loadRecurrenceEquipments(item.cliente?.id || "");
+  recurrenceForm.elements.equipamento_id.value = item.equipamento?.id || "";
+  recurrenceForm.elements.frequencia.value = item.frequencia || "mensal";
+  recurrenceForm.elements.proxima_execucao.value = formatInputDateTime(item.proxima_execucao);
+  recurrenceForm.elements.equipe_id.value = item.equipe?.id || "";
+  recurrenceForm.elements.tecnico_id.value = item.tecnico?.id || "";
+  recurrenceForm.elements.titulo.value = item.titulo || "PMOC preventivo";
+  recurrenceForm.elements.valor_cobrado.value = item.valor_cobrado || "";
+  recurrenceForm.elements.detalhes.value = item.detalhes || "";
+  recurrenceFormStatus.textContent = "Editando plano recorrente.";
+  recurrenceForm.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function deleteRecurrence(planId, button = null) {
+  const item = latestRecurrenceItems.find((plan) => plan.id === planId);
+  const title = item?.titulo || "este plano";
+
+  if (!window.confirm(\`Apagar \${title}? Esta acao nao pode ser desfeita.\`)) {
+    return;
+  }
+
+  if (button) {
+    button.disabled = true;
+  }
+
+  recurrenceStatus.textContent = "Apagando plano...";
+
+  try {
+    const response = await fetch(\`\${apiBaseUrl}/admin/planos-recorrencia/\${planId}\`, {
+      method: "DELETE",
+      headers: authHeaders()
+    });
+
+    if (await handleUnauthorized(response)) {
+      return;
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      recurrenceStatus.textContent = error.message || "Nao foi possivel apagar o plano.";
+      return;
+    }
+
+    if (recurrenceEditingPlanId === planId) {
+      resetRecurrenceForm();
+    }
+
+    await loadRecorrencias();
+    recurrenceStatus.textContent = "Plano apagado.";
+  } catch {
+    recurrenceStatus.textContent = "API indisponivel.";
+  } finally {
+    if (button) {
+      button.disabled = false;
+    }
+  }
+}
+
+function resetRecurrenceForm() {
+  recurrenceEditingPlanId = "";
+  recurrenceForm?.reset();
+
+  if (recurrenceForm instanceof HTMLFormElement) {
+    recurrenceForm.elements.titulo.value = "PMOC preventivo";
+    recurrenceForm.elements.proxima_execucao.value = \`\${getLocalDateKey(new Date())}T08:00\`;
+  }
+}
+
 async function submitClient(event) {
   event.preventDefault();
   const button = clientForm.querySelector("button[type='submit']");

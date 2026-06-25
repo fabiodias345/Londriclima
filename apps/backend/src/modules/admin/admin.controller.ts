@@ -138,6 +138,14 @@ export class AdminController {
     return this.adminService.gerarOrdemPlanoRecorrencia(planoId, usuario);
   }
 
+  @Delete("planos-recorrencia/:planoId")
+  apagarPlanoRecorrencia(
+    @Param("planoId", new ParseUUIDPipe()) planoId: string,
+    @CurrentUser() usuario: AuthenticatedUser
+  ) {
+    return this.adminService.apagarPlanoRecorrencia(planoId, usuario);
+  }
+
   @Get("clientes")
   listarClientes(@CurrentUser() usuario: AuthenticatedUser) {
     return this.adminService.listarClientes(usuario);

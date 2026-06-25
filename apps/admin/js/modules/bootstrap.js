@@ -155,13 +155,23 @@ recurrenceClientSelect?.addEventListener("change", () => {
 });
 recurrenceList?.addEventListener("click", (event) => {
   const target = event.target;
-  const button = target instanceof Element ? target.closest("[data-action='gerar-recorrencia-os']") : null;
+  const button = target instanceof Element ? target.closest("[data-action]") : null;
 
   if (!(button instanceof HTMLButtonElement) || !button.dataset.id) {
     return;
   }
 
-  void generateRecurrenceOs(button.dataset.id);
+  if (button.dataset.action === "gerar-recorrencia-os") {
+    void generateRecurrenceOs(button.dataset.id);
+  }
+
+  if (button.dataset.action === "editar-recorrencia") {
+    void editRecurrence(button.dataset.id);
+  }
+
+  if (button.dataset.action === "apagar-recorrencia") {
+    void deleteRecurrence(button.dataset.id, button);
+  }
 });
 
 osTabs?.addEventListener("click", (event) => {

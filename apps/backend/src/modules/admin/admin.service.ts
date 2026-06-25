@@ -214,6 +214,10 @@ export class AdminService {
     return this.recorrenciaService.gerarOrdemPlanoRecorrencia(planoId, usuario);
   }
 
+  async apagarPlanoRecorrencia(planoId: string, usuario: AuthenticatedUser) {
+    return this.recorrenciaService.apagarPlanoRecorrencia(planoId, usuario);
+  }
+
   async listarClientes(usuario: AuthenticatedUser) {
     return this.clientesService.listarClientes(usuario);
   }

@@ -264,6 +264,35 @@ export class AdminRecorrenciaService {
     });
   }
 
+  async apagarPlanoRecorrencia(planoId: string, usuario: AuthenticatedUser) {
+    const plano = await this.prisma.planoRecorrencia.findFirst({
+      where: {
+        id: planoId,
+        empresaId: usuario.empresa_id
+      },
+      select: {
+        id: true,
+        clienteId: true
+      }
+    });
+
+    if (!plano) {
+      throw new NotFoundException("Plano recorrente nao encontrado.");
+    }
+
+    await this.prisma.planoRecorrencia.delete({
+      where: {
+        id: plano.id
+      }
+    });
+
+    return {
+      id: plano.id,
+      cliente_id: plano.clienteId,
+      apagado: true
+    };
+  }
+
   private async validarDestinoAgenda(
     tx: Pick<Prisma.TransactionClient, "equipamento" | "equipe" | "usuario">,
     dto: SalvarOsAgendaDto,
