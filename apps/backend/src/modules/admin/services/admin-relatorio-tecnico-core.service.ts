@@ -604,8 +604,17 @@ export class AdminRelatorioTecnicoCoreService {
 
   async obterPreviaRelatorioAvulsoCliente(clienteId: string, usuario: AuthenticatedUser) {
     const cliente = await this.obterClienteRelatorioAvulso(clienteId, usuario);
+    const ordensPorEquipamento = this.mapearOrdensPorEquipamentoChecklist(cliente.ordensServico ?? []);
     const maquinas = cliente.equipamentos
-      .map((equipamento) => this.mapearMaquinaRelatorioTecnico(equipamento))
+      .map((equipamento) =>
+        this.mapearMaquinaRelatorioTecnico({
+          ...equipamento,
+          ordensServico: this.unirOrdensRelatorio(
+            equipamento.ordensServico,
+            ordensPorEquipamento.get(equipamento.id) ?? []
+          )
+        })
+      )
       .filter((maquina) => maquina.os_concluidas.length > 0);
     const pendencias = this.obterPendenciasRelatorioAvulso(cliente, maquinas);
 
@@ -1176,6 +1185,7 @@ export class AdminRelatorioTecnicoCoreService {
           codigo: "asc"
         },
         select: {
+          equipamentoId: true,
           codigo: true,
           tipo: true,
           valor: true,
@@ -1274,6 +1284,15 @@ export class AdminRelatorioTecnicoCoreService {
               select: this.ordemRelatorioTecnicoSelect()
             }
           }
+        },
+        ordensServico: {
+          where: {
+            status: OrdemServicoStatus.concluida
+          },
+          orderBy: {
+            concluidaEm: "desc"
+          },
+          select: this.ordemRelatorioTecnicoSelect()
         }
       }
     });
@@ -1287,6 +1306,42 @@ export class AdminRelatorioTecnicoCoreService {
     }
 
     return cliente;
+  }
+
+  private mapearOrdensPorEquipamentoChecklist<T extends { checklistRespostas?: Array<{ equipamentoId?: string | null }> }>(
+    ordens: T[]
+  ) {
+    const porEquipamento = new Map<string, T[]>();
+
+    for (const ordem of ordens) {
+      const equipamentos = new Set(
+        (ordem.checklistRespostas ?? [])
+          .map((resposta) => resposta.equipamentoId)
+          .filter((equipamentoId): equipamentoId is string => Boolean(equipamentoId))
+      );
+
+      for (const equipamentoId of equipamentos) {
+        const atuais = porEquipamento.get(equipamentoId) ?? [];
+        atuais.push(ordem);
+        porEquipamento.set(equipamentoId, atuais);
+      }
+    }
+
+    return porEquipamento;
+  }
+
+  private unirOrdensRelatorio<T extends { id: string }>(ordensDiretas: T[], ordensPorChecklist: T[]) {
+    const porId = new Map<string, T>();
+
+    for (const ordem of [...ordensDiretas, ...ordensPorChecklist]) {
+      porId.set(ordem.id, ordem);
+    }
+
+    return [...porId.values()].sort((a, b) => {
+      const dataA = "concluidaEm" in a && a.concluidaEm instanceof Date ? a.concluidaEm.getTime() : 0;
+      const dataB = "concluidaEm" in b && b.concluidaEm instanceof Date ? b.concluidaEm.getTime() : 0;
+      return dataB - dataA;
+    });
   }
 
   private mapearMaquinaRelatorioTecnico(equipamento: {
@@ -1347,7 +1402,8 @@ export class AdminRelatorioTecnicoCoreService {
           custoUnitario: Prisma.Decimal;
         }>;
       } | null;
-      checklistRespostas: Array<{
+      checklistRespostas?: Array<{
+        equipamentoId?: string | null;
         codigo: string;
         tipo: string;
         valor: string;
@@ -1434,7 +1490,8 @@ export class AdminRelatorioTecnicoCoreService {
         custoUnitario: Prisma.Decimal;
       }>;
     } | null;
-    checklistRespostas: Array<{
+    checklistRespostas?: Array<{
+      equipamentoId?: string | null;
       codigo: string;
       tipo: string;
       valor: string;
@@ -1501,7 +1558,8 @@ export class AdminRelatorioTecnicoCoreService {
             }))
         }
         : null,
-      checklist_respostas: ordem.checklistRespostas.map((resposta) => ({
+      checklist_respostas: (ordem.checklistRespostas ?? []).map((resposta) => ({
+        equipamento_id: resposta.equipamentoId ?? null,
         codigo: resposta.codigo,
         tipo: resposta.tipo,
         valor: resposta.valor,

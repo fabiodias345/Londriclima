@@ -454,6 +454,45 @@ test("gerarPdfRelatorioAvulsoCliente separa duas manutencoes da mesma maquina", 
   }
 });
 
+test("obterPreviaRelatorioAvulsoCliente inclui OS multi-equipamento pelas respostas do checklist", async () => {
+  const equipamento = criarEquipamentoPmocTeste("equipamento-1", "Sala", "AV-001", "SN-AV-1", "2026-06-11T12:00:00.000Z");
+  const ordem = {
+    ...equipamento.ordensServico[0],
+    id: "os-multi-1",
+    equipamentoId: null,
+    checklistRespostas: equipamento.ordensServico[0].checklistRespostas.map((resposta) => ({
+      ...resposta,
+      equipamentoId: equipamento.id
+    }))
+  };
+  equipamento.ordensServico = [];
+  const prisma = {
+    cliente: {
+      findFirst: async () => ({
+        id: "cliente-1",
+        nome: "Cliente Avulso",
+        tipo: "pf",
+        documento: "12345678900",
+        telefone: "43988887777",
+        email: "cliente@example.com",
+        pmocAtivo: false,
+        atualizadoEm: new Date("2026-06-12T10:00:00.000Z"),
+        enderecos: [{ cidade: "Londrina", uf: "PR", bairro: "Centro" }],
+        equipamentos: [equipamento],
+        ordensServico: [ordem]
+      })
+    }
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.obterPreviaRelatorioAvulsoCliente("cliente-1", usuario);
+
+  assert.equal(resposta.total_maquinas, 1);
+  assert.equal(resposta.total_os_concluidas, 1);
+  assert.equal(resposta.maquinas[0].os_concluidas[0].id, "os-multi-1");
+  assert.deepEqual(resposta.pendencias, []);
+});
+
 function criarEquipamentoPmocTeste(id: string, localInstalacao: string, patrimonio: string, numeroSerie: string, inicioIso: string) {
   const inicio = new Date(inicioIso);
   const fim = new Date(inicio.getTime() + 170 * 60000);

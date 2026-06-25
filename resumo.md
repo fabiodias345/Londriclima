@@ -6,15 +6,12 @@ Este arquivo deve registrar somente o que falta fazer ou validar. Historico impl
 
 ## Proximo foco
 
-1. Alinhar o backend do checklist com `checklist.md` sempre que a especificacao mudar.
-2. Validar no celular real o fluxo completo da preventiva:
-   - selecionar O.S.;
-   - selecionar/cadastrar maquina;
-   - preencher checklist mensal;
-   - registrar fotos exigidas;
-   - salvar checklist;
-   - finalizar com nome, assinatura e GPS.
-3. Ajustar o que aparecer ruim no uso em campo, principalmente sob sol.
+1. Reparar primeiro o PDF avulso/corretivo:
+   - corrigir dados reais;
+   - separar totalmente PMOC, engenheiro e checklist preventivo;
+   - validar PDF real baixado.
+2. Depois retomar validacao do APK com os tecnicos em uso real de campo.
+3. Alinhar o backend do checklist com `checklist.md` sempre que a especificacao mudar.
 
 ## App tecnico - pendencias futuras
 
@@ -28,9 +25,9 @@ Este arquivo deve registrar somente o que falta fazer ou validar. Historico impl
   - area de assinatura maior;
   - botao fixo de finalizar;
   - mensagens claras para nome, assinatura, checklist ou sync faltando.
-- Testar o APK em aparelho fisico com API local.
+- APK funcional em aparelho fisico; falta aprovacao dos tecnicos.
 - Gerar APK novo depois da validacao visual.
-- Publicar as alteracoes quando o fluxo estiver aprovado no celular.
+- Publicar as alteracoes quando o fluxo estiver aprovado pelos tecnicos.
 
 ## Painel admin - pendencias futuras
 
@@ -45,6 +42,10 @@ Este arquivo deve registrar somente o que falta fazer ou validar. Historico impl
 
 ## Relatorios futuros
 
+- Marco para reparar PDF:
+  - primeiro corrigir dados reais do avulso/corretivo;
+  - separar totalmente PMOC, engenheiro e checklist preventivo;
+  - depois refazer layout visual.
 - Refazer o PDF avulso/corretivo com layout visual profissional usando dados reais:
   - cliente;
   - endereco;
