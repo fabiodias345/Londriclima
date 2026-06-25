@@ -1367,6 +1367,11 @@ class _MachineField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final currentValue = controller.text.trim();
+    final dropdownOptions = currentValue.isEmpty || options.contains(currentValue)
+        ? options
+        : [currentValue, ...options];
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(
@@ -1384,11 +1389,9 @@ class _MachineField extends StatelessWidget {
           else
             DropdownButtonFormField<String>(
               key: Key('machineSelect_$fieldKey'),
-              initialValue: controller.text.trim().isEmpty
-                  ? null
-                  : controller.text.trim(),
+              initialValue: currentValue.isEmpty ? null : currentValue,
               decoration: InputDecoration(labelText: label),
-              items: options
+              items: dropdownOptions
                   .map(
                     (option) =>
                         DropdownMenuItem(value: option, child: Text(option)),

@@ -1386,6 +1386,68 @@ void main() {
     expect(checklistButton.onPressed, isNotNull);
   });
 
+  testWidgets('editar maquina aceita tipo cadastrado fora da lista padrao', (
+    tester,
+  ) async {
+    final repository = _RepositorioDeTeste(
+      status: WorkOrderStatus.inProgress,
+      backendStatus: 'em_atendimento',
+      equipments: const [
+        WorkOrderEquipment(
+          id: 'EQ-EXTERNO',
+          qrCode: '10016',
+          type: 'Quarto',
+          brand: 'Kufr12',
+          name: 'Quarto',
+          location: 'Quarto',
+          model: 'Kufr12',
+          btus: 12000,
+          serialNumber: 'SN-EXT',
+        ),
+      ],
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LoginScreen(
+          loginGateway: _GatewayDeTeste(repository: repository),
+          locationService: const _LocationServiceTeste(),
+        ),
+      ),
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('loginUserField')),
+      'tecnico@airmovebr.local',
+    );
+    await tester.enterText(
+      find.byKey(const Key('loginPasswordField')),
+      '123456',
+    );
+    await tester.tap(find.byKey(const Key('loginSubmitButton')));
+    await tester.pumpAndSettle();
+
+    await _openMaintenance(tester);
+    await tester.tap(find.text('Cliente API'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('stepTab_machines')));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('selectEquipment_EQ-EXTERNO')),
+      240,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.byKey(const Key('selectEquipment_EQ-EXTERNO')));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('machineSelect_tipo')),
+      240,
+      scrollable: find.byType(Scrollable).first,
+    );
+
+    expect(find.byKey(const Key('machineSelect_tipo')), findsOneWidget);
+    expect(find.text('Quarto'), findsWidgets);
+  });
+
   testWidgets('dashboard registra abastecimento simples', (tester) async {
     final fleetRepository = FakeFleetRepository();
 
