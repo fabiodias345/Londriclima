@@ -220,6 +220,41 @@ test("gerarPdfRelatorioAvulsoCliente usa respostas reais da corretiva sem checkl
   assert.doesNotMatch(pdf, /C3\.jpg|C6|pendente/);
 });
 
+test("gerarPdfRelatorioAvulsoCliente imprime checklist preventivo do app com respostas humanas", async () => {
+  const equipamento = criarEquipamentoPmocTeste("equipamento-1", "Sala", "AV-001", "SN-AV-1", "2026-06-11T12:00:00.000Z");
+  equipamento.ordensServico[0].checklistRespostas = [
+    { codigo: "M1", tipo: "checkbox", valor: "Sim", observacao: null },
+    { codigo: "M2", tipo: "checkbox", valor: "Nao", observacao: "controle sem pilha" },
+    { codigo: "M4", tipo: "foto", valor: "/storage/os/os-1/checklist/equipamento-1/M4.jpg", observacao: null },
+    { codigo: "S6", tipo: "numerico", valor: "7.5", observacao: "pressao ok" }
+  ] as typeof equipamento.ordensServico[number]["checklistRespostas"];
+  const prisma = {
+    cliente: {
+      findFirst: async () => ({
+        id: "cliente-1",
+        nome: "Cliente Avulso",
+        tipo: "pf",
+        documento: "12345678900",
+        telefone: "43988887777",
+        email: "cliente@example.com",
+        pmocAtivo: false,
+        atualizadoEm: new Date("2026-06-12T10:00:00.000Z"),
+        enderecos: [{ cidade: "Londrina", uf: "PR", bairro: "Centro" }],
+        equipamentos: [equipamento]
+      })
+    }
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.gerarPdfRelatorioAvulsoCliente("cliente-1", usuario);
+  const pdf = resposta.buffer.toString("latin1");
+
+  assert.match(pdf, /EPIs utilizados\s+Sim/);
+  assert.match(pdf, /Desligar pelo controle remoto\s+Nao \\?\(controle sem pilha\\?\)/);
+  assert.match(pdf, /Pressao do fluido refrigerante\s+7\.5 \\?\(pressao ok\\?\)/);
+  assert.doesNotMatch(pdf, /M4\.jpg/);
+});
+
 test("gerarPdfRelatorioAvulsoCliente nao imprime foto pendente quando evidencia nao tem arquivo", async () => {
   const equipamento = criarEquipamentoPmocTeste("equipamento-1", "Sala", "AV-001", "SN-AV-1", "2026-06-11T12:00:00.000Z");
   equipamento.ordensServico[0].evidencias[1].storageUrl = null as never;

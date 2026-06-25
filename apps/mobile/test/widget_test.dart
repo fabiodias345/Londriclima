@@ -325,7 +325,7 @@ void main() {
     expect(find.text('Filtro e limpeza', skipOffstage: false), findsOneWidget);
     expect(find.text('Medicoes', skipOffstage: false), findsOneWidget);
     expect(find.text('Desligar pelo controle remoto'), findsOneWidget);
-    expect(find.byKey(const Key('checklist_checkbox_M1')), findsOneWidget);
+    expect(find.byKey(const Key('checklist_choice_M1_Sim')), findsOneWidget);
     expect(find.text('Condicao dos filtros'), findsOneWidget);
     expect(find.byKey(const Key('checklist_select_M6')), findsOneWidget);
 
@@ -477,7 +477,7 @@ void main() {
     await tester.tap(find.byKey(const Key('checklistReadyButton')));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('checklist_checkbox_M1')));
+    await tester.tap(find.byKey(const Key('checklist_choice_M1_Sim')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('checklist_select_M6')));
     await tester.pumpAndSettle();
@@ -498,7 +498,7 @@ void main() {
 
     expect(repository.savedChecklistEquipmentId, 'EQ-102');
     expect(repository.savedChecklistType, 'semestral');
-    expect(repository.savedChecklistResponses['M1'], 'true');
+    expect(repository.savedChecklistResponses['M1'], 'Sim');
     expect(repository.savedChecklistResponses['M6'], 'danificado');
     expect(repository.savedChecklistResponses['S6'], '7.5');
     expect(repository.savedChecklistResponses['S7'], 'R-410A');
@@ -564,7 +564,7 @@ void main() {
     expect(repository.initialEvidenceOrderId, 'OS-API');
     expect(find.text('Foto registrada'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('checklist_checkbox_M1')));
+    await tester.tap(find.byKey(const Key('checklist_choice_M1_Sim')));
     await tester.tap(find.byKey(const Key('checklist_select_M6')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('ok').last);
@@ -1017,7 +1017,7 @@ void main() {
     await tester.tap(find.byKey(const Key('checklistReadyButton')));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('checklist_checkbox_M1')));
+    await tester.tap(find.byKey(const Key('checklist_choice_M1_Sim')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('checklist_select_M6')));
     await tester.pumpAndSettle();
@@ -1211,7 +1211,7 @@ void main() {
     await tester.tap(find.byKey(const Key('checklistReadyButton')));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('checklist_checkbox_M1')));
+    await tester.tap(find.byKey(const Key('checklist_choice_M1_Sim')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('checklist_select_M6')));
     await tester.pumpAndSettle();

@@ -2350,7 +2350,7 @@ export class AdminRelatorioTecnicoCoreService {
       return false;
     }
 
-    return Boolean(this.obterLabelRespostaRelatorioAvulso(resposta.codigo));
+    return true;
   }
 
   private obterLabelRespostaRelatorioAvulso(codigo: string) {
@@ -2358,8 +2358,42 @@ export class AdminRelatorioTecnicoCoreService {
       C1: "Problema encontrado",
       C2: "Acao realizada",
       C4: "Pecas utilizadas",
-      C5: "Observacao final"
-    }[codigo] ?? "";
+      C5: "Observacao final",
+      M1: "EPIs utilizados",
+      M2: "Desligar pelo controle remoto",
+      M3: "Abrir tampa frontal",
+      M5: "Lavar filtros",
+      M6: "Condicao dos filtros",
+      M7: "Limpeza da serpentina",
+      M8: "Limpeza da evaporadora",
+      M9: "Dreno desobstruido",
+      M10: "Bandeja do condensado",
+      M11: "Reinstalar filtros",
+      M12: "Fechar tampa",
+      M13: "Ligar disjuntor",
+      M14: "Funcao Dry se existir por 10 minutos",
+      M15: "Temperatura de entrada do ar",
+      M17: "Temperatura de insuflamento",
+      M18: "Observacoes gerais",
+      T1: "Fixacao e suportes",
+      T2: "Isolamento termico",
+      T3: "Conexoes eletricas",
+      T4: "Teste de drenagem",
+      S1: "Limpeza da condensadora",
+      S2: "Foto da condensadora limpa",
+      S3: "Medicao de corrente",
+      S4: "Medicao de tensao",
+      S5: "Estado das tubulacoes",
+      S6: "Pressao do fluido refrigerante",
+      S7: "Fluido refrigerante utilizado",
+      A1: "Inspecao geral anual",
+      A2: "Teste de rendimento",
+      A3: "Avaliacao de ruido",
+      A4: "Avaliacao de vibracao",
+      A5: "Recomendacoes tecnicas",
+      A6: "Plano de acoes",
+      A7: "Relatorio consolidado anual"
+    }[codigo] ?? codigo;
   }
 
   private formatarLinhaCampoPmoc(campo: string, valor: string) {

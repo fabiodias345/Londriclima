@@ -1008,7 +1008,14 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
       'foto' => _checklistValues[item.code] ?? '',
       _ => _checklistValues[item.code] ?? '',
     };
+    if (_isNegativeChecklistChoice(value)) {
+      return (_noteControllers[item.code]?.text.trim() ?? '').isNotEmpty;
+    }
     return value.trim().isNotEmpty && value != 'false';
+  }
+
+  bool _isNegativeChecklistChoice(String value) {
+    return value.trim().toLowerCase() == 'nao';
   }
 
   List<WorkOrderChecklistItem> get _requiredChecklistItems {
@@ -1835,25 +1842,52 @@ class _ChecklistField extends StatelessWidget {
         ),
       ),
       child: switch (item.kind) {
-        'checkbox' => InkWell(
-          key: Key('checklist_checkbox_${item.code}'),
-          onTap: () => onChanged(value == 'true' ? 'false' : 'true'),
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(8, 8, 12, 8),
-            child: Row(
-              children: [
-                Checkbox(
-                  value: value == 'true',
-                  onChanged: (checked) =>
-                      onChanged(checked == true ? 'true' : 'false'),
-                ),
-                Expanded(
-                  child: _ChecklistLabel(label: item.label, missing: missing),
-                ),
-              ],
+        'checkbox' => Column(
+          key: Key('checklist_choice_${item.code}'),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _ChecklistLabel(label: item.label, missing: missing),
+            const SizedBox(height: 10),
+            Row(
+              children: ['Sim', 'Nao', 'N/A'].map((option) {
+                final selected = value == option;
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: OutlinedButton(
+                      key: Key('checklist_choice_${item.code}_$option'),
+                      onPressed: () => onChanged(option),
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: selected
+                            ? airmovebrPrimary
+                            : Colors.white,
+                        foregroundColor: selected
+                            ? Colors.white
+                            : airmovebrText,
+                        side: BorderSide(
+                          color: selected ? airmovebrPrimary : airmovebrBorder,
+                        ),
+                      ),
+                      child: Text(option),
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
-          ),
+            if (_showChecklistObservation(value)) ...[
+              const SizedBox(height: 8),
+              TextField(
+                key: Key('checklist_obs_${item.code}'),
+                controller: noteController,
+                decoration: const InputDecoration(
+                  labelText: 'Observacao obrigatoria',
+                ),
+                textInputAction: TextInputAction.next,
+                maxLines: 1,
+                onChanged: (_) => onChanged(value ?? ''),
+              ),
+            ],
+          ],
         ),
         'select' => DropdownButtonFormField<String>(
           key: Key('checklist_select_${item.code}'),
@@ -2002,7 +2036,9 @@ class _ChecklistField extends StatelessWidget {
 
   bool _showChecklistObservation(String? selected) {
     final normalized = selected?.toLowerCase().trim() ?? '';
-    return normalized.contains('suja') || normalized == 'nao conforme';
+    return normalized == 'nao' ||
+        normalized.contains('suja') ||
+        normalized == 'nao conforme';
   }
 }
 

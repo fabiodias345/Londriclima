@@ -172,7 +172,7 @@ void main() {
       equipmentId: 'eq-1',
       checklistType: 'semestral',
       responses: const [
-        WorkOrderChecklistResponse(code: 'M1', kind: 'checkbox', value: 'true'),
+        WorkOrderChecklistResponse(code: 'M1', kind: 'checkbox', value: 'Sim'),
         WorkOrderChecklistResponse(
           code: 'S6',
           kind: 'numerico',
@@ -193,7 +193,7 @@ void main() {
     expect(payload['servico_realizado'], 'Checklist da maquina');
     expect(payload['procedimentos'], ['M1', 'S6']);
     expect(payload['respostas'], [
-      {'codigo': 'M1', 'tipo': 'checkbox', 'valor': 'true'},
+      {'codigo': 'M1', 'tipo': 'checkbox', 'valor': 'Sim'},
       {
         'codigo': 'S6',
         'tipo': 'numerico',
