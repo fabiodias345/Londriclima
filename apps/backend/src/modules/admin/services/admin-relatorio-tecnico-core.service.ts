@@ -2194,13 +2194,12 @@ export class AdminRelatorioTecnicoCoreService {
       return "Nenhuma evidencia registrada.";
     }
 
-    const antes = ordem.evidencias.find((evidencia) => evidencia.tipo === "antes");
-    const depois = ordem.evidencias.find((evidencia) => evidencia.tipo === "depois");
-
-    return [
-      `Antes --- ${this.obterNomeArquivoPmoc(antes?.storage_url)}`,
-      `Depois --- ${this.obterNomeArquivoPmoc(depois?.storage_url)}`
-    ].join(" - ");
+    return ordem.evidencias
+      .map((evidencia) => {
+        const rotulo = evidencia.tipo === "antes" ? "Antes" : evidencia.tipo === "depois" ? "Depois" : "Foto";
+        return `${rotulo} --- ${this.obterNomeArquivoPmoc(evidencia.storage_url)}`;
+      })
+      .join(" - ");
   }
 
   private formatarGpsPmoc(ordem: { eventos: Array<{ latitude: number | null; longitude: number | null }> } | null) {
