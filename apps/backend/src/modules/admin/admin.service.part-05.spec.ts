@@ -229,6 +229,15 @@ test("gerarPdfRelatorioAvulsoCliente imprime checklist preventivo do app com res
   writeFileSync(fotoFiltroPath, Buffer.from([0xff, 0xd8, 0xff, 0xd9, 0x00]));
   writeFileSync(fotoCondensadoraPath, Buffer.from([0xff, 0xd8, 0xff, 0xd9, 0x01]));
   writeFileSync(fotoEvaporadoraPath, Buffer.from([0xff, 0xd8, 0xff, 0xd9, 0x02]));
+  equipamento.ordensServico[0].tecnico = null as never;
+  equipamento.ordensServico[0].equipe = {
+    id: "equipe-10",
+    nome: "Equipe 10",
+    membros: [
+      { usuario: { nome: "Marcela Londriclima" } },
+      { usuario: { nome: "Paulo Londriclima" } }
+    ]
+  } as never;
   equipamento.ordensServico[0].evidencias = [];
   equipamento.ordensServico[0].checklistRespostas = [
     { codigo: "M1", tipo: "checkbox", valor: "Sim", observacao: null },
@@ -262,6 +271,7 @@ test("gerarPdfRelatorioAvulsoCliente imprime checklist preventivo do app com res
     const pdf = resposta.buffer.toString("latin1");
 
     assert.match(pdf, /EPIs utilizados\s+Sim/);
+    assert.match(pdf, /Tecnico\s+Equipe 10 - Marcela Londriclima \/ Paulo Londriclima/);
     assert.match(pdf, /Desligar pelo controle remoto\s+Nao \\?\(controle sem pilha\\?\)/);
     assert.match(pdf, /Lavar filtros\s+Sim/);
     assert.match(pdf, /Pressao do fluido refrigerante\s+7\.5 \\?\(pressao ok\\?\)/);

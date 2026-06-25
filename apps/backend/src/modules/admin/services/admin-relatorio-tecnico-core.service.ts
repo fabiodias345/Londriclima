@@ -1154,7 +1154,19 @@ export class AdminRelatorioTecnicoCoreService {
       equipe: {
         select: {
           id: true,
-          nome: true
+          nome: true,
+          membros: {
+            where: {
+              ativo: true
+            },
+            select: {
+              usuario: {
+                select: {
+                  nome: true
+                }
+              }
+            }
+          }
         }
       },
       eventos: {
@@ -1392,7 +1404,7 @@ export class AdminRelatorioTecnicoCoreService {
       concluidaEm: Date | null;
       valorCobrado: Prisma.Decimal | null;
       tecnico: { id: string; nome: string; email: string } | null;
-      equipe: { id: string; nome: string } | null;
+      equipe: { id: string; nome: string; membros?: Array<{ usuario: { nome: string } }> } | null;
       eventos: Array<{
         id: string;
         acao: OrdemServicoEventoAcao;
@@ -1480,7 +1492,7 @@ export class AdminRelatorioTecnicoCoreService {
     concluidaEm: Date | null;
     valorCobrado: Prisma.Decimal | null;
     tecnico: { id: string; nome: string; email: string } | null;
-    equipe: { id: string; nome: string } | null;
+      equipe: { id: string; nome: string; membros?: Array<{ usuario: { nome: string } }> } | null;
     eventos: Array<{
       id: string;
       acao: OrdemServicoEventoAcao;
@@ -1923,7 +1935,7 @@ export class AdminRelatorioTecnicoCoreService {
           "Data e Horario",
           `${this.formatarDataPmoc(ordem?.concluida_em ?? null)} - ${this.formatarHoraPmoc(inicio)} -> ${this.formatarHoraPmoc(fim)} (${this.calcularDuracaoPmoc(inicio, fim)})`
         ),
-        this.formatarLinhaCampoPmoc("Tecnico", ordem?.tecnico?.nome || ordem?.equipe?.nome || "nao informado"),
+        this.formatarLinhaCampoPmoc("Tecnico", this.formatarResponsavelRelatorioAvulso(ordem)),
         this.formatarLinhaCampoPmoc("Problema relatado", ordem?.problema_relatado || "nao informado"),
         ...servicoRealizado.map(([label, valor]) => this.formatarLinhaCampoPmoc(label, valor))
       ];
@@ -2543,6 +2555,28 @@ export class AdminRelatorioTecnicoCoreService {
       A6: "Plano de acoes",
       A7: "Relatorio consolidado anual"
     }[codigo] ?? codigo;
+  }
+
+  private formatarResponsavelRelatorioAvulso(
+    ordem: PreviaRelatorioAvulsoCliente["maquinas"][number]["os_concluidas"][number] | null
+  ) {
+    if (!ordem) {
+      return "nao informado";
+    }
+
+    if (ordem.tecnico?.nome) {
+      return ordem.tecnico.nome;
+    }
+
+    if (!ordem.equipe?.nome) {
+      return "nao informado";
+    }
+
+    const membros = (ordem.equipe.membros ?? [])
+      .map((membro) => membro.usuario.nome)
+      .filter(Boolean);
+
+    return membros.length ? `${ordem.equipe.nome} - ${membros.join(" / ")}` : ordem.equipe.nome;
   }
 
   private formatarLinhaCampoPmoc(campo: string, valor: string) {
