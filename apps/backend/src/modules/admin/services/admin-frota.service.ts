@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { PrismaService } from "../../../database/prisma.service";
 import { AuthenticatedUser } from "../../auth/auth-user";
@@ -374,10 +374,16 @@ export class AdminFrotaService {
   }
 
   private normalizarVeiculoPayload(dto: SalvarVeiculoDto) {
+    const rastreadorImei = dto.rastreador_imei.trim();
+
+    if (!rastreadorImei) {
+      throw new BadRequestException("Informe o IMEI do rastreador.");
+    }
+
     return {
       nome: dto.nome.trim(),
       placa: dto.placa?.trim().toUpperCase() || null,
-      rastreadorImei: dto.rastreador_imei?.trim() || null,
+      rastreadorImei,
       ativo: dto.ativo !== false
     };
   }

@@ -648,6 +648,8 @@ test("admin separa frota em mapa consumo e abastecimentos", () => {
   assert.match(html, /data-fleet-tab="abastecimentos"/);
   assert.match(html, /id="vehicleForm"/);
   assert.match(html, /id="vehicleList"/);
+  assert.match(html, /Numero IMEI do rastreador/);
+  assert.match(html, /name="rastreador_imei"[^>]+required/);
   assert.match(html, /Cadastrar veiculo/);
   assert.match(html, /id="fleetReportExportButton"/);
   assert.match(html, /id="fleetReportList"/);

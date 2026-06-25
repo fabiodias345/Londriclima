@@ -318,7 +318,7 @@ function renderVehicleList(items) {
         <span>\${escapeHtml(item.placa || "Sem placa")}</span>
       </div>
       <div>
-        <span>Rastreador</span>
+        <span>IMEI do rastreador</span>
         <strong>\${escapeHtml(item.rastreador_imei || "Nao informado")}</strong>
       </div>
       <div class="vehicle-actions">
@@ -365,6 +365,12 @@ async function submitVehicle(event) {
     placa: String(data.get("placa") || "").trim(),
     rastreador_imei: String(data.get("rastreador_imei") || "").trim()
   };
+
+  if (!payload.rastreador_imei) {
+    vehicleFormStatus.textContent = "Informe o IMEI do rastreador.";
+    vehicleForm.elements.rastreador_imei.focus();
+    return;
+  }
 
   button.disabled = true;
   button.textContent = vehicleId ? "Salvando..." : "Cadastrando...";

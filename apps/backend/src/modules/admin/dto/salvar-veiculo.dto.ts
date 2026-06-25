@@ -9,9 +9,9 @@ export class SalvarVeiculoDto {
   @IsString()
   placa?: string;
 
-  @IsOptional()
   @IsString()
-  rastreador_imei?: string;
+  @IsNotEmpty()
+  rastreador_imei: string;
 
   @IsOptional()
   @IsBoolean()

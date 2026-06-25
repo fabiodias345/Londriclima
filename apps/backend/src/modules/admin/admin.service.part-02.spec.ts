@@ -1,4 +1,4 @@
-﻿import { ConflictException,NotFoundException } from "@nestjs/common";
+﻿import { BadRequestException, ConflictException,NotFoundException } from "@nestjs/common";
 import {
 OrdemServicoStatus,
 Prisma,
@@ -92,7 +92,7 @@ test("gerencia veiculos da frota por empresa e apaga por inativacao", async () =
           id: "veiculo-2",
           nome: "Carro 2",
           placa: "DEF2E34",
-          rastreadorImei: null,
+          rastreadorImei: (data as { rastreadorImei?: string }).rastreadorImei || null,
           ativo: true,
           criadoEm: new Date("2026-06-12T10:00:00.000Z"),
           atualizadoEm: new Date("2026-06-12T10:00:00.000Z")
@@ -123,7 +123,7 @@ test("gerencia veiculos da frota por empresa e apaga por inativacao", async () =
 
   const lista = await service.listarVeiculosFrota(usuario);
   const criado = await service.criarVeiculoFrota(
-    { nome: " Carro 2 ", placa: " def2e34 ", rastreador_imei: "" },
+    { nome: " Carro 2 ", placa: " def2e34 ", rastreador_imei: " 987654321 " },
     usuario
   );
   const atualizado = await service.atualizarVeiculoFrota(
@@ -138,7 +138,7 @@ test("gerencia veiculos da frota por empresa e apaga por inativacao", async () =
     empresaId: "empresa-1",
     nome: "Carro 2",
     placa: "DEF2E34",
-    rastreadorImei: null,
+    rastreadorImei: "987654321",
     ativo: true
   });
   assert.deepEqual(chamadas.updateWhere, { id: "veiculo-1" });
@@ -154,6 +154,21 @@ test("gerencia veiculos da frota por empresa e apaga por inativacao", async () =
   assert.equal(criado.placa, "DEF2E34");
   assert.equal(atualizado.placa, "ABC1D23");
   assert.deepEqual(apagado, { id: "veiculo-1", apagado: true });
+});
+
+test("criarVeiculoFrota exige IMEI do rastreador", async () => {
+  const service = criarService({
+    veiculo: {
+      create: async () => {
+        throw new Error("nao deve cadastrar sem IMEI");
+      }
+    }
+  });
+
+  await assert.rejects(
+    () => service.criarVeiculoFrota({ nome: "Carro 2", placa: "DEF2E34", rastreador_imei: " " }, usuario),
+    BadRequestException
+  );
 });
 
 test("obterRelatorios consolida clientes, OS, frota, receitas e automacoes por dia mes e ano", async () => {
