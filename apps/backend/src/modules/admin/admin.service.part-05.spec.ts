@@ -185,6 +185,39 @@ test("obterPreviaRelatorioAvulsoCliente retorna cliente sem PMOC com OS concluid
   assert.deepEqual(resposta.pendencias, []);
 });
 
+test("gerarPdfRelatorioAvulsoCliente usa respostas reais da corretiva sem checklist PMOC", async () => {
+  const prisma = {
+    cliente: {
+      findFirst: async () => ({
+        id: "cliente-1",
+        nome: "Cliente Avulso",
+        tipo: "pf",
+        documento: "12345678900",
+        telefone: "43988887777",
+        email: "cliente@example.com",
+        pmocAtivo: false,
+        atualizadoEm: new Date("2026-06-12T10:00:00.000Z"),
+        enderecos: [{ cidade: "Londrina", uf: "PR", bairro: "Centro" }],
+        equipamentos: [
+          criarEquipamentoPmocTeste("equipamento-1", "Sala", "AV-001", "SN-AV-1", "2026-06-11T12:00:00.000Z")
+        ]
+      })
+    }
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.gerarPdfRelatorioAvulsoCliente("cliente-1", usuario);
+  const pdf = resposta.buffer.toString("latin1");
+
+  assert.match(pdf, /RELATORIO DE MANUTENCAO/);
+  assert.match(pdf, /Problema encontrado\s+Motor travado/);
+  assert.match(pdf, /Acao realizada\s+Motor destravado e testado/);
+  assert.match(pdf, /Pecas utilizadas\s+Produtos de limpeza/);
+  assert.match(pdf, /Observacao final\s+Funcionando/);
+  assert.doesNotMatch(pdf, /Filtro lavado|Operacao em modo DRY|Evidencia apos a limpeza/);
+  assert.doesNotMatch(pdf, /C3\.jpg|C6|pendente/);
+});
+
 test("enviarRelatorioAvulsoCliente agenda email direto ao cliente com copia interna via automacao", async () => {
   const chamadas = {
     emailData: undefined as unknown
@@ -249,6 +282,7 @@ function criarEquipamentoPmocTeste(id: string, localInstalacao: string, patrimon
       {
         id: `os-${id}`,
         titulo: "PMOC mensal",
+        tipoServico: "corretiva",
         problemaRelatado: "Rotina mensal",
         status: OrdemServicoStatus.concluida,
         agendadaPara: inicio,
@@ -296,6 +330,14 @@ function criarEquipamentoPmocTeste(id: string, localInstalacao: string, patrimon
           atualizadoEm: fim,
           pecas: []
         },
+        checklistRespostas: [
+          { codigo: "C1", tipo: "texto", valor: "Motor travado", observacao: null },
+          { codigo: "C2", tipo: "texto", valor: "Motor destravado e testado", observacao: null },
+          { codigo: "C3", tipo: "foto", valor: "/storage/os/os-1/checklist/equipamento-1/C3.jpg", observacao: null },
+          { codigo: "C4", tipo: "texto", valor: "Produtos de limpeza", observacao: null },
+          { codigo: "C5", tipo: "texto", valor: "Funcionando", observacao: null },
+          { codigo: "C6", tipo: "texto", valor: "pendente", observacao: null }
+        ],
         assinatura: {
           id: `assinatura-${id}`,
           nomeResponsavel: "Maria Souza",

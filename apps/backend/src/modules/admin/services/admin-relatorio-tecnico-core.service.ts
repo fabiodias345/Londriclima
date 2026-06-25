@@ -4,6 +4,7 @@ import {
   AutomacaoTipo,
   OrdemServicoEventoAcao,
   OrdemServicoStatus,
+  OrdemServicoTipoServico,
   PmocRelatorioStatus,
   Prisma,
   UsuarioRole
@@ -1018,6 +1019,7 @@ export class AdminRelatorioTecnicoCoreService {
     return {
       id: true,
       titulo: true,
+      tipoServico: true,
       problemaRelatado: true,
       status: true,
       agendadaPara: true,
@@ -1080,6 +1082,17 @@ export class AdminRelatorioTecnicoCoreService {
               custoUnitario: true
             }
           }
+        }
+      },
+      checklistRespostas: {
+        orderBy: {
+          codigo: "asc"
+        },
+        select: {
+          codigo: true,
+          tipo: true,
+          valor: true,
+          observacao: true
         }
       },
       assinatura: {
@@ -1207,6 +1220,7 @@ export class AdminRelatorioTecnicoCoreService {
     ordensServico: Array<{
       id: string;
       titulo: string;
+      tipoServico: OrdemServicoTipoServico;
       problemaRelatado: string | null;
       status: OrdemServicoStatus;
       agendadaPara: Date | null;
@@ -1246,6 +1260,12 @@ export class AdminRelatorioTecnicoCoreService {
           custoUnitario: Prisma.Decimal;
         }>;
       } | null;
+      checklistRespostas: Array<{
+        codigo: string;
+        tipo: string;
+        valor: string;
+        observacao: string | null;
+      }>;
       assinatura: {
         id: string;
         nomeResponsavel: string;
@@ -1287,6 +1307,7 @@ export class AdminRelatorioTecnicoCoreService {
   private mapearOrdemRelatorioTecnico(ordem: {
     id: string;
     titulo: string;
+    tipoServico: OrdemServicoTipoServico;
     problemaRelatado: string | null;
     status: OrdemServicoStatus;
     agendadaPara: Date | null;
@@ -1326,6 +1347,12 @@ export class AdminRelatorioTecnicoCoreService {
         custoUnitario: Prisma.Decimal;
       }>;
     } | null;
+    checklistRespostas: Array<{
+      codigo: string;
+      tipo: string;
+      valor: string;
+      observacao: string | null;
+    }>;
     assinatura: {
       id: string;
       nomeResponsavel: string;
@@ -1344,6 +1371,7 @@ export class AdminRelatorioTecnicoCoreService {
     return {
       id: ordem.id,
       titulo: ordem.titulo,
+      tipo_servico: ordem.tipoServico,
       problema_relatado: ordem.problemaRelatado,
       status: ordem.status,
       agendada_para: ordem.agendadaPara?.toISOString() ?? null,
@@ -1384,8 +1412,14 @@ export class AdminRelatorioTecnicoCoreService {
               custo_unitario: peca.custoUnitario.toNumber(),
               subtotal: peca.custoUnitario.toNumber() * peca.quantidade
             }))
-          }
+        }
         : null,
+      checklist_respostas: ordem.checklistRespostas.map((resposta) => ({
+        codigo: resposta.codigo,
+        tipo: resposta.tipo,
+        valor: resposta.valor,
+        observacao: resposta.observacao
+      })),
       assinatura: ordem.assinatura
         ? {
             id: ordem.assinatura.id,
@@ -1664,8 +1698,8 @@ export class AdminRelatorioTecnicoCoreService {
 
   private montarCapaRelatorioAvulso(previa: PreviaRelatorioAvulsoCliente) {
     return [
-      "AIRMOVEBR - RELATORIO TECNICO",
-      "Atendimento avulso sem PMOC",
+      "AIRMOVEBR - RELATORIO DE MANUTENCAO",
+      "Atendimento sem PMOC",
       "",
       this.formatarLinhaCampoPmoc("Campo", "Informacao"),
       this.formatarLinhaCampoPmoc("Empresa", "AIRMOVEBR"),
@@ -1686,7 +1720,7 @@ export class AdminRelatorioTecnicoCoreService {
       ),
       this.formatarLinhaCampoPmoc("Pendencias", previa.pendencias.join(", ") || "Nenhuma"),
       "",
-      "Este relatorio consolida os servicos executados, checklist, evidencias, GPS e assinatura do cliente.",
+      "Este relatorio consolida o servico executado, evidencias, GPS e assinatura do cliente.",
       "Documento emitido automaticamente pela plataforma AIRMOVEBR."
     ];
   }
@@ -1698,7 +1732,7 @@ export class AdminRelatorioTecnicoCoreService {
     const primeiraOs = maquina.os_concluidas[0] ?? null;
     const inicio = primeiraOs?.agendada_para ?? primeiraOs?.concluida_em ?? null;
     const fim = primeiraOs?.concluida_em ?? null;
-    const verificacoes = this.obterLinhasChecklistPmoc(primeiraOs);
+    const servicoRealizado = this.obterLinhasServicoRelatorioAvulso(primeiraOs);
 
     return [
       `MAQUINA N:${String(indice + 1).padStart(3, "0")}`,
@@ -1712,9 +1746,9 @@ export class AdminRelatorioTecnicoCoreService {
       `Tecnico: ${primeiraOs?.tecnico?.nome || primeiraOs?.equipe?.nome || "nao informado"}`,
       `Problema relatado: ${primeiraOs?.problema_relatado || "nao informado"}`,
       "",
-      "CHECKLIST / ATIVIDADES",
-      this.formatarLinhaCampoPmoc("Verificacao / Atividade", "Resultado"),
-      ...verificacoes.map(([label, valor]) => this.formatarLinhaCampoPmoc(label, valor)),
+      "SERVICO REALIZADO",
+      this.formatarLinhaCampoPmoc("Campo", "Informacao"),
+      ...servicoRealizado.map(([label, valor]) => this.formatarLinhaCampoPmoc(label, valor)),
       "",
       `Evidencias: ${this.formatarEvidenciasPmoc(primeiraOs)}`,
       `GPS: ${this.formatarGpsPmoc(primeiraOs)}`,
@@ -1767,23 +1801,49 @@ export class AdminRelatorioTecnicoCoreService {
     return Buffer.from(pdf, "latin1");
   }
 
-  private obterLinhasChecklistPmoc(ordem: PreviaPmocCliente["maquinas"][number]["os_concluidas"][number] | null) {
-    const procedimentos = new Set(ordem?.checklist?.procedimentos ?? []);
-    const evidenciaDepois = ordem?.evidencias.some((evidencia) => evidencia.tipo === "depois") ?? false;
+  private obterLinhasServicoRelatorioAvulso(
+    ordem: (PreviaRelatorioAvulsoCliente["maquinas"][number]["os_concluidas"][number] & {
+      checklist_respostas?: Array<{ codigo: string; valor: string; observacao: string | null }>;
+    }) | null
+  ) {
+    const linhas = (ordem?.checklist_respostas ?? [])
+      .filter((resposta) => this.deveExibirRespostaRelatorioAvulso(resposta))
+      .map((resposta) => {
+        const observacao = resposta.observacao?.trim() ? ` (${resposta.observacao.trim()})` : "";
+        return [this.obterLabelRespostaRelatorioAvulso(resposta.codigo), `${resposta.valor.trim()}${observacao}`];
+      });
+
+    if (linhas.length) {
+      return linhas;
+    }
 
     return [
-      ["Equipamento desligado antes da limpeza?", "Sim"],
-      ["Filtro lavado com agua corrente?", procedimentos.has("limpeza_filtro") ? "Sim" : "Nao informado"],
-      ["Limpeza com escova realizada?", procedimentos.size ? "Sim" : "Nao informado"],
-      ["Secagem completa antes da recolocacao?", procedimentos.has("limpeza_filtro") ? "Sim" : "Nao informado"],
-      ["Integridade fisica do filtro verificada?", "Sim"],
-      ["Limpeza externa do gabinete realizada?", procedimentos.has("limpeza_evaporadora") ? "Sim" : "Nao informado"],
-      ["Filtro recolocado corretamente?", "Sim"],
-      ["Operacao em modo DRY verificada?", "Nao informado"],
-      ["Verificacao das condicoes do ambiente?", ordem?.eventos.some((evento) => evento.latitude !== null) ? "Sim" : "Nao informado"],
-      ["Observacao sobre o dreno/bandeja", ordem?.observacoes[0]?.texto || "Sem observacao"],
-      ["Evidencia apos a limpeza", evidenciaDepois ? "Sim" : "Pendente"]
+      ["Problema relatado", ordem?.problema_relatado || "nao informado"],
+      ["Servico realizado", ordem?.checklist?.servico_realizado || "nao informado"]
     ];
+  }
+
+  private deveExibirRespostaRelatorioAvulso(resposta: { codigo: string; valor: string }) {
+    const valor = resposta.valor?.trim() ?? "";
+
+    if (!valor || /^pendente$/i.test(valor)) {
+      return false;
+    }
+
+    if (resposta.codigo === "C3" || valor.startsWith("/storage/")) {
+      return false;
+    }
+
+    return Boolean(this.obterLabelRespostaRelatorioAvulso(resposta.codigo));
+  }
+
+  private obterLabelRespostaRelatorioAvulso(codigo: string) {
+    return {
+      C1: "Problema encontrado",
+      C2: "Acao realizada",
+      C4: "Pecas utilizadas",
+      C5: "Observacao final"
+    }[codigo] ?? "";
   }
 
   private formatarLinhaCampoPmoc(campo: string, valor: string) {
