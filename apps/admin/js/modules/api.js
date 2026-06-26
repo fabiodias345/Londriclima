@@ -429,20 +429,20 @@ function setActiveView(view) {
   }
 
   const meta = {
-    preChamados: ["Operacao de O.S.", "O.S."],
-    frota: ["Monitoramento operacional", "Localizacao da frota"],
-    agenda: ["Despacho de servicos", "Agenda operacional"],
-    recorrencias: ["Planos de atividade", "Recorrencias"],
+    preChamados: ["Operação de O.S.", "O.S."],
+    frota: ["Monitoramento operacional", "Localização da frota"],
+    agenda: ["Despacho de serviços", "Agenda operacional"],
+    recorrencias: ["Planos de atividade", "Recorrências"],
     empresa: ["Cadastro base", "Empresa"],
     clientes: ["Relacionamento", "Clientes e equipamentos"],
-    tecnicos: ["Equipe de campo", "Tecnicos e auxiliares"],
-    equipes: ["Despacho flexivel", "Equipes por cliente"],
-    engenheiros: ["Responsabilidade tecnica", "Engenheiros responsaveis"],
-    configuracoes: ["Administracao", "Configuracoes"],
-    pmoc: ["Conformidade tecnica", "PMOC"],
-    relatoriosAvulsos: ["Atendimento avulso", "Relatorios diretos ao cliente"],
-    relatorios: ["Gestao", "Dashboard"]
-  }[view] ?? ["Operacao de O.S.", "O.S."];
+    tecnicos: ["Equipe de campo", "Técnicos e auxiliares"],
+    equipes: ["Despacho flexível", "Equipes por cliente"],
+    engenheiros: ["Responsabilidade técnica", "Engenheiros responsáveis"],
+    configuracoes: ["Administração", "Configurações"],
+    pmoc: ["Conformidade técnica", "PMOC"],
+    relatoriosAvulsos: ["Atendimento avulso", "Relatórios diretos ao cliente"],
+    relatorios: ["Gestão", "Dashboard"]
+  }[view] ?? ["Operação de O.S.", "O.S."];
 
   viewKicker.textContent = meta[0];
   viewTitle.textContent = meta[1];

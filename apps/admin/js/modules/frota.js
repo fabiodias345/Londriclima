@@ -59,7 +59,7 @@ function renderPreChamados(items) {
           </select>
         </label>
         <label>
-          Tecnicos / auxiliares
+          Técnicos / auxiliares
           <select name="usuario_ids" multiple size="3">
             \${renderOptions(dispatchOptions.tecnicos)}
           </select>
@@ -599,7 +599,7 @@ function renderAgendaDay(items, dateKey) {
 
   if (!items.length) {
     agendaSelectedDateTitle.textContent = "Sem OS abertas";
-    agendaSelectedDateMeta.textContent = "0 servicos";
+    agendaSelectedDateMeta.textContent = "0 serviços";
     agendaList.innerHTML = '<article class="agenda-empty"><strong>Nenhuma OS aberta.</strong><span>A agenda fica pronta quando um pre-chamado for aprovado.</span></article>';
     return;
   }
@@ -611,7 +611,7 @@ function renderAgendaDay(items, dateKey) {
   const dayDate = parseLocalDateKey(dateKey);
 
   agendaSelectedDateTitle.textContent = formatLongDate(dayDate);
-  agendaSelectedDateMeta.textContent = scheduledItems.length === 1 ? "1 servico marcado" : \`\${scheduledItems.length} servicos marcados\`;
+  agendaSelectedDateMeta.textContent = scheduledItems.length === 1 ? "1 serviço marcado" : \`\${scheduledItems.length} serviços marcados\`;
 
   for (const slot of buildAgendaSlots(scheduledItems)) {
     const row = document.createElement("article");

@@ -7,7 +7,7 @@ export const recorrenciasModule = {
 export const recorrenciasRoot = `
       tone: "warning",
       title: "E-mail do cliente pendente",
-      text: "Relatorio assinado, mas ainda sem confirmacao de entrega do e-mail final ao cliente."
+      text: "Relatório assinado, mas ainda sem confirmação de entrega do e-mail final ao cliente."
     });
   }
 
@@ -17,7 +17,7 @@ export const recorrenciasRoot = `
       title: "Assinatura solicitada ao engenheiro",
       text: currentSignature.assinafy_document_id
         ? \`Assinafy recebeu o documento. Status: \${currentSignature.assinafy_status || "aguardando assinatura"}.\`
-        : "PDF PMOC ja foi gerado e enviado para assinatura do engenheiro."
+        : "PDF PMOC já foi gerado e enviado para assinatura do engenheiro."
     });
   }
 
@@ -25,7 +25,7 @@ export const recorrenciasRoot = `
     alerts.push({
       tone: "danger",
       title: "Engenheiro pendente",
-      text: "Vincule o responsavel tecnico antes de gerar qualquer relatorio PMOC."
+      text: "Vincule o responsável técnico antes de gerar qualquer relatório PMOC."
     });
   }
 
@@ -33,15 +33,15 @@ export const recorrenciasRoot = `
     alerts.push({
       tone: "warning",
       title: "E-mail do cliente pendente",
-      text: "O envio final ao cliente depende de um e-mail valido no cadastro."
+      text: "O envio final ao cliente depende de um e-mail válido no cadastro."
     });
   }
 
   if (!machines.length) {
     alerts.push({
       tone: "danger",
-      title: "Nenhuma maquina cadastrada",
-      text: "Cadastre as maquinas do cliente para manter o dossie separado equipamento por equipamento."
+      title: "Nenhuma máquina cadastrada",
+      text: "Cadastre as máquinas do cliente para manter o dossiê separado equipamento por equipamento."
     });
   }
 
@@ -50,8 +50,8 @@ export const recorrenciasRoot = `
   if (machinesWithoutGas) {
     alerts.push({
       tone: "warning",
-      title: "Gas refrigerante pendente",
-      text: \`\${machinesWithoutGas} maquina(s) ainda precisam do gas refrigerante na ficha tecnica ou primeira visita.\`
+      title: "Gás refrigerante pendente",
+      text: \`\${machinesWithoutGas} máquina(s) ainda precisam do gás refrigerante na ficha técnica ou primeira visita.\`
     });
   }
 
@@ -62,7 +62,7 @@ function renderPmocMachines(machines) {
   pmocMachineList.innerHTML = "";
 
   if (!machines.length) {
-    pmocMachineList.innerHTML = '<article class="pmoc-empty"><strong>Sem maquinas neste cliente.</strong><span>Cadastre equipamentos na aba Clientes para iniciar o dossie PMOC.</span></article>';
+    pmocMachineList.innerHTML = '<article class="pmoc-empty"><strong>Sem máquinas neste cliente.</strong><span>Cadastre equipamentos na aba Clientes para iniciar o dossiê PMOC.</span></article>';
     return;
   }
 
@@ -74,16 +74,16 @@ function renderPmocMachines(machines) {
       <div>
         <span class="pmoc-status \${status.tone}">\${escapeHtml(status.label)}</span>
         <strong>\${escapeHtml([item.tipo, item.marca, item.modelo].filter(Boolean).join(" ") || "Equipamento")}</strong>
-        <p>\${escapeHtml(item.local_instalacao || "Local nao informado")}</p>
+        <p>\${escapeHtml(item.local_instalacao || "Local não informado")}</p>
       </div>
       <div class="pmoc-machine-specs">
-        <span>Patrimonio: \${escapeHtml(item.patrimonio || "nao informado")}</span>
-        <span>Serie: \${escapeHtml(item.numero_serie || "nao informada")}</span>
-        <span>Gas: \${escapeHtml(item.gas_refrigerante || "pendente")}</span>
-        <span>BTU: \${escapeHtml(item.capacidade_btu || "nao informado")}</span>
+        <span>Patrimônio: \${escapeHtml(item.patrimonio || "não informado")}</span>
+        <span>Série: \${escapeHtml(item.numero_serie || "não informada")}</span>
+        <span>Gás: \${escapeHtml(item.gas_refrigerante || "pendente")}</span>
+        <span>BTU: \${escapeHtml(item.capacidade_btu || "não informado")}</span>
       </div>
       <div class="pmoc-machine-specs">
-        <span>\${item.total_os || 0} OS no historico</span>
+        <span>\${item.total_os || 0} OS no histórico</span>
         <span>\${item.os_abertas || 0} OS abertas</span>
         <span>Atualizado \${formatDateTime(item.atualizado_em)}</span>
       </div>

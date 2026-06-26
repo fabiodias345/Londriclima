@@ -192,7 +192,7 @@ function renderAgendaDispatchOptions() {
   }
 
   if (agendaOsTechnicianSelect) {
-    agendaOsTechnicianSelect.innerHTML = '<option value="">Sem tecnico</option>' + renderOptions(dispatchOptions.tecnicos);
+    agendaOsTechnicianSelect.innerHTML = '<option value="">Sem técnico</option>' + renderOptions(dispatchOptions.tecnicos);
   }
 }
 
@@ -202,7 +202,7 @@ function renderRecurrenceDispatchOptions() {
   }
 
   if (recurrenceTechnicianSelect) {
-    recurrenceTechnicianSelect.innerHTML = '<option value="">Sem tecnico</option>' + renderOptions(dispatchOptions.tecnicos);
+    recurrenceTechnicianSelect.innerHTML = '<option value="">Sem técnico</option>' + renderOptions(dispatchOptions.tecnicos);
   }
 }
 

@@ -158,6 +158,7 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.doesNotMatch(html, /<button class="nav-link" type="button" data-view="engenheiros">/);
   assert.match(html, /id="configButton"/);
   assert.match(html, /id="configTabs"/);
+  assert.ok(html.indexOf('id="configTabs"') < html.indexOf('id="preChamadosSummary"'));
   assert.match(html, /data-config-view="empresa"/);
   assert.match(html, /data-config-view="tecnicos"/);
   assert.match(html, /data-config-view="equipes"/);
@@ -198,7 +199,7 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(html, /id="clientEquipmentPanel"/);
   assert.match(html, /id="equipmentForm"/);
   assert.match(html, /name="codigo_barras"/);
-  assert.match(html, /Codigo de barras ou QR Code/);
+  assert.match(html, /Código de barras ou QR Code/);
   assert.match(html, /Ler codigo\/QR/);
   assert.match(html, /name="gas_refrigerante"/);
   assert.match(html, /R-410A/);
@@ -321,12 +322,12 @@ test("admin organiza O.S. como fichario operacional", () => {
   assert.match(html, /id="newOsShortcutButton"/);
   assert.match(html, /id="osSearchInput"/);
   assert.match(html, /id="viewTitle">O\.S\./);
-  assert.match(html, /id="viewKicker">Operacao de O\.S\./);
-  assert.match(html, /Solicitacoes/);
+  assert.match(html, /id="viewKicker">Operação de O\.S\./);
+  assert.match(html, /Solicitações/);
   assert.match(html, /Abertas/);
   assert.match(html, /Agendadas/);
   assert.match(html, /Em atendimento/);
-  assert.match(html, /Concluidas/);
+  assert.match(html, /Concluídas/);
   assert.match(html, /Canceladas/);
   assert.match(script, /function setOsTab/);
   assert.match(script, /function filterOsRequests/);

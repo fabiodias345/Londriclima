@@ -196,13 +196,13 @@ async function submitTecnico(event) {
     }
 
     resetTecnicoForm();
-    tecnicoFormStatus.textContent = "Tecnico salvo.";
+    tecnicoFormStatus.textContent = "Técnico salvo.";
     await loadTecnicos();
   } catch {
     tecnicoFormStatus.textContent = "API indisponivel.";
   } finally {
     button.disabled = false;
-    button.textContent = "Salvar tecnico";
+    button.textContent = "Salvar técnico";
   }
 }
 

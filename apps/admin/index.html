@@ -23,11 +23,11 @@
         <strong>AIRMOVEBR</strong>
       </a>
       <nav class="side-nav" aria-label="Menu administrativo">
-        <section class="nav-group" aria-label="Operacao">
-          <span class="nav-group-title">Operacao</span>
+        <section class="nav-group" aria-label="Operação">
+          <span class="nav-group-title">Operação</span>
           <button class="nav-link active" type="button" data-view="preChamados">O.S.</button>
           <button class="nav-link" type="button" data-view="agenda">Agenda</button>
-          <button class="nav-link" type="button" data-view="recorrencias">Recorrencias</button>
+          <button class="nav-link" type="button" data-view="recorrencias">Recorrências</button>
           <button class="nav-link" type="button" data-view="frota">Frota</button>
         </section>
 
@@ -39,7 +39,7 @@
         <section class="nav-group" aria-label="Documentos">
           <span class="nav-group-title">Documentos</span>
           <button class="nav-link" type="button" data-view="pmoc">PMOC</button>
-          <button class="nav-link" type="button" data-view="relatoriosAvulsos">Relatorios Avulsos</button>
+          <button class="nav-link" type="button" data-view="relatoriosAvulsos">Relatórios Avulsos</button>
           <button class="nav-link" type="button" data-view="relatorios">Dashboard</button>
         </section>
       </nav>
@@ -54,7 +54,7 @@
         <div>
           <span class="kicker">Acesso administrativo</span>
           <h1>Entrar no painel</h1>
-          <p>Use o usuario tecnico de teste por enquanto. Depois criaremos perfis de admin e supervisor.</p>
+          <p>Use o usuário técnico de teste por enquanto. Depois criaremos perfis de admin e supervisor.</p>
         </div>
         <form id="loginForm">
           <label>
@@ -73,19 +73,26 @@
       <section class="dashboard hidden" id="dashboard">
         <header class="topbar">
           <div>
-            <span class="kicker" id="viewKicker">Operacao de O.S.</span>
+            <span class="kicker" id="viewKicker">Operação de O.S.</span>
             <h1 id="viewTitle">O.S.</h1>
           </div>
           <div class="admin-top-actions" aria-label="Acoes do painel">
-            <button class="secondary-button icon-button" id="configButton" type="button" aria-label="Configuracoes">⚙</button>
+            <button class="secondary-button icon-button" id="configButton" type="button" aria-label="Configurações">⚙</button>
             <span class="admin-avatar" aria-label="Usuario logado">AD</span>
             <button class="refresh-button compact-button" id="refreshButton" type="button">Atualizar</button>
           </div>
         </header>
 
+        <section class="config-tabs hidden" id="configTabs" role="tablist" aria-label="Configurações">
+          <button class="subnav-button active" type="button" data-config-view="empresa">Empresa</button>
+          <button class="subnav-button" type="button" data-config-view="tecnicos">Técnicos</button>
+          <button class="subnav-button" type="button" data-config-view="equipes">Equipes</button>
+          <button class="subnav-button" type="button" data-config-view="engenheiros">Engenheiros</button>
+        </section>
+
         <section class="summary-grid" id="preChamadosSummary" aria-label="Resumo">
           <article class="os-summary-card os-summary-blue">
-            <span>Solicitacoes</span>
+            <span>Solicitações</span>
             <strong id="pendingCount">0</strong>
             <small id="osRequestDelta">Pendentes no site</small>
           </article>
@@ -100,7 +107,7 @@
             <small>Com data definida</small>
           </article>
           <article class="os-summary-card os-summary-purple">
-            <span>Concluidas (mes)</span>
+            <span>Concluídas (mês)</span>
             <strong id="osCompletedMonthCount">0</strong>
             <small>Fechadas no periodo</small>
           </article>
@@ -108,7 +115,7 @@
 
         <section class="summary-grid fleet-summary-grid hidden" id="frotaSummary" aria-label="Resumo da frota">
           <article class="fleet-stat-card fleet-stat-operational">
-            <span>Veiculos ativos</span>
+            <span>Veículos ativos</span>
             <strong id="vehicleCount">0</strong>
             <small>Frota operacional</small>
           </article>
@@ -243,20 +250,13 @@
           </article>
         </section>
 
-        <section class="config-tabs hidden" id="configTabs" role="tablist" aria-label="Configuracoes">
-          <button class="subnav-button active" type="button" data-config-view="empresa">Empresa</button>
-          <button class="subnav-button" type="button" data-config-view="tecnicos">Tecnicos</button>
-          <button class="subnav-button" type="button" data-config-view="equipes">Equipes</button>
-          <button class="subnav-button" type="button" data-config-view="engenheiros">Engenheiros</button>
-        </section>
-
         <section class="worklist os-workbench os-workbench-grid os-page-shell" id="preChamadosView">
           <div class="os-tabs" id="osTabs" role="tablist" aria-label="Etapas de O.S.">
-            <button class="subnav-button active" type="button" data-os-tab="solicitacoes">Solicitacoes <span class="os-count-badge" data-os-count="solicitacoes">0</span></button>
+            <button class="subnav-button active" type="button" data-os-tab="solicitacoes">Solicitações <span class="os-count-badge" data-os-count="solicitacoes">0</span></button>
             <button class="subnav-button" type="button" data-os-tab="abertas">Abertas <span class="os-count-badge" data-os-count="abertas">0</span></button>
             <button class="subnav-button" type="button" data-os-tab="agendadas">Agendadas <span class="os-count-badge" data-os-count="agendadas">0</span></button>
             <button class="subnav-button" type="button" data-os-tab="em_atendimento">Em atendimento <span class="os-count-badge" data-os-count="em_atendimento">0</span></button>
-            <button class="subnav-button" type="button" data-os-tab="concluidas">Concluidas <span class="os-count-badge" data-os-count="concluidas">0</span></button>
+            <button class="subnav-button" type="button" data-os-tab="concluidas">Concluídas <span class="os-count-badge" data-os-count="concluidas">0</span></button>
             <button class="subnav-button" type="button" data-os-tab="canceladas">Canceladas <span class="os-count-badge" data-os-count="canceladas">0</span></button>
           </div>
           <div class="worklist-header os-header">
@@ -295,7 +295,7 @@
         <section class="fleet-shell hidden" id="frotaView">
           <div class="subnav" role="tablist" aria-label="Secoes da frota">
             <button class="subnav-button active" type="button" data-fleet-tab="mapa">Mapa</button>
-            <button class="subnav-button" type="button" data-fleet-tab="veiculos">Veiculos</button>
+            <button class="subnav-button" type="button" data-fleet-tab="veiculos">Veículos</button>
             <button class="subnav-button" type="button" data-fleet-tab="consumo">Consumo</button>
             <button class="subnav-button" type="button" data-fleet-tab="abastecimentos">Abastecimentos</button>
           </div>
@@ -311,7 +311,7 @@
             </div>
             <div class="fleet-list fleet-monitor-panel">
               <div class="worklist-header fleet-monitor-header">
-                <h2>Veiculos monitorados</h2>
+                <h2>Veículos monitorados</h2>
                 <p id="fleetStatus" role="status">Carregando...</p>
               </div>
               <div id="fleetList"></div>
@@ -322,7 +322,7 @@
             <section class="worklist vehicle-admin-panel">
               <div class="worklist-header">
                 <div>
-                  <h2>Cadastro de veiculos</h2>
+                  <h2>Cadastro de veículos</h2>
                   <p id="vehicleStatus" role="status">Carregando...</p>
                 </div>
               </div>
@@ -449,7 +449,7 @@
                   <span class="kicker">Dia selecionado</span>
                   <h3 id="agendaSelectedDateTitle">Selecione uma data</h3>
                 </div>
-                <p id="agendaSelectedDateMeta">0 servicos</p>
+                <p id="agendaSelectedDateMeta">0 serviços</p>
               </div>
               <div class="agenda-slots" id="agendaList"></div>
             </section>
@@ -495,7 +495,7 @@
             <label>
               Tecnico
               <select name="tecnico_id" id="recurrenceTechnicianSelect">
-                <option value="">Sem tecnico</option>
+                <option value="">Sem técnico</option>
               </select>
             </label>
             <label>
@@ -616,7 +616,7 @@
                 <span class="kicker">Equipamentos</span>
                 <h2 id="clientEquipmentTitle">Selecione um cliente</h2>
               </div>
-              <p id="clientEquipmentStatus" role="status">Escolha um cliente para ver as maquinas.</p>
+              <p id="clientEquipmentStatus" role="status">Escolha um cliente para ver as máquinas.</p>
             </div>
             <form class="equipment-form" id="equipmentForm">
               <label>
@@ -624,11 +624,11 @@
                 <input name="tipo" type="text" placeholder="Split, cassete, VRF, fancoil..." />
               </label>
               <label>
-                Patrimonio
+                Patrimônio
                 <input name="patrimonio" type="text" />
               </label>
               <label>
-                Codigo de barras ou QR Code
+                Código de barras ou QR Code
                 <input name="codigo_barras" type="text" placeholder="Leia ou digite o codigo da etiqueta" />
               </label>
               <label>
@@ -689,7 +689,7 @@
           <div class="worklist-header">
             <div>
               <h2>Cadastro da empresa</h2>
-              <p>Dados base para cabeçalhos e futuros dossies.</p>
+              <p>Dados base para cabeçalhos e futuros dossiês.</p>
             </div>
             <p id="empresaStatus" role="status">Carregando...</p>
           </div>
@@ -727,7 +727,7 @@
             </fieldset>
 
             <fieldset>
-              <legend>Endereco</legend>
+              <legend>Endereço</legend>
               <label>
                 CEP
                 <input name="cep" type="text" inputmode="numeric" />
@@ -799,7 +799,7 @@
 
         <section class="worklist hidden" id="engenheirosView">
           <div class="worklist-header">
-            <h2>Engenheiros responsaveis</h2>
+            <h2>Engenheiros responsáveis</h2>
             <p id="engenheirosStatus" role="status">Carregando...</p>
           </div>
           <form class="client-form" id="engineerForm">
@@ -835,7 +835,7 @@
 
         <section class="worklist hidden" id="tecnicosView">
           <div class="worklist-header">
-            <h2>Tecnicos e auxiliares</h2>
+            <h2>Técnicos e auxiliares</h2>
             <p id="tecnicosStatus" role="status">Carregando...</p>
           </div>
           <form class="client-form" id="tecnicoForm">
@@ -855,7 +855,7 @@
             <label>
               Funcao
               <select name="role">
-                <option value="tecnico">Tecnico</option>
+                <option value="tecnico">Técnico</option>
                 <option value="auxiliar">Auxiliar</option>
               </select>
             </label>
@@ -864,7 +864,7 @@
               <input name="senha" type="password" minlength="6" autocomplete="new-password" />
             </label>
             <div class="form-actions">
-              <button type="submit">Salvar tecnico</button>
+              <button type="submit">Salvar técnico</button>
               <button class="secondary-button" id="resetTecnicoFormButton" type="button">Novo</button>
             </div>
             <p class="status" id="tecnicoFormStatus" role="status"></p>
@@ -904,7 +904,7 @@
           <div class="pmoc-hero" id="pmocHero">
             <div>
               <span class="kicker">Dossie por cliente</span>
-              <h2>PMOC sem mistura de maquinas ou clientes</h2>
+              <h2>PMOC sem mistura de máquinas ou clientes</h2>
               <p>Procure um cliente, confirme se ele exige PMOC e vincule o engenheiro responsavel antes da futura emissao do relatorio.</p>
             </div>
             <form class="pmoc-search" id="pmocSearchForm">
@@ -953,7 +953,7 @@
                 <span class="kicker">Clientes em PMOC</span>
                 <h2>Dossies separados</h2>
               </div>
-              <p>Um relatorio por cliente, maquinas isoladas dentro do mesmo arquivo.</p>
+              <p>Um relatório por cliente, máquinas isoladas dentro do mesmo arquivo.</p>
             </div>
             <div class="pmoc-dossier-list" id="pmocDossierList"></div>
           </section>
@@ -980,7 +980,7 @@
         <section class="worklist hidden" id="relatoriosView">
           <div class="worklist-header">
             <div>
-              <h2>Relatorio operacional</h2>
+              <h2>Relatório operacional</h2>
               <p id="relatoriosStatus" role="status">Carregando...</p>
             </div>
             <button class="secondary-button compact-button" id="printReportsButton" type="button">Imprimir</button>
@@ -991,7 +991,7 @@
         <section class="worklist hidden" id="relatoriosAvulsosView">
           <div class="worklist-header">
             <div>
-              <h2>Relatorios tecnicos avulsos</h2>
+              <h2>Relatórios técnicos avulsos</h2>
               <p>Clientes sem PMOC recebem o relatorio direto por e-mail, com copia interna.</p>
             </div>
             <p id="relatoriosAvulsosStatus" role="status">Carregando...</p>
@@ -1065,7 +1065,7 @@
           <label>
             Tecnico
             <select name="tecnico_id" id="agendaOsTechnicianSelect">
-              <option value="">Sem tecnico</option>
+              <option value="">Sem técnico</option>
             </select>
           </label>
           <label>

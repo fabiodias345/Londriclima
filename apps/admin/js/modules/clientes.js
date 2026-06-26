@@ -60,7 +60,7 @@ function renderEquipes(items) {
   equipesList.innerHTML = "";
 
   if (!items.length) {
-    equipesList.innerHTML = '<article class="data-row"><strong>Nenhuma equipe cadastrada.</strong><span>Crie equipes por cliente ou use responsaveis avulsos na OS.</span></article>';
+    equipesList.innerHTML = '<article class="data-row"><strong>Nenhuma equipe cadastrada.</strong><span>Crie equipes por cliente ou use responsáveis avulsos na OS.</span></article>';
     return;
   }
 
@@ -201,11 +201,11 @@ function renderClientEquipments(items) {
     row.innerHTML = \`
       <div>
         <strong>\${escapeHtml([item.tipo, item.marca, item.modelo].filter(Boolean).join(" ") || "Equipamento")}</strong>
-        <span>\${escapeHtml(item.local_instalacao || "Local nao informado")}</span>
+        <span>\${escapeHtml(item.local_instalacao || "Local não informado")}</span>
       </div>
       <div>
-        <span>Patrimonio: \${escapeHtml(item.patrimonio || "nao informado")}</span>
-        <span>Codigo/QR: \${escapeHtml(item.codigo_barras || "nao informado")}</span>
+        <span>Patrimônio: \${escapeHtml(item.patrimonio || "não informado")}</span>
+        <span>Código/QR: \${escapeHtml(item.codigo_barras || "não informado")}</span>
         <span>Gas: \${escapeHtml(item.gas_refrigerante || "pendente da primeira visita")}</span>
         <span>Serie: \${escapeHtml(item.numero_serie || "nao informada")}</span>
       </div>
@@ -228,7 +228,7 @@ function renderRelatorios(result) {
       <strong>\${result.clientes}</strong>
     </article>
     <article class="report-card report-card-total">
-      <span>Veiculos ativos</span>
+      <span>Veículos ativos</span>
       <strong>\${result.veiculos_ativos}</strong>
     </article>
     \${renderPeriodMetric("Manutencoes", result.manutencoes)}
@@ -236,7 +236,7 @@ function renderRelatorios(result) {
     \${renderPeriodMetric("Pre-chamados", result.pre_chamados)}
     \${renderPeriodMetric("OS abertas", result.os_abertas)}
     \${renderPeriodMetric("Em atendimento", result.em_atendimento)}
-    \${renderPeriodMetric("Concluidas", result.concluidas)}
+    \${renderPeriodMetric("Concluídas", result.concluidas)}
   \`;
 }
 
@@ -300,7 +300,7 @@ function renderRelatoriosAvulsos(items) {
       ? { label: "Pronto para envio", tone: "success" }
       : { label: "Aguardando OS concluida", tone: "warning" };
     const ultimoEnvio = item.ultimo_envio
-      ? \`Ultimo envio: \${formatRelatorioAvulsoDateTime(item.ultimo_envio.enviado_em)} - \${escapeHtml(item.ultimo_envio.email || item.email || "e-mail nao informado")}\`
+      ? \`Último envio: \${formatRelatorioAvulsoDateTime(item.ultimo_envio.enviado_em)} - \${escapeHtml(item.ultimo_envio.email || item.email || "e-mail não informado")}\`
       : "Ainda nao enviado";
     const sendLabel = item.ultimo_envio ? "Reenviar relatorio" : "Enviar";
     const row = document.createElement("article");
@@ -464,7 +464,7 @@ function renderFuelHistory(items) {
       </div>
       <div>
         <span>\${formatCurrency(item.valor_total)}</span>
-        <span>\${escapeHtml(item.posto || "posto nao informado")}</span>
+        <span>\${escapeHtml(item.posto || "posto não informado")}</span>
       </div>
     \`;
     fuelHistoryList.appendChild(row);

@@ -223,7 +223,7 @@ async function lookupClientCep() {
     }
 
     applyCepAddress(address);
-    setClientCepStatus("Endereco preenchido. Informe apenas o numero.", "success");
+    setClientCepStatus("Endereço preenchido. Informe apenas o número.", "success");
   } catch {
     setClientCepStatus("Nao foi possivel buscar o CEP agora. Preencha manualmente.", "warning");
   }

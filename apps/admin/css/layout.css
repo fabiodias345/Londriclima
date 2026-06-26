@@ -861,49 +861,66 @@ form button,
 
 .sidebar {
   width: 312px;
-  padding: 24px 14px;
+  gap: 10px;
+  padding: 16px 12px;
   background: #10192b;
 }
 
 .brand {
-  padding: 0 14px 18px;
+  gap: 10px;
+  padding: 0 10px 8px;
 }
 
 .brand span {
-  width: 48px;
-  height: 48px;
+  width: 42px;
+  height: 42px;
   border-radius: 12px;
   background: linear-gradient(135deg, #2563eb, #f59e0b);
 }
 
+.brand strong {
+  font-size: 16px;
+  line-height: 1.1;
+}
+
 .brand strong::after {
-  content: "Gestao de Servicos";
+  content: "Gestão de Serviços";
   display: block;
-  margin-top: 5px;
+  margin-top: 3px;
   color: #9fb1cb;
   font-family: "Manrope", sans-serif;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
 }
 
+.side-nav {
+  gap: 6px;
+  padding-top: 0;
+}
+
 .nav-group {
-  gap: 7px;
+  gap: 3px;
+  padding-bottom: 6px;
   border-bottom: 0;
 }
 
 .nav-group-title {
-  padding: 10px 14px 6px;
+  padding: 6px 10px 3px;
   color: #9fb1cb;
+  font-size: 10px;
+  letter-spacing: 0.14em;
 }
 
 .nav-link,
 .sidebar-footer button {
   display: flex;
   align-items: center;
-  min-height: 48px;
-  padding: 0 14px;
+  min-height: 36px;
+  padding: 0 10px;
   border-radius: 9px;
   color: #b8c6dc;
+  font-size: 15px;
+  line-height: 1.1;
 }
 
 .nav-link.active {
@@ -917,15 +934,21 @@ form button,
 }
 
 .sidebar-footer {
-  padding: 0 5px;
+  gap: 8px;
+  padding: 0 3px;
 }
 
 .sidebar-footer small {
   width: fit-content;
-  padding: 8px 13px;
+  padding: 6px 10px;
   border-radius: 999px;
   color: #f59e0b;
   background: rgba(245, 158, 11, 0.12);
+  font-size: 12px;
+}
+
+.sidebar-footer button {
+  min-height: 38px;
 }
 
 .app-shell {
@@ -1090,6 +1113,10 @@ form button,
   padding: 6px;
   border-radius: 12px;
   background: #ffffff;
+}
+
+.config-tabs {
+  order: 0;
 }
 
 .os-tabs .subnav-button,

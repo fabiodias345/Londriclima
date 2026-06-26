@@ -129,11 +129,11 @@ function getOsTabCount(tab) {
 
 function getOsTabLabel(tab) {
   const labels = {
-    solicitacoes: "Solicitacoes",
+    solicitacoes: "Solicitações",
     abertas: "O.S. abertas",
     agendadas: "O.S. agendadas",
     em_atendimento: "O.S. em atendimento",
-    concluidas: "O.S. concluidas",
+    concluidas: "O.S. concluídas",
     canceladas: "O.S. canceladas"
   };
 
@@ -296,10 +296,10 @@ function renderOsDetail(item) {
     <div class="os-detail-facts">
       <span><strong>Cliente</strong>\${escapeHtml(item.cliente?.nome || "Nao informado")}</span>
       <span><strong>Equipamentos</strong>\${escapeHtml(renderOsEquipmentTarget(item))}</span>
-      <span><strong>Responsavel</strong>\${escapeHtml(item.equipe?.nome || item.tecnico?.nome || "Nao atribuido")}</span>
+      <span><strong>Responsável</strong>\${escapeHtml(item.equipe?.nome || item.tecnico?.nome || "Não atribuído")}</span>
       <span><strong>Status</strong>\${escapeHtml(formatStatus(item.status))}</span>
-      <span><strong>Data/hora</strong>\${item.agendada_para ? formatDateTime(item.agendada_para) : "Sem horario"}</span>
-      <span><strong>Endereco</strong>\${escapeHtml(formatAddress(item.endereco))}</span>
+      <span><strong>Data/hora</strong>\${item.agendada_para ? formatDateTime(item.agendada_para) : "Sem horário"}</span>
+      <span><strong>Endereço</strong>\${escapeHtml(formatAddress(item.endereco))}</span>
     </div>
     <p class="request-details">\${escapeHtml(item.detalhes || "Sem detalhes")}</p>
     <div class="os-detail-sections">
@@ -762,7 +762,7 @@ function removeEmptyValues(payload) {
 
 function formatAddress(address) {
   if (!address) {
-    return "Endereco nao informado";
+    return "Endereço não informado";
   }
 
   return [address.bairro, address.cidade, address.uf].filter(Boolean).join(", ");

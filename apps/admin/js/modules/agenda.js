@@ -39,7 +39,7 @@ function renderAgendaServiceCard(item) {
     <section class="agenda-service-card \${getAgendaStatusClass(item.status)}">
       <div>
         <strong>\${escapeHtml(item.titulo)}</strong>
-        <span>\${escapeHtml(item.cliente?.nome || "Cliente nao informado")} - \${escapeHtml(formatAddress(item.endereco))}</span>
+        <span>\${escapeHtml(item.cliente?.nome || "Cliente não informado")} - \${escapeHtml(formatAddress(item.endereco))}</span>
       </div>
       <div>
         <span class="status-pill">\${formatStatus(item.status)}</span>
@@ -74,7 +74,7 @@ function renderRecurrenceCard(item) {
     <article class="recurrence-card \${due ? "due" : ""}">
       <div>
         <strong>\${escapeHtml(item.titulo)}</strong>
-        <span>\${escapeHtml(item.cliente?.nome || "Cliente nao informado")} - \${formatRecurrenceFrequency(item.frequencia)}</span>
+        <span>\${escapeHtml(item.cliente?.nome || "Cliente não informado")} - \${formatRecurrenceFrequency(item.frequencia)}</span>
         <span>\${escapeHtml(item.equipamento ? formatAgendaEquipment(item.equipamento) : "Todos os equipamentos do cliente")}</span>
       </div>
       <div>
