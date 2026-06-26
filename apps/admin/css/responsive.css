@@ -129,7 +129,8 @@
     margin: 0;
   }
 
-  .os-tabs {
+  .os-tabs,
+  .config-tabs {
     overflow-x: auto;
     flex-wrap: nowrap;
     justify-content: flex-start;

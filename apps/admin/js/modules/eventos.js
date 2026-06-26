@@ -936,6 +936,10 @@ pmocGenerateReportButton?.addEventListener("click", openPmocReportPreview);
 pmocRequestSignatureButton?.addEventListener("click", requestPmocEngineerSignature);
 recurrenceForm?.addEventListener("submit", submitRecurrence);
 refreshButton?.addEventListener("click", loadActiveView);
+configButton?.addEventListener("click", async () => {
+  setActiveView("configuracoes");
+  await loadActiveView();
+});
 logoutButton?.addEventListener("click", () => {
   clearToken();
   showLogin();
@@ -944,6 +948,14 @@ logoutButton?.addEventListener("click", () => {
 for (const link of navLinks) {
   link.addEventListener("click", async () => {
     setActiveView(link.dataset.view || "preChamados");
+    await loadActiveView();
+  });
+}
+
+for (const button of configTabButtons) {
+  button.addEventListener("click", async () => {
+    setConfigView(button.dataset.configView || "empresa");
+    setActiveView("configuracoes");
     await loadActiveView();
   });
 }

@@ -33,11 +33,7 @@
 
         <section class="nav-group" aria-label="Cadastros">
           <span class="nav-group-title">Cadastros</span>
-          <button class="nav-link" type="button" data-view="empresa">Empresa</button>
           <button class="nav-link" type="button" data-view="clientes">Clientes</button>
-          <button class="nav-link" type="button" data-view="tecnicos">Tecnicos</button>
-          <button class="nav-link" type="button" data-view="equipes">Equipes</button>
-          <button class="nav-link" type="button" data-view="engenheiros">Engenheiros</button>
         </section>
 
         <section class="nav-group" aria-label="Documentos">
@@ -81,9 +77,7 @@
             <h1 id="viewTitle">O.S.</h1>
           </div>
           <div class="admin-top-actions" aria-label="Acoes do painel">
-            <button class="secondary-button icon-button" type="button" aria-label="Buscar">⌕</button>
-            <button class="secondary-button icon-button" type="button" aria-label="Notificacoes">●</button>
-            <button class="secondary-button icon-button" type="button" aria-label="Configuracoes">⚙</button>
+            <button class="secondary-button icon-button" id="configButton" type="button" aria-label="Configuracoes">⚙</button>
             <span class="admin-avatar" aria-label="Usuario logado">AD</span>
             <button class="refresh-button compact-button" id="refreshButton" type="button">Atualizar</button>
           </div>
@@ -247,6 +241,13 @@
             <span>Fluxo</span>
             <strong>Direto</strong>
           </article>
+        </section>
+
+        <section class="config-tabs hidden" id="configTabs" role="tablist" aria-label="Configuracoes">
+          <button class="subnav-button active" type="button" data-config-view="empresa">Empresa</button>
+          <button class="subnav-button" type="button" data-config-view="tecnicos">Tecnicos</button>
+          <button class="subnav-button" type="button" data-config-view="equipes">Equipes</button>
+          <button class="subnav-button" type="button" data-config-view="engenheiros">Engenheiros</button>
         </section>
 
         <section class="worklist os-workbench os-workbench-grid os-page-shell" id="preChamadosView">

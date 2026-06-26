@@ -276,6 +276,7 @@ form button,
 }
 
 .os-tabs,
+.config-tabs,
 .os-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -283,14 +284,16 @@ form button,
   align-items: center;
 }
 
-.os-tabs {
+.os-tabs,
+.config-tabs {
   padding: 6px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: rgba(255, 255, 255, 0.76);
 }
 
-.os-tabs .subnav-button {
+.os-tabs .subnav-button,
+.config-tabs .subnav-button {
   min-height: 38px;
   border: 0;
   border-radius: 6px;
@@ -300,7 +303,8 @@ form button,
   font-weight: 900;
 }
 
-.os-tabs .subnav-button.active {
+.os-tabs .subnav-button.active,
+.config-tabs .subnav-button.active {
   color: var(--ink);
   background: var(--warning);
 }
@@ -975,6 +979,11 @@ form button,
   background: #ffffff;
 }
 
+.admin-top-actions .icon-button.active {
+  color: #ffffff;
+  background: #2563eb;
+}
+
 .admin-avatar {
   display: grid;
   width: 44px;
@@ -1074,7 +1083,8 @@ form button,
   background: #2563eb;
 }
 
-.os-tabs {
+.os-tabs,
+.config-tabs {
   order: 2;
   gap: 0;
   padding: 6px;
@@ -1082,7 +1092,8 @@ form button,
   background: #ffffff;
 }
 
-.os-tabs .subnav-button {
+.os-tabs .subnav-button,
+.config-tabs .subnav-button {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -1092,7 +1103,8 @@ form button,
   color: #52657f;
 }
 
-.os-tabs .subnav-button.active {
+.os-tabs .subnav-button.active,
+.config-tabs .subnav-button.active {
   color: #ffffff;
   background: #2563eb;
 }

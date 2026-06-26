@@ -151,8 +151,17 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
 
   assert.match(html, /data-view="agenda"/);
   assert.match(html, /data-view="recorrencias"/);
-  assert.match(html, /data-view="empresa"/);
   assert.match(html, /data-view="clientes"/);
+  assert.doesNotMatch(html, /<button class="nav-link" type="button" data-view="empresa">/);
+  assert.doesNotMatch(html, /<button class="nav-link" type="button" data-view="tecnicos">/);
+  assert.doesNotMatch(html, /<button class="nav-link" type="button" data-view="equipes">/);
+  assert.doesNotMatch(html, /<button class="nav-link" type="button" data-view="engenheiros">/);
+  assert.match(html, /id="configButton"/);
+  assert.match(html, /id="configTabs"/);
+  assert.match(html, /data-config-view="empresa"/);
+  assert.match(html, /data-config-view="tecnicos"/);
+  assert.match(html, /data-config-view="equipes"/);
+  assert.match(html, /data-config-view="engenheiros"/);
   assert.match(html, /data-view="relatorios"/);
   assert.match(html, /data-view="relatoriosAvulsos"/);
   assert.match(html, /id="agendaView"/);
@@ -235,6 +244,11 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(script, /selectedAgendaDate = button\.dataset\.agendaDate/);
   assert.match(script, /async function loadEmpresa/);
   assert.match(script, /async function submitEmpresa/);
+  assert.match(script, /let activeConfigView = "empresa"/);
+  assert.match(script, /async function loadConfigView/);
+  assert.match(script, /function setConfigView/);
+  assert.match(script, /configButton\?\.addEventListener/);
+  assert.match(script, /configTabButtons/);
   assert.match(script, /fetch\(`\$\{apiBaseUrl\}\/admin\/empresa`/);
   assert.match(script, /async function loadClientes/);
   assert.match(clientesModule, /view:\s*"clientes"/);
@@ -504,8 +518,8 @@ test("admin gerencia tecnicos equipes e responsaveis flexiveis por OS", () => {
   const html = read("apps/admin/index.html");
   const script = readAdminJs();
 
-  assert.match(html, /data-view="tecnicos"/);
-  assert.match(html, /data-view="equipes"/);
+  assert.match(html, /data-config-view="tecnicos"/);
+  assert.match(html, /data-config-view="equipes"/);
   assert.match(html, /id="tecnicosView"/);
   assert.match(html, /id="tecnicoForm"/);
   assert.match(html, /name="senha"/);

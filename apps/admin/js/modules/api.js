@@ -40,6 +40,9 @@ const osScheduledCount = document.querySelector("#osScheduledCount");
 const osCompletedMonthCount = document.querySelector("#osCompletedMonthCount");
 const refreshButton = document.querySelector("#refreshButton");
 const logoutButton = document.querySelector("#logoutButton");
+const configButton = document.querySelector("#configButton");
+const configTabs = document.querySelector("#configTabs");
+const configTabButtons = document.querySelectorAll("[data-config-view]");
 const navLinks = document.querySelectorAll(".nav-link");
 const viewKicker = document.querySelector("#viewKicker");
 const viewTitle = document.querySelector("#viewTitle");
@@ -217,6 +220,7 @@ const fleetReportList = document.querySelector("#fleetReportList");
 const fleetReportExportButton = document.querySelector("#fleetReportExportButton");
 
 let activeView = "preChamados";
+let activeConfigView = "empresa";
 let activeOsTab = "solicitacoes";
 let selectedOsDetailId = "";
 let latestPreChamados = [];
@@ -340,6 +344,11 @@ async function loadActiveView() {
     return;
   }
 
+  if (activeView === "configuracoes") {
+    await loadConfigView();
+    return;
+  }
+
   if (activeView === "clientes") {
     await loadClientes();
     return;
@@ -378,6 +387,25 @@ async function loadActiveView() {
   await loadOsWorkbench();
 }
 
+async function loadConfigView() {
+  if (activeConfigView === "tecnicos") {
+    await loadTecnicos();
+    return;
+  }
+
+  if (activeConfigView === "equipes") {
+    await loadEquipes();
+    return;
+  }
+
+  if (activeConfigView === "engenheiros") {
+    await loadEngenheiros();
+    return;
+  }
+
+  await loadEmpresa();
+}
+
 async function loadOsWorkbench() {
   await Promise.all([
     loadPreChamados(),
@@ -394,6 +422,12 @@ function setActiveView(view) {
     link.classList.toggle("active", link.dataset.view === view);
   }
 
+  configButton?.classList.toggle("active", view === "configuracoes");
+
+  if (view === "configuracoes") {
+    setConfigView(activeConfigView);
+  }
+
   const meta = {
     preChamados: ["Operacao de O.S.", "O.S."],
     frota: ["Monitoramento operacional", "Localizacao da frota"],
@@ -404,6 +438,7 @@ function setActiveView(view) {
     tecnicos: ["Equipe de campo", "Tecnicos e auxiliares"],
     equipes: ["Despacho flexivel", "Equipes por cliente"],
     engenheiros: ["Responsabilidade tecnica", "Engenheiros responsaveis"],
+    configuracoes: ["Administracao", "Configuracoes"],
     pmoc: ["Conformidade tecnica", "PMOC"],
     relatoriosAvulsos: ["Atendimento avulso", "Relatorios diretos ao cliente"],
     relatorios: ["Gestao", "Dashboard"]
@@ -420,18 +455,27 @@ function setActiveView(view) {
   pmocSummary.classList.toggle("hidden", view !== "pmoc");
   relatoriosSummary.classList.toggle("hidden", view !== "relatorios");
   relatoriosAvulsosSummary.classList.toggle("hidden", view !== "relatoriosAvulsos");
+  configTabs.classList.toggle("hidden", view !== "configuracoes");
   preChamadosView.classList.toggle("hidden", view !== "preChamados");
   frotaView.classList.toggle("hidden", view !== "frota");
   agendaView.classList.toggle("hidden", view !== "agenda");
   recorrenciasView.classList.toggle("hidden", view !== "recorrencias");
-  empresaView.classList.toggle("hidden", view !== "empresa");
+  empresaView.classList.toggle("hidden", view !== "empresa" && !(view === "configuracoes" && activeConfigView === "empresa"));
   clientesView.classList.toggle("hidden", view !== "clientes");
-  engenheirosView.classList.toggle("hidden", view !== "engenheiros");
-  tecnicosView.classList.toggle("hidden", view !== "tecnicos");
-  equipesView.classList.toggle("hidden", view !== "equipes");
+  engenheirosView.classList.toggle("hidden", view !== "engenheiros" && !(view === "configuracoes" && activeConfigView === "engenheiros"));
+  tecnicosView.classList.toggle("hidden", view !== "tecnicos" && !(view === "configuracoes" && activeConfigView === "tecnicos"));
+  equipesView.classList.toggle("hidden", view !== "equipes" && !(view === "configuracoes" && activeConfigView === "equipes"));
   pmocView.classList.toggle("hidden", view !== "pmoc");
   relatoriosView.classList.toggle("hidden", view !== "relatorios");
   relatoriosAvulsosView.classList.toggle("hidden", view !== "relatoriosAvulsos");
+}
+
+function setConfigView(view) {
+  activeConfigView = view;
+
+  for (const button of configTabButtons) {
+    button.classList.toggle("active", button.dataset.configView === view);
+  }
 }
 
 async function loadPreChamados() {
