@@ -299,6 +299,10 @@ function renderRelatoriosAvulsos(items) {
     const status = item.pronto_para_envio
       ? { label: "Pronto para envio", tone: "success" }
       : { label: "Aguardando OS concluida", tone: "warning" };
+    const ultimoEnvio = item.ultimo_envio
+      ? \`Ultimo envio: \${formatRelatorioAvulsoDateTime(item.ultimo_envio.enviado_em)} - \${escapeHtml(item.ultimo_envio.email || item.email || "e-mail nao informado")}\`
+      : "Ainda nao enviado";
+    const sendLabel = item.ultimo_envio ? "Reenviar relatorio" : "Enviar";
     const row = document.createElement("article");
     row.className = "data-row avulso-row";
     row.innerHTML = \`
@@ -309,10 +313,11 @@ function renderRelatoriosAvulsos(items) {
       <div>
         <span>\${item.total_maquinas || 0} maquina(s) · \${item.total_os_concluidas || 0} OS concluida(s)</span>
         <span class="pmoc-status \${status.tone}">\${escapeHtml(status.label)}</span>
+        <span>\${ultimoEnvio}</span>
       </div>
       <div class="data-row-actions">
         <button class="secondary-button compact-button" type="button" data-action="avulso-pdf" data-id="\${item.id}">PDF</button>
-        <button class="approve-button compact-button" type="button" data-action="avulso-enviar" data-id="\${item.id}" \${item.pronto_para_envio ? "" : "disabled"}>Enviar</button>
+        <button class="approve-button compact-button" type="button" data-action="avulso-enviar" data-id="\${item.id}" data-default-label="\${sendLabel}" data-last-sent="\${item.ultimo_envio?.enviado_em || ""}" data-last-email="\${escapeHtml(item.ultimo_envio?.email || item.email || "")}" \${item.pronto_para_envio ? "" : "disabled"}>\${sendLabel}</button>
         <button class="secondary-button compact-button danger-button" type="button" data-action="avulso-apagar" data-id="\${item.id}">Apagar relatorio</button>
       </div>
     \`;
@@ -350,6 +355,16 @@ async function openRelatorioAvulsoPdf(clientId) {
 }
 
 async function enviarRelatorioAvulso(clientId, button) {
+  if (button.dataset.lastSent) {
+    const confirmado = window.confirm(
+      \`Este relatorio ja foi enviado em \${formatRelatorioAvulsoDateTime(button.dataset.lastSent)} para \${button.dataset.lastEmail || "o cliente"}. Deseja enviar novamente?\`
+    );
+
+    if (!confirmado) {
+      return;
+    }
+  }
+
   button.disabled = true;
   button.textContent = "Enviando...";
   relatoriosAvulsosStatus.textContent = "Agendando envio ao cliente...";
@@ -375,8 +390,19 @@ async function enviarRelatorioAvulso(clientId, button) {
     relatoriosAvulsosStatus.textContent = "API indisponivel ao enviar relatorio.";
   } finally {
     button.disabled = false;
-    button.textContent = "Enviar";
+    button.textContent = button.dataset.defaultLabel || "Enviar";
   }
+}
+
+function formatRelatorioAvulsoDateTime(value) {
+  if (!value) {
+    return "data nao informada";
+  }
+
+  return new Date(value).toLocaleString("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short"
+  });
 }
 
 async function apagarRelatorioAvulso(clientId, button) {

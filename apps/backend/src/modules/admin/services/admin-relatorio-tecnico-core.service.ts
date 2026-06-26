@@ -532,20 +532,40 @@ export class AdminRelatorioTecnicoCoreService {
   }
 
   async listarRelatoriosAvulsos(usuario: AuthenticatedUser) {
-    const relatoriosApagados = await this.prisma.automacaoAgendada.findMany({
-      where: {
-        empresaId: usuario.empresa_id,
-        tipo: AutomacaoTipo.enviar_email,
-        payload: {
-          path: ["tipo"],
-          equals: "relatorio_tecnico_avulso_apagado"
+    const [relatoriosApagados, relatoriosEnviados] = await Promise.all([
+      this.prisma.automacaoAgendada.findMany({
+        where: {
+          empresaId: usuario.empresa_id,
+          tipo: AutomacaoTipo.enviar_email,
+          payload: {
+            path: ["tipo"],
+            equals: "relatorio_tecnico_avulso_apagado"
+          }
+        },
+        select: {
+          payload: true
         }
-      },
-      select: {
-        payload: true
-      }
-    });
+      }),
+      this.prisma.automacaoAgendada.findMany({
+        where: {
+          empresaId: usuario.empresa_id,
+          tipo: AutomacaoTipo.enviar_email,
+          payload: {
+            path: ["tipo"],
+            equals: "relatorio_tecnico_avulso"
+          }
+        },
+        orderBy: {
+          criadoEm: "desc"
+        },
+        select: {
+          criadoEm: true,
+          payload: true
+        }
+      })
+    ]);
     const osApagadasPorCliente = this.mapearOsRelatoriosAvulsosApagados(relatoriosApagados);
+    const ultimoEnvioPorCliente = this.mapearUltimoEnvioRelatorioAvulso(relatoriosEnviados);
     const clientes = await this.prisma.cliente.findMany({
       where: {
         empresaId: usuario.empresa_id,
@@ -614,7 +634,8 @@ export class AdminRelatorioTecnicoCoreService {
         atualizado_em: cliente.atualizadoEm.toISOString(),
         total_maquinas: cliente.equipamentos.length,
         total_os_concluidas: totalOsConcluidas,
-        pronto_para_envio: Boolean(cliente.email) && totalOsConcluidas > 0
+        pronto_para_envio: Boolean(cliente.email) && totalOsConcluidas > 0,
+        ultimo_envio: ultimoEnvioPorCliente.get(cliente.id) ?? null
       };
     }).filter((item) => item.total_os_concluidas > 0);
 
@@ -784,6 +805,34 @@ export class AdminRelatorioTecnicoCoreService {
       const atual = porCliente.get(clienteId) ?? new Set<string>();
       osIds.forEach((osId) => atual.add(osId));
       porCliente.set(clienteId, atual);
+    }
+
+    return porCliente;
+  }
+
+  private mapearUltimoEnvioRelatorioAvulso(relatorios: Array<{ criadoEm: Date; payload: Prisma.JsonValue }>) {
+    const porCliente = new Map<string, { enviado_em: string; email: string | null }>();
+
+    for (const relatorio of relatorios) {
+      if (!relatorio.payload || typeof relatorio.payload !== "object" || Array.isArray(relatorio.payload)) {
+        continue;
+      }
+
+      const payload = relatorio.payload as Record<string, unknown>;
+      if (payload.tipo !== "relatorio_tecnico_avulso") {
+        continue;
+      }
+
+      const clienteId = typeof payload.cliente_id === "string" ? payload.cliente_id : "";
+
+      if (!clienteId || porCliente.has(clienteId)) {
+        continue;
+      }
+
+      porCliente.set(clienteId, {
+        enviado_em: typeof payload.data_envio === "string" ? payload.data_envio : relatorio.criadoEm.toISOString(),
+        email: typeof payload.cliente_email === "string" ? payload.cliente_email : null
+      });
     }
 
     return porCliente;
