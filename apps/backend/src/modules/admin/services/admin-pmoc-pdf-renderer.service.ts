@@ -15,6 +15,7 @@ type OrdemPmoc = {
   concluida_em?: string | null;
   tecnico?: { nome?: string | null } | null;
   equipe?: { nome?: string | null } | null;
+  checklist_tipo?: "mensal" | "trimestral" | "semestral" | "anual" | null;
   eventos?: Array<{ latitude?: number | null; longitude?: number | null; registrado_em?: string | null }>;
   evidencias?: Array<{ tipo?: string | null; storage_url?: string | null }>;
   checklist?: { procedimentos?: string[]; servico_realizado?: string | null } | null;
@@ -82,25 +83,27 @@ const ENGENHEIRO_PADRAO_PMOC = {
   rnp: "1721220267"
 };
 
-const ATIVIDADES_MANUTENCAO = [
-  ["4.1", "Limpeza dos filtros de ar e/ou substituicao", "X", "X", "X"],
-  ["4.2", "Limpeza externa do gabinete do evaporador", "X", "X", "X"],
-  ["4.3", "Verificar operacao de drenagem", "X", "X", "X"],
-  ["4.4", "Verificar e corrigir ruidos e vibracoes anormais", "X", "X", "X"],
-  ["4.5", "Verificar termostatos, controles e sensores", "X", "X", "X"],
-  ["4.6", "Higienizar evaporadores com bactericida", "X", "X", "X"],
-  ["4.7", "Verificar e eliminar odores desagradaveis", "X", "X", "X"],
-  ["4.8", "Limpeza das serpentinas do evaporador", "", "X", "X"],
-  ["4.9", "Limpeza do ventilador/rotor do evaporador", "", "X", "X"],
-  ["4.10", "Limpeza da bandeja de condensado", "", "X", "X"],
-  ["4.11", "Reaperto de terminais/conexoes eletricas", "", "X", "X"],
-  ["4.12", "Verificar corrente/pressao/tensao", "", "", "X"],
-  ["4.13", "Limpeza do condensador", "", "", "X"],
-  ["4.14", "Verificar estado dos compressores", "", "", "X"],
-  ["4.15", "Lubrificacao geral do equipamento", "", "", "X"],
-  ["4.16", "Verificar estado dos suportes/coxins", "", "", "X"],
-  ["4.17", "Verificar e corrigir focos de corrosao", "", "", "X"],
-  ["4.18", "Verificar isolantes termicos das linhas", "", "", "X"]
+type PeriodicidadePmoc = "mensal" | "trimestral" | "semestral";
+
+const ATIVIDADES_MANUTENCAO: Array<[string, string, PeriodicidadePmoc]> = [
+  ["4.1", "Limpeza dos filtros de ar e/ou substituicao", "mensal"],
+  ["4.2", "Limpeza externa do gabinete do evaporador", "mensal"],
+  ["4.3", "Verificar operacao de drenagem", "mensal"],
+  ["4.4", "Verificar e corrigir ruidos e vibracoes anormais", "mensal"],
+  ["4.5", "Verificar termostatos, controles e sensores", "mensal"],
+  ["4.6", "Higienizar evaporadores com bactericida", "mensal"],
+  ["4.7", "Verificar e eliminar odores desagradaveis", "mensal"],
+  ["4.8", "Limpeza das serpentinas do evaporador", "trimestral"],
+  ["4.9", "Limpeza do ventilador/rotor do evaporador", "trimestral"],
+  ["4.10", "Limpeza da bandeja de condensado", "trimestral"],
+  ["4.11", "Reaperto de terminais/conexoes eletricas", "trimestral"],
+  ["4.12", "Verificar corrente/pressao/tensao", "semestral"],
+  ["4.13", "Limpeza do condensador", "semestral"],
+  ["4.14", "Verificar estado dos compressores", "semestral"],
+  ["4.15", "Lubrificacao geral do equipamento", "semestral"],
+  ["4.16", "Verificar estado dos suportes/coxins", "semestral"],
+  ["4.17", "Verificar e corrigir focos de corrosao", "semestral"],
+  ["4.18", "Verificar isolantes termicos das linhas", "semestral"]
 ];
 
 export class AdminPmocPdfRendererService {
@@ -189,6 +192,7 @@ export class AdminPmocPdfRendererService {
 
   private criarPlanoManutencao(previa: PreviaPmoc): PdfPage {
     const page: PdfPage = [];
+    const periodicidade = this.obterPeriodicidadePrevia(previa);
     this.cabecalho(page, previa, "OBJETIVO, RESPONSABILIDADES E PLANO DE MANUTENCAO");
     let y = 730;
     y = this.paragraph(
@@ -209,7 +213,8 @@ export class AdminPmocPdfRendererService {
       10
     );
     this.sectionTitle(page, "ATIVIDADES DE MANUTENCAO", y - 18);
-    this.table(page, 36, y - 42, [38, 320, 55, 75, 70], [["N", "Atividade", "Mensal", "Trimestral", "Semestral"], ...ATIVIDADES_MANUTENCAO], {
+    this.text(page, `Manutencao executada ${this.rotuloPeriodicidade(periodicidade)}`, 36, y - 34, 8, true);
+    this.table(page, 36, y - 58, [38, 250, 130, 140], this.linhasAtividadesManutencao(periodicidade), {
       rowHeight: 20,
       fontSize: 7
     });
@@ -252,6 +257,7 @@ export class AdminPmocPdfRendererService {
     const page: PdfPage = [];
     const numero = String(indice + 1).padStart(3, "0");
     const primeiraOs = maquina.os_concluidas[0] ?? null;
+    const periodicidade = this.obterPeriodicidadeOrdem(primeiraOs);
     const inicio = primeiraOs?.agendada_para ?? primeiraOs?.eventos?.[0]?.registrado_em ?? null;
     const fim = primeiraOs?.concluida_em ?? primeiraOs?.eventos?.at(-1)?.registrado_em ?? null;
     this.cabecalho(page, previa, `MAQUINA N:${numero} - PAGINA EXCLUSIVA`);
@@ -268,7 +274,8 @@ export class AdminPmocPdfRendererService {
       ["Gas Refrigerante", this.valor(maquina.gas_refrigerante)]
     ]);
     this.sectionTitle(page, "PLANO DE MANUTENCAO DA MAQUINA", 505);
-    this.table(page, 36, 480, [38, 320, 55, 75, 70], [["N", "Atividade", "Mensal", "Trimestral", "Semestral"], ...ATIVIDADES_MANUTENCAO], {
+    this.text(page, `Manutencao executada ${this.rotuloPeriodicidade(periodicidade)}`, 36, 488, 7.5, true);
+    this.table(page, 36, 470, [38, 250, 130, 140], this.linhasAtividadesManutencao(periodicidade), {
       rowHeight: 17,
       fontSize: 6.5
     });
@@ -341,19 +348,68 @@ export class AdminPmocPdfRendererService {
     return page;
   }
 
+  private linhasAtividadesManutencao(periodicidadeExecutada: PeriodicidadePmoc) {
+    return [
+      ["N", "Atividade", "Periodicidade prevista", "Executado neste relatorio"],
+      ...ATIVIDADES_MANUTENCAO.map(([numero, atividade, periodicidadePrevista]) => [
+        numero,
+        atividade,
+        this.rotuloPeriodicidade(periodicidadePrevista),
+        this.periodicidadeInclui(periodicidadeExecutada, periodicidadePrevista) ? this.rotuloPeriodicidade(periodicidadeExecutada) : ""
+      ])
+    ];
+  }
+
+  private obterPeriodicidadePrevia(previa: PreviaPmoc): PeriodicidadePmoc {
+    for (const maquina of previa.maquinas) {
+      const periodicidade = this.obterPeriodicidadeOrdem(maquina.os_concluidas[0] ?? null);
+      if (periodicidade) {
+        return periodicidade;
+      }
+    }
+
+    return "mensal";
+  }
+
+  private obterPeriodicidadeOrdem(ordem: OrdemPmoc | null): PeriodicidadePmoc {
+    const tipo = ordem?.checklist_tipo === "anual" ? "semestral" : ordem?.checklist_tipo;
+    if (tipo === "mensal" || tipo === "trimestral" || tipo === "semestral") {
+      return tipo;
+    }
+
+    const texto = `${ordem?.titulo ?? ""} ${ordem?.checklist?.servico_realizado ?? ""}`.toLowerCase();
+    if (texto.includes("semestral") || texto.includes("anual")) return "semestral";
+    if (texto.includes("trimestral")) return "trimestral";
+    return "mensal";
+  }
+
+  private periodicidadeInclui(executada: PeriodicidadePmoc, prevista: PeriodicidadePmoc) {
+    const pesos: Record<PeriodicidadePmoc, number> = { mensal: 1, trimestral: 2, semestral: 3 };
+    return pesos[prevista] <= pesos[executada];
+  }
+
+  private rotuloPeriodicidade(periodicidade: PeriodicidadePmoc) {
+    return {
+      mensal: "Mensal",
+      trimestral: "Trimestral",
+      semestral: "Semestral"
+    }[periodicidade];
+  }
+
   private cabecalho(page: PdfPage, previa: PreviaPmoc, titulo: string) {
-    this.rect(page, 36, 780, 540, 38);
-    this.text(page, CONTRATADA_PMOC.nomeFantasia, 46, 803, 14, true);
-    this.text(page, "PMOC - Plano de Manutencao, Operacao e Controle", 46, 789, 8, false);
-    this.text(page, this.numeroPmoc(previa), 430, 803, 8, true);
-    this.text(page, `Cliente: ${previa.cliente.nome}`, 430, 789, 7, false, 34);
-    this.text(page, titulo, 36, 755, 13, true);
-    this.line(page, 36, 748, 576, 748);
+    this.rect(page, 36, 780, 540, 38, "0.09 0.18 0.30");
+    this.rect(page, 36, 776, 540, 4, "0.21 0.53 0.73");
+    this.text(page, CONTRATADA_PMOC.nomeFantasia, 46, 803, 14, true, undefined, "1 1 1");
+    this.text(page, "PMOC - Plano de Manutencao, Operacao e Controle", 46, 789, 8, false, undefined, "0.88 0.93 0.98");
+    this.text(page, this.numeroPmoc(previa), 430, 803, 8, true, undefined, "1 1 1");
+    this.text(page, `Cliente: ${previa.cliente.nome}`, 430, 789, 7, false, 34, "0.88 0.93 0.98");
+    this.text(page, titulo, 36, 755, 13, true, undefined, "0.09 0.18 0.30");
+    this.line(page, 36, 748, 576, 748, "0.21 0.53 0.73");
   }
 
   private sectionTitle(page: PdfPage, titulo: string, y: number) {
-    this.rect(page, 36, y - 4, 540, 20, "0.92");
-    this.text(page, titulo, 43, y + 2, 9, true);
+    this.rect(page, 36, y - 4, 540, 20, "0.93 0.95 0.97");
+    this.text(page, titulo, 43, y + 2, 9, true, undefined, "0.09 0.18 0.30");
   }
 
   private keyValueTable(page: PdfPage, x: number, y: number, rows: string[][], rowHeight = 22, fontSize = 8) {
@@ -372,13 +428,13 @@ export class AdminPmocPdfRendererService {
     const totalWidth = widths.reduce((sum, width) => sum + width, 0);
     rows.forEach((row, rowIndex) => {
       if (rowIndex === 0) {
-        this.rect(page, x, cy - options.rowHeight + 4, totalWidth, options.rowHeight, "0.90");
+        this.rect(page, x, cy - options.rowHeight + 4, totalWidth, options.rowHeight, "0.90 0.93 0.95");
       }
       this.rect(page, x, cy - options.rowHeight + 4, totalWidth, options.rowHeight);
       let cx = x;
       widths.forEach((width, columnIndex) => {
-        if (columnIndex > 0) this.line(page, cx, cy + 4, cx, cy - options.rowHeight + 4);
-        this.text(page, row[columnIndex] || "", cx + 4, cy - options.rowHeight + 11, options.fontSize, rowIndex === 0, Math.max(8, Math.floor(width / 5.2)));
+        if (columnIndex > 0) this.line(page, cx, cy + 4, cx, cy - options.rowHeight + 4, "0.82 0.85 0.88");
+        this.text(page, row[columnIndex] || "", cx + 4, cy - options.rowHeight + 11, options.fontSize, rowIndex === 0, Math.max(8, Math.floor(width / 5.2)), "0.12 0.16 0.22");
         cx += width;
       });
       cy -= options.rowHeight;
@@ -395,29 +451,30 @@ export class AdminPmocPdfRendererService {
   }
 
   private footer(page: PdfPage, numeroPagina: number) {
-    this.line(page, 36, 30, 576, 30);
-    this.text(page, "Documento gerado pelo sistema AIRMOVEBR Digital", 36, 18, 7, false);
-    this.text(page, `Pagina ${numeroPagina}`, 535, 18, 7, false);
+    this.line(page, 36, 30, 576, 30, "0.55 0.60 0.66");
+    this.text(page, "Documento gerado pelo sistema AIRMOVEBR Digital", 36, 18, 7, false, undefined, "0.38 0.42 0.48");
+    this.text(page, `Pagina ${numeroPagina}`, 535, 18, 7, false, undefined, "0.38 0.42 0.48");
   }
 
   private compat(page: PdfPage, values: string[]) {
     values.forEach((value, index) => this.text(page, value, 36, 42 - index * 2, 1, false));
   }
 
-  private text(page: PdfPage, value: string, x: number, y: number, size: number, bold = false, maxChars?: number) {
+  private text(page: PdfPage, value: string, x: number, y: number, size: number, bold = false, maxChars?: number, color = "0 0 0") {
     const text = maxChars && value.length > maxChars ? `${value.slice(0, Math.max(0, maxChars - 3))}...` : value;
-    page.push(`BT /${bold ? "F2" : "F1"} ${size} Tf ${x} ${y} Td (${this.escaparTextoPdf(text)}) Tj ET`);
+    page.push(`BT ${color} rg /${bold ? "F2" : "F1"} ${size} Tf ${x} ${y} Td (${this.escaparTextoPdf(text)}) Tj ET`);
   }
 
-  private line(page: PdfPage, x1: number, y1: number, x2: number, y2: number) {
-    page.push(`${x1} ${y1} m ${x2} ${y2} l S`);
+  private line(page: PdfPage, x1: number, y1: number, x2: number, y2: number, color = "0 0 0") {
+    page.push(`q ${color} RG ${x1} ${y1} m ${x2} ${y2} l S Q`);
   }
 
-  private rect(page: PdfPage, x: number, y: number, width: number, height: number, fillGray?: string) {
-    if (fillGray) {
-      page.push(`q ${fillGray} g ${x} ${y} ${width} ${height} re f Q`);
+  private rect(page: PdfPage, x: number, y: number, width: number, height: number, fill?: string) {
+    if (fill) {
+      const fillColor = fill.includes(" ") ? `${fill} rg` : `${fill} g`;
+      page.push(`q ${fillColor} ${x} ${y} ${width} ${height} re f Q`);
     }
-    page.push(`${x} ${y} ${width} ${height} re S`);
+    page.push(`q 0.82 0.85 0.88 RG ${x} ${y} ${width} ${height} re S Q`);
   }
 
   private criarPdf(pages: PdfPage[]) {

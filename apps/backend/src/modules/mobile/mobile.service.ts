@@ -66,16 +66,6 @@ const checklistSemestralExtra: ChecklistItem[] = [
   { codigo: "S13", item: "Observacao", tipo: "texto", obrigatorio: false }
 ];
 
-const checklistAnualExtra: ChecklistItem[] = [
-  { codigo: "A1", item: "Quantidade de intervencoes no ano", tipo: "numerico" },
-  { codigo: "A2", item: "Avaliacao de desempenho geral", tipo: "texto" },
-  { codigo: "A3", item: "Fixacoes mecanicas evaporadora/condensadora", tipo: "select_obs" },
-  { codigo: "A4", item: "Isolamento termico das tubulacoes", tipo: "select_obs" },
-  { codigo: "A5", item: "Conexoes de cobre: vazamentos, oxidacao", tipo: "select_obs" },
-  { codigo: "A6", item: "Capacidade atende ao ambiente?", tipo: "select_obs", opcoes: ["sim", "nao"] },
-  { codigo: "A7", item: "Relatorio consolidado anual", tipo: "texto" }
-];
-
 @Injectable()
 export class MobileService {
   constructor(private readonly prisma: PrismaService) {}
@@ -268,11 +258,7 @@ export class MobileService {
     const mensalSemFinalizacao = checklistMensal.filter((item) => item.tipo !== "finalizacao" && item.codigo !== "M13");
     const semestralExtra = checklistSemestralExtra.flatMap((item) => (item.codigo === "S12" ? [ligarDisjuntor, item] : [item]));
 
-    if (tipo === ChecklistTipo.anual) {
-      return [...mensalSemFinalizacao, ...checklistTrimestralExtra, ...semestralExtra, ...checklistAnualExtra, finalizacao];
-    }
-
-    if (tipo === ChecklistTipo.semestral) {
+    if (tipo === ChecklistTipo.semestral || tipo === ChecklistTipo.anual) {
       return [...mensalSemFinalizacao, ...checklistTrimestralExtra, ...semestralExtra, finalizacao];
     }
 

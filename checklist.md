@@ -5,13 +5,12 @@ Documento de referencia para os checklists preventivos do app tecnico.
 ## Regras gerais
 
 - O tecnico nao escolhe a periodicidade no app.
-- A periodicidade vem da O.S. ou do plano preventivo: `mensal`, `trimestral`, `semestral` ou `anual`.
+- A periodicidade vem da O.S. ou do plano preventivo: `mensal`, `trimestral` ou `semestral`.
 - O backend envia o checklist flat ja expandido para o app.
 - O app apenas renderiza, valida preenchimento e salva respostas.
 - Checklists maiores incluem os anteriores sem repetir itens iguais:
   - Trimestral = Mensal + extras trimestrais.
   - Semestral = Mensal + Trimestral + extras semestrais.
-  - Anual = Mensal + Trimestral + Semestral + extras anuais.
 - Observacao de `select_obs` deve aparecer somente quando a resposta indicar problema/sujeira.
 - Medicoes devem ser por valor numerico, nao por pergunta "bom/ruim".
 
@@ -82,24 +81,10 @@ Inclui Mensal + Trimestral + os itens abaixo.
 | S11 | Reinstalar componentes | `checkbox` |  |
 | S12 | Religar e verificar operacao completa | `select_obs` | ok / nao conforme |
 
-## Anual - extras
-
-Inclui Mensal + Trimestral + Semestral + os itens abaixo.
-
-| Codigo | Item | Tipo | Opcoes/observacao |
-| --- | --- | --- | --- |
-| A1 | Quantidade de intervencoes no ano | `numerico` |  |
-| A2 | Avaliacao de desempenho geral | `texto` |  |
-| A3 | Fixacoes mecanicas evaporadora/condensadora | `select_obs` | ok / nao conforme |
-| A4 | Isolamento termico das tubulacoes | `select_obs` | ok / nao conforme |
-| A5 | Conexoes de cobre: vazamentos, oxidacao | `select_obs` | ok / nao conforme |
-| A6 | Capacidade atende ao ambiente? | `select_obs` | sim / nao |
-| A7 | Relatorio consolidado anual | `texto` | Observacao tecnica anual |
-
 ## Pontos de atencao
 
 - O checklist mensal precisa continuar facil no sol: campos grandes, contraste alto e pendencias em azul claro.
 - A regra de fotos deve ser conferida no aparelho real:
   - Mensal e trimestral devem manter as fotos combinadas para a operacao.
-  - Semestral e anual precisam da foto extra da condensadora limpa.
+  - Semestral precisa da foto extra da condensadora limpa.
 - Qualquer mudanca neste arquivo deve ser refletida no backend que monta o checklist mobile.

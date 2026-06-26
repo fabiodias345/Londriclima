@@ -97,7 +97,7 @@ class WorkOrder {
     return switch (value) {
       'trimestral' => 'Trimestral',
       'semestral' => 'Semestral',
-      'anual' => 'Anual',
+      'anual' => 'Semestral',
       _ => 'Mensal',
     };
   }

@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from "@nestjs/comm
 import {
   AutomacaoStatus,
   AutomacaoTipo,
+  ChecklistTipo,
   OrdemServicoEventoAcao,
   OrdemServicoStatus,
   OrdemServicoTipoServico,
@@ -1188,6 +1189,7 @@ export class AdminRelatorioTecnicoCoreService {
       id: true,
       titulo: true,
       tipoServico: true,
+      checklistTipo: true,
       problemaRelatado: true,
       status: true,
       agendadaPara: true,
@@ -1447,6 +1449,7 @@ export class AdminRelatorioTecnicoCoreService {
       id: string;
       titulo: string;
       tipoServico: OrdemServicoTipoServico;
+      checklistTipo: ChecklistTipo;
       problemaRelatado: string | null;
       status: OrdemServicoStatus;
       agendadaPara: Date | null;
@@ -1534,8 +1537,9 @@ export class AdminRelatorioTecnicoCoreService {
   private mapearOrdemRelatorioTecnico(ordem: {
     id: string;
     titulo: string;
-    tipoServico: OrdemServicoTipoServico;
-    problemaRelatado: string | null;
+      tipoServico: OrdemServicoTipoServico;
+      checklistTipo: ChecklistTipo;
+      problemaRelatado: string | null;
     status: OrdemServicoStatus;
     agendadaPara: Date | null;
     concluidaEm: Date | null;
@@ -1600,6 +1604,7 @@ export class AdminRelatorioTecnicoCoreService {
       id: ordem.id,
       titulo: ordem.titulo,
       tipo_servico: ordem.tipoServico,
+      checklist_tipo: ordem.checklistTipo,
       problema_relatado: ordem.problemaRelatado,
       status: ordem.status,
       agendada_para: ordem.agendadaPara?.toISOString() ?? null,

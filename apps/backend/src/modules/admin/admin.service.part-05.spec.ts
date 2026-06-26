@@ -132,6 +132,10 @@ test("gerarPdfPmocCliente retorna PDF com nome de arquivo e conteudo oficial", a
   assert.match(pdf, /CREA\/Carteira\s+CREA-PR 654321/);
   assert.match(pdf, /ART anual PMOC\s+1720263699262/);
   assert.match(pdf, /RESUMO DAS MAQUINAS DO CLIENTE/);
+  assert.match(pdf, /Periodicidade prevista/);
+  assert.match(pdf, /Executado neste relatorio/);
+  assert.match(pdf, /Manutencao executada\s+Mensal/);
+  assert.doesNotMatch(pdf, /"Mensal", "Trimestral", "Semestral"/);
   assert.match(pdf, /MAQUINA N:001 - PAGINA EXCLUSIVA/);
   assert.match(pdf, /MAQUINA N:002 - PAGINA EXCLUSIVA/);
   assert.match(pdf, /Area climatizada m2\s+Nao informado/);
@@ -610,6 +614,7 @@ function criarEquipamentoPmocTeste(id: string, localInstalacao: string, patrimon
         id: `os-${id}`,
         titulo: "PMOC mensal",
         tipoServico: "corretiva",
+        checklistTipo: "mensal",
         problemaRelatado: "Rotina mensal",
         status: OrdemServicoStatus.concluida,
         agendadaPara: inicio,

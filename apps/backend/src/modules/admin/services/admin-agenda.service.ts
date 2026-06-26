@@ -682,7 +682,7 @@ export class AdminAgendaService {
       return ChecklistTipo.mensal;
     }
 
-    return dto.checklist_tipo ?? ChecklistTipo.mensal;
+    return dto.checklist_tipo === ChecklistTipo.anual ? ChecklistTipo.semestral : dto.checklist_tipo ?? ChecklistTipo.mensal;
   }
 
   private mapearAtualizacaoOrdem(ordem: { id: string; status: OrdemServicoStatus; atualizadaEm: Date }) {

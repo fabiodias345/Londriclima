@@ -468,6 +468,16 @@ test("admin mostra despacho da O.S. sem etapa manual redundante", () => {
   assert.match(styles, /\.os-dispatch-status/);
 });
 
+test("admin nao oferece checklist ou recorrencia anual operacional", () => {
+  const html = read("apps/admin/index.html");
+  const agendaScript = read("apps/admin/js/modules/agenda.js");
+  const eventosScript = read("apps/admin/js/modules/eventos.js");
+
+  assert.doesNotMatch(html, /<option value="anual">Anual<\/option>/);
+  assert.doesNotMatch(agendaScript, /anual:\s*"Anual"/);
+  assert.doesNotMatch(eventosScript, /anual:\s*"Anual"/);
+});
+
 test("admin mostra prontidao da O.S. para o app do tecnico", () => {
   const script = readAdminJs();
   const styles = readAdminCss();

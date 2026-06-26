@@ -98,8 +98,7 @@ function formatRecurrenceFrequency(value) {
   return {
     mensal: "Mensal",
     trimestral: "Trimestral",
-    semestral: "Semestral",
-    anual: "Anual"
+    semestral: "Semestral"
   }[value] || value;
 }
 
