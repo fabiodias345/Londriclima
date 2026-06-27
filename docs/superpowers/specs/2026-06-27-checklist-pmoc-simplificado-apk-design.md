@@ -12,8 +12,6 @@ Cada máquina mantém separadamente suas respostas, medições, observações, f
 
 ## Tipos de resposta
 
-- Segurança e execução: `Em conformidade`, `Não conforme` e `Não executado`.
-- Trabalho em altura NR-35: `Em conformidade`, `Não conforme` e `Não se aplica`.
 - Testes e inspeções: `Normal`, `Irregularidade encontrada` e `Não testado`.
 - Medições: valor numérico obrigatório em graus Celsius.
 - Fotos: captura obrigatória vinculada à máquina e ao item.
@@ -23,62 +21,54 @@ Não será usada resposta genérica `Sim/Não`.
 
 ## Manutenção mensal
 
-1. EPIs padrão: óculos, luvas e bota de segurança.
-2. Trabalho em altura NR-35: cinto e talabarte ancorado.
-3. Limpeza ou substituição dos filtros.
-4. Teste do controle remoto/comandos.
-5. Teste do dreno.
-6. Inspeção visual: ruídos, vibrações, vazamentos e danos aparentes.
-7. Medição da temperatura de insuflamento em °C.
-8. Medição da temperatura de retorno/exaustão em °C.
-9. Foto do insuflamento mostrando a medição.
-10. Foto da máquina aberta com o filtro limpo.
+1. Limpeza ou substituição dos filtros.
+2. Teste do controle remoto/comandos.
+3. Teste do dreno.
+4. Inspeção visual: ruídos, vibrações, vazamentos e danos aparentes.
+5. Medição da temperatura de insuflamento em °C.
+6. Medição da temperatura de retorno/exaustão em °C.
+7. Foto do insuflamento mostrando a medição.
+8. Foto da máquina aberta com o filtro limpo.
 
 ## Manutenção trimestral
 
-1. EPIs padrão: óculos, luvas e bota de segurança.
-2. Trabalho em altura NR-35: cinto e talabarte ancorado.
-3. Limpeza ou substituição dos filtros.
-4. Teste do controle remoto/comandos.
-5. Teste do dreno.
-6. Inspeção visual: ruídos, vibrações, vazamentos e danos aparentes.
-7. Limpeza superficial da serpentina da evaporadora.
-8. Revisão das conexões elétricas.
-9. Revisão dos motores e ventiladores.
-10. Verificação do isolamento térmico das tubulações.
-11. Inspeção visual do circuito frigorífico para indícios de vazamentos.
-12. Medição da temperatura de insuflamento em °C.
-13. Medição da temperatura de retorno/exaustão em °C.
-14. Foto do insuflamento mostrando a medição.
-15. Foto da máquina aberta com o filtro limpo.
+1. Limpeza ou substituição dos filtros.
+2. Teste do controle remoto/comandos.
+3. Teste do dreno.
+4. Inspeção visual: ruídos, vibrações, vazamentos e danos aparentes.
+5. Limpeza superficial da serpentina da evaporadora.
+6. Revisão das conexões elétricas.
+7. Revisão dos motores e ventiladores.
+8. Verificação do isolamento térmico das tubulações.
+9. Inspeção visual do circuito frigorífico para indícios de vazamentos.
+10. Medição da temperatura de insuflamento em °C.
+11. Medição da temperatura de retorno/exaustão em °C.
+12. Foto do insuflamento mostrando a medição.
+13. Foto da máquina aberta com o filtro limpo.
 
 ## Manutenção semestral
 
-1. EPIs padrão: óculos, luvas e bota de segurança.
-2. Trabalho em altura NR-35: cinto e talabarte ancorado.
-3. Teste do controle remoto/comandos.
-4. Higienização completa da evaporadora.
-5. Foto da máquina aberta e desmontada com bolsão embaixo.
-6. Revisão dos motores e ventiladores.
-7. Verificação das fixações: suportes, coxins e parafusos.
-8. Medição da temperatura de insuflamento em °C.
-9. Foto do insuflamento mostrando a medição.
+1. Teste do controle remoto/comandos.
+2. Higienização completa da evaporadora.
+3. Foto da máquina aberta e desmontada com bolsão embaixo.
+4. Revisão dos motores e ventiladores.
+5. Verificação das fixações: suportes, coxins e parafusos.
+6. Medição da temperatura de insuflamento em °C.
+7. Foto do insuflamento mostrando a medição.
 
 ## Manutenção anual
 
-1. EPIs padrão: óculos, luvas e bota de segurança.
-2. Trabalho em altura NR-35: cinto e talabarte ancorado.
-3. Teste do controle remoto/comandos.
-4. Higienização completa da evaporadora.
-5. Foto da máquina aberta e desmontada com bolsão embaixo.
-6. Higienização completa da condensadora.
-7. Foto da condensadora limpa.
-8. Verificação completa do circuito frigorífico: pressões, estanqueidade e carga quando necessário.
-9. Inspeção completa dos componentes elétricos.
-10. Verificação do isolamento térmico das tubulações.
-11. Medição da temperatura de insuflamento em °C.
-12. Medição da temperatura de retorno/exaustão em °C.
-13. Foto do insuflamento mostrando a medição.
+1. Teste do controle remoto/comandos.
+2. Higienização completa da evaporadora.
+3. Foto da máquina aberta e desmontada com bolsão embaixo.
+4. Higienização completa da condensadora.
+5. Foto da condensadora limpa.
+6. Verificação completa do circuito frigorífico: pressões, estanqueidade e carga quando necessário.
+7. Inspeção completa dos componentes elétricos.
+8. Verificação do isolamento térmico das tubulações.
+9. Medição da temperatura de insuflamento em °C.
+10. Medição da temperatura de retorno/exaustão em °C.
+11. Foto do insuflamento mostrando a medição.
 
 ## Fluxo do aplicativo
 
@@ -103,7 +93,6 @@ Fotos permanecem armazenadas como evidências de checklist vinculadas ao código
 
 - Destacar e posicionar a tela no primeiro item obrigatório ausente.
 - Exigir observação quando a resposta indicar falha, irregularidade ou não execução.
-- Aceitar `Não se aplica` somente no item NR-35.
 - Rejeitar temperatura vazia ou não numérica.
 - Exigir todas as fotos previstas para a periodicidade.
 - Mostrar erro de envio de foto sem apagar as demais respostas.
