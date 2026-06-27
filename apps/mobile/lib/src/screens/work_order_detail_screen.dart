@@ -36,6 +36,7 @@ const _machineTypeOptions = [
 const _gasOptions = ['R-22', 'R-410A', 'R-32', 'R-134a', 'Outro'];
 
 enum _WorkOrderDetailStep { data, machines, checklist, finish }
+enum _AnnualStageOrder { evaporatorsFirst, condensersFirst }
 
 OutlineInputBorder _fieldBorder(Color color, {double width = 1}) {
   return OutlineInputBorder(
@@ -104,6 +105,8 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
   final Set<String> _highlightedChecklistCodes = {};
   String? _errorMessage;
   _WorkOrderDetailStep _activeStep = _WorkOrderDetailStep.data;
+  _AnnualStageOrder _annualStageOrder = _AnnualStageOrder.evaporatorsFirst;
+  String _activeAnnualStage = 'evaporadora';
 
   @override
   void dispose() {
@@ -129,6 +132,11 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
     super.initState();
     _order = widget.order;
     _equipments = List<WorkOrderEquipment>.of(_equipmentsFor(widget.order));
+    _initialEvidenceSaved = _equipments.any(
+      (equipment) => equipment.checklistResponses.any(
+        (response) => response.kind == 'foto' && response.value.isNotEmpty,
+      ),
+    );
     if (_allEquipmentsHandled) {
       _checklistSaved = true;
       _initialEvidenceSaved = true;
@@ -251,6 +259,10 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
               DetailSection(
                 title: 'Selecionar maquina',
                 children: [
+                  if (_order.checklistType == 'anual') ...[
+                    _annualOrderSelector(),
+                    const SizedBox(height: 12),
+                  ],
                   TextField(
                     key: const Key('machineSearchField'),
                     decoration: const InputDecoration(
@@ -286,7 +298,6 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
                         _checklistStarted = false;
                         _checklistSaved = false;
                         _checklistMessage = null;
-                        _initialEvidenceSaved = false;
                         _signaturePoints.clear();
                         _responsibleController.clear();
                         _clearMachineForm();
@@ -509,9 +520,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
         ),
         child: FilledButton.icon(
           key: const Key('saveChecklistButton'),
-          onPressed: _savingChecklist || !_initialEvidenceSaved
-              ? null
-              : _saveChecklist,
+          onPressed: _savingChecklist ? null : _saveChecklist,
           icon: const Icon(Icons.save_outlined),
           label: Text(_saveChecklistButtonLabel),
           style: FilledButton.styleFrom(
@@ -528,11 +537,73 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
     if (_savingChecklist) {
       return 'Salvando...';
     }
-    if (!_initialEvidenceSaved) {
-      return 'Registre a foto do checklist';
-    }
-    return 'Salvar checklist';
+    return _order.checklistType == 'anual'
+        ? 'Salvar etapa da máquina'
+        : 'Salvar checklist';
   }
+
+  Widget _annualOrderSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Ordem da manutenção anual',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 8),
+        SegmentedButton<_AnnualStageOrder>(
+          key: const Key('annualStageOrder'),
+          segments: const [
+            ButtonSegment(
+              value: _AnnualStageOrder.evaporatorsFirst,
+              label: Text('Evaporadoras primeiro'),
+            ),
+            ButtonSegment(
+              value: _AnnualStageOrder.condensersFirst,
+              label: Text('Condensadoras primeiro'),
+            ),
+          ],
+          selected: {_annualStageOrder},
+          onSelectionChanged: (selection) {
+            final selected = selection.first;
+            setState(() {
+              _annualStageOrder = selected;
+              _activeAnnualStage = selected == _AnnualStageOrder.evaporatorsFirst
+                  ? 'evaporadora'
+                  : 'condensadora';
+              _selectedEquipment = null;
+            });
+          },
+        ),
+        const SizedBox(height: 8),
+        Container(
+          key: const Key('annualActiveStage'),
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: airmovebrRequiredMissingFill,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: airmovebrBorder),
+          ),
+          child: Text(
+            'Etapa atual: ${_annualStageLabel(_activeAnnualStage)}',
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+        ),
+      ],
+    );
+  }
+
+  List<String> get _annualStages => _annualStageOrder == _AnnualStageOrder.evaporatorsFirst
+      ? const ['evaporadora', 'condensadora', 'geral', 'medicoes']
+      : const ['condensadora', 'evaporadora', 'geral', 'medicoes'];
+
+  String _annualStageLabel(String stage) => switch (stage) {
+    'evaporadora' => 'Evaporadoras',
+    'condensadora' => 'Condensadoras',
+    'medicoes' => 'Medições e fotos',
+    _ => 'Verificações gerais',
+  };
 
   bool get _canStart => _order.status == WorkOrderStatus.pending && !_starting;
 
@@ -654,10 +725,10 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
       _checklistSaved = false;
       _checklistMessage = null;
       _checklistValues.clear();
-      _initialEvidenceSaved = false;
       _signaturePoints.clear();
       _responsibleController.clear();
       _clearTextControllers();
+      _loadChecklistResponses(equipment);
     });
   }
 
@@ -728,12 +799,13 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
     });
 
     try {
+      final savedResponses = _buildChecklistResponses();
       final pendingBefore = await widget.repository.pendingSyncCount();
       await widget.repository.saveChecklist(
         _order,
         equipmentId: equipment.id,
         checklistType: _order.checklistType,
-        responses: _buildChecklistResponses(),
+        responses: savedResponses,
       );
       final pendingAfter = await widget.repository.pendingSyncCount();
       if (!mounted) {
@@ -741,15 +813,30 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
       }
 
       setState(() {
-        _markEquipmentExecution(
+        final mergedResponses = _mergeChecklistResponses(
+          equipment.checklistResponses,
+          savedResponses,
+        );
+        final completed = _isEquipmentChecklistComplete(mergedResponses);
+        _updateEquipmentChecklist(
           equipment.id,
-          pendingAfter > pendingBefore ? 'aguardando_sync' : 'feito',
+          responses: mergedResponses,
+          status: completed
+              ? pendingAfter > pendingBefore
+                    ? 'aguardando_sync'
+                    : 'feito'
+              : 'em_andamento',
         );
         _savingChecklist = false;
         _checklistSaved = _allEquipmentsHandled;
-        _checklistMessage = _allEquipmentsHandled
-            ? 'Todos os equipamentos foram concluidos. Pode finalizar a OS.'
-            : 'Maquina concluida. Faltam $_pendingEquipmentCount.';
+        _checklistMessage = completed
+            ? _allEquipmentsHandled
+                  ? 'Todos os equipamentos foram concluidos. Pode finalizar a OS.'
+                  : 'Maquina concluida. Faltam $_pendingEquipmentCount.'
+            : 'Etapa ${_annualStageLabel(_activeAnnualStage)} salva para esta máquina.';
+        if (_order.checklistType == 'anual') {
+          _advanceAnnualStageIfComplete();
+        }
         _selectedEquipment = null;
         _editingMachine = false;
         _checklistStarted = false;
@@ -780,6 +867,53 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
     }
 
     return fallback;
+  }
+
+  List<WorkOrderChecklistResponse> _mergeChecklistResponses(
+    List<WorkOrderChecklistResponse> current,
+    List<WorkOrderChecklistResponse> updates,
+  ) {
+    final byCode = {for (final response in current) response.code: response};
+    for (final response in updates) {
+      byCode[response.code] = response;
+    }
+    return byCode.values.toList();
+  }
+
+  bool _isEquipmentChecklistComplete(
+    List<WorkOrderChecklistResponse> responses,
+  ) {
+    final completedCodes = responses
+        .where((response) => response.value.trim().isNotEmpty)
+        .map((response) => response.code)
+        .toSet();
+    return _order.effectiveChecklist
+        .where((item) => item.required && item.kind != 'finalizacao')
+        .every((item) => completedCodes.contains(item.code));
+  }
+
+  void _advanceAnnualStageIfComplete() {
+    final stageCodes = _order.effectiveChecklist
+        .where((item) => item.stage == _activeAnnualStage && item.required)
+        .map((item) => item.code)
+        .toSet();
+    final stageComplete = _equipments.every((equipment) {
+      final completedCodes = equipment.checklistResponses
+          .where((response) => response.value.trim().isNotEmpty)
+          .map((response) => response.code)
+          .toSet();
+      return stageCodes.every(completedCodes.contains);
+    });
+    if (!stageComplete) {
+      return;
+    }
+
+    final currentIndex = _annualStages.indexOf(_activeAnnualStage);
+    if (currentIndex >= 0 && currentIndex < _annualStages.length - 1) {
+      _activeAnnualStage = _annualStages[currentIndex + 1];
+      _checklistMessage =
+          'Etapa concluída em todas as máquinas. Próxima: ${_annualStageLabel(_activeAnnualStage)}.';
+    }
   }
 
   Future<void> _finishWorkOrder() async {
@@ -935,10 +1069,11 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
         photo: photo,
       );
 
-      if (!_initialEvidenceSaved && _isInitialEvidencePhoto(item)) {
+      final registeredInitialEvidence = !_initialEvidenceSaved;
+      if (registeredInitialEvidence) {
         await widget.repository.saveInitialEvidence(
           _order,
-          description: 'Foto inicial',
+          description: 'Primeira foto do checklist',
           photo: photo,
         );
       }
@@ -949,7 +1084,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
 
       setState(() {
         _checklistValues[item.code] = storageUrl;
-        if (_isInitialEvidencePhoto(item)) {
+        if (registeredInitialEvidence) {
           _initialEvidenceSaved = true;
         }
         _uploadingPhotoCodes.remove(item.code);
@@ -969,12 +1104,17 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
     }
   }
 
-  bool _isInitialEvidencePhoto(WorkOrderChecklistItem item) {
-    return item.kind == 'foto' && item.code == 'M4';
+  List<WorkOrderChecklistItem> get _visibleChecklistItems {
+    if (_order.checklistType != 'anual') {
+      return _order.effectiveChecklist;
+    }
+    return _order.effectiveChecklist
+        .where((item) => item.stage == _activeAnnualStage)
+        .toList();
   }
 
   List<WorkOrderChecklistResponse> _buildChecklistResponses() {
-    return _order.effectiveChecklist.map((item) {
+    return _visibleChecklistItems.map((item) {
       final textValue = _textControllers[item.code]?.text.trim();
       final value = switch (item.kind) {
         'texto' || 'numerico' => textValue ?? '',
@@ -993,7 +1133,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
   }
 
   List<WorkOrderChecklistItem> _missingChecklistItems() {
-    return _order.effectiveChecklist.where((item) {
+    return _visibleChecklistItems.where((item) {
       return !_isChecklistItemComplete(item);
     }).toList();
   }
@@ -1018,7 +1158,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
   }
 
   List<WorkOrderChecklistItem> get _requiredChecklistItems {
-    return _order.effectiveChecklist
+    return _visibleChecklistItems
         .where((item) => item.required && item.kind != 'finalizacao')
         .toList();
   }
@@ -1115,7 +1255,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
       ),
     );
 
-    for (final item in _order.effectiveChecklist) {
+    for (final item in _visibleChecklistItems) {
       final group = _checklistGroupFor(item);
       if (group != currentGroup) {
         widgets.add(_ChecklistGroupHeader(label: group));
@@ -1248,10 +1388,10 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
           _checklistSaved = false;
           _checklistMessage = null;
           _checklistValues.clear();
-          _initialEvidenceSaved = false;
           _signaturePoints.clear();
           _responsibleController.clear();
           _clearTextControllers();
+          _loadChecklistResponses(equipment);
           _activeStep = _WorkOrderDetailStep.machines;
         });
       },
@@ -1269,11 +1409,18 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
   int get _pendingEquipmentCount =>
       _equipments.where((equipment) => equipment.isPending).length;
 
-  void _markEquipmentExecution(String equipmentId, String status) {
+  void _updateEquipmentChecklist(
+    String equipmentId, {
+    required String status,
+    required List<WorkOrderChecklistResponse> responses,
+  }) {
     _equipments = _equipments
         .map(
           (equipment) => equipment.id == equipmentId
-              ? equipment.copyWith(executionStatus: status)
+              ? equipment.copyWith(
+                  executionStatus: status,
+                  checklistResponses: responses,
+                )
               : equipment,
         )
         .toList();
@@ -1305,6 +1452,19 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
     _highlightedMachineFields.clear();
     for (final entry in _machineImpossibleControllers.entries) {
       entry.value.text = equipment.impossibleFields[entry.key] ?? '';
+    }
+  }
+
+  void _loadChecklistResponses(WorkOrderEquipment equipment) {
+    for (final response in equipment.checklistResponses) {
+      if (response.kind == 'texto' || response.kind == 'numerico') {
+        _controllerFor(response.code).text = response.value;
+      } else {
+        _checklistValues[response.code] = response.value;
+      }
+      if (response.note?.isNotEmpty ?? false) {
+        _noteControllerFor(response.code).text = response.note!;
+      }
     }
   }
 
@@ -1907,26 +2067,29 @@ class _ChecklistField extends StatelessWidget {
         'select_obs' => Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            DropdownButtonFormField<String>(
-              key: Key('checklist_select_${item.code}'),
-              initialValue: value,
-              decoration: _checklistDecoration(item.label, missing),
-              items:
-                  (item.options.isEmpty
-                          ? const ['ok', 'nao conforme']
-                          : item.options)
-                      .map(
-                        (option) => DropdownMenuItem(
-                          value: option,
-                          child: Text(option),
-                        ),
-                      )
-                      .toList(),
-              onChanged: (selected) {
-                if (selected != null) {
-                  onChanged(selected);
-                }
-              },
+            _ChecklistLabel(label: item.label, missing: missing),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: (item.options.isEmpty
+                      ? const ['Normal', 'Irregularidade encontrada', 'Não testado']
+                      : item.options)
+                  .map((option) {
+                    final selected = value == option;
+                    return ChoiceChip(
+                      key: Key('checklist_choice_${item.code}_$option'),
+                      label: Text(option),
+                      selected: selected,
+                      onSelected: (_) => onChanged(option),
+                      selectedColor: airmovebrPrimary,
+                      labelStyle: TextStyle(
+                        color: selected ? Colors.white : airmovebrText,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    );
+                  })
+                  .toList(),
             ),
             if (_showChecklistObservation(item, value)) ...[
               const SizedBox(height: 8),
@@ -2046,11 +2209,11 @@ class _ChecklistField extends StatelessWidget {
 
 bool _requiresChecklistObservation(String code, String? selected) {
   final normalized = selected?.toLowerCase().trim() ?? '';
-  if (code == 'T5' || code == 'S4') {
-    return normalized == 'sim';
-  }
-
-  return normalized == 'nao';
+  return const {
+    'não executado',
+    'irregularidade encontrada',
+    'não testado',
+  }.contains(normalized);
 }
 
 class _ChecklistGroupHeader extends StatelessWidget {
@@ -2083,6 +2246,15 @@ class _ChecklistGroupHeader extends StatelessWidget {
 }
 
 String _checklistGroupFor(WorkOrderChecklistItem item) {
+  if (item.stage == 'evaporadora') {
+    return 'Evaporadora';
+  }
+  if (item.stage == 'condensadora') {
+    return 'Condensadora';
+  }
+  if (item.stage == 'medicoes') {
+    return 'Medicoes e fotos';
+  }
   final label = item.label.toLowerCase();
   if (item.kind == 'foto') {
     return 'Fotos';
@@ -2120,6 +2292,9 @@ String _checklistGroupFor(WorkOrderChecklistItem item) {
 
 IconData _checklistGroupIcon(String label) {
   return switch (label) {
+    'Evaporadora' => Icons.air_outlined,
+    'Condensadora' => Icons.ac_unit,
+    'Medicoes e fotos' => Icons.device_thermostat_outlined,
     'Seguranca' => Icons.health_and_safety_outlined,
     'Fotos' => Icons.photo_camera_outlined,
     'Filtro e limpeza' => Icons.filter_alt_outlined,

@@ -48,9 +48,26 @@ class OfflineWorkOrderRepository implements WorkOrderRepository {
       final pendingEquipmentIds =
           pendingEquipmentIdsByOrder[order.id] ?? const <String>{};
       final equipments = order.equipments.map((equipment) {
-        return pendingEquipmentIds.contains(equipment.id)
-            ? equipment.copyWith(executionStatus: 'aguardando_sync')
-            : equipment;
+        final responses = _pendingResponses(
+          pending,
+          order.id,
+          equipment.id,
+          equipment.checklistResponses,
+        );
+        if (!pendingEquipmentIds.contains(equipment.id)) {
+          return equipment.copyWith(checklistResponses: responses);
+        }
+        final completedCodes = responses
+            .where((response) => response.value.isNotEmpty)
+            .map((response) => response.code)
+            .toSet();
+        final complete = order.effectiveChecklist
+            .where((item) => item.required && item.kind != 'finalizacao')
+            .every((item) => completedCodes.contains(item.code));
+        return equipment.copyWith(
+          executionStatus: complete ? 'aguardando_sync' : 'em_andamento',
+          checklistResponses: responses,
+        );
       }).toList();
 
       if (pendingIds.contains(order.id)) {
@@ -321,6 +338,39 @@ class OfflineWorkOrderRepository implements WorkOrderRepository {
     return result;
   }
 
+  List<WorkOrderChecklistResponse> _pendingResponses(
+    List<Map<String, dynamic>> pending,
+    String orderId,
+    String equipmentId,
+    List<WorkOrderChecklistResponse> current,
+  ) {
+    final byCode = {for (final response in current) response.code: response};
+    for (final item in pending) {
+      if (item['order_id']?.toString() != orderId ||
+          item['equipment_id']?.toString() != equipmentId) {
+        continue;
+      }
+      if (item['kind'] == 'checklist') {
+        for (final response in (item['responses'] as List? ?? const [])
+            .whereType<Map<String, dynamic>>()
+            .map(_responseFromJson)) {
+          byCode[response.code] = response;
+        }
+      }
+      if (item['kind'] == 'checklist_photo') {
+        final code = item['code']?.toString() ?? '';
+        if (code.isNotEmpty) {
+          byCode[code] = WorkOrderChecklistResponse(
+            code: code,
+            kind: 'foto',
+            value: 'offline://$orderId/checklist/$equipmentId/$code',
+          );
+        }
+      }
+    }
+    return byCode.values.toList();
+  }
+
   Map<String, dynamic> _orderToJson(WorkOrder order) {
     return {
       'id': order.id,
@@ -330,6 +380,7 @@ class OfflineWorkOrderRepository implements WorkOrderRepository {
       'maintenance_type': order.maintenanceType,
       'service_type': order.serviceType,
       'checklist_type': order.checklistType,
+      'checklist': order.checklist.map(_checklistItemToJson).toList(),
       'scheduled_at': order.scheduledAt.toIso8601String(),
       'status': order.status.name,
       'backend_status': order.backendStatus,
@@ -346,6 +397,7 @@ class OfflineWorkOrderRepository implements WorkOrderRepository {
       maintenanceType: json['maintenance_type'].toString(),
       serviceType: json['service_type']?.toString() ?? 'preventiva',
       checklistType: json['checklist_type']?.toString() ?? 'mensal',
+      checklist: _checklistItemsFromJson(json['checklist']),
       scheduledAt: DateTime.parse(json['scheduled_at'].toString()),
       status: WorkOrderStatus.values.firstWhere(
         (status) => status.name == json['status'],
@@ -370,6 +422,9 @@ class OfflineWorkOrderRepository implements WorkOrderRepository {
       'serial_number': equipment.serialNumber,
       'impossible_fields': equipment.impossibleFields,
       'execution_status': equipment.executionStatus,
+      'checklist_responses': equipment.checklistResponses
+          .map(_responseToJson)
+          .toList(),
     };
   }
 
@@ -396,6 +451,10 @@ class OfflineWorkOrderRepository implements WorkOrderRepository {
             ) ??
             const {},
         executionStatus: json['execution_status']?.toString() ?? 'pendente',
+        checklistResponses: (json['checklist_responses'] as List? ?? const [])
+            .whereType<Map<String, dynamic>>()
+            .map(_responseFromJson)
+            .toList(),
       );
     }).toList();
   }
@@ -416,6 +475,37 @@ class OfflineWorkOrderRepository implements WorkOrderRepository {
       value: json['value'].toString(),
       note: json['note']?.toString(),
     );
+  }
+
+  Map<String, dynamic> _checklistItemToJson(WorkOrderChecklistItem item) {
+    return {
+      'code': item.code,
+      'label': item.label,
+      'kind': item.kind,
+      'options': item.options,
+      'unit': item.unit,
+      'required': item.required,
+      'stage': item.stage,
+    };
+  }
+
+  List<WorkOrderChecklistItem> _checklistItemsFromJson(Object? value) {
+    if (value is! List) {
+      return const [];
+    }
+    return value.whereType<Map<String, dynamic>>().map((json) {
+      return WorkOrderChecklistItem(
+        code: json['code'].toString(),
+        label: json['label'].toString(),
+        kind: json['kind'].toString(),
+        options: (json['options'] as List? ?? const [])
+            .map((option) => option.toString())
+            .toList(),
+        unit: json['unit']?.toString(),
+        required: json['required'] != false,
+        stage: json['stage']?.toString() ?? 'geral',
+      );
+    }).toList();
   }
 
   Map<String, dynamic> _photoToJson(ChecklistPhotoFile photo) {

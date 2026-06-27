@@ -18,6 +18,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
 import { PrismaService } from "../../database/prisma.service";
 import { AuthenticatedUser } from "../auth/auth-user";
+import { codigosObrigatoriosChecklist } from "../mobile/mobile-checklists";
 import { AtualizarStatusOsDto } from "./dto/atualizar-status-os.dto";
 import { FinalizarOsDto } from "./dto/finalizar-os.dto";
 import { IdentificarEquipamentoDto } from "./dto/identificar-equipamento.dto";
@@ -623,26 +624,38 @@ export class OrdensServicoService {
           return;
         }
 
-        await tx.ordemServicoChecklistResposta.deleteMany({
-          where: {
-            ordemServicoId: osId,
-            equipamentoId
-          }
-        });
-
-        await tx.ordemServicoChecklistResposta.createMany({
-          data: respostas.map((resposta) => ({
-            empresaId: ordemServico.empresaId,
-            ordemServicoId: osId,
-            checklistId,
-            equipamentoId,
-            checklistTipo: dto.checklist_tipo ?? ordemServico.checklistTipo ?? ChecklistTipo.mensal,
-            codigo: resposta.codigo,
-            tipo: resposta.tipo,
-            valor: resposta.valor,
-            observacao: resposta.observacao?.trim() || null
-          }))
-        });
+        const checklistTipo = dto.checklist_tipo ?? ordemServico.checklistTipo ?? ChecklistTipo.mensal;
+        await Promise.all(
+          respostas.map((resposta) =>
+            tx.ordemServicoChecklistResposta.upsert({
+              where: {
+                ordemServicoId_equipamentoId_codigo: {
+                  ordemServicoId: osId,
+                  equipamentoId,
+                  codigo: resposta.codigo
+                }
+              },
+              update: {
+                checklistId,
+                checklistTipo,
+                tipo: resposta.tipo,
+                valor: resposta.valor,
+                observacao: resposta.observacao?.trim() || null
+              },
+              create: {
+                empresaId: ordemServico.empresaId,
+                ordemServicoId: osId,
+                checklistId,
+                equipamentoId,
+                checklistTipo,
+                codigo: resposta.codigo,
+                tipo: resposta.tipo,
+                valor: resposta.valor,
+                observacao: resposta.observacao?.trim() || null
+              }
+            })
+          )
+        );
       };
 
       if (ordemServico.checklist) {
@@ -769,6 +782,7 @@ export class OrdensServicoService {
           status: true,
           titulo: true,
           tipoServico: true,
+          checklistTipo: true,
           agendadaPara: true,
           equipamento: {
             select: {
@@ -854,12 +868,26 @@ export class OrdensServicoService {
         throw new UnprocessableEntityException("Checklist ainda não registrado.");
       }
 
-      if (!ordemServico.equipamento) {
-        const equipamentos = ordemServico.cliente?.equipamentos ?? [];
-        const equipamentosFeitos = new Set(
-          ordemServico.checklistRespostas.map((resposta) => resposta.equipamentoId)
+      const equipamentos = ordemServico.equipamento
+        ? [ordemServico.equipamento]
+        : ordemServico.cliente?.equipamentos ?? [];
+
+      if (ordemServico.tipoServico === OrdemServicoTipoServico.preventiva) {
+        const obrigatorios = codigosObrigatoriosChecklist(
+          ordemServico.checklistTipo ?? ChecklistTipo.mensal
         );
-        const pendentes = equipamentos.filter((equipamento) => !equipamentosFeitos.has(equipamento.id));
+        const pendentes = equipamentos.filter((equipamento) => {
+          const codigos = new Set(
+            ordemServico.checklistRespostas
+              .filter(
+                (resposta) =>
+                  resposta.equipamentoId === equipamento.id &&
+                  (resposta.valor?.trim() ?? "")
+              )
+              .map((resposta) => resposta.codigo)
+          );
+          return !obrigatorios.every((codigo) => codigos.has(codigo));
+        });
 
         if (pendentes.length > 0) {
           throw new UnprocessableEntityException("Finalize todos os equipamentos antes de concluir a OS.");

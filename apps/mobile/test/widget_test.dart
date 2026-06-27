@@ -1521,6 +1521,84 @@ void main() {
     expect(find.text('Quarto'), findsWidgets);
   });
 
+  testWidgets('checklist simplificado mostra respostas e ordem anual', (
+    tester,
+  ) async {
+    final repository = _RepositorioDeTeste(
+      status: WorkOrderStatus.inProgress,
+      backendStatus: 'em_atendimento',
+      checklistType: 'anual',
+      equipments: _singleEquipment,
+      checklist: const [
+        WorkOrderChecklistItem(
+          code: 'ANU_HIGIENIZACAO_EVAP',
+          label: 'Higienização completa da evaporadora',
+          kind: 'select_obs',
+          options: ['Executado', 'Não executado'],
+          stage: 'evaporadora',
+        ),
+        WorkOrderChecklistItem(
+          code: 'ANU_HIGIENIZACAO_COND',
+          label: 'Higienização completa da condensadora',
+          kind: 'select_obs',
+          options: ['Executado', 'Não executado'],
+          stage: 'condensadora',
+        ),
+      ],
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LoginScreen(
+          loginGateway: _GatewayDeTeste(repository: repository),
+          locationService: const _LocationServiceTeste(),
+        ),
+      ),
+    );
+
+    await tester.enterText(find.byKey(const Key('loginUserField')), 'teste');
+    await tester.enterText(find.byKey(const Key('loginPasswordField')), '123456');
+    await tester.tap(find.byKey(const Key('loginSubmitButton')));
+    await tester.pumpAndSettle();
+    await _openMaintenance(tester);
+    await tester.tap(find.text('Cliente API'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('stepTab_machines')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('annualStageOrder')), findsOneWidget);
+    expect(find.text('Evaporadoras primeiro'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('selectEquipment_EQ-101')),
+      240,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.byKey(const Key('selectEquipment_EQ-101')));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('checklistReadyButton')),
+      240,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.byKey(const Key('checklistReadyButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Executado'), findsOneWidget);
+    expect(find.text('Não executado'), findsOneWidget);
+    await tester.tap(
+      find.byKey(
+        const Key(
+          'checklist_choice_ANU_HIGIENIZACAO_EVAP_Não executado',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('checklist_obs_ANU_HIGIENIZACAO_EVAP')),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('dashboard registra abastecimento simples', (tester) async {
     final fleetRepository = FakeFleetRepository();
 
@@ -1648,6 +1726,8 @@ class _RepositorioDeTeste implements WorkOrderRepository {
     this.status = WorkOrderStatus.pending,
     this.backendStatus,
     this.serviceType = 'preventiva',
+    this.checklistType = 'semestral',
+    this.checklist,
     this.scheduledAt,
   });
 
@@ -1655,6 +1735,8 @@ class _RepositorioDeTeste implements WorkOrderRepository {
   final WorkOrderStatus status;
   final String? backendStatus;
   final String serviceType;
+  final String checklistType;
+  final List<WorkOrderChecklistItem>? checklist;
   final DateTime? scheduledAt;
 
   String? startedOrderId;
@@ -1714,8 +1796,8 @@ class _RepositorioDeTeste implements WorkOrderRepository {
             ],
         maintenanceType: 'Limpeza de filtros',
         serviceType: serviceType,
-        checklistType: 'semestral',
-        checklist: const [
+        checklistType: checklistType,
+        checklist: checklist ?? const [
           WorkOrderChecklistItem(
             code: 'M1',
             label: 'Desligar pelo controle remoto',

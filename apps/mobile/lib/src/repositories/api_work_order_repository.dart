@@ -467,6 +467,7 @@ class ApiWorkOrderRepository implements WorkOrderRepository {
             : const [],
         unit: map['unidade']?.toString() ?? map['unit']?.toString(),
         required: map['obrigatorio'] != false && map['required'] != false,
+        stage: map['etapa']?.toString() ?? map['stage']?.toString() ?? 'geral',
       );
     }).toList();
   }
@@ -512,6 +513,7 @@ class ApiWorkOrderRepository implements WorkOrderRepository {
             map['status_execucao']?.toString() ??
             map['executionStatus']?.toString() ??
             'pendente',
+        checklistResponses: _responsesFromJson(map),
       );
     }).toList();
   }
@@ -536,7 +538,27 @@ class ApiWorkOrderRepository implements WorkOrderRepository {
           map['status_execucao']?.toString() ??
           map['executionStatus']?.toString() ??
           'pendente',
+      checklistResponses: _responsesFromJson(map),
     );
+  }
+
+  List<WorkOrderChecklistResponse> _responsesFromJson(
+    Map<String, dynamic> map,
+  ) {
+    final raw = map['checklist_respostas'] ?? map['checklistResponses'];
+    if (raw is! List) {
+      return const [];
+    }
+
+    return raw.map((item) {
+      final response = item as Map<String, dynamic>;
+      return WorkOrderChecklistResponse(
+        code: response['codigo']?.toString() ?? response['code'].toString(),
+        kind: response['tipo']?.toString() ?? response['kind'].toString(),
+        value: response['valor']?.toString() ?? response['value']?.toString() ?? '',
+        note: response['observacao']?.toString() ?? response['note']?.toString(),
+      );
+    }).toList();
   }
 
   int? _intFromJson(Object? value) {

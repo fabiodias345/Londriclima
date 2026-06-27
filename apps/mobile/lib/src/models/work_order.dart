@@ -97,7 +97,7 @@ class WorkOrder {
     return switch (value) {
       'trimestral' => 'Trimestral',
       'semestral' => 'Semestral',
-      'anual' => 'Semestral',
+      'anual' => 'Anual',
       _ => 'Mensal',
     };
   }
@@ -140,6 +140,7 @@ class WorkOrderChecklistItem {
     this.options = const [],
     this.unit,
     this.required = true,
+    this.stage = 'geral',
   });
 
   final String code;
@@ -148,6 +149,7 @@ class WorkOrderChecklistItem {
   final List<String> options;
   final String? unit;
   final bool required;
+  final String stage;
 }
 
 class WorkOrderChecklistResponse {
@@ -210,6 +212,7 @@ class WorkOrderEquipment {
     this.serialNumber = '',
     this.impossibleFields = const {},
     this.executionStatus = 'pendente',
+    this.checklistResponses = const [],
   });
 
   final String id;
@@ -224,6 +227,7 @@ class WorkOrderEquipment {
   final String serialNumber;
   final Map<String, String> impossibleFields;
   final String executionStatus;
+  final List<WorkOrderChecklistResponse> checklistResponses;
 
   bool get isDone => executionStatus == 'feito';
 
@@ -231,7 +235,10 @@ class WorkOrderEquipment {
 
   bool get isPending => !isDone && !isWaitingSync;
 
-  WorkOrderEquipment copyWith({String? executionStatus}) {
+  WorkOrderEquipment copyWith({
+    String? executionStatus,
+    List<WorkOrderChecklistResponse>? checklistResponses,
+  }) {
     return WorkOrderEquipment(
       id: id,
       qrCode: qrCode,
@@ -245,6 +252,7 @@ class WorkOrderEquipment {
       serialNumber: serialNumber,
       impossibleFields: impossibleFields,
       executionStatus: executionStatus ?? this.executionStatus,
+      checklistResponses: checklistResponses ?? this.checklistResponses,
     );
   }
 

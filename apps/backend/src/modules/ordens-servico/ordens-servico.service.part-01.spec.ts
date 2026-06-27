@@ -1,9 +1,11 @@
 ﻿import { BadRequestException,ConflictException,NotFoundException,UnprocessableEntityException } from "@nestjs/common";
 import {
 AutomacaoTipo,
+ChecklistTipo,
 EvidenciaTipo,
 OrdemServicoEventoAcao,
 OrdemServicoStatus,
+OrdemServicoTipoServico,
 Prisma,
 UsuarioRole
 } from "@prisma/client";
@@ -266,8 +268,7 @@ test("registrarChecklist exige evidencia inicial antes de salvar servico", async
 
 test("registrarChecklist salva respostas estruturadas por equipamento", async () => {
   const chamadas = {
-    respostasDeleteWhere: undefined as unknown,
-    respostasCreateData: undefined as unknown
+    respostasUpsert: [] as unknown[]
   };
   const checklistCriado = {
     id: "checklist-1",
@@ -284,6 +285,7 @@ test("registrarChecklist salva respostas estruturadas por equipamento", async ()
         empresaId: "empresa-1",
         clienteId: "cliente-1",
         status: OrdemServicoStatus.em_atendimento,
+        checklistTipo: "mensal",
         evidencias: [{ tipo: EvidenciaTipo.antes }],
         checklist: null
       })
@@ -299,11 +301,8 @@ test("registrarChecklist salva respostas estruturadas por equipamento", async ()
       create: async () => checklistCriado
     },
     ordemServicoChecklistResposta: {
-      deleteMany: async ({ where }: { where: unknown }) => {
-        chamadas.respostasDeleteWhere = where;
-      },
-      createMany: async ({ data }: { data: unknown }) => {
-        chamadas.respostasCreateData = data;
+      upsert: async (args: unknown) => {
+        chamadas.respostasUpsert.push(args);
       }
     }
   };
@@ -335,32 +334,60 @@ test("registrarChecklist salva respostas estruturadas por equipamento", async ()
     usuario
   );
 
-  assert.deepEqual(chamadas.respostasDeleteWhere, {
-    ordemServicoId: "os-1",
-    equipamentoId: "equip-1"
-  });
-  assert.deepEqual(chamadas.respostasCreateData, [
+  assert.deepEqual(chamadas.respostasUpsert, [
     {
-      empresaId: "empresa-1",
-      ordemServicoId: "os-1",
-      checklistId: "checklist-1",
-      equipamentoId: "equip-1",
-      checklistTipo: "mensal",
-      codigo: "M1",
-      tipo: "checkbox",
-      valor: "true",
-      observacao: null
+      where: {
+        ordemServicoId_equipamentoId_codigo: {
+          ordemServicoId: "os-1",
+          equipamentoId: "equip-1",
+          codigo: "M1"
+        }
+      },
+      update: {
+        checklistId: "checklist-1",
+        checklistTipo: "mensal",
+        tipo: "checkbox",
+        valor: "true",
+        observacao: null
+      },
+      create: {
+        empresaId: "empresa-1",
+        ordemServicoId: "os-1",
+        checklistId: "checklist-1",
+        equipamentoId: "equip-1",
+        checklistTipo: "mensal",
+        codigo: "M1",
+        tipo: "checkbox",
+        valor: "true",
+        observacao: null
+      }
     },
     {
-      empresaId: "empresa-1",
-      ordemServicoId: "os-1",
-      checklistId: "checklist-1",
-      equipamentoId: "equip-1",
-      checklistTipo: "mensal",
-      codigo: "M6",
-      tipo: "select",
-      valor: "danificado",
-      observacao: "Filtro rasgado"
+      where: {
+        ordemServicoId_equipamentoId_codigo: {
+          ordemServicoId: "os-1",
+          equipamentoId: "equip-1",
+          codigo: "M6"
+        }
+      },
+      update: {
+        checklistId: "checklist-1",
+        checklistTipo: "mensal",
+        tipo: "select",
+        valor: "danificado",
+        observacao: "Filtro rasgado"
+      },
+      create: {
+        empresaId: "empresa-1",
+        ordemServicoId: "os-1",
+        checklistId: "checklist-1",
+        equipamentoId: "equip-1",
+        checklistTipo: "mensal",
+        codigo: "M6",
+        tipo: "select",
+        valor: "danificado",
+        observacao: "Filtro rasgado"
+      }
     }
   ]);
   assert.equal(resposta.equipamento_id, "equip-1");
@@ -579,11 +606,15 @@ test("finalizarOs bloqueia OS multi-equipamento com maquina pendente", async () 
     ordemServico: {
       findUnique: async () =>
         criarOrdemProntaParaFinalizar({
+          tipoServico: OrdemServicoTipoServico.preventiva,
+          checklistTipo: ChecklistTipo.mensal,
           equipamento: null,
           cliente: {
             equipamentos: [{ id: "equip-1" }, { id: "equip-2" }]
           },
-          checklistRespostas: [{ equipamentoId: "equip-1" }]
+          checklistRespostas: [
+            { equipamentoId: "equip-1", codigo: "MEN_FILTRO", valor: "Executado" }
+          ]
         })
     }
   };

@@ -3,67 +3,12 @@ import { ChecklistTipo, OrdemServicoStatus, Prisma } from "@prisma/client";
 import { PrismaService } from "../../database/prisma.service";
 import type { CriarAbastecimentoDto } from "../admin/dto/criar-abastecimento.dto";
 import type { AuthenticatedUser } from "../auth/auth-user";
+import { codigosObrigatoriosChecklist, montarChecklistMobile } from "./mobile-checklists";
 
 const statusesCampo = [
   OrdemServicoStatus.aberta,
   OrdemServicoStatus.em_deslocamento,
   OrdemServicoStatus.em_atendimento
-];
-
-type ChecklistItemTipo = "checkbox" | "select" | "select_obs" | "numerico" | "texto" | "foto" | "finalizacao";
-type ChecklistItem = {
-  codigo: string;
-  item: string;
-  tipo: ChecklistItemTipo;
-  opcoes?: string[];
-  unidade?: string;
-  obrigatorio?: boolean;
-};
-
-const checklistMensal: ChecklistItem[] = [
-  { codigo: "M1", item: "EPIs utilizados", tipo: "checkbox" },
-  { codigo: "M2", item: "Desligar pelo controle remoto", tipo: "checkbox" },
-  { codigo: "M3", item: "Disjuntores desligados e ambiente protegido", tipo: "checkbox" },
-  { codigo: "M4", item: "Foto inicial", tipo: "foto" },
-  { codigo: "M5", item: "Retirar filtro", tipo: "checkbox" },
-  { codigo: "M6", item: "Condicoes do filtro", tipo: "select", opcoes: ["limpo", "sujo", "danificado"] },
-  { codigo: "M7", item: "Limpar filtro", tipo: "checkbox" },
-  { codigo: "M8", item: "Aguardar secagem", tipo: "checkbox" },
-  { codigo: "M9", item: "Inspecao interna", tipo: "select_obs", opcoes: ["Interna limpa", "Interna suja"] },
-  { codigo: "M10", item: "Bandeja do condensado", tipo: "select_obs", opcoes: ["Bandeja limpa", "Bandeja suja"] },
-  { codigo: "M11", item: "Reinstalar filtros", tipo: "checkbox" },
-  { codigo: "M12", item: "Fechar tampa", tipo: "checkbox" },
-  { codigo: "M13", item: "Ligar disjuntor", tipo: "checkbox" },
-  { codigo: "M14", item: "Funcao Dry se existir por 10 minutos", tipo: "select", opcoes: ["realizado", "nao existe"] },
-  { codigo: "M15", item: "Temperatura de entrada do ar", tipo: "numerico", unidade: "°C" },
-  { codigo: "M17", item: "Temperatura de insuflamento", tipo: "numerico", unidade: "°C" },
-  { codigo: "M16", item: "Finalizacao", tipo: "finalizacao" }
-];
-
-const checklistTrimestralExtra: ChecklistItem[] = [
-  { codigo: "T1", item: "Aplicar higienizante", tipo: "checkbox" },
-  { codigo: "T2", item: "Limpar serpentina evaporadora", tipo: "checkbox" },
-  { codigo: "T3", item: "Dreno limpo", tipo: "checkbox" },
-  { codigo: "T4", item: "Gabinete limpo", tipo: "checkbox" },
-  { codigo: "T5", item: "Ruido", tipo: "checkbox" },
-  { codigo: "T6", item: "Fluxo de ar pelas aletas normal", tipo: "checkbox" },
-  { codigo: "M18", item: "Foto da evaporadora limpa", tipo: "foto" }
-];
-
-const checklistSemestralExtra: ChecklistItem[] = [
-  { codigo: "S1", item: "Acesso a condensadora", tipo: "checkbox" },
-  { codigo: "S2", item: "Limpar serpentina condensadora", tipo: "checkbox" },
-  { codigo: "S4", item: "Oxidacao, danos ou entupimentos", tipo: "checkbox" },
-  { codigo: "S5", item: "Efetuado limpeza geral", tipo: "checkbox" },
-  { codigo: "S6", item: "Pressao do fluido refrigerante", tipo: "numerico", unidade: "bar/psi" },
-  { codigo: "S7", item: "Tipo de fluido refrigerante", tipo: "texto" },
-  { codigo: "S8", item: "Efetuado inspecao eletrica conexoes", tipo: "checkbox" },
-  { codigo: "S9", item: "Corrente", tipo: "numerico", unidade: "A" },
-  { codigo: "S10", item: "Protecoes eletricas funcionando", tipo: "checkbox" },
-  { codigo: "S11", item: "Reinstalar componentes", tipo: "checkbox" },
-  { codigo: "S12", item: "Religado e verificado", tipo: "checkbox" },
-  { codigo: "S3", item: "Foto da condensadora limpa", tipo: "foto" },
-  { codigo: "S13", item: "Observacao", tipo: "texto", obrigatorio: false }
 ];
 
 @Injectable()
@@ -205,7 +150,11 @@ export class MobileService {
       responsaveis: true,
       checklistRespostas: {
         select: {
-          equipamentoId: true
+          equipamentoId: true,
+          codigo: true,
+          tipo: true,
+          valor: true,
+          observacao: true
         }
       }
     };
@@ -223,50 +172,63 @@ export class MobileService {
       tipo: ordem.titulo,
       tipo_servico: ordem.tipoServico ?? "preventiva",
       checklist_tipo: ordem.checklistTipo ?? ChecklistTipo.mensal,
-      checklist: this.montarChecklist(ordem.checklistTipo ?? ChecklistTipo.mensal),
+      checklist: montarChecklistMobile(ordem.checklistTipo ?? ChecklistTipo.mensal),
       status: ordem.status,
       data: ordem.agendadaPara?.toISOString() ?? null,
       equipamento: this.descreverEquipamento(ordem.equipamento),
-      equipamentos: equipamentosBase.map((equipamento: any) => ({
-        id: equipamento.id,
-        codigo_qr: equipamento.codigoBarras ?? equipamento.patrimonio ?? "",
-        tipo: equipamento.tipo ?? "",
-        marca: equipamento.marca ?? "",
-        nome: equipamento.localInstalacao || equipamento.modelo,
-        local: equipamento.localInstalacao ?? "",
-        modelo: equipamento.modelo ?? "",
-        capacidade_btu: equipamento.capacidadeBtu ?? null,
-        gas_refrigerante: equipamento.gasRefrigerante ?? "",
-        numero_serie: equipamento.numeroSerie ?? "",
-        dados_impossiveis: equipamento.dadosPendentesJustificados ?? [],
-        descricao: this.descreverEquipamento(equipamento),
-        status_execucao: this.statusExecucaoEquipamento(ordem, equipamento.id)
-      }))
+      equipamentos: equipamentosBase.map((equipamento: any) => {
+        const respostas = this.respostasEquipamento(ordem, equipamento.id);
+        return {
+          id: equipamento.id,
+          codigo_qr: equipamento.codigoBarras ?? equipamento.patrimonio ?? "",
+          tipo: equipamento.tipo ?? "",
+          marca: equipamento.marca ?? "",
+          nome: equipamento.localInstalacao || equipamento.modelo,
+          local: equipamento.localInstalacao ?? "",
+          modelo: equipamento.modelo ?? "",
+          capacidade_btu: equipamento.capacidadeBtu ?? null,
+          gas_refrigerante: equipamento.gasRefrigerante ?? "",
+          numero_serie: equipamento.numeroSerie ?? "",
+          dados_impossiveis: equipamento.dadosPendentesJustificados ?? [],
+          descricao: this.descreverEquipamento(equipamento),
+          checklist_respostas: respostas.map((resposta: any) => ({
+            codigo: resposta.codigo,
+            tipo: resposta.tipo,
+            valor: resposta.valor,
+            observacao: resposta.observacao
+          })),
+          status_execucao: this.statusExecucaoEquipamento(ordem, equipamento.id)
+        };
+      })
     };
   }
 
   private statusExecucaoEquipamento(ordem: any, equipamentoId: string) {
-    const respostas = ordem.checklistRespostas ?? [];
-    return respostas.some((resposta: any) => resposta.equipamentoId === equipamentoId)
-      ? "feito"
-      : "pendente";
+    const respostasEquipamento = this.respostasEquipamento(ordem, equipamentoId);
+    if (ordem.tipoServico === "corretiva") {
+      return respostasEquipamento.some((resposta: any) => resposta.valor?.trim())
+        ? "feito"
+        : "pendente";
+    }
+    const tipo = ordem.checklistTipo ?? ChecklistTipo.mensal;
+    const obrigatorios = codigosObrigatoriosChecklist(tipo);
+    const respondidos = new Set(
+      respostasEquipamento
+        .filter((resposta: any) => resposta.valor?.trim())
+        .map((resposta: any) => resposta.codigo)
+    );
+
+    if (obrigatorios.every((codigo) => respondidos.has(codigo))) {
+      return "feito";
+    }
+
+    return respondidos.size > 0 ? "em_andamento" : "pendente";
   }
 
-  private montarChecklist(tipo: ChecklistTipo) {
-    const finalizacao = checklistMensal.find((item) => item.tipo === "finalizacao")!;
-    const ligarDisjuntor = checklistMensal.find((item) => item.codigo === "M13")!;
-    const mensalSemFinalizacao = checklistMensal.filter((item) => item.tipo !== "finalizacao" && item.codigo !== "M13");
-    const semestralExtra = checklistSemestralExtra.flatMap((item) => (item.codigo === "S12" ? [ligarDisjuntor, item] : [item]));
-
-    if (tipo === ChecklistTipo.semestral || tipo === ChecklistTipo.anual) {
-      return [...mensalSemFinalizacao, ...checklistTrimestralExtra, ...semestralExtra, finalizacao];
-    }
-
-    if (tipo === ChecklistTipo.trimestral) {
-      return [...mensalSemFinalizacao, ...checklistTrimestralExtra, ligarDisjuntor, finalizacao];
-    }
-
-    return checklistMensal;
+  private respostasEquipamento(ordem: any, equipamentoId: string) {
+    return (ordem.checklistRespostas ?? []).filter(
+      (resposta: any) => resposta.equipamentoId === equipamentoId
+    );
   }
 
   private formatarEndereco(endereco: any) {

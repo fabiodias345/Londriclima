@@ -1,25 +1,20 @@
 # Resumo AIRMOVEBR
 
-Atualizado em: 25/06/2026
+Atualizado em: 27/06/2026
 
 Este arquivo deve registrar somente o que falta fazer ou validar. Historico implementado fica no Git e nos testes.
 
 ## Proximo foco
 
-1. Validar no APK o novo checklist preventivo em uso real de campo.
-2. Conferir o PDF PMOC real depois do deploy.
-3. Alinhar o backend do checklist com `checklist.md` sempre que a especificacao mudar.
+1. Validar no APK os checklists simplificados mensal, trimestral, semestral e anual em uso real de campo.
+2. Implementar separadamente o questionario interno de seguranca da execucao, sem exibir no relatorio do cliente.
+3. Adaptar posteriormente o relatorio tecnico e o PDF PMOC aos novos codigos de checklist.
 
 ## App tecnico - pendencias futuras
 
-- Checklist preventivo ajustado no backend:
-  - sem opcao N/A;
-  - mensal com foto inicial;
-  - trimestral com foto inicial e foto da evaporadora limpa depois de ruido/fluxo de ar;
-  - semestral com foto inicial, foto da evaporadora limpa e foto da condensadora limpa;
-  - sem checklist operacional anual; vigencia/ART anual continuam apenas no documento PMOC;
-  - foto da condensadora limpa abaixo de religado e verificado;
-  - ligar disjuntor fica no final dos checklists acumulados, acima de religado e verificado quando existir.
+- Checklists agora sao independentes por periodicidade e precisam de validacao visual no aparelho.
+- Confirmar em campo o fluxo anual por etapas, com escolha entre evaporadoras ou condensadoras primeiro.
+- Confirmar restauracao de respostas, fotos por maquina e sincronizacao offline em rede instavel.
 - Melhorar a finalizacao da O.S.:
   - resumo antes da assinatura;
   - area de assinatura maior;

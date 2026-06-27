@@ -43,6 +43,64 @@ void main() {
     },
   );
 
+  test('offline preserva duas etapas do checklist da mesma máquina', () async {
+    final remote = _RemoteRepository(failNextChecklist: true);
+    final store = MemoryOfflineSyncStore();
+    final repository = OfflineWorkOrderRepository(remote: remote, store: store);
+    final order = _order(
+      checklistType: 'anual',
+      checklist: const [
+        WorkOrderChecklistItem(
+          code: 'ANU_HIGIENIZACAO_EVAP',
+          label: 'Evaporadora',
+          kind: 'select_obs',
+          stage: 'evaporadora',
+        ),
+        WorkOrderChecklistItem(
+          code: 'ANU_HIGIENIZACAO_COND',
+          label: 'Condensadora',
+          kind: 'select_obs',
+          stage: 'condensadora',
+        ),
+      ],
+    );
+
+    await repository.saveChecklist(
+      order,
+      equipmentId: 'EQ-1',
+      checklistType: 'anual',
+      responses: const [
+        WorkOrderChecklistResponse(
+          code: 'ANU_HIGIENIZACAO_EVAP',
+          kind: 'select_obs',
+          value: 'Executado',
+        ),
+      ],
+    );
+    remote.failNextChecklist = true;
+    await repository.saveChecklist(
+      order,
+      equipmentId: 'EQ-1',
+      checklistType: 'anual',
+      responses: const [
+        WorkOrderChecklistResponse(
+          code: 'ANU_HIGIENIZACAO_COND',
+          kind: 'select_obs',
+          value: 'Executado',
+        ),
+      ],
+    );
+
+    final result = await repository.syncPending();
+
+    expect(result.synced, 2);
+    expect(remote.savedResponseCodes, {
+      'ANU_HIGIENIZACAO_EVAP',
+      'ANU_HIGIENIZACAO_COND',
+    });
+    expect(await repository.pendingSyncCount(), 0);
+  });
+
   test('sincronizar fila reenvia checklist pendente e limpa fila', () async {
     final remote = _RemoteRepository(failNextChecklist: true);
     final store = MemoryOfflineSyncStore();
@@ -98,13 +156,18 @@ void main() {
   );
 }
 
-WorkOrder _order() {
+WorkOrder _order({
+  String checklistType = 'mensal',
+  List<WorkOrderChecklistItem> checklist = const [],
+}) {
   return WorkOrder(
     id: 'OS-1',
     clientName: 'Cliente',
     address: 'Rua 1',
     equipment: 'Split',
     maintenanceType: 'PMOC',
+    checklistType: checklistType,
+    checklist: checklist,
     scheduledAt: DateTime(2026, 6, 22),
     status: WorkOrderStatus.inProgress,
     backendStatus: 'em_atendimento',
@@ -128,6 +191,7 @@ class _RemoteRepository implements WorkOrderRepository {
   bool failNextChecklist;
   bool failChecklistAlways;
   int savedChecklists = 0;
+  final Set<String> savedResponseCodes = {};
 
   @override
   Future<List<WorkOrder>> listMine() async => [_order()];
@@ -173,6 +237,7 @@ class _RemoteRepository implements WorkOrderRepository {
       throw const SocketException('offline');
     }
     savedChecklists += 1;
+    savedResponseCodes.addAll(responses.map((response) => response.code));
   }
 
   @override

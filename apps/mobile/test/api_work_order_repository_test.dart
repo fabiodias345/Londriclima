@@ -103,8 +103,18 @@ void main() {
                 'endereco': 'Rua API, 10',
                 'equipamento': 'Todos',
                 'tipo': 'PMOC',
+                'tipo_servico': 'preventiva',
+                'checklist_tipo': 'anual',
                 'data': null,
                 'status': 'em_atendimento',
+                'checklist': [
+                  {
+                    'codigo': 'ANU_FOTO_COND',
+                    'item': 'Foto da condensadora limpa',
+                    'tipo': 'foto',
+                    'etapa': 'condensadora',
+                  },
+                ],
                 'equipamentos': [
                   {
                     'id': 'eq-1',
@@ -112,6 +122,14 @@ void main() {
                     'local': 'Sala 1',
                     'modelo': 'Split',
                     'status_execucao': 'feito',
+                    'checklist_respostas': [
+                      {
+                        'codigo': 'ANU_FOTO_COND',
+                        'tipo': 'foto',
+                        'valor': '/storage/condensadora.jpg',
+                        'observacao': null,
+                      },
+                    ],
                   },
                   {
                     'id': 'eq-2',
@@ -137,6 +155,9 @@ void main() {
 
       expect(orders.single.equipments[0].executionStatus, 'feito');
       expect(orders.single.equipments[0].isDone, isTrue);
+      expect(orders.single.serviceLabel, 'Preventiva anual');
+      expect(orders.single.checklist.single.stage, 'condensadora');
+      expect(orders.single.equipments[0].checklistResponses.single.code, 'ANU_FOTO_COND');
       expect(orders.single.equipments[1].executionStatus, 'pendente');
 
       await pump.cancel();
