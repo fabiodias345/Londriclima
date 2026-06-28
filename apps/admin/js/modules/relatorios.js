@@ -165,6 +165,7 @@ async function submitTecnico(event) {
   const tecnicoId = String(data.get("id") || "");
   const payload = removeEmptyValues({
     nome: String(data.get("nome") || ""),
+    login: String(data.get("login") || ""),
     email: String(data.get("email") || ""),
     telefone: onlyDigits(String(data.get("telefone") || "")),
     role: String(data.get("role") || "tecnico"),

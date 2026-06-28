@@ -47,6 +47,7 @@ async function main() {
     },
     update: {
       nome: "João Técnico",
+      login: "tecnico",
       senhaHash,
       role: "tecnico",
       ativo: true
@@ -54,6 +55,7 @@ async function main() {
     create: {
       empresaId: empresa.id,
       nome: "João Técnico",
+      login: "tecnico",
       email: "tecnico@airmovebr.local",
       senhaHash,
       role: "tecnico",

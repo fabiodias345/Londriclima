@@ -113,7 +113,7 @@ test("criarOrdemAgenda cria OS aberta para cliente da empresa e registra evento"
       cliente_id: "cliente-1",
       titulo: "Manutencao preventiva",
       tipo_servico: OrdemServicoTipoServico.preventiva,
-      checklist_tipo: ChecklistTipo.trimestral,
+      checklist_tipo: ChecklistTipo.anual,
       detalhes: "Limpeza e revisao",
       agendada_para: "2026-06-18T08:00:00.000Z",
       valor_cobrado: 350
@@ -126,7 +126,7 @@ test("criarOrdemAgenda cria OS aberta para cliente da empresa e registra evento"
   assert.equal((chamadas.createData as { enderecoId: string }).enderecoId, "endereco-1");
   assert.equal((chamadas.createData as { status: OrdemServicoStatus }).status, OrdemServicoStatus.aberta);
   assert.equal((chamadas.createData as { tipoServico: OrdemServicoTipoServico }).tipoServico, OrdemServicoTipoServico.preventiva);
-  assert.equal((chamadas.createData as { checklistTipo: ChecklistTipo }).checklistTipo, ChecklistTipo.trimestral);
+  assert.equal((chamadas.createData as { checklistTipo: ChecklistTipo }).checklistTipo, ChecklistTipo.anual);
   assert.equal((chamadas.createData as { titulo: string }).titulo, "Manutencao preventiva");
   assert.equal((chamadas.createData as { problemaRelatado: string }).problemaRelatado, "Limpeza e revisao");
   assert.equal((chamadas.createData as { valorCobrado: Prisma.Decimal }).valorCobrado.toNumber(), 350);
@@ -302,7 +302,7 @@ test("criarPlanoRecorrencia cadastra rotina operacional para cliente da empresa"
   });
 });
 
-test("gerarOrdemPlanoRecorrencia cria OS e avanca proxima execucao", async () => {
+test("gerarOrdemPlanoRecorrencia anual cria OS anual e avanca doze meses", async () => {
   const chamadas = {
     osData: undefined as unknown,
     planoUpdate: undefined as unknown
@@ -316,10 +316,10 @@ test("gerarOrdemPlanoRecorrencia cria OS e avanca proxima execucao", async () =>
         equipamentoId: "equipamento-1",
         equipeId: "equipe-1",
         tecnicoId: "tecnico-1",
-        titulo: "PMOC mensal",
+        titulo: "PMOC anual",
         detalhes: "Limpeza preventiva",
-        frequencia: PlanoRecorrenciaFrequencia.mensal,
-        checklistTipo: ChecklistTipo.mensal,
+        frequencia: PlanoRecorrenciaFrequencia.anual,
+        checklistTipo: ChecklistTipo.anual,
         proximaExecucao: new Date("2026-07-01T11:00:00.000Z"),
         valorCobrado: new Prisma.Decimal(280),
         ativo: true,
@@ -355,14 +355,14 @@ test("gerarOrdemPlanoRecorrencia cria OS e avanca proxima execucao", async () =>
   assert.equal((chamadas.osData as { clienteId: string }).clienteId, "cliente-1");
   assert.equal((chamadas.osData as { equipamentoId: string }).equipamentoId, "equipamento-1");
   assert.equal((chamadas.osData as { status: OrdemServicoStatus }).status, OrdemServicoStatus.aberta);
-  assert.equal((chamadas.osData as { checklistTipo: ChecklistTipo }).checklistTipo, ChecklistTipo.mensal);
+  assert.equal((chamadas.osData as { checklistTipo: ChecklistTipo }).checklistTipo, ChecklistTipo.anual);
   assert.equal((chamadas.planoUpdate as { ultimoOsId: string }).ultimoOsId, "os-recorrente-1");
-  assert.equal((chamadas.planoUpdate as { proximaExecucao: Date }).proximaExecucao.toISOString(), "2026-08-01T11:00:00.000Z");
+  assert.equal((chamadas.planoUpdate as { proximaExecucao: Date }).proximaExecucao.toISOString(), "2027-07-01T11:00:00.000Z");
   assert.deepEqual(resposta, {
     os_id: "os-recorrente-1",
     status: OrdemServicoStatus.aberta,
     atualizado_em: "2026-06-18T12:00:00.000Z",
-    proxima_execucao: "2026-08-01T11:00:00.000Z"
+    proxima_execucao: "2027-07-01T11:00:00.000Z"
   });
 });
 

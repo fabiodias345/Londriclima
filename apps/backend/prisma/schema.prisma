@@ -144,6 +144,7 @@ model Usuario {
   id        String      @id @default(uuid()) @db.Uuid
   empresaId String     @map("empresa_id") @db.Uuid
   nome      String
+  login     String?     @unique
   email     String
   telefone  String?
   senhaHash String     @map("senha_hash")

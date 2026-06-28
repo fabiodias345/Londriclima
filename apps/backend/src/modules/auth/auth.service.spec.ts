@@ -8,6 +8,7 @@ const usuarioAtivo = {
   id: "usuario-1",
   empresaId: "empresa-1",
   nome: "Tecnico AIRMOVEBR",
+  login: "tecnico",
   email: "tecnico@airmovebr.local",
   senhaHash: "hash-seguro",
   role: UsuarioRole.tecnico
@@ -78,7 +79,10 @@ test("login retorna tokens e atualiza ultimo login para usuario ativo de empresa
   });
 
   assert.deepEqual(chamadas.findFirstWhere, {
-    email: "tecnico@airmovebr.local",
+    OR: [
+      { login: "tecnico@airmovebr.local" },
+      { email: "tecnico@airmovebr.local" }
+    ],
     ativo: true,
     empresa: {
       ativa: true
@@ -99,6 +103,18 @@ test("login retorna tokens e atualiza ultimo login para usuario ativo de empresa
     nome: "Tecnico AIRMOVEBR",
     email: "tecnico@airmovebr.local",
     role: UsuarioRole.tecnico
+  });
+});
+
+test("login curto e normalizado autentica o mesmo usuario", async () => {
+  const { chamadas, service } = criarAuthService({});
+
+  await service.login({ login: " Tecnico ", senha: "123456" });
+
+  assert.deepEqual(chamadas.findFirstWhere, {
+    OR: [{ login: "tecnico" }, { email: "tecnico" }],
+    ativo: true,
+    empresa: { ativa: true }
   });
 });
 

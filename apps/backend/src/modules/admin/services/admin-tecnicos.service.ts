@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma, UsuarioRole } from "@prisma/client";
 import { PrismaService } from "../../../database/prisma.service";
 import { AuthenticatedUser } from "../../auth/auth-user";
@@ -37,10 +37,14 @@ export class AdminTecnicosService {
       throw new BadRequestException("Senha inicial e obrigatoria.");
     }
 
+    const login = this.normalizarLogin(dto.login);
+    await this.garantirLoginDisponivel(login);
+
     const tecnico = await this.prisma.usuario.create({
       data: {
         empresaId: usuario.empresa_id,
         nome: dto.nome.trim(),
+        login,
         email: dto.email.trim().toLowerCase(),
         telefone: this.digitosOuNulo(dto.telefone),
         senhaHash: await this.passwordHash.hash(dto.senha),
@@ -55,9 +59,12 @@ export class AdminTecnicosService {
 
   async atualizarTecnico(tecnicoId: string, dto: SalvarTecnicoDto, usuario: AuthenticatedUser) {
     await this.garantirTecnicoDaEmpresa(tecnicoId, usuario);
+    const login = this.normalizarLogin(dto.login);
+    await this.garantirLoginDisponivel(login, tecnicoId);
 
     const data: Prisma.UsuarioUpdateInput = {
       nome: dto.nome.trim(),
+      login,
       email: dto.email.trim().toLowerCase(),
       telefone: this.digitosOuNulo(dto.telefone),
       role: this.normalizarRoleTecnico(dto.role)
@@ -126,6 +133,7 @@ export class AdminTecnicosService {
     return {
       id: true,
       nome: true,
+      login: true,
       email: true,
       telefone: true,
       role: true,
@@ -138,6 +146,7 @@ export class AdminTecnicosService {
   private mapearTecnico(tecnico: {
     id: string;
     nome: string;
+    login: string | null;
     email: string;
     telefone: string | null;
     role: UsuarioRole;
@@ -148,6 +157,7 @@ export class AdminTecnicosService {
     return {
       id: tecnico.id,
       nome: tecnico.nome,
+      login: tecnico.login,
       email: tecnico.email,
       telefone: tecnico.telefone,
       role: tecnico.role,
@@ -160,5 +170,23 @@ export class AdminTecnicosService {
   private digitosOuNulo(valor?: string) {
     const digitos = valor?.replace(/\D/g, "");
     return digitos ? digitos : null;
+  }
+
+  private normalizarLogin(valor: string) {
+    return valor.trim().toLowerCase();
+  }
+
+  private async garantirLoginDisponivel(login: string, tecnicoId?: string) {
+    const existente = await this.prisma.usuario.findFirst({
+      where: {
+        login,
+        ...(tecnicoId ? { NOT: { id: tecnicoId } } : {})
+      },
+      select: { id: true }
+    });
+
+    if (existente) {
+      throw new ConflictException("Login ja cadastrado.");
+    }
   }
 }

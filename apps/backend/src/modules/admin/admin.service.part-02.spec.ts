@@ -318,6 +318,7 @@ test("listarTecnicos retorna usuarios tecnicos e auxiliares ativos da empresa", 
           {
             id: "tecnico-1",
             nome: "Joao Tecnico",
+            login: "joao",
             email: "joao@airmovebr.local",
             telefone: "43999999999",
             role: UsuarioRole.tecnico,
@@ -341,6 +342,7 @@ test("listarTecnicos retorna usuarios tecnicos e auxiliares ativos da empresa", 
     }
   });
   assert.equal(resposta.total, 1);
+  assert.equal(resposta.items[0].login, "joao");
   assert.equal(resposta.items[0].email, "joao@airmovebr.local");
 });
 

@@ -59,7 +59,7 @@
         <form id="loginForm">
           <label>
             Login
-            <input name="email" type="text" value="tecnico@airmovebr.local" required />
+            <input name="login" type="text" value="tecnico" required />
           </label>
           <label>
             Senha
@@ -480,6 +480,7 @@
                 <option value="mensal">Mensal</option>
                 <option value="trimestral">Trimestral</option>
                 <option value="semestral">Semestral</option>
+                <option value="anual">Anual</option>
               </select>
             </label>
             <label>
@@ -845,7 +846,11 @@
               <input name="nome" type="text" required />
             </label>
             <label>
-              Email / login
+              Login
+              <input name="login" type="text" maxlength="30" pattern="[A-Za-z0-9._-]+" required />
+            </label>
+            <label>
+              Email
               <input name="email" type="text" required />
             </label>
             <label>
@@ -1046,6 +1051,7 @@
               <option value="mensal">Mensal</option>
               <option value="trimestral">Trimestral</option>
               <option value="semestral">Semestral</option>
+              <option value="anual">Anual</option>
             </select>
           </label>
           <label>

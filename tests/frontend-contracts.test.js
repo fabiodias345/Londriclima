@@ -184,6 +184,10 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(html, /id="recurrenceForm"/);
   assert.match(html, /id="recurrenceList"/);
   assert.match(html, /name="frequencia"/);
+  assert.ok(
+    (html.match(/<option value="anual">Anual<\/option>/g) || []).length >= 2,
+    "recorrencia e OS devem oferecer periodicidade anual"
+  );
   assert.match(html, /name="proxima_execucao"/);
   assert.match(html, /id="clientesView"/);
   assert.match(html, /id="empresaView"/);
@@ -483,14 +487,14 @@ test("admin mostra despacho da O.S. sem etapa manual redundante", () => {
   assert.match(styles, /\.os-dispatch-status/);
 });
 
-test("admin nao oferece checklist ou recorrencia anual operacional", () => {
+test("admin oferece checklist e recorrencia anual operacional", () => {
   const html = read("apps/admin/index.html");
   const agendaScript = read("apps/admin/js/modules/agenda.js");
   const eventosScript = read("apps/admin/js/modules/eventos.js");
 
-  assert.doesNotMatch(html, /<option value="anual">Anual<\/option>/);
-  assert.doesNotMatch(agendaScript, /anual:\s*"Anual"/);
-  assert.doesNotMatch(eventosScript, /anual:\s*"Anual"/);
+  assert.ok((html.match(/<option value="anual">Anual<\/option>/g) || []).length >= 2);
+  assert.match(agendaScript, /anual:\s*"Anual"/);
+  assert.match(eventosScript, /anual:\s*"Anual"/);
 });
 
 test("admin mostra prontidao da O.S. para o app do tecnico", () => {
@@ -524,8 +528,9 @@ test("admin gerencia tecnicos equipes e responsaveis flexiveis por OS", () => {
   assert.match(html, /id="tecnicosView"/);
   assert.match(html, /id="tecnicoForm"/);
   assert.match(html, /name="senha"/);
-  assert.match(html, /Email \/ login\s*<input name="email" type="text" required \/>/);
-  assert.doesNotMatch(html, /Email \/ login\s*<input name="email" type="email" required \/>/);
+  assert.match(html, /Login\s*<input name="login"[^>]+required \/>/);
+  assert.match(html, /Email\s*<input name="email" type="text" required \/>/);
+  assert.match(script, /login: String\(data\.get\("login"\)/);
   assert.match(html, /id="equipesView"/);
   assert.match(html, /id="equipeForm"/);
   assert.match(html, /id="equipeMembersList"/);

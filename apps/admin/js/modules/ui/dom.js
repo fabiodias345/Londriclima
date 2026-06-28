@@ -301,6 +301,7 @@ function fillTecnicoForm(tecnicoId) {
 
   tecnicoForm.elements.id.value = tecnico.id;
   tecnicoForm.elements.nome.value = tecnico.nome || "";
+  tecnicoForm.elements.login.value = tecnico.login || "";
   tecnicoForm.elements.email.value = tecnico.email || "";
   tecnicoForm.elements.telefone.value = tecnico.telefone || "";
   tecnicoForm.elements.role.value = tecnico.role || "tecnico";

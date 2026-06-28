@@ -374,7 +374,7 @@ export class AdminRecorrenciaService {
       [PlanoRecorrenciaFrequencia.mensal]: 1,
       [PlanoRecorrenciaFrequencia.trimestral]: 3,
       [PlanoRecorrenciaFrequencia.semestral]: 6,
-      [PlanoRecorrenciaFrequencia.anual]: 6
+      [PlanoRecorrenciaFrequencia.anual]: 12
     };
     const proxima = new Date(data);
     proxima.setMonth(proxima.getMonth() + mesesPorFrequencia[frequencia]);
@@ -386,7 +386,7 @@ export class AdminRecorrenciaService {
       [PlanoRecorrenciaFrequencia.mensal]: ChecklistTipo.mensal,
       [PlanoRecorrenciaFrequencia.trimestral]: ChecklistTipo.trimestral,
       [PlanoRecorrenciaFrequencia.semestral]: ChecklistTipo.semestral,
-      [PlanoRecorrenciaFrequencia.anual]: ChecklistTipo.semestral
+      [PlanoRecorrenciaFrequencia.anual]: ChecklistTipo.anual
     };
     return porFrequencia[frequencia];
   }

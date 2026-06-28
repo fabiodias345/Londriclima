@@ -8,6 +8,7 @@ class FakeLoginGateway implements MobileLoginGateway {
     final normalizedUser = user.trim().toLowerCase();
     final isDemoUser =
         normalizedUser == 'teste' ||
+        normalizedUser == 'tecnico' ||
         normalizedUser == 'tecnico@airmovebr.local';
     if (isDemoUser && password == '123456') {
       return LoginSession(

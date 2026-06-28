@@ -15,6 +15,7 @@ export const clientesRoot = `
         <span>CREA \${escapeHtml(item.crea)} - CPF \${escapeHtml(item.cpf)}</span>
       </div>
       <div>
+        <span>Login: \${escapeHtml(item.login || "pendente")}</span>
         <span>\${escapeHtml(item.email)}</span>
         <span>\${formatPhone(item.telefone)}</span>
       </div>

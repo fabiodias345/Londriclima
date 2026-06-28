@@ -393,7 +393,8 @@ function formatChecklistTipo(value) {
   return {
     mensal: "Mensal",
     trimestral: "Trimestral",
-    semestral: "Semestral"
+    semestral: "Semestral",
+    anual: "Anual"
   }[value] || "Mensal";
 }
 

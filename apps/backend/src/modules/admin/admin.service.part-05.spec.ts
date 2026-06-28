@@ -105,7 +105,7 @@ test("gerarPdfPmocCliente retorna PDF com nome de arquivo e conteudo oficial", a
         },
         enderecos: [{ cidade: "Londrina", uf: "PR", bairro: "Centro" }],
         equipamentos: [
-          criarEquipamentoPmocTeste("equipamento-1", "Sala 09", "CRIS-009", "SN-CRIS-0009", "2026-06-01T20:01:00.000Z"),
+          criarEquipamentoPmocTeste("equipamento-1", "Sala 09", "CRIS-009", "SN-CRIS-0009", "2026-06-01T20:01:00.000Z", "anual"),
           criarEquipamentoPmocTeste("equipamento-2", "Sala 19", "CRIS-019", "SN-CRIS-0019", "2026-06-11T20:01:00.000Z")
         ]
       })
@@ -135,12 +135,14 @@ test("gerarPdfPmocCliente retorna PDF com nome de arquivo e conteudo oficial", a
   const planoGeral = pdf.slice(pdf.indexOf("(OBJETIVO, RESPONSABILIDADES"), pdf.indexOf("(RESUMO DAS MÁQUINAS"));
   assert.match(planoGeral, /Periodicidade prevista/);
   assert.doesNotMatch(planoGeral, /Executado neste relatório/);
-  assert.match(pdf, /Manutenção executada\s+Mensal/);
+  assert.match(pdf, /Manutenção executada\s+Anual/);
   assert.doesNotMatch(pdf, /"Mensal", "Trimestral", "Semestral"/);
   assert.match(pdf, /MÁQUINA N:001 - PÁGINA EXCLUSIVA/);
   assert.match(pdf, /MÁQUINA N:002 - PÁGINA EXCLUSIVA/);
   const paginaMaquina = pdf.slice(pdf.indexOf("(MÁQUINA N:001"), pdf.indexOf("(MÁQUINA N:002"));
   assert.match(paginaMaquina, /Executado neste relatório/);
+  assert.match(paginaMaquina, /Higienização completa da condensadora/);
+  assert.doesNotMatch(paginaMaquina, /\(Mensal\)|\(Trimestral\)|\(Semestral\)/);
   assert.doesNotMatch(paginaMaquina, /Periodicidade prevista/);
   assert.doesNotMatch(paginaMaquina, /PLANO DE MANUTENÇÃO DA MÁQUINA|ÚLTIMA EXECUÇÃO \/ OCORRÊNCIAS/);
   assert.match(pdf, /Área climatizada m2\s+Não informado/);
@@ -597,7 +599,14 @@ test("obterPreviaRelatorioAvulsoCliente inclui OS multi-equipamento pelas respos
   assert.deepEqual(resposta.pendencias, []);
 });
 
-function criarEquipamentoPmocTeste(id: string, localInstalacao: string, patrimonio: string, numeroSerie: string, inicioIso: string) {
+function criarEquipamentoPmocTeste(
+  id: string,
+  localInstalacao: string,
+  patrimonio: string,
+  numeroSerie: string,
+  inicioIso: string,
+  checklistTipo: "mensal" | "trimestral" | "semestral" | "anual" = "mensal"
+) {
   const inicio = new Date(inicioIso);
   const fim = new Date(inicio.getTime() + 170 * 60000);
   const sufixo = patrimonio.toLowerCase().replace(/\D/g, "") || id;
@@ -617,10 +626,10 @@ function criarEquipamentoPmocTeste(id: string, localInstalacao: string, patrimon
     ordensServico: [
       {
         id: `os-${id}`,
-        titulo: "PMOC mensal",
+        titulo: `PMOC ${checklistTipo}`,
         tipoServico: "corretiva",
-        checklistTipo: "mensal",
-        problemaRelatado: "Rotina mensal",
+        checklistTipo,
+        problemaRelatado: `Rotina ${checklistTipo}`,
         status: OrdemServicoStatus.concluida,
         agendadaPara: inicio,
         concluidaEm: fim,

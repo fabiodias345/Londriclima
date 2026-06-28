@@ -14,9 +14,10 @@ export class AuthService {
   ) {}
 
   async login(dto: LoginDto) {
+    const identificador = (dto.login?.trim() || dto.email?.trim() || "").toLowerCase();
     const usuario = await this.prisma.usuario.findFirst({
       where: {
-        email: dto.email,
+        OR: [{ login: identificador }, { email: identificador }],
         ativo: true,
         empresa: {
           ativa: true
@@ -26,6 +27,7 @@ export class AuthService {
         id: true,
         empresaId: true,
         nome: true,
+        login: true,
         email: true,
         senhaHash: true,
         role: true

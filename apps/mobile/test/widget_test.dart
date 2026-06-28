@@ -1081,6 +1081,9 @@ void main() {
     );
     expect(repository.finishInput?.latitude, -23.3048);
     expect(repository.finishInput?.longitude, -51.1701);
+    expect(find.text('Detalhes da OS'), findsNothing);
+    expect(find.byKey(const Key('myMaintenanceButton')), findsOneWidget);
+    expect(find.text('Ordens de servico'), findsOneWidget);
     expect(find.text('OS finalizada.'), findsOneWidget);
   });
 

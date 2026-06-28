@@ -42,12 +42,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _ordersFuture = widget.repository.listMine();
   }
 
-  void _reload() {
-    setState(() {
-      _ordersFuture = widget.repository.listMine();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -108,8 +102,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _openOrder(WorkOrder order) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
+    final updated = await Navigator.of(context).push<WorkOrder>(
+      MaterialPageRoute<WorkOrder>(
         builder: (_) => WorkOrderDetailScreen(
           order: order,
           repository: widget.repository,
@@ -121,7 +115,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
 
     if (mounted) {
-      _reload();
+      setState(() {
+        _showMaintenance = true;
+        _ordersFuture = widget.repository.listMine();
+      });
+      if (updated != null) {
+        final message = updated.status == WorkOrderStatus.waitingSync
+            ? 'Finalizacao aguardando sincronizacao.'
+            : 'OS finalizada.';
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+      }
     }
   }
 

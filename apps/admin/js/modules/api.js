@@ -301,7 +301,7 @@ async function login(event) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        email: String(data.get("email") || ""),
+        login: String(data.get("login") || ""),
         senha: String(data.get("senha") || "")
       })
     });

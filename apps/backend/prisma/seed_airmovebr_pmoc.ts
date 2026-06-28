@@ -156,6 +156,7 @@ async function upsertTecnicoLocal(empresaId: string) {
   const data = {
     empresaId,
     nome: "Joao Tecnico",
+    login: "tecnico",
     email: "tecnico@airmovebr.local",
     senhaHash,
     role: "tecnico" as const,

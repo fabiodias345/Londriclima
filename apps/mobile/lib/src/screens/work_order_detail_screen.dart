@@ -990,11 +990,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
             ? 'Finalizacao aguardando sincronizacao.'
             : 'OS finalizada.';
       });
-      if (updated.status == WorkOrderStatus.waitingSync) {
-        _showSnackBar(
-          'Finalizacao salva offline. Sincronize quando houver rede.',
-        );
-      }
+      Navigator.of(context).pop(updated);
     } on Object catch (error) {
       if (!mounted) {
         return;
@@ -1688,24 +1684,31 @@ class _MachineListHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(2, 10, 2, 8),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: color,
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-            ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              _StatusPill(
+                label: count == 1 ? '1 maquina' : '$count maquinas',
+                color: color,
+                backgroundColor: Colors.white,
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          _StatusPill(
-            label: count == 1 ? '1 maquina' : '$count maquinas',
-            color: color,
-            backgroundColor: Colors.white,
-          ),
-          const SizedBox(width: 10),
-          const Expanded(child: Divider(color: airmovebrBorder)),
+          const SizedBox(height: 6),
+          const Divider(color: airmovebrBorder),
         ],
       ),
     );

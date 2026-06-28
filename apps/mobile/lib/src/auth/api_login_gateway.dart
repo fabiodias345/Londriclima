@@ -24,7 +24,7 @@ class ApiLoginGateway implements MobileLoginGateway {
           .postUrl(baseUrl.resolve('/api/v1/auth/login'))
           .timeout(timeout);
       request.headers.contentType = ContentType.json;
-      request.write(jsonEncode({'email': user.trim(), 'senha': password}));
+      request.write(jsonEncode({'login': user.trim(), 'senha': password}));
 
       final response = await request.close().timeout(timeout);
       final body = await response

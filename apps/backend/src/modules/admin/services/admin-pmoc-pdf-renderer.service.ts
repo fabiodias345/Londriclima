@@ -83,7 +83,7 @@ const ENGENHEIRO_PADRAO_PMOC = {
   rnp: "1721220267"
 };
 
-type PeriodicidadePmoc = "mensal" | "trimestral" | "semestral";
+type PeriodicidadePmoc = "mensal" | "trimestral" | "semestral" | "anual";
 
 const ATIVIDADES_MANUTENCAO: Array<[string, string, PeriodicidadePmoc]> = [
   ["4.1", "Limpeza dos filtros de ar e/ou substituição", "mensal"],
@@ -103,7 +103,14 @@ const ATIVIDADES_MANUTENCAO: Array<[string, string, PeriodicidadePmoc]> = [
   ["4.15", "Lubrificação geral do equipamento", "semestral"],
   ["4.16", "Verificar estado dos suportes/coxins", "semestral"],
   ["4.17", "Verificar e corrigir focos de corrosão", "semestral"],
-  ["4.18", "Verificar isolantes térmicos das linhas", "semestral"]
+  ["4.18", "Verificar isolantes térmicos das linhas", "semestral"],
+  ["4.19", "Teste do controle remoto e comandos", "anual"],
+  ["4.20", "Higienização completa da evaporadora", "anual"],
+  ["4.21", "Higienização completa da condensadora", "anual"],
+  ["4.22", "Verificação completa do circuito frigorífico", "anual"],
+  ["4.23", "Inspeção completa dos componentes elétricos", "anual"],
+  ["4.24", "Verificação do isolamento térmico das tubulações", "anual"],
+  ["4.25", "Medição das temperaturas de insuflamento e retorno", "anual"]
 ];
 
 export class AdminPmocPdfRendererService {
@@ -372,27 +379,28 @@ export class AdminPmocPdfRendererService {
   }
 
   private obterPeriodicidadeOrdem(ordem: OrdemPmoc | null): PeriodicidadePmoc {
-    const tipo = ordem?.checklist_tipo === "anual" ? "semestral" : ordem?.checklist_tipo;
-    if (tipo === "mensal" || tipo === "trimestral" || tipo === "semestral") {
+    const tipo = ordem?.checklist_tipo;
+    if (tipo === "mensal" || tipo === "trimestral" || tipo === "semestral" || tipo === "anual") {
       return tipo;
     }
 
     const texto = `${ordem?.titulo ?? ""} ${ordem?.checklist?.servico_realizado ?? ""}`.toLowerCase();
-    if (texto.includes("semestral") || texto.includes("anual")) return "semestral";
+    if (texto.includes("anual")) return "anual";
+    if (texto.includes("semestral")) return "semestral";
     if (texto.includes("trimestral")) return "trimestral";
     return "mensal";
   }
 
   private periodicidadeInclui(executada: PeriodicidadePmoc, prevista: PeriodicidadePmoc) {
-    const pesos: Record<PeriodicidadePmoc, number> = { mensal: 1, trimestral: 2, semestral: 3 };
-    return pesos[prevista] <= pesos[executada];
+    return executada === prevista;
   }
 
   private rotuloPeriodicidade(periodicidade: PeriodicidadePmoc) {
     return {
       mensal: "Mensal",
       trimestral: "Trimestral",
-      semestral: "Semestral"
+      semestral: "Semestral",
+      anual: "Anual"
     }[periodicidade];
   }
 
