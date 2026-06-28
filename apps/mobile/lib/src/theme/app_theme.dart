@@ -35,20 +35,21 @@ ThemeData buildAirmovebrTheme() {
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      border: _inputBorder(airmovebrBorder),
-      enabledBorder: _inputBorder(airmovebrBorder),
-      focusedBorder: _inputBorder(airmovebrAccent, width: 2),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+      border: _inputBorder(airmovebrBorder, width: 2),
+      enabledBorder: _inputBorder(airmovebrBorder, width: 2),
+      focusedBorder: _inputBorder(airmovebrAccent, width: 2.5),
       labelStyle: const TextStyle(
         color: airmovebrMuted,
         fontWeight: FontWeight.w700,
+        fontSize: 14,
       ),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         minimumSize: const Size.fromHeight(54),
         textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(

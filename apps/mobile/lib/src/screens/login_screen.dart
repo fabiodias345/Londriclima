@@ -92,78 +92,104 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Image.asset('assets/airmovebr-logo.png', height: 96),
-                  const SizedBox(height: 28),
-                  Text(
-                    'Acesso AIRMOVEBR',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: airmovebrText,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Entre para acessar a operacao.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyLarge?.copyWith(color: airmovebrMuted),
-                  ),
-                  const SizedBox(height: 28),
-                  TextField(
-                    key: const Key('loginUserField'),
-                    controller: _userController,
-                    textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      labelText: 'Login',
-                      prefixIcon: Icon(Icons.person_outline),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  TextField(
-                    key: const Key('loginPasswordField'),
-                    controller: _passwordController,
-                    obscureText: true,
-                    onSubmitted: (_) => _login(),
-                    decoration: const InputDecoration(
-                      labelText: 'Senha',
-                      prefixIcon: Icon(Icons.lock_outline),
-                    ),
-                  ),
-                  if (_errorMessage != null) ...[
-                    const SizedBox(height: 12),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              airmovebrPrimary,
+              airmovebrAccent,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Image.asset('assets/airmovebr-logo.png', height: 128),
+                    const SizedBox(height: 32),
                     Text(
-                      _errorMessage!,
-                      key: const Key('loginErrorMessage'),
+                      'Acesso AIRMOVEBR',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Color(0xFFB3261E),
-                        fontWeight: FontWeight.w700,
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        fontSize: 26,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Entre para acessar a operacao.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyLarge?.copyWith(
+                        color: Colors.white70,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    TextField(
+                      key: const Key('loginUserField'),
+                      controller: _userController,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'Login',
+                        prefixIcon: Icon(Icons.person_outline),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      key: const Key('loginPasswordField'),
+                      controller: _passwordController,
+                      obscureText: true,
+                      onSubmitted: (_) => _login(),
+                      decoration: const InputDecoration(
+                        labelText: 'Senha',
+                        prefixIcon: Icon(Icons.lock_outline),
+                      ),
+                    ),
+                    if (_errorMessage != null) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        _errorMessage!,
+                        key: const Key('loginErrorMessage'),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Color(0xFFFFCDD2),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 28),
+                    FilledButton(
+                      key: const Key('loginSubmitButton'),
+                      onPressed: _isLoading ? null : _login,
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(56),
+                        backgroundColor: airmovebrAccent,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: Text(
+                        _isLoading ? 'Entrando...' : 'Entrar',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                     ),
                   ],
-                  const SizedBox(height: 22),
-                  FilledButton(
-                    key: const Key('loginSubmitButton'),
-                    onPressed: _isLoading ? null : _login,
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(54),
-                      backgroundColor: airmovebrAccent,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: Text(_isLoading ? 'Entrando...' : 'Entrar'),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
