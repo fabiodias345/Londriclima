@@ -306,7 +306,7 @@ function fillTecnicoForm(tecnicoId) {
   tecnicoForm.elements.telefone.value = tecnico.telefone || "";
   tecnicoForm.elements.role.value = tecnico.role || "tecnico";
   tecnicoForm.elements.senha.value = "";
-  tecnicoFormStatus.textContent = "Editando tecnico selecionado.";
+  tecnicoFormStatus.textContent = "Editando acesso selecionado.";
 }
 
 function resetTecnicoForm() {

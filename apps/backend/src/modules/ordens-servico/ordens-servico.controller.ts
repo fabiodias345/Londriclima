@@ -14,6 +14,7 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import { AuthenticatedUser } from "../auth/auth-user";
 import { CurrentUser } from "../auth/current-user.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { MobileRoleGuard } from "../auth/mobile-role.guard";
 import { AtualizarStatusOsDto } from "./dto/atualizar-status-os.dto";
 import { FinalizarOsDto } from "./dto/finalizar-os.dto";
 import { IdentificarEquipamentoDto } from "./dto/identificar-equipamento.dto";
@@ -31,7 +32,7 @@ export type EvidenciaUploadFile = {
 };
 
 @Controller("os")
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, MobileRoleGuard)
 export class OrdensServicoController {
   constructor(private readonly ordensServicoService: OrdensServicoService) {}
 

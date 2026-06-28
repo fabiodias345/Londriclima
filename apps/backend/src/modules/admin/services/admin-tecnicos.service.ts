@@ -8,6 +8,7 @@ import { SalvarTecnicoDto } from "../dto/salvar-tecnico.dto";
 @Injectable()
 export class AdminTecnicosService {
   private readonly passwordHash = new PasswordHashService();
+  private readonly rolesAcesso = [UsuarioRole.admin, UsuarioRole.tecnico, UsuarioRole.auxiliar];
 
   constructor(private readonly prisma: PrismaService) {}
 
@@ -17,7 +18,7 @@ export class AdminTecnicosService {
         empresaId: usuario.empresa_id,
         ativo: true,
         role: {
-          in: [UsuarioRole.tecnico, UsuarioRole.auxiliar]
+          in: this.rolesAcesso
         }
       },
       orderBy: {
@@ -58,7 +59,7 @@ export class AdminTecnicosService {
   }
 
   async atualizarTecnico(tecnicoId: string, dto: SalvarTecnicoDto, usuario: AuthenticatedUser) {
-    await this.garantirTecnicoDaEmpresa(tecnicoId, usuario);
+    await this.garantirAcessoDaEmpresa(tecnicoId, usuario);
     const login = this.normalizarLogin(dto.login);
     await this.garantirLoginDisponivel(login, tecnicoId);
 
@@ -86,7 +87,20 @@ export class AdminTecnicosService {
   }
 
   async apagarTecnico(tecnicoId: string, usuario: AuthenticatedUser) {
-    await this.garantirTecnicoDaEmpresa(tecnicoId, usuario);
+    const acesso = await this.garantirAcessoDaEmpresa(tecnicoId, usuario);
+    if (acesso.role === UsuarioRole.admin) {
+      const totalAdminsAtivos = await this.prisma.usuario.count({
+        where: {
+          empresaId: usuario.empresa_id,
+          ativo: true,
+          role: UsuarioRole.admin
+        }
+      });
+
+      if (totalAdminsAtivos <= 1) {
+        throw new BadRequestException("Nao e possivel apagar o unico admin ativo.");
+      }
+    }
 
     const tecnico = await this.prisma.usuario.update({
       where: {
@@ -106,26 +120,32 @@ export class AdminTecnicosService {
     };
   }
 
-  private async garantirTecnicoDaEmpresa(tecnicoId: string, usuario: AuthenticatedUser) {
+  private async garantirAcessoDaEmpresa(tecnicoId: string, usuario: AuthenticatedUser) {
     const tecnico = await this.prisma.usuario.findFirst({
       where: {
         id: tecnicoId,
         empresaId: usuario.empresa_id,
         role: {
-          in: [UsuarioRole.tecnico, UsuarioRole.auxiliar]
+          in: this.rolesAcesso
         }
       },
       select: {
-        id: true
+        id: true,
+        role: true
       }
     });
 
     if (!tecnico) {
-      throw new NotFoundException("Tecnico nao encontrado.");
+      throw new NotFoundException("Acesso nao encontrado.");
     }
+
+    return tecnico;
   }
 
-  private normalizarRoleTecnico(role?: "tecnico" | "auxiliar") {
+  private normalizarRoleTecnico(role?: "admin" | "tecnico" | "auxiliar") {
+    if (role === "admin") {
+      return UsuarioRole.admin;
+    }
     return role === "auxiliar" ? UsuarioRole.auxiliar : UsuarioRole.tecnico;
   }
 

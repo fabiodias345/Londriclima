@@ -646,7 +646,7 @@ function renderOptions(items) {
 }
 
 async function deleteTecnico(tecnicoId) {
-  tecnicoFormStatus.textContent = "Removendo tecnico...";
+  tecnicoFormStatus.textContent = "Removendo acesso...";
 
   try {
     const response = await fetch(\`\${apiBaseUrl}/admin/tecnicos/\${tecnicoId}\`, {
@@ -660,7 +660,7 @@ async function deleteTecnico(tecnicoId) {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
-      tecnicoFormStatus.textContent = error.message || "Nao foi possivel apagar o tecnico.";
+      tecnicoFormStatus.textContent = error.message || "Nao foi possivel apagar o acesso.";
       return;
     }
 
@@ -668,7 +668,7 @@ async function deleteTecnico(tecnicoId) {
       resetTecnicoForm();
     }
 
-    tecnicoFormStatus.textContent = "Tecnico removido.";
+    tecnicoFormStatus.textContent = "Acesso removido.";
     await loadTecnicos();
   } catch {
     tecnicoFormStatus.textContent = "API indisponivel.";

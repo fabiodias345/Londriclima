@@ -93,16 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              airmovebrPrimary,
-              airmovebrAccent,
-            ],
-          ),
-        ),
+        color: neuroBase,
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -119,7 +110,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w900,
-                        color: Colors.white,
+                        color: neuroText,
                         fontSize: 26,
                       ),
                     ),
@@ -130,7 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: Theme.of(
                         context,
                       ).textTheme.bodyLarge?.copyWith(
-                        color: Colors.white70,
+                        color: neuroMuted,
                         fontSize: 16,
                       ),
                     ),
@@ -162,7 +153,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         key: const Key('loginErrorMessage'),
                         textAlign: TextAlign.center,
                         style: const TextStyle(
-                          color: Color(0xFFFFCDD2),
+                          color: neuroDanger,
                           fontWeight: FontWeight.w700,
                           fontSize: 14,
                         ),
@@ -172,14 +163,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     FilledButton(
                       key: const Key('loginSubmitButton'),
                       onPressed: _isLoading ? null : _login,
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(56),
-                        backgroundColor: airmovebrAccent,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
                       child: Text(
                         _isLoading ? 'Entrando...' : 'Entrar',
                         style: const TextStyle(

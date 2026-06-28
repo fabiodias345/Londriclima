@@ -32,7 +32,7 @@ function renderTecnicos(items) {
   tecnicosList.innerHTML = "";
 
   if (!items.length) {
-    tecnicosList.innerHTML = '<article class="data-row"><strong>Nenhum tecnico cadastrado.</strong><span>Cadastre tecnicos e auxiliares para liberar login no app.</span></article>';
+    tecnicosList.innerHTML = '<article class="data-row"><strong>Nenhum acesso cadastrado.</strong><span>Cadastre admins, tecnicos e auxiliares para liberar login.</span></article>';
     return;
   }
 
@@ -42,7 +42,7 @@ function renderTecnicos(items) {
     row.innerHTML = \`
       <div>
         <strong>\${escapeHtml(item.nome)}</strong>
-        <span>\${escapeHtml(item.role === "auxiliar" ? "Auxiliar" : "Tecnico")}</span>
+        <span>\${escapeHtml(formatAccessRole(item.role))}</span>
       </div>
       <div>
         <span>\${escapeHtml(item.email)}</span>
@@ -138,7 +138,7 @@ function renderEquipeMembersList(selectedMembers = []) {
   }
 
   if (!latestTecnicos.length) {
-    equipeMembersList.innerHTML = '<span>Cadastre tecnicos e auxiliares antes de montar equipes.</span>';
+    equipeMembersList.innerHTML = '<span>Cadastre acessos antes de montar equipes.</span>';
     return;
   }
 
@@ -149,7 +149,7 @@ function renderEquipeMembersList(selectedMembers = []) {
     return \`
       <label class="team-member-option">
         <input name="membro_usuario_id" type="checkbox" value="\${tecnico.id}" \${selected ? "checked" : ""} />
-        <span>\${escapeHtml(tecnico.nome)} - \${escapeHtml(tecnico.role === "auxiliar" ? "Auxiliar" : "Tecnico")}</span>
+        <span>\${escapeHtml(tecnico.nome)} - \${escapeHtml(formatAccessRole(tecnico.role))}</span>
         <select name="membro_funcao_\${tecnico.id}">
           <option value="lider" \${funcao === "lider" ? "selected" : ""}>Lider</option>
           <option value="tecnico" \${funcao === "tecnico" ? "selected" : ""}>Tecnico</option>
@@ -166,6 +166,14 @@ function formatTeamRole(role) {
     tecnico: "tecnico",
     auxiliar: "auxiliar"
   }[role] || "tecnico";
+}
+
+function formatAccessRole(role) {
+  return {
+    admin: "Admin",
+    tecnico: "Tecnico",
+    auxiliar: "Auxiliar"
+  }[role] || "Tecnico";
 }
 
 function renderEngineerOptions(selectedId = clientEngineerSelect?.value || "") {

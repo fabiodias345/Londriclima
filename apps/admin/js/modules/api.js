@@ -435,7 +435,7 @@ function setActiveView(view) {
     recorrencias: ["Planos de atividade", "Recorrências"],
     empresa: ["Cadastro base", "Empresa"],
     clientes: ["Relacionamento", "Clientes e equipamentos"],
-    tecnicos: ["Equipe de campo", "Técnicos e auxiliares"],
+    tecnicos: ["Equipe de campo", "Acessos"],
     equipes: ["Despacho flexível", "Equipes por cliente"],
     engenheiros: ["Responsabilidade técnica", "Engenheiros responsáveis"],
     configuracoes: ["Administração", "Configurações"],

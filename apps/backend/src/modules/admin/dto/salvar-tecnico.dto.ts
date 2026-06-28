@@ -20,8 +20,8 @@ export class SalvarTecnicoDto {
   telefone?: string;
 
   @IsOptional()
-  @IsIn(["tecnico", "auxiliar"])
-  role?: "tecnico" | "auxiliar";
+  @IsIn(["admin", "tecnico", "auxiliar"])
+  role?: "admin" | "tecnico" | "auxiliar";
 
   @IsOptional()
   @IsString()

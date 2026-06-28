@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
-import { ChecklistTipo, OrdemServicoStatus, Prisma } from "@prisma/client";
+import { ChecklistTipo, OrdemServicoStatus, Prisma, UsuarioRole } from "@prisma/client";
 import { PrismaService } from "../../database/prisma.service";
 import type { CriarAbastecimentoDto } from "../admin/dto/criar-abastecimento.dto";
 import type { AuthenticatedUser } from "../auth/auth-user";
@@ -124,6 +124,13 @@ export class MobileService {
   }
 
   private filtroOrdensDoUsuario(user: AuthenticatedUser) {
+    if (user.role === UsuarioRole.admin) {
+      return {
+        empresaId: user.empresa_id,
+        status: { in: statusesCampo }
+      };
+    }
+
     return {
       empresaId: user.empresa_id,
       status: { in: statusesCampo },

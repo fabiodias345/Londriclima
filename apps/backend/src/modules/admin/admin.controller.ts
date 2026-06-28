@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Header, Param, ParseUUIDPipe, Patch, Post, Res, StreamableFile, UseGuards } from "@nestjs/common";
 import { AuthenticatedUser } from "../auth/auth-user";
+import { AdminRoleGuard } from "../auth/admin-role.guard";
 import { CurrentUser } from "../auth/current-user.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { AprovarPreChamadoDto } from "./dto/aprovar-pre-chamado.dto";
@@ -20,7 +21,7 @@ type HeaderResponse = {
 };
 
 @Controller("admin")
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, AdminRoleGuard)
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 

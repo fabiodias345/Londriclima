@@ -60,6 +60,26 @@ test("listarOrdens retorna somente equipamento escolhido na OS", async () => {
   assert.equal(resultado.items[0].equipamentos[0].nome, "Sala 101");
 });
 
+test("listarOrdens permite admin ver OS de campo da empresa sem atribuicao direta", async () => {
+  const admin = { ...usuario, role: UsuarioRole.admin };
+  const prisma = {
+    ordemServico: {
+      findMany: async ({ where }: { where: unknown }) => {
+        assert.deepEqual(where, {
+          empresaId: admin.empresa_id,
+          status: { in: [OrdemServicoStatus.aberta, OrdemServicoStatus.em_deslocamento, OrdemServicoStatus.em_atendimento] }
+        });
+
+        return [];
+      }
+    }
+  };
+
+  const resultado = await criarService(prisma).listarOrdens(admin);
+
+  assert.deepEqual(resultado.items, []);
+});
+
 test("listarOrdens retorna todos equipamentos quando OS nao define equipamento", async () => {
   const prisma = {
     ordemServico: {

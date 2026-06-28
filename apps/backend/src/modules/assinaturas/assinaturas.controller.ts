@@ -1,5 +1,6 @@
 import { Body, Controller, Param, ParseUUIDPipe, Post, UseGuards } from "@nestjs/common";
 import { AuthenticatedUser } from "../auth/auth-user";
+import { AdminRoleGuard } from "../auth/admin-role.guard";
 import { CurrentUser } from "../auth/current-user.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { AssinafyService } from "./assinafy.service";
@@ -9,7 +10,7 @@ export class AssinaturasController {
   constructor(private readonly assinafyService: AssinafyService) {}
 
   @Post("pmoc/clientes/:clienteId/assinafy")
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminRoleGuard)
   enviarPmocParaAssinatura(
     @Param("clienteId", new ParseUUIDPipe()) clienteId: string,
     @CurrentUser() usuario: AuthenticatedUser

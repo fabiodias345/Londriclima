@@ -192,18 +192,18 @@ async function submitTecnico(event) {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
-      tecnicoFormStatus.textContent = error.message || "Nao foi possivel salvar o tecnico.";
+      tecnicoFormStatus.textContent = error.message || "Nao foi possivel salvar o acesso.";
       return;
     }
 
     resetTecnicoForm();
-    tecnicoFormStatus.textContent = "Técnico salvo.";
+    tecnicoFormStatus.textContent = "Acesso salvo.";
     await loadTecnicos();
   } catch {
     tecnicoFormStatus.textContent = "API indisponivel.";
   } finally {
     button.disabled = false;
-    button.textContent = "Salvar técnico";
+    button.textContent = "Salvar acesso";
   }
 }
 

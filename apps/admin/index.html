@@ -54,12 +54,12 @@
         <div>
           <span class="kicker">Acesso administrativo</span>
           <h1>Entrar no painel</h1>
-          <p>Use o usuário técnico de teste por enquanto. Depois criaremos perfis de admin e supervisor.</p>
+          <p>Use um usuário administrador para acessar o painel.</p>
         </div>
         <form id="loginForm">
           <label>
             Login
-            <input name="login" type="text" value="tecnico" required />
+            <input name="login" type="text" value="admin" required />
           </label>
           <label>
             Senha
@@ -85,7 +85,7 @@
 
         <section class="config-tabs hidden" id="configTabs" role="tablist" aria-label="Configurações">
           <button class="subnav-button active" type="button" data-config-view="empresa">Empresa</button>
-          <button class="subnav-button" type="button" data-config-view="tecnicos">Técnicos</button>
+          <button class="subnav-button" type="button" data-config-view="tecnicos">Acessos</button>
           <button class="subnav-button" type="button" data-config-view="equipes">Equipes</button>
           <button class="subnav-button" type="button" data-config-view="engenheiros">Engenheiros</button>
         </section>
@@ -836,7 +836,7 @@
 
         <section class="worklist hidden" id="tecnicosView">
           <div class="worklist-header">
-            <h2>Técnicos e auxiliares</h2>
+            <h2>Acessos</h2>
             <p id="tecnicosStatus" role="status">Carregando...</p>
           </div>
           <form class="client-form" id="tecnicoForm">
@@ -860,6 +860,7 @@
             <label>
               Funcao
               <select name="role">
+                <option value="admin">Admin</option>
                 <option value="tecnico">Técnico</option>
                 <option value="auxiliar">Auxiliar</option>
               </select>
@@ -869,7 +870,7 @@
               <input name="senha" type="password" minlength="6" autocomplete="new-password" />
             </label>
             <div class="form-actions">
-              <button type="submit">Salvar técnico</button>
+              <button type="submit">Salvar acesso</button>
               <button class="secondary-button" id="resetTecnicoFormButton" type="button">Novo</button>
             </div>
             <p class="status" id="tecnicoFormStatus" role="status"></p>
@@ -1094,7 +1095,7 @@
     <script
       src="./vendor/leaflet/leaflet.js"
     ></script>
-    <script type="module" src="./js/main.js?v=20260628-anual-login"></script>
+    <script type="module" src="./js/main.js?v=20260628-acessos"></script>
   </body>
 </html>
 

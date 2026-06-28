@@ -109,7 +109,7 @@ function criarPrismaMock() {
           nome: "Tecnico AIRMOVEBR",
           email: "tecnico@airmovebr.local",
           senhaHash,
-          role: UsuarioRole.tecnico
+          role: UsuarioRole.admin
         };
       },
       update: async () => ({ id: usuarioId })

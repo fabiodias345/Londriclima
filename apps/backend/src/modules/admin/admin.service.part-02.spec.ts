@@ -306,7 +306,7 @@ test("obterEmpresa retorna cadastro completo da empresa do usuario", async () =>
   assert.equal(resposta.status, "ativa");
 });
 
-test("listarTecnicos retorna usuarios tecnicos e auxiliares ativos da empresa", async () => {
+test("listarTecnicos retorna acessos admin tecnico e auxiliar ativos da empresa", async () => {
   const chamadas = {
     where: undefined as unknown
   };
@@ -338,7 +338,7 @@ test("listarTecnicos retorna usuarios tecnicos e auxiliares ativos da empresa", 
     empresaId: "empresa-1",
     ativo: true,
     role: {
-      in: [UsuarioRole.tecnico, "auxiliar"]
+      in: [UsuarioRole.admin, UsuarioRole.tecnico, UsuarioRole.auxiliar]
     }
   });
   assert.equal(resposta.total, 1);

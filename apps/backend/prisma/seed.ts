@@ -38,6 +38,54 @@ async function main() {
     }
   });
 
+  const adminExistente = await prisma.usuario.findFirst({
+    where: {
+      OR: [
+        { login: "admin" },
+        {
+          empresaId: empresa.id,
+          email: "admin@airmovebr.local"
+        }
+      ]
+    }
+  });
+
+  const adminData = {
+    empresaId: empresa.id,
+    nome: "Administrador AIRMOVEBR",
+    login: "admin",
+    email: "admin@airmovebr.local",
+    senhaHash,
+    role: "admin" as const,
+    ativo: true
+  };
+
+  if (adminExistente) {
+    await prisma.usuario.update({
+      where: { id: adminExistente.id },
+      data: {
+        nome: "Administrador AIRMOVEBR",
+        login: "admin",
+        email: "admin@airmovebr.local",
+        senhaHash,
+        role: "admin",
+        ativo: true
+      }
+    });
+  } else {
+    await prisma.usuario.create({
+      data: adminData
+    });
+  }
+
+  await prisma.usuario.updateMany({
+    where: { login: "tecnico" },
+    data: {
+      empresaId: empresa.id,
+      email: "tecnico@airmovebr.local"
+    }
+  });
+
   const tecnico = await prisma.usuario.upsert({
     where: {
       empresaId_email: {
@@ -607,6 +655,7 @@ async function main() {
   });
 
   console.log(`Empresa piloto pronta: ${empresa.nome} (${empresa.id})`);
+  console.log(`Admin de teste: admin / senha ${senhaTecnico}`);
   console.log(`Técnico de teste: ${tecnico.email} / senha ${senhaTecnico} (${tecnico.id})`);
   console.log(`OS de teste aberta: ${ordemServico.id}`);
   console.log(`Frota de teste pronta: ${veiculo1.nome}, ${veiculo2.nome}`);

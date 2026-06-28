@@ -265,7 +265,7 @@ async function loadTecnicos(renderList = true) {
   latestTecnicos = result.items || [];
 
   if (renderList) {
-    tecnicosStatus.textContent = result.total === 1 ? "1 tecnico" : \`\${result.total} tecnicos e auxiliares\`;
+    tecnicosStatus.textContent = result.total === 1 ? "1 acesso" : \`\${result.total} acessos\`;
     renderTecnicos(latestTecnicos);
   }
 

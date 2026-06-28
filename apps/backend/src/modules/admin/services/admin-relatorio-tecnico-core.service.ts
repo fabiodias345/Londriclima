@@ -125,7 +125,7 @@ export class AdminRelatorioTecnicoCoreService {
           empresaId: usuario.empresa_id,
           ativo: true,
           role: {
-            in: [UsuarioRole.admin, UsuarioRole.supervisor, UsuarioRole.tecnico, UsuarioRole.auxiliar]
+            in: [UsuarioRole.admin, UsuarioRole.tecnico, UsuarioRole.auxiliar]
           }
         },
         orderBy: {

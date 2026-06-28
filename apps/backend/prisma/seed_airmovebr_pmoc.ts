@@ -146,6 +146,44 @@ async function findOrCreateEmpresa() {
 
 async function upsertTecnicoLocal(empresaId: string) {
   const senhaHash = await hashPassword("123456");
+  const adminExistente = await prisma.usuario.findFirst({
+    where: {
+      OR: [
+        { login: "admin" },
+        {
+          empresaId,
+          email: "admin@airmovebr.local"
+        }
+      ]
+    }
+  });
+  const adminData = {
+    empresaId,
+    nome: "Administrador AIRMOVEBR",
+    login: "admin",
+    email: "admin@airmovebr.local",
+    senhaHash,
+    role: "admin" as const,
+    ativo: true
+  };
+
+  if (adminExistente) {
+    await prisma.usuario.update({
+      where: { id: adminExistente.id },
+      data: adminData
+    });
+  } else {
+    await prisma.usuario.create({ data: adminData });
+  }
+
+  await prisma.usuario.updateMany({
+    where: { login: "tecnico" },
+    data: {
+      empresaId,
+      email: "tecnico@airmovebr.local"
+    }
+  });
+
   const existente = await prisma.usuario.findFirst({
     where: {
       empresaId,
@@ -331,7 +369,8 @@ async function main() {
   ]);
 
   console.log(`Empresa local: ${empresa.nome} (${empresa.cnpj})`);
-  console.log(`Login local: ${tecnico.email} / 123456`);
+  console.log("Login admin local: admin / 123456");
+  console.log(`Login tecnico local: ${tecnico.email} / 123456`);
   console.log(`Engenheiro: ${engenheiro.nome} (${engenheiro.crea})`);
   console.log(`Clientes PMOC: ${totalClientes}`);
   console.log(`Maquinas PMOC: ${totalEquipamentos}`);

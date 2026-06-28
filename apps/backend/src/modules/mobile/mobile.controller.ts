@@ -2,11 +2,12 @@ import { Body, Controller, Get, Param, Post, UseGuards } from "@nestjs/common";
 import { CriarAbastecimentoDto } from "../admin/dto/criar-abastecimento.dto";
 import { CurrentUser } from "../auth/current-user.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { MobileRoleGuard } from "../auth/mobile-role.guard";
 import type { AuthenticatedUser } from "../auth/auth-user";
 import { MobileService } from "./mobile.service";
 
 @Controller("mobile")
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, MobileRoleGuard)
 export class MobileController {
   constructor(private readonly mobileService: MobileService) {}
 
