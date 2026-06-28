@@ -5,6 +5,7 @@ import '../repositories/fleet_repository.dart';
 import '../repositories/work_order_repository.dart';
 import '../services/barcode_scanner_service.dart';
 import '../services/location_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/work_order_card.dart';
 import '../widgets/work_order_filter_bar.dart';
 import 'fueling_screen.dart';
@@ -191,15 +192,39 @@ class _DashboardActions extends StatelessWidget {
         FilledButton.icon(
           key: const Key('myMaintenanceButton'),
           onPressed: onMaintenanceTap,
-          icon: const Icon(Icons.assignment_outlined),
+          icon: const Icon(Icons.assignment_outlined, size: 24),
           label: const Text('Minhas manutencoes'),
+          style: FilledButton.styleFrom(
+            minimumSize: const Size.fromHeight(64),
+            backgroundColor: airmovebrPrimary,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            textStyle: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         OutlinedButton.icon(
           key: const Key('fuelingButton'),
           onPressed: onFuelingTap,
-          icon: const Icon(Icons.local_gas_station_outlined),
+          icon: const Icon(Icons.local_gas_station_outlined, size: 24),
           label: const Text('Abastecimentos'),
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size.fromHeight(64),
+            foregroundColor: airmovebrPrimary,
+            side: const BorderSide(color: airmovebrAccent, width: 2),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            textStyle: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
         ),
       ],
     );

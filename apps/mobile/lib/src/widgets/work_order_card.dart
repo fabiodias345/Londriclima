@@ -12,16 +12,24 @@ class WorkOrderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(8),
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(14),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: airmovebrBorder),
+            borderRadius: BorderRadius.circular(14),
+            color: Colors.white,
+            border: Border.all(color: airmovebrBorder, width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: airmovebrPrimary.withValues(alpha: 0.08),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -35,34 +43,39 @@ class WorkOrderCard extends StatelessWidget {
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: airmovebrText,
                         fontWeight: FontWeight.w900,
+                        fontSize: 16,
                       ),
                     ),
                   ),
                   _StatusPill(status: order.status),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 14),
               _InfoLine(icon: Icons.place_outlined, text: order.address),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               _InfoLine(icon: Icons.ac_unit, text: order.equipment),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               _InfoLine(
                 icon: Icons.inventory_2_outlined,
                 text: order.equipmentCountLabel,
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               _InfoLine(icon: Icons.build_outlined, text: order.serviceLabel),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
               Row(
                 children: [
                   Expanded(
                     child: Text(
                       _shortOrderId(order.id),
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w800),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                        color: airmovebrMuted,
+                      ),
                     ),
                   ),
-                  const Icon(Icons.chevron_right, color: airmovebrMuted),
+                  const Icon(Icons.chevron_right, color: airmovebrAccent, size: 22),
                 ],
               ),
             ],
