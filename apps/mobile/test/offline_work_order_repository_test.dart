@@ -197,7 +197,11 @@ class _RemoteRepository implements WorkOrderRepository {
   Future<List<WorkOrder>> listMine() async => [_order()];
 
   @override
-  Future<WorkOrder> startService(WorkOrder order, GeoPoint location) async {
+  Future<WorkOrder> startService(
+    WorkOrder order,
+    GeoPoint location,
+    SafetyCheckInput safety,
+  ) async {
     return order.copyWith(
       status: WorkOrderStatus.inProgress,
       backendStatus: 'em_atendimento',

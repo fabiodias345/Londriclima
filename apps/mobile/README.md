@@ -36,7 +36,7 @@ Aplicativo Flutter para a operacao AIRMOVEBR.
 ```bash
 flutter test
 flutter analyze
-flutter build apk --debug
+flutter build apk --debug --dart-define=MOBILE_API_BASE_URL=https://api.airmovebr.com.br
 ```
 
 Para testar conectado na API real, informe o IP da maquina que esta rodando o backend:
@@ -57,7 +57,7 @@ Para producao:
 flutter run --dart-define=MOBILE_API_BASE_URL=https://api.airmovebr.com.br
 ```
 
-Sem `MOBILE_API_BASE_URL`, o app usa dados fake locais para teste.
+O modo operacional exige `MOBILE_API_BASE_URL`. O fake local somente e habilitado com `--dart-define=MOBILE_DEMO_MODE=true`.
 
 APK debug gerado em:
 

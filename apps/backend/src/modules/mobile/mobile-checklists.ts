@@ -91,6 +91,7 @@ const checklistPorTipo: Record<ChecklistTipo, ChecklistItem[]> = {
     acao("ANU_HIGIENIZACAO_EVAP", "Higienização completa da evaporadora", "evaporadora"),
     foto("ANU_FOTO_BOLSAO", "Foto da máquina aberta e desmontada com bolsão embaixo", "evaporadora"),
     acao("ANU_HIGIENIZACAO_COND", "Higienização completa da condensadora", "condensadora"),
+    foto("ANU_FOTO_BOLSAO_COND", "Foto da condensadora aberta e desmontada com bolsão embaixo", "condensadora"),
     foto("ANU_FOTO_COND", "Foto da condensadora limpa", "condensadora"),
     inspecao("ANU_CIRCUITO", "Verificação completa do circuito frigorífico: pressões, estanqueidade e carga quando necessário", "geral"),
     inspecao("ANU_ELETRICA", "Inspeção completa dos componentes elétricos", "geral"),

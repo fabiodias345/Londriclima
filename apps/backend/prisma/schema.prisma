@@ -162,6 +162,7 @@ model Usuario {
   ordensResponsavel OrdemServicoResponsavel[]
   planosRecorrenciaTecnico PlanoRecorrencia[] @relation("PlanoRecorrenciaTecnico")
   eventos OrdemServicoEvento[]
+  segurancas OrdemServicoSeguranca[]
   veiculoAbastecimentos VeiculoAbastecimento[]
   pmocRelatoriosCriados PmocRelatorio[] @relation("PmocRelatorioCriador")
 
@@ -423,6 +424,7 @@ model OrdemServico {
   checklistRespostas OrdemServicoChecklistResposta[]
   assinatura OrdemServicoAssinatura?
   observacoes OrdemServicoObservacao[]
+  segurancas OrdemServicoSeguranca[]
   automacoes AutomacaoAgendada[]
   planosRecorrenciaGerada PlanoRecorrencia[] @relation("PlanoRecorrenciaUltimaOs")
 
@@ -430,6 +432,29 @@ model OrdemServico {
   @@index([empresaId, agendadaPara])
   @@index([clienteId])
   @@map("ordens_servico")
+}
+
+model OrdemServicoSeguranca {
+  id              String   @id @default(uuid()) @db.Uuid
+  empresaId       String   @map("empresa_id") @db.Uuid
+  ordemServicoId  String   @map("ordem_servico_id") @db.Uuid
+  usuarioId       String?  @map("usuario_id") @db.Uuid
+  respostas       Json
+  aprovado        Boolean
+  motivoBloqueio  String?  @map("motivo_bloqueio")
+  versao           Int      @default(1)
+  latitude         Decimal  @db.Decimal(10, 7)
+  longitude        Decimal  @db.Decimal(10, 7)
+  registradoEm     DateTime @map("registrado_em")
+  criadoEm         DateTime @default(now()) @map("criado_em")
+
+  ordemServico OrdemServico @relation(fields: [ordemServicoId], references: [id])
+  usuario Usuario? @relation(fields: [usuarioId], references: [id])
+
+  @@index([empresaId])
+  @@index([ordemServicoId])
+  @@index([usuarioId])
+  @@map("ordem_servico_segurancas")
 }
 
 model PlanoRecorrencia {

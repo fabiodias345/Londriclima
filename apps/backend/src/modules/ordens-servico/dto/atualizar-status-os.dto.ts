@@ -1,6 +1,32 @@
 import { Type } from "class-transformer";
-import { IsDateString, IsEnum, IsNumber, Max, Min } from "class-validator";
+import { IsBoolean, IsDateString, IsEnum, IsNumber, ValidateNested, Max, Min } from "class-validator";
 import { OrdemServicoEventoAcao } from "@prisma/client";
+
+export class SegurancaInternaDto {
+  @IsBoolean()
+  epis_confirmados: boolean;
+
+  @IsBoolean()
+  equipamento_desligado: boolean;
+
+  @IsBoolean()
+  area_ferramentas_seguras: boolean;
+
+  @IsBoolean()
+  trabalho_altura: boolean;
+
+  @IsBoolean()
+  nr35_valida: boolean;
+
+  @IsBoolean()
+  cinto_paraquedista: boolean;
+
+  @IsBoolean()
+  talabarte_ancorado: boolean;
+
+  @IsBoolean()
+  area_isolada: boolean;
+}
 
 export class AtualizarStatusOsDto {
   @IsEnum(OrdemServicoEventoAcao)
@@ -20,4 +46,8 @@ export class AtualizarStatusOsDto {
 
   @IsDateString()
   registrado_em: string;
+
+  @ValidateNested()
+  @Type(() => SegurancaInternaDto)
+  seguranca?: SegurancaInternaDto;
 }

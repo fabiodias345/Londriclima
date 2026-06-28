@@ -7,9 +7,11 @@ import 'services/location_service.dart';
 import 'theme/app_theme.dart';
 
 class AirmovebrApp extends StatelessWidget {
-  const AirmovebrApp({super.key});
+  const AirmovebrApp({super.key, this.demoMode = _demoMode});
 
   static const _apiBaseUrl = String.fromEnvironment('MOBILE_API_BASE_URL');
+  static const _demoMode = bool.fromEnvironment('MOBILE_DEMO_MODE');
+  final bool demoMode;
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +20,10 @@ class AirmovebrApp extends StatelessWidget {
       title: 'AIRMOVEBR',
       theme: buildAirmovebrTheme(),
       home: LoginScreen(
-        loginGateway: HybridLoginGateway(apiBaseUrl: _parseApiBaseUrl()),
+        loginGateway: HybridLoginGateway(
+          apiBaseUrl: _parseApiBaseUrl(),
+          demoMode: demoMode,
+        ),
         locationService: const DeviceLocationService(),
         barcodeScanner: const DeviceBarcodeScannerService(),
       ),

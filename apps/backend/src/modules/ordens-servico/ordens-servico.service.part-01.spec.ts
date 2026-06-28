@@ -42,6 +42,17 @@ const finalizarDto = {
   finalizado_em: "2026-06-10T12:05:00-03:00"
 };
 
+const segurancaAprovada = {
+  epis_confirmados: true,
+  equipamento_desligado: true,
+  area_ferramentas_seguras: true,
+  trabalho_altura: false,
+  nr35_valida: false,
+  cinto_paraquedista: false,
+  talabarte_ancorado: false,
+  area_isolada: false
+};
+
 function criarOrdemProntaParaFinalizar(overrides: Record<string, unknown> = {}) {
   return {
     id: "os-1",
@@ -154,6 +165,9 @@ test("atualizarStatus inicia atendimento direto a partir de OS aberta", async ()
     },
     ordemServicoEvento: {
       create: async () => eventoCriado
+    },
+    ordemServicoSeguranca: {
+      create: async () => ({ id: "seguranca-1" })
     }
   };
   const prisma = {
@@ -167,7 +181,8 @@ test("atualizarStatus inicia atendimento direto a partir de OS aberta", async ()
       acao: OrdemServicoEventoAcao.iniciar_atendimento,
       latitude: -23.3045,
       longitude: -51.1696,
-      registrado_em: registradoEm
+      registrado_em: registradoEm,
+      seguranca: segurancaAprovada
     },
     usuario
   );
@@ -175,6 +190,80 @@ test("atualizarStatus inicia atendimento direto a partir de OS aberta", async ()
   assert.deepEqual(chamadas.updateData, { status: OrdemServicoStatus.em_atendimento });
   assert.equal(resposta.status, OrdemServicoStatus.em_atendimento);
   assert.equal(resposta.evento.acao, OrdemServicoEventoAcao.iniciar_atendimento);
+});
+
+test("atualizarStatus exige seguranca interna para iniciar atendimento", async () => {
+  const prisma = {
+    $transaction: async (callback: (tx: unknown) => unknown) => callback({
+      ordemServico: {
+        findUnique: async () => ({
+          id: "os-1",
+          empresaId: "empresa-1",
+          status: OrdemServicoStatus.aberta
+        })
+      }
+    })
+  };
+  const service = criarService(prisma);
+
+  await assert.rejects(
+    () =>
+      service.atualizarStatus(
+        "os-1",
+        {
+          acao: OrdemServicoEventoAcao.iniciar_atendimento,
+          latitude: -23.3045,
+          longitude: -51.1696,
+          registrado_em: "2026-06-10T08:45:00-03:00"
+        },
+        usuario
+      ),
+    BadRequestException
+  );
+});
+
+test("atualizarStatus registra bloqueio de seguranca sem iniciar atendimento", async () => {
+  let segurancaData: Record<string, unknown> | undefined;
+  const tx = {
+    ordemServico: {
+      findUnique: async () => ({
+        id: "os-1",
+        empresaId: "empresa-1",
+        status: OrdemServicoStatus.aberta
+      }),
+      update: async () => {
+        throw new Error("nao deve iniciar atendimento bloqueado");
+      }
+    },
+    ordemServicoSeguranca: {
+      create: async ({ data }: { data: Record<string, unknown> }) => {
+        segurancaData = data;
+        return { id: "seguranca-1" };
+      }
+    }
+  };
+  const prisma = {
+    $transaction: async (callback: (tx: unknown) => unknown) => callback(tx)
+  };
+  const service = criarService(prisma);
+
+  await assert.rejects(
+    () => service.atualizarStatus(
+      "os-1",
+      {
+        acao: OrdemServicoEventoAcao.iniciar_atendimento,
+        latitude: -23.3045,
+        longitude: -51.1696,
+        registrado_em: "2026-06-10T08:45:00-03:00",
+        seguranca: { ...segurancaAprovada, epis_confirmados: false }
+      },
+      usuario
+    ),
+    UnprocessableEntityException
+  );
+
+  assert.equal(segurancaData?.aprovado, false);
+  assert.match(String(segurancaData?.motivoBloqueio), /EPIs/);
 });
 
 test("atualizarStatus rejeita transicao fora do fluxo permitido", async () => {

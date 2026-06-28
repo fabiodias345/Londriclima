@@ -25,6 +25,7 @@ import { IdentificarEquipamentoDto } from "./dto/identificar-equipamento.dto";
 import { RegistrarChecklistDto } from "./dto/registrar-checklist.dto";
 import { RegistrarObservacoesDto } from "./dto/registrar-observacoes.dto";
 import { OrdensServicoRelatorioTecnicoRenderer } from "./ordens-servico-relatorio-tecnico-renderer";
+import { avaliarSegurancaInterna } from "./ordens-servico-seguranca";
 import type { EvidenciaUploadFile } from "./ordens-servico.controller";
 
 type TransicaoStatus = {
@@ -95,6 +96,15 @@ export class OrdensServicoService {
       throw new BadRequestException("Ação inválida para este endpoint.");
     }
 
+    const exigeSeguranca = dto.acao === OrdemServicoEventoAcao.iniciar_atendimento;
+    if (exigeSeguranca && !dto.seguranca) {
+      throw new BadRequestException("Confirmação de segurança é obrigatória antes do atendimento.");
+    }
+
+    const avaliacaoSeguranca = dto.seguranca
+      ? avaliarSegurancaInterna(dto.seguranca)
+      : null;
+
     const registradoEm = new Date(dto.registrado_em);
 
     const resultado = await this.prisma.$transaction(async (tx) => {
@@ -119,6 +129,31 @@ export class OrdensServicoService {
 
       if (!transicao.statusPermitidos.includes(ordemServico.status)) {
         throw new ConflictException("Transição de status inválida para esta OS.");
+      }
+
+      if (dto.seguranca && avaliacaoSeguranca) {
+        await tx.ordemServicoSeguranca.create({
+          data: {
+            empresaId: ordemServico.empresaId,
+            ordemServicoId: osId,
+            usuarioId: usuario.id,
+            respostas: dto.seguranca as unknown as Prisma.InputJsonValue,
+            aprovado: avaliacaoSeguranca.aprovado,
+            motivoBloqueio: avaliacaoSeguranca.motivoBloqueio,
+            versao: 1,
+            latitude: new Prisma.Decimal(dto.latitude),
+            longitude: new Prisma.Decimal(dto.longitude),
+            registradoEm
+          }
+        });
+
+        if (!avaliacaoSeguranca.aprovado) {
+          return {
+            ordemAtualizada: { id: ordemServico.id, status: ordemServico.status },
+            evento: null,
+            bloqueado: avaliacaoSeguranca.motivoBloqueio
+          };
+        }
       }
 
       const [ordemAtualizada, evento] = await Promise.all([
@@ -155,9 +190,20 @@ export class OrdensServicoService {
 
       return {
         ordemAtualizada,
-        evento
+        evento,
+        bloqueado: null
       };
     });
+
+    if (resultado.bloqueado) {
+      throw new UnprocessableEntityException(
+        `Atendimento bloqueado: ${resultado.bloqueado}.`
+      );
+    }
+
+    if (!resultado.evento) {
+      throw new UnprocessableEntityException("Atendimento bloqueado pela segurança interna.");
+    }
 
     return {
       os_id: resultado.ordemAtualizada.id,

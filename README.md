@@ -145,7 +145,7 @@ Comandos principais:
 cd apps/mobile
 flutter test
 flutter analyze
-flutter build apk --debug
+flutter build apk --debug --dart-define=MOBILE_API_BASE_URL=https://api.airmovebr.com.br
 ```
 
 Teste no celular usando a API local:
@@ -154,7 +154,7 @@ Teste no celular usando a API local:
 flutter run --dart-define=MOBILE_API_BASE_URL=http://10.91.93.11:3000
 ```
 
-Sem `MOBILE_API_BASE_URL`, o APK usa dados fake locais.
+O APK operacional exige `MOBILE_API_BASE_URL`. Para demo local, use explicitamente `--dart-define=MOBILE_DEMO_MODE=true`.
 
 APK debug:
 

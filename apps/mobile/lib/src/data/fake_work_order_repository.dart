@@ -56,41 +56,50 @@ class FakeWorkOrderRepository implements WorkOrderRepository {
         checklistType: 'semestral',
         checklist: const [
           WorkOrderChecklistItem(
-            code: 'M1',
-            label: 'Desligar pelo controle remoto',
-            kind: 'checkbox',
-          ),
-          WorkOrderChecklistItem(
-            code: 'M4',
-            label: 'Fotografar filtros antes',
-            kind: 'foto',
-          ),
-          WorkOrderChecklistItem(
-            code: 'M6',
-            label: 'Condicao dos filtros',
-            kind: 'select',
-            options: ['ok', 'danificado', 'substituido'],
-          ),
-          WorkOrderChecklistItem(
-            code: 'M9',
-            label: 'Inspecao interior: mofo, sujidade, odor',
+            code: 'SEM_CONTROLE',
+            label: 'Teste do controle remoto/comandos',
             kind: 'select_obs',
+            options: ['Normal', 'Irregularidade encontrada', 'Não testado'],
           ),
           WorkOrderChecklistItem(
-            code: 'M16',
-            label: 'Finalizacao',
-            kind: 'finalizacao',
+            code: 'SEM_HIGIENIZACAO_EVAP',
+            label: 'Higienização completa da evaporadora',
+            kind: 'select_obs',
+            options: ['Executado', 'Não executado'],
+            stage: 'evaporadora',
           ),
           WorkOrderChecklistItem(
-            code: 'S6',
-            label: 'Pressao do fluido refrigerante',
+            code: 'SEM_FOTO_BOLSAO',
+            label: 'Foto da máquina aberta e desmontada com bolsão embaixo',
+            kind: 'foto',
+            stage: 'evaporadora',
+          ),
+          WorkOrderChecklistItem(
+            code: 'SEM_MOTORES',
+            label: 'Revisão dos motores e ventiladores',
+            kind: 'select_obs',
+            options: ['Normal', 'Irregularidade encontrada', 'Não testado'],
+            stage: 'evaporadora',
+          ),
+          WorkOrderChecklistItem(
+            code: 'SEM_FIXACOES',
+            label: 'Verificação das fixações: suportes, coxins e parafusos',
+            kind: 'select_obs',
+            options: ['Normal', 'Irregularidade encontrada', 'Não testado'],
+            stage: 'evaporadora',
+          ),
+          WorkOrderChecklistItem(
+            code: 'SEM_TEMP_INSUFLAMENTO',
+            label: 'Temperatura de insuflamento',
             kind: 'numerico',
-            unit: 'bar/psi',
+            unit: '°C',
+            stage: 'medicoes',
           ),
           WorkOrderChecklistItem(
-            code: 'S7',
-            label: 'Tipo de fluido refrigerante',
-            kind: 'texto',
+            code: 'SEM_FOTO_INSUFLAMENTO',
+            label: 'Foto do insuflamento mostrando a medição',
+            kind: 'foto',
+            stage: 'medicoes',
           ),
         ],
         scheduledAt: today,
@@ -118,7 +127,14 @@ class FakeWorkOrderRepository implements WorkOrderRepository {
   }
 
   @override
-  Future<WorkOrder> startService(WorkOrder order, GeoPoint location) async {
+  Future<WorkOrder> startService(
+    WorkOrder order,
+    GeoPoint location,
+    SafetyCheckInput safety,
+  ) async {
+    if (!safety.approved) {
+      throw StateError('Atendimento bloqueado pela segurança interna.');
+    }
     return order.copyWith(
       status: WorkOrderStatus.inProgress,
       backendStatus: 'em_atendimento',

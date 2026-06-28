@@ -39,13 +39,18 @@ class ApiWorkOrderRepository implements WorkOrderRepository {
   }
 
   @override
-  Future<WorkOrder> startService(WorkOrder order, GeoPoint location) async {
+  Future<WorkOrder> startService(
+    WorkOrder order,
+    GeoPoint location,
+    SafetyCheckInput safety,
+  ) async {
     return _updateStatus(
       order: order,
       location: location,
       action: 'iniciar_atendimento',
       fallbackStatus: 'em_atendimento',
       errorPrefix: 'Falha ao iniciar atendimento',
+      safety: safety,
     );
   }
 
@@ -391,6 +396,7 @@ class ApiWorkOrderRepository implements WorkOrderRepository {
     required String action,
     required String fallbackStatus,
     required String errorPrefix,
+    SafetyCheckInput? safety,
   }) async {
     final uri = baseUrl.resolve('/api/v1/os/${order.id}/status');
     final client = HttpClient();
@@ -405,14 +411,17 @@ class ApiWorkOrderRepository implements WorkOrderRepository {
           'latitude': location.latitude,
           'longitude': location.longitude,
           'registrado_em': DateTime.now().toIso8601String(),
+          if (safety != null) 'seguranca': safety.toJson(),
         }),
       );
 
       final response = await request.close();
-      await response.drain<void>();
+      final body = await response.transform(utf8.decoder).join();
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw HttpException('$errorPrefix: ${response.statusCode}');
+        throw HttpException(
+          _errorMessage(body, fallback: '$errorPrefix: ${response.statusCode}'),
+        );
       }
 
       return order.copyWith(
@@ -555,8 +564,12 @@ class ApiWorkOrderRepository implements WorkOrderRepository {
       return WorkOrderChecklistResponse(
         code: response['codigo']?.toString() ?? response['code'].toString(),
         kind: response['tipo']?.toString() ?? response['kind'].toString(),
-        value: response['valor']?.toString() ?? response['value']?.toString() ?? '',
-        note: response['observacao']?.toString() ?? response['note']?.toString(),
+        value:
+            response['valor']?.toString() ??
+            response['value']?.toString() ??
+            '',
+        note:
+            response['observacao']?.toString() ?? response['note']?.toString(),
       );
     }).toList();
   }

@@ -85,8 +85,12 @@ class OfflineWorkOrderRepository implements WorkOrderRepository {
   }
 
   @override
-  Future<WorkOrder> startService(WorkOrder order, GeoPoint location) {
-    return remote.startService(order, location);
+  Future<WorkOrder> startService(
+    WorkOrder order,
+    GeoPoint location,
+    SafetyCheckInput safety,
+  ) {
+    return remote.startService(order, location, safety);
   }
 
   @override
@@ -351,9 +355,10 @@ class OfflineWorkOrderRepository implements WorkOrderRepository {
         continue;
       }
       if (item['kind'] == 'checklist') {
-        for (final response in (item['responses'] as List? ?? const [])
-            .whereType<Map<String, dynamic>>()
-            .map(_responseFromJson)) {
+        for (final response
+            in (item['responses'] as List? ?? const [])
+                .whereType<Map<String, dynamic>>()
+                .map(_responseFromJson)) {
           byCode[response.code] = response;
         }
       }

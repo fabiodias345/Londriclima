@@ -8,6 +8,7 @@ import '../models/work_order.dart';
 import '../repositories/work_order_repository.dart';
 import '../services/barcode_scanner_service.dart';
 import '../services/location_service.dart';
+import 'safety_check_dialog.dart';
 import '../theme/app_theme.dart';
 import '../widgets/detail_section.dart';
 
@@ -35,7 +36,6 @@ const _machineTypeOptions = [
 const _gasOptions = ['R-22', 'R-410A', 'R-32', 'R-134a', 'Outro'];
 
 enum _WorkOrderDetailStep { data, machines, checklist, finish }
-enum _AnnualStageOrder { evaporatorsFirst, condensersFirst }
 
 OutlineInputBorder _fieldBorder(Color color, {double width = 1}) {
   return OutlineInputBorder(
@@ -104,8 +104,6 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
   final Set<String> _highlightedChecklistCodes = {};
   String? _errorMessage;
   _WorkOrderDetailStep _activeStep = _WorkOrderDetailStep.data;
-  _AnnualStageOrder _annualStageOrder = _AnnualStageOrder.evaporatorsFirst;
-  String _activeAnnualStage = 'evaporadora';
 
   @override
   void dispose() {
@@ -258,10 +256,6 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
               DetailSection(
                 title: 'Selecionar maquina',
                 children: [
-                  if (_order.checklistType == 'anual') ...[
-                    _annualOrderSelector(),
-                    const SizedBox(height: 12),
-                  ],
                   TextField(
                     key: const Key('machineSearchField'),
                     decoration: const InputDecoration(
@@ -536,73 +530,8 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
     if (_savingChecklist) {
       return 'Salvando...';
     }
-    return _order.checklistType == 'anual'
-        ? 'Salvar etapa da máquina'
-        : 'Salvar checklist';
+    return 'Salvar checklist';
   }
-
-  Widget _annualOrderSelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Ordem da manutenção anual',
-          style: TextStyle(fontWeight: FontWeight.w800),
-        ),
-        const SizedBox(height: 8),
-        SegmentedButton<_AnnualStageOrder>(
-          key: const Key('annualStageOrder'),
-          segments: const [
-            ButtonSegment(
-              value: _AnnualStageOrder.evaporatorsFirst,
-              label: Text('Evaporadoras primeiro'),
-            ),
-            ButtonSegment(
-              value: _AnnualStageOrder.condensersFirst,
-              label: Text('Condensadoras primeiro'),
-            ),
-          ],
-          selected: {_annualStageOrder},
-          onSelectionChanged: (selection) {
-            final selected = selection.first;
-            setState(() {
-              _annualStageOrder = selected;
-              _activeAnnualStage = selected == _AnnualStageOrder.evaporatorsFirst
-                  ? 'evaporadora'
-                  : 'condensadora';
-              _selectedEquipment = null;
-            });
-          },
-        ),
-        const SizedBox(height: 8),
-        Container(
-          key: const Key('annualActiveStage'),
-          width: double.infinity,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: airmovebrRequiredMissingFill,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: airmovebrBorder),
-          ),
-          child: Text(
-            'Etapa atual: ${_annualStageLabel(_activeAnnualStage)}',
-            style: const TextStyle(fontWeight: FontWeight.w800),
-          ),
-        ),
-      ],
-    );
-  }
-
-  List<String> get _annualStages => _annualStageOrder == _AnnualStageOrder.evaporatorsFirst
-      ? const ['evaporadora', 'condensadora', 'geral', 'medicoes']
-      : const ['condensadora', 'evaporadora', 'geral', 'medicoes'];
-
-  String _annualStageLabel(String stage) => switch (stage) {
-    'evaporadora' => 'Evaporadoras',
-    'condensadora' => 'Condensadoras',
-    'medicoes' => 'Medições e fotos',
-    _ => 'Verificações gerais',
-  };
 
   bool get _canStart => _order.status == WorkOrderStatus.pending && !_starting;
 
@@ -619,6 +548,11 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
   }
 
   Future<void> _startService() async {
+    final safety = await showSafetyCheckDialog(context);
+    if (safety == null || !mounted) {
+      return;
+    }
+
     setState(() {
       _starting = true;
       _errorMessage = null;
@@ -626,7 +560,11 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
 
     try {
       final location = await widget.locationService.currentLocation();
-      final updated = await widget.repository.startService(_order, location);
+      final updated = await widget.repository.startService(
+        _order,
+        location,
+        safety,
+      );
       if (!mounted) {
         return;
       }
@@ -832,10 +770,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
             ? _allEquipmentsHandled
                   ? 'Todos os equipamentos foram concluidos. Pode finalizar a OS.'
                   : 'Maquina concluida. Faltam $_pendingEquipmentCount.'
-            : 'Etapa ${_annualStageLabel(_activeAnnualStage)} salva para esta máquina.';
-        if (_order.checklistType == 'anual') {
-          _advanceAnnualStageIfComplete();
-        }
+            : 'Checklist parcial salvo para esta máquina.';
         _selectedEquipment = null;
         _editingMachine = false;
         _checklistStarted = false;
@@ -889,30 +824,6 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
     return _order.effectiveChecklist
         .where((item) => item.required && item.kind != 'finalizacao')
         .every((item) => completedCodes.contains(item.code));
-  }
-
-  void _advanceAnnualStageIfComplete() {
-    final stageCodes = _order.effectiveChecklist
-        .where((item) => item.stage == _activeAnnualStage && item.required)
-        .map((item) => item.code)
-        .toSet();
-    final stageComplete = _equipments.every((equipment) {
-      final completedCodes = equipment.checklistResponses
-          .where((response) => response.value.trim().isNotEmpty)
-          .map((response) => response.code)
-          .toSet();
-      return stageCodes.every(completedCodes.contains);
-    });
-    if (!stageComplete) {
-      return;
-    }
-
-    final currentIndex = _annualStages.indexOf(_activeAnnualStage);
-    if (currentIndex >= 0 && currentIndex < _annualStages.length - 1) {
-      _activeAnnualStage = _annualStages[currentIndex + 1];
-      _checklistMessage =
-          'Etapa concluída em todas as máquinas. Próxima: ${_annualStageLabel(_activeAnnualStage)}.';
-    }
   }
 
   Future<void> _finishWorkOrder() async {
@@ -1084,12 +995,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
   }
 
   List<WorkOrderChecklistItem> get _visibleChecklistItems {
-    if (_order.checklistType != 'anual') {
-      return _order.effectiveChecklist;
-    }
-    return _order.effectiveChecklist
-        .where((item) => item.stage == _activeAnnualStage)
-        .toList();
+    return _order.effectiveChecklist;
   }
 
   List<WorkOrderChecklistResponse> _buildChecklistResponses() {
@@ -2058,24 +1964,29 @@ class _ChecklistField extends StatelessWidget {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: (item.options.isEmpty
-                      ? const ['Normal', 'Irregularidade encontrada', 'Não testado']
-                      : item.options)
-                  .map((option) {
-                    final selected = value == option;
-                    return ChoiceChip(
-                      key: Key('checklist_choice_${item.code}_$option'),
-                      label: Text(option),
-                      selected: selected,
-                      onSelected: (_) => onChanged(option),
-                      selectedColor: airmovebrPrimary,
-                      labelStyle: TextStyle(
-                        color: selected ? Colors.white : airmovebrText,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    );
-                  })
-                  .toList(),
+              children:
+                  (item.options.isEmpty
+                          ? const [
+                              'Normal',
+                              'Irregularidade encontrada',
+                              'Não testado',
+                            ]
+                          : item.options)
+                      .map((option) {
+                        final selected = value == option;
+                        return ChoiceChip(
+                          key: Key('checklist_choice_${item.code}_$option'),
+                          label: Text(option),
+                          selected: selected,
+                          onSelected: (_) => onChanged(option),
+                          selectedColor: airmovebrPrimary,
+                          labelStyle: TextStyle(
+                            color: selected ? Colors.white : airmovebrText,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        );
+                      })
+                      .toList(),
             ),
             if (_showChecklistObservation(item, value)) ...[
               const SizedBox(height: 8),

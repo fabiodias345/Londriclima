@@ -3,9 +3,62 @@ import 'dart:io';
 
 import 'package:airmovebr_mobile/src/models/work_order.dart';
 import 'package:airmovebr_mobile/src/repositories/api_work_order_repository.dart';
+import 'package:airmovebr_mobile/src/services/location_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test(
+    'ApiWorkOrderRepository envia seguranca ao iniciar atendimento',
+    () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      late Map<String, dynamic> payload;
+      final pump = server.listen((request) async {
+        payload =
+            jsonDecode(await utf8.decoder.bind(request).join())
+                as Map<String, dynamic>;
+        request.response.statusCode = HttpStatus.ok;
+        await request.response.close();
+      });
+      final repository = ApiWorkOrderRepository(
+        baseUrl: Uri.parse('http://127.0.0.1:${server.port}'),
+        token: 'token-api',
+      );
+      final order = WorkOrder(
+        id: 'os-1',
+        clientName: 'Cliente',
+        address: 'Rua 1',
+        equipment: 'Split',
+        maintenanceType: 'PMOC',
+        scheduledAt: DateTime(2026, 6, 28),
+        status: WorkOrderStatus.pending,
+      );
+      const safety = SafetyCheckInput(
+        ppeConfirmed: true,
+        equipmentPoweredOff: true,
+        safeAreaAndTools: true,
+        workAtHeight: false,
+        nr35Valid: false,
+        parachuteHarness: false,
+        anchoredLanyard: false,
+        isolatedArea: false,
+      );
+
+      await repository.startService(
+        order,
+        const GeoPoint(latitude: -23.3, longitude: -51.1),
+        safety,
+      );
+
+      expect(payload['acao'], 'iniciar_atendimento');
+      expect(
+        (payload['seguranca'] as Map<String, dynamic>)['epis_confirmados'],
+        isTrue,
+      );
+      await pump.cancel();
+      await server.close(force: true);
+    },
+  );
+
   test('ApiWorkOrderRepository aceita data nula e status do backend', () async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     final requests = <HttpRequest>[];
@@ -157,7 +210,10 @@ void main() {
       expect(orders.single.equipments[0].isDone, isTrue);
       expect(orders.single.serviceLabel, 'Preventiva anual');
       expect(orders.single.checklist.single.stage, 'condensadora');
-      expect(orders.single.equipments[0].checklistResponses.single.code, 'ANU_FOTO_COND');
+      expect(
+        orders.single.equipments[0].checklistResponses.single.code,
+        'ANU_FOTO_COND',
+      );
       expect(orders.single.equipments[1].executionStatus, 'pendente');
 
       await pump.cancel();

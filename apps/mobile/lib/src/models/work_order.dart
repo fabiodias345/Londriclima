@@ -198,6 +198,46 @@ class FinalizeWorkOrderInput {
   final DateTime finalizedAt;
 }
 
+class SafetyCheckInput {
+  const SafetyCheckInput({
+    required this.ppeConfirmed,
+    required this.equipmentPoweredOff,
+    required this.safeAreaAndTools,
+    required this.workAtHeight,
+    required this.nr35Valid,
+    required this.parachuteHarness,
+    required this.anchoredLanyard,
+    required this.isolatedArea,
+  });
+
+  final bool ppeConfirmed;
+  final bool equipmentPoweredOff;
+  final bool safeAreaAndTools;
+  final bool workAtHeight;
+  final bool nr35Valid;
+  final bool parachuteHarness;
+  final bool anchoredLanyard;
+  final bool isolatedArea;
+
+  bool get approved =>
+      ppeConfirmed &&
+      equipmentPoweredOff &&
+      safeAreaAndTools &&
+      (!workAtHeight ||
+          (nr35Valid && parachuteHarness && anchoredLanyard && isolatedArea));
+
+  Map<String, bool> toJson() => {
+    'epis_confirmados': ppeConfirmed,
+    'equipamento_desligado': equipmentPoweredOff,
+    'area_ferramentas_seguras': safeAreaAndTools,
+    'trabalho_altura': workAtHeight,
+    'nr35_valida': nr35Valid,
+    'cinto_paraquedista': parachuteHarness,
+    'talabarte_ancorado': anchoredLanyard,
+    'area_isolada': isolatedArea,
+  };
+}
+
 class WorkOrderEquipment {
   const WorkOrderEquipment({
     required this.id,

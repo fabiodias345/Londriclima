@@ -55,6 +55,7 @@ test("checklist mobile anual separa evaporadora e condensadora", () => {
     "ANU_HIGIENIZACAO_EVAP",
     "ANU_FOTO_BOLSAO",
     "ANU_HIGIENIZACAO_COND",
+    "ANU_FOTO_BOLSAO_COND",
     "ANU_FOTO_COND",
     "ANU_CIRCUITO",
     "ANU_ELETRICA",

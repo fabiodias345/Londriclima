@@ -23,6 +23,7 @@ void main() {
     );
     final hybridSession = await HybridLoginGateway(
       apiBaseUrl: null,
+      demoMode: true,
     ).login('tecnico@airmovebr.local', '123456');
 
     expect(fakeSession, isNotNull);
@@ -32,7 +33,7 @@ void main() {
   testWidgets('login de teste abre dashboard operacional com ordens fake', (
     tester,
   ) async {
-    await tester.pumpWidget(const AirmovebrApp());
+    await tester.pumpWidget(const AirmovebrApp(demoMode: true));
 
     expect(find.text('Acesso AIRMOVEBR'), findsOneWidget);
     expect(find.byKey(const Key('loginUserField')), findsOneWidget);
@@ -67,7 +68,7 @@ void main() {
   });
 
   testWidgets('filtro pendentes mostra somente OS pendente', (tester) async {
-    await tester.pumpWidget(const AirmovebrApp());
+    await tester.pumpWidget(const AirmovebrApp(demoMode: true));
 
     await tester.enterText(find.byKey(const Key('loginUserField')), 'teste');
     await tester.enterText(
@@ -87,7 +88,7 @@ void main() {
   });
 
   testWidgets('toque no card abre detalhe da OS', (tester) async {
-    await tester.pumpWidget(const AirmovebrApp());
+    await tester.pumpWidget(const AirmovebrApp(demoMode: true));
 
     await tester.enterText(find.byKey(const Key('loginUserField')), 'teste');
     await tester.enterText(
@@ -121,7 +122,7 @@ void main() {
   });
 
   testWidgets('login invalido mostra mensagem de erro', (tester) async {
-    await tester.pumpWidget(const AirmovebrApp());
+    await tester.pumpWidget(const AirmovebrApp(demoMode: true));
 
     await tester.enterText(find.byKey(const Key('loginUserField')), 'teste');
     await tester.enterText(
@@ -243,8 +244,7 @@ void main() {
     await tester.tap(find.text('Cliente API'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
-    await tester.tap(find.text('Iniciar atendimento'));
-    await tester.pumpAndSettle();
+    await _confirmSafetyAndStart(tester);
 
     expect(repository.startedOrderId, 'OS-API');
     await tester.scrollUntilVisible(
@@ -282,8 +282,7 @@ void main() {
     await tester.tap(find.text('Cliente API'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
-    await tester.tap(find.text('Iniciar atendimento'));
-    await tester.pumpAndSettle();
+    await _confirmSafetyAndStart(tester);
 
     expect(find.text('Selecionar maquina'), findsOneWidget);
     expect(find.byKey(const Key('machineSearchField')), findsOneWidget);
@@ -418,8 +417,7 @@ void main() {
     await tester.tap(find.text('Cliente API'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
-    await tester.tap(find.text('Iniciar atendimento'));
-    await tester.pumpAndSettle();
+    await _confirmSafetyAndStart(tester);
 
     await tester.tap(find.byKey(const Key('scanEquipmentButton')));
     await tester.pumpAndSettle();
@@ -459,8 +457,7 @@ void main() {
     await tester.tap(find.text('Cliente API'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
-    await tester.tap(find.text('Iniciar atendimento'));
-    await tester.pumpAndSettle();
+    await _confirmSafetyAndStart(tester);
 
     await tester.enterText(
       find.byKey(const Key('machineSearchField')),
@@ -537,8 +534,7 @@ void main() {
     await tester.tap(find.text('Cliente API'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
-    await tester.tap(find.text('Iniciar atendimento'));
-    await tester.pumpAndSettle();
+    await _confirmSafetyAndStart(tester);
 
     await tester.enterText(
       find.byKey(const Key('machineSearchField')),
@@ -624,8 +620,7 @@ void main() {
     await tester.tap(find.text('Cliente API'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
-    await tester.tap(find.text('Iniciar atendimento'));
-    await tester.pumpAndSettle();
+    await _confirmSafetyAndStart(tester);
     await tester.enterText(
       find.byKey(const Key('machineSearchField')),
       'sala 102',
@@ -680,8 +675,7 @@ void main() {
     await tester.tap(find.text('Cliente API'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
-    await tester.tap(find.text('Iniciar atendimento'));
-    await tester.pumpAndSettle();
+    await _confirmSafetyAndStart(tester);
 
     expect(
       find.byKey(const Key('stepTab_data'), skipOffstage: false),
@@ -742,8 +736,7 @@ void main() {
     await tester.tap(find.text('Cliente API'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
-    await tester.tap(find.text('Iniciar atendimento'));
-    await tester.pumpAndSettle();
+    await _confirmSafetyAndStart(tester);
     await tester.enterText(
       find.byKey(const Key('machineSearchField')),
       'sala 102',
@@ -861,8 +854,7 @@ void main() {
     await tester.tap(find.text('Cliente API'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
-    await tester.tap(find.text('Iniciar atendimento'));
-    await tester.pumpAndSettle();
+    await _confirmSafetyAndStart(tester);
     await tester.tap(find.byKey(const Key('selectEquipment_EQ-102')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('checklistReadyButton')));
@@ -913,8 +905,7 @@ void main() {
       await tester.tap(find.text('Cliente API'));
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
-      await tester.tap(find.text('Iniciar atendimento'));
-      await tester.pumpAndSettle();
+      await _confirmSafetyAndStart(tester);
       await tester.enterText(
         find.byKey(const Key('machineSearchField')),
         'sala 102',
@@ -1000,8 +991,7 @@ void main() {
     await tester.tap(find.text('Cliente API'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
-    await tester.tap(find.text('Iniciar atendimento'));
-    await tester.pumpAndSettle();
+    await _confirmSafetyAndStart(tester);
     await tester.enterText(
       find.byKey(const Key('machineSearchField')),
       'sala 102',
@@ -1197,8 +1187,7 @@ void main() {
     await tester.tap(find.text('Cliente API'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
-    await tester.tap(find.text('Iniciar atendimento'));
-    await tester.pumpAndSettle();
+    await _confirmSafetyAndStart(tester);
     await tester.enterText(
       find.byKey(const Key('machineSearchField')),
       'sala 102',
@@ -1364,8 +1353,7 @@ void main() {
     await tester.tap(find.text('Cliente API'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Iniciar atendimento'), 240);
-    await tester.tap(find.text('Iniciar atendimento'));
-    await tester.pumpAndSettle();
+    await _confirmSafetyAndStart(tester);
     await tester.scrollUntilVisible(
       find.byKey(const Key('newMachineButton')),
       240,
@@ -1547,6 +1535,19 @@ void main() {
           options: ['Executado', 'Não executado'],
           stage: 'condensadora',
         ),
+        WorkOrderChecklistItem(
+          code: 'ANU_CIRCUITO',
+          label: 'Verificação completa do circuito frigorífico',
+          kind: 'select_obs',
+          options: ['Normal', 'Irregularidade encontrada', 'Não testado'],
+        ),
+        WorkOrderChecklistItem(
+          code: 'ANU_TEMP_INSUFLAMENTO',
+          label: 'Temperatura de insuflamento',
+          kind: 'numerico',
+          unit: '°C',
+          stage: 'medicoes',
+        ),
       ],
     );
     await tester.pumpWidget(
@@ -1559,7 +1560,10 @@ void main() {
     );
 
     await tester.enterText(find.byKey(const Key('loginUserField')), 'teste');
-    await tester.enterText(find.byKey(const Key('loginPasswordField')), '123456');
+    await tester.enterText(
+      find.byKey(const Key('loginPasswordField')),
+      '123456',
+    );
     await tester.tap(find.byKey(const Key('loginSubmitButton')));
     await tester.pumpAndSettle();
     await _openMaintenance(tester);
@@ -1568,15 +1572,16 @@ void main() {
     await tester.tap(find.byKey(const Key('stepTab_machines')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('annualStageOrder')), findsOneWidget);
-    expect(find.text('Evaporadoras primeiro'), findsOneWidget);
+    expect(find.byKey(const Key('annualStageOrder')), findsNothing);
 
     await tester.scrollUntilVisible(
-      find.byKey(const Key('selectEquipment_EQ-101')),
+      find.byKey(const Key('selectEquipment_EQ-102')),
       240,
       scrollable: find.byType(Scrollable).first,
     );
-    await tester.tap(find.byKey(const Key('selectEquipment_EQ-101')));
+    await tester.ensureVisible(find.byKey(const Key('selectEquipment_EQ-102')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('selectEquipment_EQ-102')));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
       find.byKey(const Key('checklistReadyButton')),
@@ -1586,13 +1591,25 @@ void main() {
     await tester.tap(find.byKey(const Key('checklistReadyButton')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Executado'), findsOneWidget);
-    expect(find.text('Não executado'), findsOneWidget);
+    expect(
+      find.byKey(const Key('checklist_choice_ANU_HIGIENIZACAO_EVAP_Executado')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('checklist_choice_ANU_HIGIENIZACAO_COND_Executado')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('checklist_choice_ANU_CIRCUITO_Normal')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('checklist_number_ANU_TEMP_INSUFLAMENTO')),
+      findsOneWidget,
+    );
     await tester.tap(
       find.byKey(
-        const Key(
-          'checklist_choice_ANU_HIGIENIZACAO_EVAP_Não executado',
-        ),
+        const Key('checklist_choice_ANU_HIGIENIZACAO_EVAP_Não executado'),
       ),
     );
     await tester.pumpAndSettle();
@@ -1680,6 +1697,16 @@ void main() {
 
 Future<void> _openMaintenance(WidgetTester tester) async {
   await tester.tap(find.byKey(const Key('myMaintenanceButton')));
+  await tester.pumpAndSettle();
+}
+
+Future<void> _confirmSafetyAndStart(WidgetTester tester) async {
+  await tester.tap(find.text('Iniciar atendimento'));
+  await tester.pumpAndSettle();
+  for (final key in ['safety_epi', 'safety_power', 'safety_area']) {
+    await tester.tap(find.byKey(Key(key)));
+  }
+  await tester.tap(find.byKey(const Key('safety_confirm')));
   await tester.pumpAndSettle();
 }
 
@@ -1800,40 +1827,42 @@ class _RepositorioDeTeste implements WorkOrderRepository {
         maintenanceType: 'Limpeza de filtros',
         serviceType: serviceType,
         checklistType: checklistType,
-        checklist: checklist ?? const [
-          WorkOrderChecklistItem(
-            code: 'M1',
-            label: 'Desligar pelo controle remoto',
-            kind: 'checkbox',
-          ),
-          WorkOrderChecklistItem(
-            code: 'M4',
-            label: 'Foto apos abrir tampa frontal',
-            kind: 'foto',
-          ),
-          WorkOrderChecklistItem(
-            code: 'M6',
-            label: 'Condicao dos filtros',
-            kind: 'select',
-            options: ['ok', 'danificado', 'substituido'],
-          ),
-          WorkOrderChecklistItem(
-            code: 'M16',
-            label: 'Finalizacao',
-            kind: 'finalizacao',
-          ),
-          WorkOrderChecklistItem(
-            code: 'S6',
-            label: 'Pressao do fluido refrigerante',
-            kind: 'numerico',
-            unit: 'bar/psi',
-          ),
-          WorkOrderChecklistItem(
-            code: 'S7',
-            label: 'Tipo de fluido refrigerante',
-            kind: 'texto',
-          ),
-        ],
+        checklist:
+            checklist ??
+            const [
+              WorkOrderChecklistItem(
+                code: 'M1',
+                label: 'Desligar pelo controle remoto',
+                kind: 'checkbox',
+              ),
+              WorkOrderChecklistItem(
+                code: 'M4',
+                label: 'Foto apos abrir tampa frontal',
+                kind: 'foto',
+              ),
+              WorkOrderChecklistItem(
+                code: 'M6',
+                label: 'Condicao dos filtros',
+                kind: 'select',
+                options: ['ok', 'danificado', 'substituido'],
+              ),
+              WorkOrderChecklistItem(
+                code: 'M16',
+                label: 'Finalizacao',
+                kind: 'finalizacao',
+              ),
+              WorkOrderChecklistItem(
+                code: 'S6',
+                label: 'Pressao do fluido refrigerante',
+                kind: 'numerico',
+                unit: 'bar/psi',
+              ),
+              WorkOrderChecklistItem(
+                code: 'S7',
+                label: 'Tipo de fluido refrigerante',
+                kind: 'texto',
+              ),
+            ],
         scheduledAt: scheduledAt ?? DateTime.now(),
         status: status,
         backendStatus: backendStatus,
@@ -1842,7 +1871,11 @@ class _RepositorioDeTeste implements WorkOrderRepository {
   }
 
   @override
-  Future<WorkOrder> startService(WorkOrder order, GeoPoint location) async {
+  Future<WorkOrder> startService(
+    WorkOrder order,
+    GeoPoint location,
+    SafetyCheckInput safety,
+  ) async {
     startedOrderId = order.id;
     return order.copyWith(
       status: WorkOrderStatus.inProgress,
