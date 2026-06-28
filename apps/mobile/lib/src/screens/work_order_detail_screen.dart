@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../models/work_order.dart';
@@ -926,23 +925,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
     }
 
     var responsibleName = _responsibleController.text.trim();
-    var hasSignature = _signaturePoints.whereType<Offset>().isNotEmpty;
-    if (kDebugMode) {
-      if (responsibleName.isEmpty) {
-        responsibleName = 'Teste AIRMOVEBR';
-      }
-      if (!hasSignature) {
-        _signaturePoints
-          ..clear()
-          ..addAll(const [
-            Offset(80, 120),
-            Offset(190, 80),
-            Offset(320, 130),
-            Offset(500, 70),
-          ]);
-        hasSignature = true;
-      }
-    }
+    final hasSignature = _signaturePoints.whereType<Offset>().isNotEmpty;
     if (responsibleName.isEmpty || !hasSignature) {
       setState(() {
         _errorMessage = 'Informe o responsavel e colete a assinatura.';

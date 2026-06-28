@@ -1072,10 +1072,19 @@ export class OrdensServicoService {
 
   private criarBufferAssinatura(assinaturaBase64: string) {
     const match = assinaturaBase64.match(/^data:image\/png;base64,(?<base64>.+)$/);
-    const base64 = match?.groups?.base64 ?? assinaturaBase64;
+    const base64 = (match?.groups?.base64 ?? assinaturaBase64).replace(/\s/g, "");
+
+    if (!base64 || base64.length % 4 !== 0 || !/^[A-Za-z0-9+/]+={0,2}$/.test(base64)) {
+      throw new BadRequestException("Assinatura do cliente obrigatoria.");
+    }
 
     try {
-      return Buffer.from(base64, "base64");
+      const assinatura = Buffer.from(base64, "base64");
+      const pngHeader = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+      if (assinatura.length < 256 || !assinatura.subarray(0, pngHeader.length).equals(pngHeader)) {
+        throw new BadRequestException("Assinatura do cliente obrigatoria.");
+      }
+      return assinatura;
     } catch {
       throw new BadRequestException("assinatura_cliente_base64 inválida.");
     }

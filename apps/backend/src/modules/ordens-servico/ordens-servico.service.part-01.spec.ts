@@ -20,6 +20,11 @@ const usuario = {
   role: UsuarioRole.tecnico
 };
 
+const assinaturaPngTeste = Buffer.concat([
+  Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+  Buffer.alloc(300)
+]).toString("base64");
+
 function criarService(prisma: unknown, options: { onSalvarAssinatura?: () => void } = {}) {
   const service = new OrdensServicoService(prisma as never);
   (service as unknown as { salvarAssinatura: () => Promise<string> }).salvarAssinatura = async () => {
@@ -30,7 +35,7 @@ function criarService(prisma: unknown, options: { onSalvarAssinatura?: () => voi
 }
 
 const finalizarDto = {
-  assinatura_cliente_base64: "data:image/png;base64,aGVsbG8=",
+  assinatura_cliente_base64: `data:image/png;base64,${assinaturaPngTeste}`,
   nome_responsavel_assinatura: "Maria Souza",
   latitude: -23.3048,
   longitude: -51.1701,
