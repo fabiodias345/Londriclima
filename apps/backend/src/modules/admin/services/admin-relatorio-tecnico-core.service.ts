@@ -1647,13 +1647,15 @@ export class AdminRelatorioTecnicoCoreService {
             }))
         }
         : null,
-      checklist_respostas: (ordem.checklistRespostas ?? []).map((resposta) => ({
-        equipamento_id: resposta.equipamentoId ?? null,
-        codigo: resposta.codigo,
-        tipo: resposta.tipo,
-        valor: resposta.valor,
-        observacao: resposta.observacao
-      })),
+      checklist_respostas: (ordem.checklistRespostas ?? [])
+        .filter((resposta) => resposta.tipo !== "etapa" && !resposta.codigo.startsWith("ANU_ETAPA_"))
+        .map((resposta) => ({
+          equipamento_id: resposta.equipamentoId ?? null,
+          codigo: resposta.codigo,
+          tipo: resposta.tipo,
+          valor: resposta.valor,
+          observacao: resposta.observacao
+        })),
       assinatura: ordem.assinatura
         ? {
             id: ordem.assinatura.id,

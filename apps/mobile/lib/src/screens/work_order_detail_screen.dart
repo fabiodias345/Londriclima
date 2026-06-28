@@ -4,12 +4,14 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
+import '../models/annual_checklist_flow.dart';
 import '../models/work_order.dart';
 import '../repositories/work_order_repository.dart';
 import '../services/barcode_scanner_service.dart';
 import '../services/location_service.dart';
 import 'safety_check_dialog.dart';
 import '../theme/app_theme.dart';
+import '../widgets/annual_checklist_stage_selector.dart';
 import '../widgets/detail_section.dart';
 
 const _machineFieldLabels = {
@@ -103,6 +105,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
   final Set<String> _highlightedMachineFields = {};
   final Set<String> _highlightedChecklistCodes = {};
   String? _errorMessage;
+  AnnualChecklistStage _annualStage = AnnualChecklistStage.evaporadora;
   _WorkOrderDetailStep _activeStep = _WorkOrderDetailStep.data;
 
   @override
@@ -453,6 +456,8 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
                 key: _checklistSectionKey,
                 title: _order.isCorrective
                     ? 'Checklist corretivo'
+                    : _order.isInstallation
+                    ? 'Checklist de instalação'
                     : 'Checklist da maquina',
                 children: _order.effectiveChecklist.isEmpty
                     ? const [
@@ -511,17 +516,53 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
             ),
           ],
         ),
-        child: FilledButton.icon(
-          key: const Key('saveChecklistButton'),
-          onPressed: _savingChecklist ? null : _saveChecklist,
-          icon: const Icon(Icons.save_outlined),
-          label: Text(_saveChecklistButtonLabel),
-          style: FilledButton.styleFrom(
-            minimumSize: const Size.fromHeight(56),
-            backgroundColor: airmovebrAccent,
-            foregroundColor: Colors.white,
-          ),
-        ),
+        child: _isAnnualChecklist
+            ? Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      key: const Key('saveAnnualDraftButton'),
+                      onPressed:
+                          _savingChecklist || _isActiveAnnualStageComplete
+                          ? null
+                          : _saveAnnualDraft,
+                      icon: const Icon(Icons.save_outlined),
+                      label: const Text('Salvar rascunho'),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(56),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: FilledButton.icon(
+                      key: const Key('completeAnnualStageButton'),
+                      onPressed:
+                          _savingChecklist || _isActiveAnnualStageComplete
+                          ? null
+                          : _completeAnnualStage,
+                      icon: const Icon(Icons.check_circle_outline),
+                      label: const Text('Concluir etapa'),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(56),
+                        backgroundColor: airmovebrAccent,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : FilledButton.icon(
+                key: const Key('saveChecklistButton'),
+                onPressed: _savingChecklist ? null : _saveChecklist,
+                icon: const Icon(Icons.save_outlined),
+                label: Text(_saveChecklistButtonLabel),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(56),
+                  backgroundColor: airmovebrAccent,
+                  foregroundColor: Colors.white,
+                ),
+              ),
       ),
     );
   }
@@ -656,6 +697,9 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
         return;
       }
       _selectedEquipment = equipment;
+      _annualStage = firstIncompleteAnnualChecklistStage(
+        equipment.checklistResponses,
+      );
       _editingMachine = !equipment.hasRequiredMachineData();
       _loadMachineForm(equipment);
       _checklistStarted = false;
@@ -709,13 +753,17 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
         .toList();
   }
 
-  Future<void> _saveChecklist() async {
+  Future<void> _saveAnnualDraft() => _saveChecklist(draft: true);
+
+  Future<void> _completeAnnualStage() => _saveChecklist();
+
+  Future<void> _saveChecklist({bool draft = false}) async {
     final equipment = _selectedEquipment;
     if (equipment == null) {
       return;
     }
     final missing = _missingChecklistItems();
-    if (missing.isNotEmpty) {
+    if (!draft && missing.isNotEmpty) {
       setState(() {
         _savingChecklist = false;
         _checklistMessage = null;
@@ -736,7 +784,17 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
     });
 
     try {
-      final savedResponses = _buildChecklistResponses();
+      var savedResponses = _buildChecklistResponses(onlyFilled: draft);
+      if (_isAnnualChecklist && !draft) {
+        savedResponses = [
+          ...savedResponses,
+          WorkOrderChecklistResponse(
+            code: _annualStage.completionCode,
+            kind: 'etapa',
+            value: 'concluida',
+          ),
+        ];
+      }
       final pendingBefore = await widget.repository.pendingSyncCount();
       await widget.repository.saveChecklist(
         _order,
@@ -754,7 +812,8 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
           equipment.checklistResponses,
           savedResponses,
         );
-        final completed = _isEquipmentChecklistComplete(mergedResponses);
+        final completed =
+            !draft && _isEquipmentChecklistComplete(mergedResponses);
         _updateEquipmentChecklist(
           equipment.id,
           responses: mergedResponses,
@@ -766,11 +825,13 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
         );
         _savingChecklist = false;
         _checklistSaved = _allEquipmentsHandled;
-        _checklistMessage = completed
+        _checklistMessage = draft
+            ? 'Rascunho salvo.'
+            : completed
             ? _allEquipmentsHandled
                   ? 'Todos os equipamentos foram concluidos. Pode finalizar a OS.'
                   : 'Maquina concluida. Faltam $_pendingEquipmentCount.'
-            : 'Checklist parcial salvo para esta máquina.';
+            : 'Etapa concluida. Selecione a outra etapa para continuar.';
         _selectedEquipment = null;
         _editingMachine = false;
         _checklistStarted = false;
@@ -821,9 +882,11 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
         .where((response) => response.value.trim().isNotEmpty)
         .map((response) => response.code)
         .toSet();
-    return _order.effectiveChecklist
+    final itemsComplete = _order.effectiveChecklist
         .where((item) => item.required && item.kind != 'finalizacao')
         .every((item) => completedCodes.contains(item.code));
+    return itemsComplete &&
+        (!_isAnnualChecklist || annualChecklistStagesComplete(responses));
   }
 
   Future<void> _finishWorkOrder() async {
@@ -995,26 +1058,50 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
   }
 
   List<WorkOrderChecklistItem> get _visibleChecklistItems {
-    return _order.effectiveChecklist;
+    if (!_isAnnualChecklist) {
+      return _order.effectiveChecklist;
+    }
+    return _order.effectiveChecklist
+        .where((item) => item.stage == _annualStage.code)
+        .toList();
   }
 
-  List<WorkOrderChecklistResponse> _buildChecklistResponses() {
-    return _visibleChecklistItems.map((item) {
-      final textValue = _textControllers[item.code]?.text.trim();
-      final value = switch (item.kind) {
-        'texto' || 'numerico' => textValue ?? '',
-        'foto' => _checklistValues[item.code] ?? 'pendente',
-        'finalizacao' => _checklistValues[item.code] ?? 'pendente',
-        _ => _checklistValues[item.code] ?? '',
-      };
-      final note = _noteControllers[item.code]?.text.trim();
-      return WorkOrderChecklistResponse(
-        code: item.code,
-        kind: item.kind,
-        value: value,
-        note: note == null || note.isEmpty ? null : note,
+  bool get _isAnnualChecklist => _order.checklistType == 'anual';
+
+  Set<AnnualChecklistStage> get _completedAnnualStages =>
+      annualChecklistCompletedStages(
+        _selectedEquipment?.checklistResponses ?? const [],
       );
-    }).toList();
+
+  bool get _isActiveAnnualStageComplete =>
+      _isAnnualChecklist && _completedAnnualStages.contains(_annualStage);
+
+  List<WorkOrderChecklistResponse> _buildChecklistResponses({
+    bool onlyFilled = false,
+  }) {
+    return _visibleChecklistItems
+        .map((item) {
+          final textValue = _textControllers[item.code]?.text.trim();
+          final value = switch (item.kind) {
+            'texto' || 'numerico' => textValue ?? '',
+            'foto' => _checklistValues[item.code] ?? 'pendente',
+            'finalizacao' => _checklistValues[item.code] ?? 'pendente',
+            _ => _checklistValues[item.code] ?? '',
+          };
+          final note = _noteControllers[item.code]?.text.trim();
+          return WorkOrderChecklistResponse(
+            code: item.code,
+            kind: item.kind,
+            value: value,
+            note: note == null || note.isEmpty ? null : note,
+          );
+        })
+        .where((response) {
+          return !onlyFilled ||
+              (response.value.trim().isNotEmpty &&
+                  response.value != 'pendente');
+        })
+        .toList();
   }
 
   List<WorkOrderChecklistItem> _missingChecklistItems() {
@@ -1131,6 +1218,23 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
   List<Widget> _checklistWidgets() {
     final widgets = <Widget>[];
     String? currentGroup;
+
+    if (_isAnnualChecklist) {
+      widgets.add(
+        AnnualChecklistStageSelector(
+          value: _annualStage,
+          completedStages: _completedAnnualStages,
+          onChanged: (stage) {
+            setState(() {
+              _annualStage = stage;
+              _highlightedChecklistCodes.clear();
+              _errorMessage = null;
+            });
+          },
+        ),
+      );
+      widgets.add(const SizedBox(height: 12));
+    }
 
     widgets.add(
       _ChecklistProgressSummary(
@@ -1267,6 +1371,9 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
       onTap: () {
         setState(() {
           _selectedEquipment = equipment;
+          _annualStage = firstIncompleteAnnualChecklistStage(
+            equipment.checklistResponses,
+          );
           _editingMachine = !equipment.hasRequiredMachineData();
           _loadMachineForm(equipment);
           _checklistStarted = false;

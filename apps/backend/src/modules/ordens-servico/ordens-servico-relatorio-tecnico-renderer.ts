@@ -71,6 +71,10 @@ export class OrdensServicoRelatorioTecnicoRenderer {
   private deveExibirRespostaChecklist(resposta: { codigo: string; valor: string }) {
     const valor = resposta.valor?.trim() ?? "";
 
+    if (/^ANU_ETAPA_.*_CONCLUIDA$/.test(resposta.codigo)) {
+      return false;
+    }
+
     if (!valor || /^pendente$/i.test(valor)) {
       return false;
     }
@@ -320,7 +324,13 @@ export class OrdensServicoRelatorioTecnicoRenderer {
   }
 
   private formatarTipoServico(tipo: OrdemServicoTipoServico) {
-    return tipo === OrdemServicoTipoServico.corretiva ? "Corretiva" : "Preventiva";
+    if (tipo === OrdemServicoTipoServico.corretiva) {
+      return "Corretiva";
+    }
+    if (tipo === OrdemServicoTipoServico.instalacao) {
+      return "Instalação";
+    }
+    return "Preventiva";
   }
 
   private formatarDataHora(data: Date | null) {

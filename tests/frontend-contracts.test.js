@@ -181,6 +181,7 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(html, /name="checklist_tipo"/);
   assert.match(html, /Preventiva/);
   assert.match(html, /Corretiva/);
+  assert.match(html, /Instalação|Instalacao/);
   assert.match(html, /name="agendada_para"/);
   assert.match(html, /name="tecnico_id"/);
   assert.match(html, /id="recorrenciasView"/);

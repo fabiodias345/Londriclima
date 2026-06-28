@@ -95,6 +95,7 @@ enum ChecklistTipo {
 enum OrdemServicoTipoServico {
   preventiva
   corretiva
+  instalacao
 }
 
 model Empresa {

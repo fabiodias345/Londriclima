@@ -196,6 +196,54 @@ test("reprogramarOrdemAgenda atualiza horario e responsaveis de OS operacional",
   });
 });
 
+test("reprogramarOrdemAgenda instalaçao usa checklist mensal neutro", async () => {
+  const chamadas = {
+    updateData: undefined as unknown
+  };
+  const tx = {
+    ordemServico: {
+      findUnique: async () => ({
+        id: "os-1",
+        empresaId: "empresa-1",
+        status: OrdemServicoStatus.aberta,
+        clienteId: "cliente-antigo"
+      }),
+      update: async ({ data }: { data: unknown }) => {
+        chamadas.updateData = data;
+        return {
+          id: "os-1",
+          status: OrdemServicoStatus.aberta,
+          atualizadaEm: new Date("2026-06-18T12:00:00.000Z")
+        };
+      }
+    },
+    cliente: {
+      findFirst: async () => ({
+        id: "cliente-1",
+        enderecos: [{ id: "endereco-1" }]
+      })
+    }
+  };
+  const service = criarService({
+    $transaction: async (callback: (value: unknown) => unknown) => callback(tx)
+  });
+
+  await service.reprogramarOrdemAgenda(
+    "os-1",
+    {
+      cliente_id: "cliente-1",
+      titulo: "Instalacao split",
+      tipo_servico: OrdemServicoTipoServico.instalacao,
+      checklist_tipo: ChecklistTipo.anual,
+      agendada_para: "2026-06-18T13:30:00.000Z"
+    },
+    usuario
+  );
+
+  assert.equal((chamadas.updateData as { tipoServico: OrdemServicoTipoServico }).tipoServico, OrdemServicoTipoServico.instalacao);
+  assert.equal((chamadas.updateData as { checklistTipo: ChecklistTipo }).checklistTipo, ChecklistTipo.mensal);
+});
+
 test("listarAgenda retorna checklist_tipo para conferencia do app tecnico", async () => {
   const chamadas = {
     where: undefined as unknown

@@ -1512,7 +1512,7 @@ void main() {
     expect(find.text('Quarto'), findsWidgets);
   });
 
-  testWidgets('checklist simplificado mostra respostas e ordem anual', (
+  testWidgets('checklist anual salva rascunho e conclui as duas etapas', (
     tester,
   ) async {
     final repository = _RepositorioDeTeste(
@@ -1522,31 +1522,32 @@ void main() {
       equipments: _singleEquipment,
       checklist: const [
         WorkOrderChecklistItem(
-          code: 'ANU_HIGIENIZACAO_EVAP',
-          label: 'Higienização completa da evaporadora',
+          code: 'ANU_EVAP_1',
+          label: 'Evaporadora 1',
           kind: 'select_obs',
           options: ['Executado', 'Não executado'],
           stage: 'evaporadora',
         ),
         WorkOrderChecklistItem(
-          code: 'ANU_HIGIENIZACAO_COND',
-          label: 'Higienização completa da condensadora',
+          code: 'ANU_EVAP_2',
+          label: 'Evaporadora 2',
+          kind: 'select_obs',
+          options: ['Executado', 'Não executado'],
+          stage: 'evaporadora',
+        ),
+        WorkOrderChecklistItem(
+          code: 'ANU_COND_1',
+          label: 'Condensadora 1',
           kind: 'select_obs',
           options: ['Executado', 'Não executado'],
           stage: 'condensadora',
         ),
         WorkOrderChecklistItem(
-          code: 'ANU_CIRCUITO',
-          label: 'Verificação completa do circuito frigorífico',
+          code: 'ANU_COND_2',
+          label: 'Condensadora 2',
           kind: 'select_obs',
-          options: ['Normal', 'Irregularidade encontrada', 'Não testado'],
-        ),
-        WorkOrderChecklistItem(
-          code: 'ANU_TEMP_INSUFLAMENTO',
-          label: 'Temperatura de insuflamento',
-          kind: 'numerico',
-          unit: '°C',
-          stage: 'medicoes',
+          options: ['Executado', 'Não executado'],
+          stage: 'condensadora',
         ),
       ],
     );
@@ -1572,8 +1573,6 @@ void main() {
     await tester.tap(find.byKey(const Key('stepTab_machines')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('annualStageOrder')), findsNothing);
-
     await tester.scrollUntilVisible(
       find.byKey(const Key('selectEquipment_EQ-102')),
       240,
@@ -1592,32 +1591,198 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.byKey(const Key('checklist_choice_ANU_HIGIENIZACAO_EVAP_Executado')),
+      find.byKey(const Key('checklist_choice_ANU_EVAP_1_Executado')),
       findsOneWidget,
     );
     expect(
-      find.byKey(const Key('checklist_choice_ANU_HIGIENIZACAO_COND_Executado')),
-      findsOneWidget,
+      find.byKey(const Key('checklist_choice_ANU_COND_1_Executado')),
+      findsNothing,
+    );
+    await tester.tap(
+      find.byKey(const Key('checklist_choice_ANU_EVAP_1_Executado')),
+    );
+    await tester.tap(
+      find.byKey(const Key('checklist_choice_ANU_EVAP_2_Executado')),
+    );
+    await tester.tap(find.byKey(const Key('saveAnnualDraftButton')));
+    await tester.pumpAndSettle();
+    expect(repository.savedChecklistResponses, {
+      'ANU_EVAP_1': 'Executado',
+      'ANU_EVAP_2': 'Executado',
+    });
+
+    await tester.tap(find.byKey(const Key('selectEquipment_EQ-102')));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('checklistReadyButton')),
+      240,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.byKey(const Key('checklistReadyButton')));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<ChoiceChip>(
+            find.byKey(const Key('checklist_choice_ANU_EVAP_1_Executado')),
+          )
+          .selected,
+      isTrue,
+    );
+
+    await tester.tap(find.byKey(const Key('annualStage_condensadora')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('checklist_choice_ANU_EVAP_1_Executado')),
+      findsNothing,
     );
     expect(
-      find.byKey(const Key('checklist_choice_ANU_CIRCUITO_Normal')),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(const Key('checklist_number_ANU_TEMP_INSUFLAMENTO')),
+      find.byKey(const Key('checklist_choice_ANU_COND_1_Executado')),
       findsOneWidget,
     );
     await tester.tap(
-      find.byKey(
-        const Key('checklist_choice_ANU_HIGIENIZACAO_EVAP_Não executado'),
-      ),
+      find.byKey(const Key('checklist_choice_ANU_COND_1_Executado')),
     );
+    await tester.tap(
+      find.byKey(const Key('checklist_choice_ANU_COND_2_Executado')),
+    );
+    await tester.tap(find.byKey(const Key('completeAnnualStageButton')));
     await tester.pumpAndSettle();
-    expect(
-      find.byKey(const Key('checklist_obs_ANU_HIGIENIZACAO_EVAP')),
-      findsOneWidget,
+    expect(find.text('Concluidas'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('selectEquipment_EQ-102')));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('checklistReadyButton')),
+      240,
+      scrollable: find.byType(Scrollable).first,
     );
+    await tester.tap(find.byKey(const Key('checklistReadyButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('completeAnnualStageButton')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('finishWorkOrderButton')), findsOneWidget);
   });
+
+  testWidgets(
+    'checklist anual abre etapa pendente e bloqueia etapa concluida',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(900, 1600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final repository = _RepositorioDeTeste(
+        status: WorkOrderStatus.inProgress,
+        backendStatus: 'em_atendimento',
+        checklistType: 'anual',
+        equipments: const [
+          WorkOrderEquipment(
+            id: 'EQ-102',
+            qrCode: 'QR-102',
+            type: 'Split',
+            brand: 'Samsung',
+            name: 'Sala 102',
+            location: 'Sala 102',
+            model: 'Split API',
+            btus: 24000,
+            gas: 'R-410A',
+            serialNumber: 'SN-102',
+            executionStatus: 'em_andamento',
+            checklistResponses: [
+              WorkOrderChecklistResponse(
+                code: 'ANU_EVAP',
+                kind: 'select_obs',
+                value: 'Executado',
+              ),
+              WorkOrderChecklistResponse(
+                code: 'ANU_ETAPA_EVAPORADORA_CONCLUIDA',
+                kind: 'etapa',
+                value: 'concluida',
+              ),
+            ],
+          ),
+        ],
+        checklist: const [
+          WorkOrderChecklistItem(
+            code: 'ANU_EVAP',
+            label: 'Evaporadora',
+            kind: 'select_obs',
+            options: ['Executado'],
+            stage: 'evaporadora',
+          ),
+          WorkOrderChecklistItem(
+            code: 'ANU_COND',
+            label: 'Condensadora',
+            kind: 'select_obs',
+            options: ['Executado'],
+            stage: 'condensadora',
+          ),
+        ],
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: LoginScreen(
+            loginGateway: _GatewayDeTeste(repository: repository),
+            locationService: const _LocationServiceTeste(),
+          ),
+        ),
+      );
+      await tester.enterText(find.byKey(const Key('loginUserField')), 'teste');
+      await tester.enterText(
+        find.byKey(const Key('loginPasswordField')),
+        '123456',
+      );
+      await tester.tap(find.byKey(const Key('loginSubmitButton')));
+      await tester.pumpAndSettle();
+      await _openMaintenance(tester);
+      await tester.tap(find.text('Cliente API'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('stepTab_machines')));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('selectEquipment_EQ-102')),
+        240,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.byKey(const Key('selectEquipment_EQ-102')));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('checklistReadyButton')),
+        240,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.byKey(const Key('checklistReadyButton')));
+      await tester.pumpAndSettle();
+
+      expect(
+        tester
+            .widget<ChoiceChip>(
+              find.byKey(const Key('annualStage_condensadora')),
+            )
+            .selected,
+        isTrue,
+      );
+      expect(
+        find.byKey(const Key('annualStageCompleted_evaporadora')),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const Key('annualStage_evaporadora')));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<OutlinedButton>(
+              find.byKey(const Key('saveAnnualDraftButton')),
+            )
+            .onPressed,
+        isNull,
+      );
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.byKey(const Key('completeAnnualStageButton')),
+            )
+            .onPressed,
+        isNull,
+      );
+    },
+  );
 
   testWidgets('dashboard registra abastecimento simples', (tester) async {
     final fleetRepository = FakeFleetRepository();

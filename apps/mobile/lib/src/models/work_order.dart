@@ -45,9 +45,14 @@ class WorkOrder {
 
   bool get isCorrective => serviceType == 'corretiva';
 
+  bool get isInstallation => serviceType == 'instalacao';
+
   String get serviceLabel {
     if (isCorrective) {
       return 'Corretiva';
+    }
+    if (isInstallation) {
+      return 'Instalação';
     }
 
     return 'Preventiva ${_checklistTypeLabel(checklistType).toLowerCase()}';

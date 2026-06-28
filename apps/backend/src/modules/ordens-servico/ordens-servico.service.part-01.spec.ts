@@ -12,6 +12,10 @@ UsuarioRole
 import * as assert from "node:assert/strict";
 import { test } from "node:test";
 import { OrdensServicoService } from "./ordens-servico.service";
+import {
+  codigosObrigatoriosChecklist,
+  codigosObrigatoriosChecklistEtapaAnual
+} from "../mobile/mobile-checklists";
 
 const usuario = {
   id: "usuario-1",
@@ -488,6 +492,83 @@ test("registrarChecklist salva respostas estruturadas por equipamento", async ()
   assert.equal(resposta.respostas_salvas, 2);
 });
 
+test("registrarChecklist rejeita conclusao anual com etapa incompleta", async () => {
+  let persistidas = [
+    { codigo: "ANU_CONTROLE", valor: "Normal" },
+    { codigo: "ANU_HIGIENIZACAO_EVAP", valor: "Executado" }
+  ];
+  const tx = {
+    ordemServico: {
+      findUnique: async () => ({
+        id: "os-1",
+        empresaId: "empresa-1",
+        clienteId: "cliente-1",
+        status: OrdemServicoStatus.em_atendimento,
+        checklistTipo: ChecklistTipo.anual,
+        evidencias: [{ tipo: EvidenciaTipo.antes }],
+        checklist: null
+      })
+    },
+    equipamento: { findFirst: async () => ({ id: "equip-1" }) },
+    ordemServicoChecklistResposta: {
+      findMany: async () => persistidas,
+      upsert: async () => undefined
+    },
+    ordemServicoChecklist: {
+      create: async () => ({ id: "checklist-1", pecas: [] })
+    }
+  };
+  const service = criarService({
+    $transaction: async (callback: (value: unknown) => unknown) => callback(tx)
+  });
+
+  await assert.rejects(
+    () =>
+      service.registrarChecklist(
+        "os-1",
+        {
+          equipamento_id: "equip-1",
+          checklist_tipo: ChecklistTipo.anual,
+          servico_realizado: "Etapa evaporadora",
+          respostas: [
+            {
+              codigo: "ANU_ETAPA_EVAPORADORA_CONCLUIDA",
+              tipo: "etapa",
+              valor: "concluida"
+            }
+          ]
+        },
+        usuario
+      ),
+    /etapa evaporadora.*incompleta/i
+  );
+
+  persistidas = codigosObrigatoriosChecklistEtapaAnual("evaporadora").map((codigo) => ({
+    codigo,
+    valor: "Executado"
+  }));
+  await assert.rejects(
+    () =>
+      service.registrarChecklist(
+        "os-1",
+        {
+          equipamento_id: "equip-1",
+          checklist_tipo: ChecklistTipo.anual,
+          servico_realizado: "Etapa evaporadora",
+          respostas: [
+            {
+              codigo: "ANU_ETAPA_EVAPORADORA_CONCLUIDA",
+              tipo: "texto",
+              valor: "sim"
+            }
+          ]
+        },
+        usuario
+      ),
+    /marcador.*invalido/i
+  );
+});
+
 test("finalizarOs conclui a OS, registra assinatura, evento e automacoes", async () => {
   const chamadas = {
     assinaturaData: undefined as unknown,
@@ -599,7 +680,14 @@ test("finalizarOs agenda relatorio tecnico por email para cliente sem PMOC", asy
             },
             { equipamentoId: "equip-1", codigo: "C4", tipo: "texto", valor: "Produtos de limpeza", observacao: null },
             { equipamentoId: "equip-1", codigo: "C5", tipo: "texto", valor: "Funcionando", observacao: null },
-            { equipamentoId: "equip-1", codigo: "C6", tipo: "texto", valor: "pendente", observacao: null }
+            { equipamentoId: "equip-1", codigo: "C6", tipo: "texto", valor: "pendente", observacao: null },
+            {
+              equipamentoId: "equip-1",
+              codigo: "ANU_ETAPA_EVAPORADORA_CONCLUIDA",
+              tipo: "etapa",
+              valor: "concluida",
+              observacao: null
+            }
           ]
         }),
       update: async () => undefined
@@ -644,6 +732,7 @@ test("finalizarOs agenda relatorio tecnico por email para cliente sem PMOC", asy
   assert.match(pdfText, /\/Subtype \/Image/);
   assert.doesNotMatch(pdfText, /Foto do atendimento: \/storage/);
   assert.doesNotMatch(pdfText, /C3\.jpg|C6: pendente/);
+  assert.doesNotMatch(pdfText, /ANU_ETAPA_|EVAPORADORA_CONCLUIDA/);
   assert.doesNotMatch(pdfText, /OS: os-1/);
   assert.doesNotMatch(pdfText, /Preventiva/);
   assert.doesNotMatch(pdfText, /Engenheiro|CREA|ART|PMOC/);
@@ -716,6 +805,73 @@ test("finalizarOs bloqueia OS multi-equipamento com maquina pendente", async () 
     $transaction: async (callback: (tx: unknown) => unknown) => callback(tx)
   };
   const service = criarService(prisma);
+
+  await assert.rejects(
+    () => service.finalizarOs("os-1", finalizarDto, usuario),
+    /Finalize todos os equipamentos/
+  );
+});
+
+test("finalizarOs anual exige marcadores das duas etapas", async () => {
+  const tx = {
+    ordemServico: {
+      findUnique: async () =>
+        criarOrdemProntaParaFinalizar({
+          tipoServico: OrdemServicoTipoServico.preventiva,
+          checklistTipo: ChecklistTipo.anual,
+          equipamento: null,
+          cliente: { equipamentos: [{ id: "equip-1" }] },
+          checklistRespostas: [
+            ...codigosObrigatoriosChecklist(ChecklistTipo.anual).map((codigo) => ({
+              equipamentoId: "equip-1",
+              codigo,
+              tipo: "select_obs",
+              valor: "Executado"
+            })),
+            {
+              equipamentoId: "equip-1",
+              codigo: "ANU_ETAPA_EVAPORADORA_CONCLUIDA",
+              tipo: "texto",
+              valor: "concluida"
+            },
+            {
+              equipamentoId: "equip-1",
+              codigo: "ANU_ETAPA_CONDENSADORA_CONCLUIDA",
+              tipo: "etapa",
+              valor: "sim"
+            }
+          ]
+        })
+    }
+  };
+  const service = criarService({
+    $transaction: async (callback: (value: unknown) => unknown) => callback(tx)
+  });
+
+  await assert.rejects(
+    () => service.finalizarOs("os-1", finalizarDto, usuario),
+    /Finalize todos os equipamentos/
+  );
+});
+
+test("finalizarOs instalacao exige checklist proprio completo", async () => {
+  const tx = {
+    ordemServico: {
+      findUnique: async () =>
+        criarOrdemProntaParaFinalizar({
+          tipoServico: OrdemServicoTipoServico.instalacao,
+          checklistTipo: ChecklistTipo.mensal,
+          equipamento: null,
+          cliente: { equipamentos: [{ id: "equip-1" }] },
+          checklistRespostas: [
+            { equipamentoId: "equip-1", codigo: "INS_FIXACAO", tipo: "select_obs", valor: "Executado" }
+          ]
+        })
+    }
+  };
+  const service = criarService({
+    $transaction: async (callback: (value: unknown) => unknown) => callback(tx)
+  });
 
   await assert.rejects(
     () => service.finalizarOs("os-1", finalizarDto, usuario),

@@ -402,8 +402,11 @@ function formatOsServiceType(item) {
   if (item.tipo_servico === "corretiva") {
     return "Corretiva";
   }
+  if (item.tipo_servico === "instalacao") {
+    return "Instalação";
+  }
 
-  return \`Preventiva \${formatChecklistTipo(item.checklist_tipo).toLowerCase()}\`;
+  return `Preventiva ${formatChecklistTipo(item.checklist_tipo).toLowerCase()}`;
 }
 
 function renderOsTimeline(item) {

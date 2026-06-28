@@ -101,6 +101,55 @@ void main() {
     expect(await repository.pendingSyncCount(), 0);
   });
 
+  test('rascunho anual completo continua em andamento offline', () async {
+    final order = _order(
+      checklistType: 'anual',
+      checklist: const [
+        WorkOrderChecklistItem(
+          code: 'ANU_EVAP',
+          label: 'Evaporadora',
+          kind: 'select_obs',
+          stage: 'evaporadora',
+        ),
+        WorkOrderChecklistItem(
+          code: 'ANU_COND',
+          label: 'Condensadora',
+          kind: 'select_obs',
+          stage: 'condensadora',
+        ),
+      ],
+    );
+    final remote = _RemoteRepository(
+      failChecklistAlways: true,
+      listedOrder: order,
+    );
+    final repository = OfflineWorkOrderRepository(
+      remote: remote,
+      store: MemoryOfflineSyncStore(),
+    );
+
+    await repository.saveChecklist(
+      order,
+      equipmentId: 'EQ-1',
+      checklistType: 'anual',
+      responses: const [
+        WorkOrderChecklistResponse(
+          code: 'ANU_EVAP',
+          kind: 'select_obs',
+          value: 'Executado',
+        ),
+        WorkOrderChecklistResponse(
+          code: 'ANU_COND',
+          kind: 'select_obs',
+          value: 'Executado',
+        ),
+      ],
+    );
+
+    final orders = await repository.listMine();
+    expect(orders.single.equipments.single.executionStatus, 'em_andamento');
+  });
+
   test('sincronizar fila reenvia checklist pendente e limpa fila', () async {
     final remote = _RemoteRepository(failNextChecklist: true);
     final store = MemoryOfflineSyncStore();
@@ -154,6 +203,117 @@ void main() {
       expect(await repository.pendingSyncCount(), 0);
     },
   );
+
+  test('reinicio deduplica varios itens pendentes da mesma OS', () async {
+    final store = MemoryOfflineSyncStore();
+    final remote = _RemoteRepository(
+      failChecklistAlways: true,
+      failPhotosAlways: true,
+    );
+    final order = _order();
+    final repository = OfflineWorkOrderRepository(remote: remote, store: store);
+
+    await repository.saveChecklist(
+      order,
+      equipmentId: 'EQ-1',
+      checklistType: 'mensal',
+      responses: const [
+        WorkOrderChecklistResponse(code: 'M1', kind: 'checkbox', value: 'true'),
+      ],
+    );
+    await repository.saveChecklistPhoto(
+      order,
+      equipmentId: 'EQ-1',
+      code: 'M4',
+      photo: const ChecklistPhotoFile(
+        filename: 'foto.jpg',
+        mimeType: 'image/jpeg',
+        bytes: [1, 2, 3],
+      ),
+    );
+    remote.failListMine = true;
+
+    final restarted = OfflineWorkOrderRepository(remote: remote, store: store);
+    final orders = await restarted.listMine();
+
+    expect(orders, hasLength(1));
+    expect(orders.single.id, 'OS-1');
+  });
+
+  test(
+    'sync troca URL offline pela URL remota antes de enviar checklist',
+    () async {
+      final remote = _RemoteRepository(
+        failNextChecklist: true,
+        failNextPhoto: true,
+      );
+      final repository = OfflineWorkOrderRepository(
+        remote: remote,
+        store: MemoryOfflineSyncStore(),
+      );
+      final order = _order();
+      final localUrl = await repository.saveChecklistPhoto(
+        order,
+        equipmentId: 'EQ-1',
+        code: 'M4',
+        photo: const ChecklistPhotoFile(
+          filename: 'foto.jpg',
+          mimeType: 'image/jpeg',
+          bytes: [1, 2, 3],
+        ),
+      );
+      await repository.saveChecklist(
+        order,
+        equipmentId: 'EQ-1',
+        checklistType: 'mensal',
+        responses: [
+          WorkOrderChecklistResponse(code: 'M4', kind: 'foto', value: localUrl),
+        ],
+      );
+
+      final result = await repository.syncPending();
+
+      expect(result.failed, 0);
+      expect(remote.savedResponseValues['M4'], '/storage/foto.jpg');
+    },
+  );
+
+  test('sync mantem checklist pendente quando upload da foto falha', () async {
+    final remote = _RemoteRepository(
+      failNextChecklist: true,
+      failNextPhoto: true,
+    );
+    final repository = OfflineWorkOrderRepository(
+      remote: remote,
+      store: MemoryOfflineSyncStore(),
+    );
+    final order = _order();
+    final localUrl = await repository.saveChecklistPhoto(
+      order,
+      equipmentId: 'EQ-1',
+      code: 'M4',
+      photo: const ChecklistPhotoFile(
+        filename: 'foto.jpg',
+        mimeType: 'image/jpeg',
+        bytes: [1, 2, 3],
+      ),
+    );
+    await repository.saveChecklist(
+      order,
+      equipmentId: 'EQ-1',
+      checklistType: 'mensal',
+      responses: [
+        WorkOrderChecklistResponse(code: 'M4', kind: 'foto', value: localUrl),
+      ],
+    );
+    remote.failNextPhoto = true;
+
+    final result = await repository.syncPending();
+
+    expect(result.failed, 2);
+    expect(remote.savedChecklists, 0);
+    expect(await repository.pendingSyncCount(), 2);
+  });
 }
 
 WorkOrder _order({
@@ -186,15 +346,28 @@ class _RemoteRepository implements WorkOrderRepository {
   _RemoteRepository({
     this.failNextChecklist = false,
     this.failChecklistAlways = false,
+    this.listedOrder,
+    this.failNextPhoto = false,
+    this.failPhotosAlways = false,
   });
 
   bool failNextChecklist;
   bool failChecklistAlways;
+  final WorkOrder? listedOrder;
+  bool failNextPhoto;
+  bool failPhotosAlways;
+  bool failListMine = false;
   int savedChecklists = 0;
   final Set<String> savedResponseCodes = {};
+  final Map<String, String> savedResponseValues = {};
 
   @override
-  Future<List<WorkOrder>> listMine() async => [_order()];
+  Future<List<WorkOrder>> listMine() async {
+    if (failListMine) {
+      throw const SocketException('offline');
+    }
+    return [listedOrder ?? _order()];
+  }
 
   @override
   Future<WorkOrder> startService(
@@ -242,6 +415,9 @@ class _RemoteRepository implements WorkOrderRepository {
     }
     savedChecklists += 1;
     savedResponseCodes.addAll(responses.map((response) => response.code));
+    savedResponseValues.addAll({
+      for (final response in responses) response.code: response.value,
+    });
   }
 
   @override
@@ -251,6 +427,10 @@ class _RemoteRepository implements WorkOrderRepository {
     required String code,
     required ChecklistPhotoFile photo,
   }) async {
+    if (failPhotosAlways || failNextPhoto) {
+      failNextPhoto = false;
+      throw const SocketException('offline');
+    }
     return '/storage/foto.jpg';
   }
 

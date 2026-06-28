@@ -520,7 +520,8 @@ test("gerarPdfRelatorioAvulsoCliente separa duas manutencoes da mesma maquina", 
     checklistRespostas: [
       { codigo: "C1", tipo: "texto", valor: "queimou o compressor", observacao: null },
       { codigo: "C2", tipo: "texto", valor: "trocado o mesmo", observacao: null },
-      { codigo: "C4", tipo: "texto", valor: "compressor", observacao: null }
+      { codigo: "C4", tipo: "texto", valor: "compressor", observacao: null },
+      { codigo: "ANU_ETAPA_EVAPORADORA_CONCLUIDA", tipo: "etapa", valor: "concluida", observacao: null }
     ]
   });
   const prisma = {
@@ -555,6 +556,7 @@ test("gerarPdfRelatorioAvulsoCliente separa duas manutencoes da mesma maquina", 
     assert.match(textoPdf, /Antes --- antes\.jpg/);
     assert.match(textoPdf, /Depois --- depois\.jpg/);
     assert.match(textoPdf, /\/Subtype \/Image/);
+    assert.doesNotMatch(textoPdf, /ANU_ETAPA_|Etapa evaporadora concluida/i);
   } finally {
     rmSync(resolve(process.cwd(), "..", "..", "storage", "os", "os-equipamento-1-corretiva"), { recursive: true, force: true });
   }

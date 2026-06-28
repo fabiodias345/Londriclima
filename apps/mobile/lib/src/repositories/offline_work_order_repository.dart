@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import '../models/annual_checklist_flow.dart';
 import '../models/work_order.dart';
 import '../services/location_service.dart';
 import 'offline_sync_store.dart';
@@ -32,10 +33,15 @@ class OfflineWorkOrderRepository implements WorkOrderRepository {
 
     final pending = await store.readAll();
     if (_cachedOrders.isEmpty && pending.isNotEmpty) {
-      _cachedOrders = pending
-          .where((item) => item['order'] is Map<String, dynamic>)
-          .map((item) => _orderFromJson(item['order'] as Map<String, dynamic>))
-          .toList();
+      final byId = <String, WorkOrder>{};
+      for (final item in pending.where(
+        (item) => item['order'] is Map<String, dynamic>,
+      )) {
+        final order = _orderFromJson(item['order'] as Map<String, dynamic>);
+        final orderId = item['order_id']?.toString();
+        byId[orderId == null || orderId.isEmpty ? order.id : orderId] = order;
+      }
+      _cachedOrders = byId.values.toList();
     }
 
     final pendingIds = pending
@@ -61,9 +67,13 @@ class OfflineWorkOrderRepository implements WorkOrderRepository {
             .where((response) => response.value.isNotEmpty)
             .map((response) => response.code)
             .toSet();
-        final complete = order.effectiveChecklist
+        final itemsComplete = order.effectiveChecklist
             .where((item) => item.required && item.kind != 'finalizacao')
             .every((item) => completedCodes.contains(item.code));
+        final complete =
+            itemsComplete &&
+            (order.checklistType != 'anual' ||
+                annualChecklistStagesComplete(responses));
         return equipment.copyWith(
           executionStatus: complete ? 'aguardando_sync' : 'em_andamento',
           checklistResponses: responses,
@@ -253,14 +263,28 @@ class OfflineWorkOrderRepository implements WorkOrderRepository {
     final remaining = <Map<String, dynamic>>[];
     var synced = 0;
     var failed = 0;
+    final urlReplacements = <String, String>{};
+    final failedPhotoUrls = <String>{};
 
     for (final item in pending) {
+      _replaceOfflineUrls(item, urlReplacements);
+      if (_dependsOnFailedPhoto(item, failedPhotoUrls)) {
+        failed += 1;
+        remaining.add(item);
+        continue;
+      }
       try {
-        await _sendPendingItem(item);
+        final replacement = await _sendPendingItem(item);
+        if (replacement != null) {
+          urlReplacements[replacement.key] = replacement.value;
+        }
         synced += 1;
       } on Object catch (error) {
         failed += 1;
         remaining.add(item);
+        if (item['kind'] == 'checklist_photo') {
+          failedPhotoUrls.add(_offlinePhotoUrl(item));
+        }
         if (!_isOffline(error)) {
           continue;
         }
@@ -271,7 +295,9 @@ class OfflineWorkOrderRepository implements WorkOrderRepository {
     return OfflineSyncResult(synced: synced, failed: failed);
   }
 
-  Future<void> _sendPendingItem(Map<String, dynamic> item) async {
+  Future<MapEntry<String, String>?> _sendPendingItem(
+    Map<String, dynamic> item,
+  ) async {
     final order = _orderFromJson(item['order'] as Map<String, dynamic>);
     switch (item['kind']) {
       case 'checklist':
@@ -284,36 +310,74 @@ class OfflineWorkOrderRepository implements WorkOrderRepository {
               .map(_responseFromJson)
               .toList(),
         );
-        break;
+        return null;
       case 'checklist_photo':
-        await remote.saveChecklistPhoto(
+        final remoteUrl = await remote.saveChecklistPhoto(
           order,
           equipmentId: item['equipment_id'].toString(),
           code: item['code'].toString(),
           photo: _photoFromJson(item['photo'] as Map<String, dynamic>),
         );
-        break;
+        final localUrl = _offlinePhotoUrl(item);
+        return MapEntry(localUrl, remoteUrl);
       case 'initial_evidence':
         await remote.saveInitialEvidence(
           order,
           description: item['description'].toString(),
           photo: _photoFromJson(item['photo'] as Map<String, dynamic>),
         );
-        break;
+        return null;
       case 'final_evidence':
         await remote.saveFinalEvidence(
           order,
           description: item['description'].toString(),
           photo: _photoFromJson(item['photo'] as Map<String, dynamic>),
         );
-        break;
+        return null;
       case 'finish':
         await remote.finishWorkOrder(
           order,
           _finishInputFromJson(item['input'] as Map<String, dynamic>),
         );
-        break;
+        return null;
     }
+    return null;
+  }
+
+  void _replaceOfflineUrls(
+    Map<String, dynamic> item,
+    Map<String, String> replacements,
+  ) {
+    if (item['kind'] != 'checklist' || replacements.isEmpty) {
+      return;
+    }
+    for (final response in (item['responses'] as List? ?? const [])) {
+      if (response is! Map<String, dynamic>) {
+        continue;
+      }
+      final replacement = replacements[response['value']?.toString()];
+      if (replacement != null) {
+        response['value'] = replacement;
+      }
+    }
+  }
+
+  bool _dependsOnFailedPhoto(
+    Map<String, dynamic> item,
+    Set<String> failedPhotoUrls,
+  ) {
+    if (item['kind'] != 'checklist' || failedPhotoUrls.isEmpty) {
+      return false;
+    }
+    return (item['responses'] as List? ?? const []).any(
+      (response) =>
+          response is Map<String, dynamic> &&
+          failedPhotoUrls.contains(response['value']?.toString()),
+    );
+  }
+
+  String _offlinePhotoUrl(Map<String, dynamic> item) {
+    return 'offline://${item['order_id']}/checklist/${item['equipment_id']}/${item['code']}';
   }
 
   bool _isOffline(Object error) {

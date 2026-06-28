@@ -351,11 +351,14 @@ async function submitAgendaOs(event) {
 }
 
 function syncAgendaOsServiceFields() {
-  const isCorrective = agendaOsServiceTypeSelect?.value === "corretiva";
-  agendaOsChecklistTypeLabel?.classList.toggle("hidden", isCorrective);
+  const serviceType = agendaOsServiceTypeSelect?.value || "preventiva";
+  const isPreventive = serviceType === "preventiva";
+  const isCorrective = serviceType === "corretiva";
+  const isInstallation = serviceType === "instalacao";
+  agendaOsChecklistTypeLabel?.classList.toggle("hidden", !isPreventive);
 
   if (agendaOsChecklistTypeSelect) {
-    agendaOsChecklistTypeSelect.disabled = isCorrective;
+    agendaOsChecklistTypeSelect.disabled = !isPreventive;
   }
 
   const titleInput = agendaOsForm?.elements?.titulo;
@@ -370,7 +373,8 @@ function syncAgendaOsServiceFields() {
     "Manutencao preventiva trimestral",
     "Manutencao preventiva semestral",
     "Manutencao preventiva anual",
-    "Manutencao corretiva"
+    "Manutencao corretiva",
+    "Instalacao de ar-condicionado"
   ];
 
   if (currentTitle && !defaultTitles.includes(currentTitle)) {
@@ -379,7 +383,9 @@ function syncAgendaOsServiceFields() {
 
   titleInput.value = isCorrective
     ? "Manutencao corretiva"
-    : \`Manutencao preventiva \${agendaOsChecklistTypeSelect?.value || "mensal"}\`;
+    : isInstallation
+      ? "Instalacao de ar-condicionado"
+      : `Manutencao preventiva ${agendaOsChecklistTypeSelect?.value || "mensal"}`;
 }
 
 async function submitRecurrence(event) {

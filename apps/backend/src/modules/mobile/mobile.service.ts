@@ -1,9 +1,14 @@
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
-import { ChecklistTipo, OrdemServicoStatus, Prisma, UsuarioRole } from "@prisma/client";
+import { ChecklistTipo, OrdemServicoStatus, OrdemServicoTipoServico, Prisma, UsuarioRole } from "@prisma/client";
 import { PrismaService } from "../../database/prisma.service";
 import type { CriarAbastecimentoDto } from "../admin/dto/criar-abastecimento.dto";
 import type { AuthenticatedUser } from "../auth/auth-user";
-import { codigosObrigatoriosChecklist, montarChecklistMobile } from "./mobile-checklists";
+import {
+  codigosObrigatoriosChecklistPorServico,
+  marcadorConclusaoChecklistAnualValido,
+  MARCADORES_CONCLUSAO_CHECKLIST_ANUAL,
+  montarChecklistMobilePorServico
+} from "./mobile-checklists";
 
 const statusesCampo = [
   OrdemServicoStatus.aberta,
@@ -179,7 +184,10 @@ export class MobileService {
       tipo: ordem.titulo,
       tipo_servico: ordem.tipoServico ?? "preventiva",
       checklist_tipo: ordem.checklistTipo ?? ChecklistTipo.mensal,
-      checklist: montarChecklistMobile(ordem.checklistTipo ?? ChecklistTipo.mensal),
+      checklist: montarChecklistMobilePorServico(
+        ordem.tipoServico ?? OrdemServicoTipoServico.preventiva,
+        ordem.checklistTipo ?? ChecklistTipo.mensal
+      ),
       status: ordem.status,
       data: ordem.agendadaPara?.toISOString() ?? null,
       equipamento: this.descreverEquipamento(ordem.equipamento),
@@ -212,20 +220,30 @@ export class MobileService {
 
   private statusExecucaoEquipamento(ordem: any, equipamentoId: string) {
     const respostasEquipamento = this.respostasEquipamento(ordem, equipamentoId);
-    if (ordem.tipoServico === "corretiva") {
+    if (ordem.tipoServico === OrdemServicoTipoServico.corretiva) {
       return respostasEquipamento.some((resposta: any) => resposta.valor?.trim())
         ? "feito"
         : "pendente";
     }
     const tipo = ordem.checklistTipo ?? ChecklistTipo.mensal;
-    const obrigatorios = codigosObrigatoriosChecklist(tipo);
+    const obrigatorios = codigosObrigatoriosChecklistPorServico(
+      ordem.tipoServico ?? OrdemServicoTipoServico.preventiva,
+      tipo
+    );
     const respondidos = new Set(
       respostasEquipamento
         .filter((resposta: any) => resposta.valor?.trim())
         .map((resposta: any) => resposta.codigo)
     );
 
-    if (obrigatorios.every((codigo) => respondidos.has(codigo))) {
+    const etapasAnuaisConcluidas = tipo !== ChecklistTipo.anual ||
+      Object.values(MARCADORES_CONCLUSAO_CHECKLIST_ANUAL).every((codigo) =>
+        respostasEquipamento.some(
+          (resposta: any) => resposta.codigo === codigo && marcadorConclusaoChecklistAnualValido(resposta)
+        )
+      );
+
+    if (etapasAnuaisConcluidas && obrigatorios.every((codigo) => respondidos.has(codigo))) {
       return "feito";
     }
 

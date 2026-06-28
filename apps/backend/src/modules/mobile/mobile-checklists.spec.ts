@@ -1,7 +1,12 @@
 import * as assert from "node:assert/strict";
 import { test } from "node:test";
-import { ChecklistTipo } from "@prisma/client";
-import { montarChecklistMobile } from "./mobile-checklists";
+import { ChecklistTipo, OrdemServicoTipoServico } from "@prisma/client";
+import {
+  codigosObrigatoriosChecklistEtapaAnual,
+  codigosObrigatoriosChecklistPorServico,
+  montarChecklistMobile,
+  montarChecklistMobilePorServico
+} from "./mobile-checklists";
 
 const codigos = (tipo: ChecklistTipo) => montarChecklistMobile(tipo).map((item) => item.codigo);
 
@@ -64,8 +69,69 @@ test("checklist mobile anual separa evaporadora e condensadora", () => {
     "ANU_TEMP_RETORNO",
     "ANU_FOTO_INSUFLAMENTO"
   ]);
-  assert.equal(checklist.find((item) => item.codigo === "ANU_HIGIENIZACAO_EVAP")?.etapa, "evaporadora");
-  assert.equal(checklist.find((item) => item.codigo === "ANU_HIGIENIZACAO_COND")?.etapa, "condensadora");
+  assert.deepEqual(
+    Object.fromEntries(checklist.map((item) => [item.codigo, item.etapa])),
+    {
+      ANU_CONTROLE: "evaporadora",
+      ANU_HIGIENIZACAO_EVAP: "evaporadora",
+      ANU_FOTO_BOLSAO: "evaporadora",
+      ANU_HIGIENIZACAO_COND: "condensadora",
+      ANU_FOTO_BOLSAO_COND: "condensadora",
+      ANU_FOTO_COND: "condensadora",
+      ANU_CIRCUITO: "condensadora",
+      ANU_ELETRICA: "condensadora",
+      ANU_ISOLAMENTO: "condensadora",
+      ANU_TEMP_INSUFLAMENTO: "evaporadora",
+      ANU_TEMP_RETORNO: "evaporadora",
+      ANU_FOTO_INSUFLAMENTO: "evaporadora"
+    }
+  );
+  assert.deepEqual(new Set(checklist.map((item) => item.etapa)), new Set(["evaporadora", "condensadora"]));
+  assert.deepEqual(codigosObrigatoriosChecklistEtapaAnual("evaporadora"), [
+    "ANU_CONTROLE",
+    "ANU_HIGIENIZACAO_EVAP",
+    "ANU_FOTO_BOLSAO",
+    "ANU_TEMP_INSUFLAMENTO",
+    "ANU_TEMP_RETORNO",
+    "ANU_FOTO_INSUFLAMENTO"
+  ]);
+  assert.deepEqual(codigosObrigatoriosChecklistEtapaAnual("condensadora"), [
+    "ANU_HIGIENIZACAO_COND",
+    "ANU_FOTO_BOLSAO_COND",
+    "ANU_FOTO_COND",
+    "ANU_CIRCUITO",
+    "ANU_ELETRICA",
+    "ANU_ISOLAMENTO"
+  ]);
+});
+
+test("checklist mobile instalacao usa fluxo proprio", () => {
+  const checklist = montarChecklistMobilePorServico(OrdemServicoTipoServico.instalacao, ChecklistTipo.mensal);
+
+  assert.deepEqual(checklist.map((item) => item.codigo), [
+    "INS_FIXACAO",
+    "INS_TUBULACAO",
+    "INS_DRENO",
+    "INS_ELETRICA",
+    "INS_ESTANQUEIDADE",
+    "INS_TESTE",
+    "INS_TEMP_INSUFLAMENTO",
+    "INS_TEMP_RETORNO",
+    "INS_FOTO_EVAP",
+    "INS_FOTO_COND"
+  ]);
+  assert.deepEqual(codigosObrigatoriosChecklistPorServico(OrdemServicoTipoServico.instalacao, ChecklistTipo.anual), [
+    "INS_FIXACAO",
+    "INS_TUBULACAO",
+    "INS_DRENO",
+    "INS_ELETRICA",
+    "INS_ESTANQUEIDADE",
+    "INS_TESTE",
+    "INS_TEMP_INSUFLAMENTO",
+    "INS_TEMP_RETORNO",
+    "INS_FOTO_EVAP",
+    "INS_FOTO_COND"
+  ]);
 });
 
 test("checklist mobile usa respostas estruturadas sem sim ou nao", () => {

@@ -678,7 +678,10 @@ export class AdminAgendaService {
   }
 
   private normalizarChecklistTipo(dto: Pick<SalvarOsAgendaDto, "tipo_servico" | "checklist_tipo">) {
-    if (dto.tipo_servico === OrdemServicoTipoServico.corretiva) {
+    if (
+      dto.tipo_servico === OrdemServicoTipoServico.corretiva ||
+      dto.tipo_servico === OrdemServicoTipoServico.instalacao
+    ) {
       return ChecklistTipo.mensal;
     }
 

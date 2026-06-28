@@ -1,7 +1,8 @@
-import { OrdemServicoStatus, UsuarioRole } from "@prisma/client";
+import { ChecklistTipo, OrdemServicoStatus, OrdemServicoTipoServico, UsuarioRole } from "@prisma/client";
 import * as assert from "node:assert/strict";
 import { test } from "node:test";
 import { MobileService } from "./mobile.service";
+import { montarChecklistMobile } from "./mobile-checklists";
 
 const usuario = {
   id: "usuario-1",
@@ -288,10 +289,106 @@ test("listarOrdens mantém checklists independentes por periodicidade", async ()
   assert.equal(fotos("mensal").length, 2);
   assert.equal(fotos("trimestral").length, 2);
   assert.equal(fotos("semestral").length, 2);
-  assert.equal(fotos("anual").length, 3);
+  assert.equal(fotos("anual").length, 4);
   assert.equal(codigos("trimestral").some((codigo: string) => codigo.startsWith("MEN_")), false);
   assert.equal(codigos("semestral").some((codigo: string) => codigo.startsWith("TRI_")), false);
   assert.equal(new Set(codigos("anual")).size, codigos("anual").length);
+});
+
+test("listarOrdens anual nao marca rascunho completo como equipamento feito", async () => {
+  const equipamento = { id: "eq-1", modelo: "Split", localInstalacao: "Sala 1" };
+  const respostas = montarChecklistMobile(ChecklistTipo.anual).map((item) => ({
+    equipamentoId: equipamento.id,
+    codigo: item.codigo,
+    tipo: item.tipo,
+    valor: "preenchido",
+    observacao: null
+  }));
+  const ordem = {
+    id: "os-anual",
+    clienteId: "cliente-1",
+    titulo: "PMOC anual",
+    tipoServico: "preventiva",
+    checklistTipo: ChecklistTipo.anual,
+    status: OrdemServicoStatus.em_atendimento,
+    agendadaPara: new Date("2026-06-22T12:00:00.000Z"),
+    cliente: { nome: "Hospital Norte", equipamentos: [equipamento] },
+    endereco: null,
+    equipamento: null,
+    responsaveis: [],
+    checklistRespostas: respostas
+  };
+  const prisma = { ordemServico: { findMany: async () => [ordem] } };
+  const service = criarService(prisma);
+
+  const rascunho = await service.listarOrdens(usuario);
+  assert.equal(rascunho.items[0].equipamentos[0].status_execucao, "em_andamento");
+
+  ordem.checklistRespostas.push(
+    ...["EVAPORADORA", "CONDENSADORA"].map((etapa) => ({
+      equipamentoId: equipamento.id,
+      codigo: `ANU_ETAPA_${etapa}_CONCLUIDA`,
+      tipo: "etapa",
+      valor: "concluida",
+      observacao: null
+    })) as never[]
+  );
+  (ordem.checklistRespostas.at(-1) as any).valor = "sim";
+  const formatoInvalido = await service.listarOrdens(usuario);
+  assert.equal(formatoInvalido.items[0].equipamentos[0].status_execucao, "em_andamento");
+  (ordem.checklistRespostas.at(-1) as any).valor = "concluida";
+  const concluido = await service.listarOrdens(usuario);
+  assert.equal(concluido.items[0].equipamentos[0].status_execucao, "feito");
+});
+
+test("listarOrdens retorna checklist de instalacao e marca equipamento feito", async () => {
+  const equipamento = { id: "eq-1", modelo: "Split", localInstalacao: "Sala 1" };
+  const ordem = {
+    id: "os-inst",
+    clienteId: "cliente-1",
+    titulo: "Instalacao split",
+    tipoServico: OrdemServicoTipoServico.instalacao,
+    checklistTipo: ChecklistTipo.anual,
+    status: OrdemServicoStatus.em_atendimento,
+    agendadaPara: new Date("2026-06-22T12:00:00.000Z"),
+    cliente: { nome: "Hospital Norte", equipamentos: [equipamento] },
+    endereco: null,
+    equipamento: null,
+    responsaveis: [],
+    checklistRespostas: [
+      { equipamentoId: equipamento.id, codigo: "INS_FIXACAO", tipo: "select_obs", valor: "Executado", observacao: null },
+      { equipamentoId: equipamento.id, codigo: "INS_TUBULACAO", tipo: "select_obs", valor: "Executado", observacao: null },
+      { equipamentoId: equipamento.id, codigo: "INS_DRENO", tipo: "select_obs", valor: "Executado", observacao: null },
+      { equipamentoId: equipamento.id, codigo: "INS_ELETRICA", tipo: "select_obs", valor: "Executado", observacao: null },
+      { equipamentoId: equipamento.id, codigo: "INS_ESTANQUEIDADE", tipo: "select_obs", valor: "Executado", observacao: null },
+      { equipamentoId: equipamento.id, codigo: "INS_TESTE", tipo: "select_obs", valor: "Executado", observacao: null },
+      { equipamentoId: equipamento.id, codigo: "INS_TEMP_INSUFLAMENTO", tipo: "numerico", valor: "18", observacao: null },
+      { equipamentoId: equipamento.id, codigo: "INS_TEMP_RETORNO", tipo: "numerico", valor: "24", observacao: null },
+      { equipamentoId: equipamento.id, codigo: "INS_FOTO_EVAP", tipo: "foto", valor: "/storage/evap.jpg", observacao: null },
+      { equipamentoId: equipamento.id, codigo: "INS_FOTO_COND", tipo: "foto", valor: "/storage/cond.jpg", observacao: null }
+    ]
+  };
+  const prisma = { ordemServico: { findMany: async () => [ordem] } };
+
+  const resultado = await criarService(prisma).listarOrdens(usuario);
+
+  assert.equal(resultado.items[0].tipo_servico, OrdemServicoTipoServico.instalacao);
+  assert.deepEqual(
+    resultado.items[0].checklist.map((item: { codigo: string }) => item.codigo),
+    [
+      "INS_FIXACAO",
+      "INS_TUBULACAO",
+      "INS_DRENO",
+      "INS_ELETRICA",
+      "INS_ESTANQUEIDADE",
+      "INS_TESTE",
+      "INS_TEMP_INSUFLAMENTO",
+      "INS_TEMP_RETORNO",
+      "INS_FOTO_EVAP",
+      "INS_FOTO_COND"
+    ]
+  );
+  assert.equal(resultado.items[0].equipamentos[0].status_execucao, "feito");
 });
 
 test("listarVeiculos retorna carros ativos da empresa para o app", async () => {

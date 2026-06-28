@@ -140,6 +140,69 @@ void main() {
     await server.close(force: true);
   });
 
+  test('ApiWorkOrderRepository le instalacao com checklist proprio', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+
+    final pump = server.listen((request) async {
+      request.response.headers.contentType = ContentType.json;
+      request.response.write(
+        jsonEncode({
+          'items': [
+            {
+              'id': 'os-inst',
+              'cliente': 'Cliente API',
+              'endereco': 'Rua API, 10',
+              'equipamento': 'Split API',
+              'tipo': 'Instalacao',
+              'tipo_servico': 'instalacao',
+              'checklist_tipo': 'mensal',
+              'data': null,
+              'status': 'em_atendimento',
+              'checklist': [
+                {
+                  'codigo': 'INS_FIXACAO',
+                  'item': 'Fixacao e nivelamento das unidades',
+                  'tipo': 'select_obs',
+                },
+                {
+                  'codigo': 'INS_FOTO_COND',
+                  'item': 'Foto da condensadora instalada',
+                  'tipo': 'foto',
+                },
+              ],
+              'equipamentos': [
+                {
+                  'id': 'eq-1',
+                  'nome': 'Sala API',
+                  'local': 'Sala API',
+                  'modelo': 'Split API',
+                },
+              ],
+            },
+          ],
+        }),
+      );
+      await request.response.close();
+    });
+
+    final repository = ApiWorkOrderRepository(
+      baseUrl: Uri.parse('http://127.0.0.1:${server.port}'),
+      token: 'token-api',
+    );
+
+    final orders = await repository.listMine();
+
+    expect(orders.single.serviceType, 'instalacao');
+    expect(orders.single.serviceLabel, 'Instalação');
+    expect(orders.single.effectiveChecklist.map((item) => item.code), [
+      'INS_FIXACAO',
+      'INS_FOTO_COND',
+    ]);
+
+    await pump.cancel();
+    await server.close(force: true);
+  });
+
   test(
     'ApiWorkOrderRepository le status de execucao por equipamento',
     () async {

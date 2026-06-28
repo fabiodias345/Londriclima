@@ -18,7 +18,13 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
 import { PrismaService } from "../../database/prisma.service";
 import { AuthenticatedUser } from "../auth/auth-user";
-import { codigosObrigatoriosChecklist } from "../mobile/mobile-checklists";
+import {
+  codigosObrigatoriosChecklistPorServico,
+  codigosObrigatoriosChecklistEtapaAnual,
+  etapaAnualDoMarcador,
+  marcadorConclusaoChecklistAnualValido,
+  MARCADORES_CONCLUSAO_CHECKLIST_ANUAL
+} from "../mobile/mobile-checklists";
 import { AtualizarStatusOsDto } from "./dto/atualizar-status-os.dto";
 import { FinalizarOsDto } from "./dto/finalizar-os.dto";
 import { IdentificarEquipamentoDto } from "./dto/identificar-equipamento.dto";
@@ -648,6 +654,38 @@ export class OrdensServicoService {
         }
       }
 
+      const checklistTipo = ordemServico.checklistTipo ?? dto.checklist_tipo ?? ChecklistTipo.mensal;
+      const marcadoresAnuais = respostas.filter((resposta) => etapaAnualDoMarcador(resposta.codigo) !== null);
+      if (
+        checklistTipo === ChecklistTipo.anual &&
+        marcadoresAnuais.some((resposta) => !marcadorConclusaoChecklistAnualValido(resposta))
+      ) {
+        throw new UnprocessableEntityException("Marcador de conclusao da etapa anual invalido.");
+      }
+      const etapasConcluidas = checklistTipo === ChecklistTipo.anual
+        ? marcadoresAnuais
+            .map((resposta) => etapaAnualDoMarcador(resposta.codigo))
+            .filter((etapa): etapa is NonNullable<typeof etapa> => etapa !== null)
+        : [];
+      if (equipamentoId && etapasConcluidas.length > 0) {
+        const persistidas = await tx.ordemServicoChecklistResposta.findMany({
+          where: { ordemServicoId: osId, equipamentoId },
+          select: { codigo: true, valor: true }
+        });
+        const valores = new Map(persistidas.map((resposta) => [resposta.codigo, resposta.valor]));
+        for (const resposta of respostas) {
+          valores.set(resposta.codigo, resposta.valor);
+        }
+        for (const etapa of new Set(etapasConcluidas)) {
+          const incompleta = codigosObrigatoriosChecklistEtapaAnual(etapa).some(
+            (codigo) => !(valores.get(codigo)?.trim())
+          );
+          if (incompleta) {
+            throw new UnprocessableEntityException(`Etapa ${etapa} do checklist anual esta incompleta.`);
+          }
+        }
+      }
+
       const pecas = dto.pecas ?? [];
       const custoTotalPecas = pecas.reduce(
         (total, peca) => total + peca.quantidade * peca.custo_unitario,
@@ -670,7 +708,6 @@ export class OrdensServicoService {
           return;
         }
 
-        const checklistTipo = dto.checklist_tipo ?? ordemServico.checklistTipo ?? ChecklistTipo.mensal;
         await Promise.all(
           respostas.map((resposta) =>
             tx.ordemServicoChecklistResposta.upsert({
@@ -918,21 +955,29 @@ export class OrdensServicoService {
         ? [ordemServico.equipamento]
         : ordemServico.cliente?.equipamentos ?? [];
 
-      if (ordemServico.tipoServico === OrdemServicoTipoServico.preventiva) {
-        const obrigatorios = codigosObrigatoriosChecklist(
-          ordemServico.checklistTipo ?? ChecklistTipo.mensal
+      if (ordemServico.tipoServico !== OrdemServicoTipoServico.corretiva) {
+        const checklistTipo = ordemServico.checklistTipo ?? ChecklistTipo.mensal;
+        const obrigatorios = codigosObrigatoriosChecklistPorServico(
+          ordemServico.tipoServico,
+          checklistTipo
         );
         const pendentes = equipamentos.filter((equipamento) => {
+          const respostasEquipamento = ordemServico.checklistRespostas.filter(
+            (resposta) => resposta.equipamentoId === equipamento.id
+          );
           const codigos = new Set(
-            ordemServico.checklistRespostas
-              .filter(
-                (resposta) =>
-                  resposta.equipamentoId === equipamento.id &&
-                  (resposta.valor?.trim() ?? "")
-              )
+            respostasEquipamento
+              .filter((resposta) => resposta.valor?.trim())
               .map((resposta) => resposta.codigo)
           );
-          return !obrigatorios.every((codigo) => codigos.has(codigo));
+          const marcadoresValidos = ordemServico.tipoServico !== OrdemServicoTipoServico.preventiva ||
+            checklistTipo !== ChecklistTipo.anual ||
+            Object.values(MARCADORES_CONCLUSAO_CHECKLIST_ANUAL).every((codigo) =>
+              respostasEquipamento.some(
+                (resposta) => resposta.codigo === codigo && marcadorConclusaoChecklistAnualValido(resposta)
+              )
+            );
+          return !marcadoresValidos || !obrigatorios.every((codigo) => codigos.has(codigo));
         });
 
         if (pendentes.length > 0) {
