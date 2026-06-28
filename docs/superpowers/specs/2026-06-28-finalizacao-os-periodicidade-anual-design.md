@@ -27,6 +27,17 @@ Corrigir o retorno do aplicativo apos finalizar uma ordem de servico, eliminar o
 - O checklist anual deve conter somente itens anuais; nao deve herdar, somar ou copiar itens das outras periodicidades.
 - O PDF/PMOC deve reconhecer e rotular a periodicidade anual sem trata-la como semestral.
 
+### Login curto na Locaweb
+
+- Manter `email` como dado separado do usuario.
+- Adicionar `login` curto ao cadastro de tecnicos e auxiliares no painel web.
+- O login deve ser normalizado em minusculas, sem espacos nas extremidades e ser unico em todo o sistema, evitando ambiguidade entre empresas.
+- A API de autenticacao deve aceitar tanto o novo login curto quanto o email durante a transicao.
+- Novos tecnicos e auxiliares devem exigir login curto no cadastro.
+- O usuario de producao `tecnico@airmovebr.local` deve receber o login curto `tecnico` na migracao, mantendo a senha atual.
+- Conflitos de login devem retornar mensagem clara ao painel, sem alterar o cadastro existente.
+- O aplicativo deve enviar o valor digitado como identificador generico, sem exigir formato de email.
+
 ## Fluxo
 
 1. O tecnico finaliza a OS.
@@ -39,6 +50,8 @@ Corrigir o retorno do aplicativo apos finalizar uma ordem de servico, eliminar o
 
 O banco ja possui `anual` nos enums de checklist e recorrencia. Nao sera feita conversao automatica de registros semestrais, pois nao e possivel determinar com seguranca quais eram anuais. Registros anuais existentes passam a ser preservados e podem ser atualizados pelo painel.
 
+O campo de login sera adicionado sem remover o email. O acesso por email continuara funcionando durante a transicao. A migracao atribui `tecnico` ao usuario conhecido de producao; outros usuarios existentes poderao receber um login curto pelo painel.
+
 ## Validacao
 
 - Teste Flutter confirma retorno ao dashboard apos finalizacao online e offline.
@@ -47,8 +60,11 @@ O banco ja possui `anual` nos enums de checklist e recorrencia. Nao sera feita c
 - Testes do backend confirmam persistencia anual, intervalo de 12 meses e ausencia de conversao para semestral.
 - Testes dos checklists confirmam que cada periodicidade continua independente.
 - Testes do PDF confirmam o rotulo anual e a selecao exclusiva de itens anuais.
+- Testes de autenticacao confirmam acesso por login curto e por email.
+- Testes do cadastro confirmam obrigatoriedade, normalizacao e unicidade global do login.
 
 ## Fora do escopo
 
 - Converter automaticamente registros semestrais antigos em anuais.
 - Redesenhar telas ou alterar os itens definidos em cada checklist.
+- Remover imediatamente o acesso por email.
