@@ -38,21 +38,6 @@
   height: 18px;
 }
 
-.scanner-panel {
-  display: grid;
-  gap: 12px;
-  padding: 18px 22px;
-  border-top: 1px solid var(--line);
-  background: var(--navy);
-}
-
-.scanner-panel video {
-  width: min(520px, 100%);
-  aspect-ratio: 16 / 9;
-  border-radius: var(--radius);
-  background: #000;
-}
-
 .equipment-secret {
   color: var(--danger) !important;
   font-weight: 900;

@@ -1334,6 +1334,7 @@ void main() {
         home: LoginScreen(
           loginGateway: _GatewayDeTeste(repository: repository),
           locationService: const _LocationServiceTeste(),
+          barcodeScanner: const _BarcodeScannerTeste('QR-999'),
         ),
       ),
     );
@@ -1373,10 +1374,15 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.enterText(
+    await tester.scrollUntilVisible(
       find.byKey(const Key('machineField_codigo_qr')),
-      'QR-999',
+      240,
+      scrollable: find.byType(Scrollable).first,
     );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('machineScan_codigo_qr')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('machineScan_codigo_qr')));
+    await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
       find.byKey(const Key('machineSelect_tipo')),
       240,

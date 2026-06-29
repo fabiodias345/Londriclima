@@ -359,6 +359,9 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
                           'gas_refrigerante' => _gasOptions,
                           _ => const <String>[],
                         },
+                        onScan: entry.key == 'codigo_qr'
+                            ? _scanMachineFormCode
+                            : null,
                         onImpossibleChanged: (checked) {
                           setState(() {
                             if (checked) {
@@ -710,6 +713,20 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
       _responsibleController.clear();
       _clearTextControllers();
       _loadChecklistResponses(equipment);
+    });
+  }
+
+  Future<void> _scanMachineFormCode() async {
+    final code = await widget.barcodeScanner.scanBarcode(context);
+    final normalized = code?.trim();
+    if (normalized == null || normalized.isEmpty) {
+      return;
+    }
+
+    setState(() {
+      _machineControllers['codigo_qr']!.text = normalized;
+      _highlightedMachineFields.remove('codigo_qr');
+      _errorMessage = null;
     });
   }
 
@@ -1795,6 +1812,7 @@ class _MachineField extends StatelessWidget {
     required this.onChanged,
     this.numeric = false,
     this.options = const [],
+    this.onScan,
   });
 
   final String fieldKey;
@@ -1805,6 +1823,7 @@ class _MachineField extends StatelessWidget {
   final bool missing;
   final bool numeric;
   final List<String> options;
+  final VoidCallback? onScan;
   final ValueChanged<bool> onImpossibleChanged;
   final VoidCallback onChanged;
 
@@ -1830,6 +1849,14 @@ class _MachineField extends StatelessWidget {
       prefixIcon: missing
           ? const Icon(Icons.info_outline, color: airmovebrPrimary)
           : null,
+      suffixIcon: onScan == null
+          ? null
+          : IconButton(
+              key: Key('machineScan_$fieldKey'),
+              onPressed: impossible ? null : onScan,
+              icon: const Icon(Icons.qr_code_scanner_outlined),
+              tooltip: 'Ler pela camera',
+            ),
     );
 
     return Padding(
@@ -1844,6 +1871,7 @@ class _MachineField extends StatelessWidget {
               enabled: !impossible,
               keyboardType: numeric ? TextInputType.number : TextInputType.text,
               textInputAction: TextInputAction.next,
+              maxLength: fieldKey == 'codigo_qr' ? 16 : null,
               decoration: decoration,
               onChanged: (_) => onChanged(),
             )

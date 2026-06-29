@@ -206,8 +206,8 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(html, /id="confirmDeleteClientButton"/);
   assert.match(html, /id="clientEquipmentPanel"/);
   assert.match(html, /id="equipmentForm"/);
-  assert.doesNotMatch(html, /name="codigo_barras"/);
-  assert.doesNotMatch(html, /Código de barras ou QR Code/);
+  assert.match(html, /name="codigo_barras"/);
+  assert.match(html, /Código de barras ou QR Code/);
   assert.doesNotMatch(html, /Ler codigo\/QR|Escanear QR\/codigo/);
   assert.doesNotMatch(html, /name="modelo"[^>]+required/);
   assert.match(html, /name="gas_refrigerante"/);
@@ -303,14 +303,15 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(script, /async function deleteEngineer/);
   assert.match(script, /method:\s*"DELETE"/);
   assert.match(script, /\/admin\/clientes\/\$\{selectedEquipmentClientId\}\/equipamentos/);
+  assert.match(script, /codigo_barras:\s*String\(data\.get\("codigo_barras"\)/);
   assert.match(script, /gas_refrigerante:\s*String\(data\.get\("gas_refrigerante"\)/);
+  assert.match(script, /Código\/QR: \$\{escapeHtml\(item\.codigo_barras/);
   assert.match(script, /Gas: \$\{escapeHtml\(item\.gas_refrigerante/);
   assert.match(script, /\/admin\/equipamentos\/\$\{equipmentId\}\/renovar-acesso/);
   assert.match(script, /\/admin\/equipamentos\/\$\{equipmentId\}/);
   assert.doesNotMatch(script, /BarcodeDetector/);
   assert.doesNotMatch(script, /qr_code/);
   assert.doesNotMatch(script, /function placeEquipmentScannerButtonNearCodeInput/);
-  assert.doesNotMatch(script, /codigo_barras:\s*String\(data\.get\("codigo_barras"\)/);
   assert.doesNotMatch(script, /insertAdjacentElement\("afterend", scanEquipmentCodeButton\)/);
   assert.match(script, /data-action="renovar-acesso-equipamento"/);
   assert.match(script, /data-action="apagar-equipamento"/);
