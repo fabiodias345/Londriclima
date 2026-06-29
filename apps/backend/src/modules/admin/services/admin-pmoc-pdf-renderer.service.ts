@@ -127,7 +127,7 @@ export class AdminPmocPdfRendererService {
     if (!previa.maquinas.length) {
       pages.push(this.criarPaginaSemMaquina(previa));
     } else {
-      previa.maquinas.forEach((maquina, indice) => pages.push(this.criarPaginaMaquina(previa, maquina, indice)));
+      previa.maquinas.forEach((maquina, indice) => pages.push(...this.criarPaginasMaquina(previa, maquina, indice)));
     }
 
     pages.push(this.criarDeclaracaoFinal(previa));
@@ -263,8 +263,9 @@ export class AdminPmocPdfRendererService {
     return page;
   }
 
-  private criarPaginaMaquina(previa: PreviaPmoc, maquina: MaquinaPmoc, indice: number): PdfPage {
+  private criarPaginasMaquina(previa: PreviaPmoc, maquina: MaquinaPmoc, indice: number): PdfPage[] {
     const page: PdfPage = [];
+    const execucaoPage: PdfPage = [];
     const numero = String(indice + 1).padStart(3, "0");
     const primeiraOs = maquina.os_concluidas[0] ?? null;
     const periodicidade = this.obterPeriodicidadeOrdem(primeiraOs);
@@ -283,36 +284,42 @@ export class AdminPmocPdfRendererService {
       ["Código de barras", this.valor(maquina.codigo_barras)],
       ["Gás Refrigerante", this.valor(maquina.gas_refrigerante)]
     ]);
-    this.text(page, `Manutenção executada ${this.rotuloPeriodicidade(periodicidade)}`, 36, 505, 7.5, true);
-    this.table(page, 36, 487, [38, 380, 140], this.linhasAtividadesManutencao(periodicidade, "executada"), {
-      rowHeight: 17,
-      fontSize: 6.5
+    this.text(page, `Manutenção executada ${this.rotuloPeriodicidade(periodicidade)}`, 36, 475, 7.5, true);
+    this.table(page, 36, 457, [38, 380, 140], this.linhasAtividadesManutencao(periodicidade, "executada"), {
+      rowHeight: 15,
+      fontSize: 5.8
     });
     const linhasChecklist = this.linhasChecklistApk(primeiraOs);
+    const linhasEvidencias = this.linhasEvidenciasApp(primeiraOs);
+    this.footer(page, 5 + indice * 2);
+    this.cabecalho(execucaoPage, previa, `MÁQUINA N:${numero} - EXECUÇÃO E EVIDÊNCIAS`);
+    this.sectionTitle(execucaoPage, "EXECUÇÃO NO APP", 735);
     this.keyValueTable(
-      page,
+      execucaoPage,
       36,
-      145,
+      710,
       [
         ["Data", this.formatarData(primeiraOs?.concluida_em ?? null)],
         ["Horário", `${this.formatarHora(inicio)} - ${this.formatarHora(fim)} (${this.calcularDuracao(inicio, fim)})`],
         ["Técnico/Equipe", primeiraOs?.tecnico?.nome || primeiraOs?.equipe?.nome || "Não informado"],
         ["OS", primeiraOs?.titulo || "Não informado"],
-        ["Evidências", this.formatarEvidencias(primeiraOs)],
         ["GPS", this.formatarGps(primeiraOs)],
-        ["Assinatura", primeiraOs?.assinatura?.nome_responsavel || "Não informado"],
-        ...linhasChecklist
+        ["Assinatura", primeiraOs?.assinatura?.nome_responsavel || "Não informado"]
       ],
-      11,
-      6
+      20,
+      7
     );
+    this.sectionTitle(execucaoPage, "EVIDÊNCIAS DO APP", 545);
+    this.table(execucaoPage, 36, 520, [145, 395], [["Foto", "Arquivo"], ...linhasEvidencias], { rowHeight: 20, fontSize: 7 });
+    this.sectionTitle(execucaoPage, "CHECKLIST APK", 390);
+    this.table(execucaoPage, 36, 365, [145, 395], [["Campo", "Informação"], ...linhasChecklist], { rowHeight: 20, fontSize: 7 });
     this.compat(page, [
       `Área climatizada m2 ${this.formatarNumero(maquina.area_climatizada_m2)}`,
       `Ocupantes fixos ${this.formatarNumero(maquina.ocupantes_fixo)}`,
       `Ocupantes variáveis ${this.formatarNumero(maquina.ocupantes_variavel)}`
     ]);
-    this.footer(page, 5 + indice);
-    return page;
+    this.footer(execucaoPage, 6 + indice * 2);
+    return [page, execucaoPage];
   }
 
   private criarDeclaracaoFinal(previa: PreviaPmoc): PdfPage {
@@ -355,7 +362,7 @@ export class AdminPmocPdfRendererService {
     this.line(page, 350, 205, 570, 205);
     this.text(page, previa.cliente.nome, 365, 185, 10, true);
     this.text(page, "Contratante / Responsável", 385, 170, 8, false);
-    this.footer(page, 5 + Math.max(previa.maquinas.length, 1));
+    this.footer(page, 5 + Math.max(previa.maquinas.length * 2, 1));
     return page;
   }
 
@@ -377,6 +384,27 @@ export class AdminPmocPdfRendererService {
     return resumirChecklistPmoc(ordem?.checklist_tipo, ordem?.checklist_respostas, (storageUrl) => this.obterNomeArquivo(storageUrl))
       .slice(0, 4)
       .map((linha, index) => [index === 0 ? "Checklist APK" : `Checklist APK ${index + 1}`, linha]);
+  }
+
+  private linhasEvidenciasApp(ordem: OrdemPmoc | null) {
+    const linhas: string[][] = [];
+    const urls = new Set<string>();
+    const adicionar = (rotulo: string, storageUrl?: string | null) => {
+      if (!storageUrl || urls.has(storageUrl)) return;
+      urls.add(storageUrl);
+      linhas.push([rotulo, this.obterNomeArquivo(storageUrl)]);
+    };
+
+    for (const evidencia of ordem?.evidencias ?? []) {
+      const rotulo = evidencia.tipo === "antes" ? "Antes" : evidencia.tipo === "depois" ? "Depois" : "Foto";
+      adicionar(rotulo, evidencia.storage_url);
+    }
+
+    for (const resposta of ordem?.checklist_respostas ?? []) {
+      if (resposta.tipo === "foto") adicionar(resposta.codigo || "Checklist", resposta.valor);
+    }
+
+    return linhas.length ? linhas.slice(0, 6) : [["Evidências", "Nenhuma evidência registrada."]];
   }
 
   private obterPeriodicidadePrevia(previa: PreviaPmoc): PeriodicidadePmoc {
@@ -477,7 +505,7 @@ export class AdminPmocPdfRendererService {
   }
 
   private compat(page: PdfPage, values: string[]) {
-    values.forEach((value, index) => this.text(page, value, 36, 42 - index * 2, 1, false));
+    values.forEach((value, index) => this.text(page, value, 1000, 1000 - index * 2, 1, false));
   }
 
   private text(page: PdfPage, value: string, x: number, y: number, size: number, bold = false, maxChars?: number, color = "0 0 0") {

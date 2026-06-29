@@ -39,12 +39,17 @@ test("PMOC PDF inclui resumo do checklist executado no APK sem mudar a estrutura
               concluida_em: "2026-06-12T10:00:00.000Z",
               tecnico: { nome: "Joao Tecnico" },
               eventos: [],
-              evidencias: [],
+              evidencias: [
+                { tipo: "antes", storage_url: "/storage/os/os-1/evidencias/antes.jpg" },
+                { tipo: "depois", storage_url: "/storage/os/os-1/evidencias/depois.jpg" }
+              ],
               checklist: { servico_realizado: "Checklist da maquina", procedimentos: [] },
               checklist_respostas: [
                 { codigo: "MEN_FILTRO", tipo: "select_obs", valor: "Executado", observacao: null },
                 { codigo: "MEN_CONTROLE", tipo: "select_obs", valor: "Irregularidade encontrada", observacao: "controle sem pilha" },
-                { codigo: "MEN_TEMP_INSUFLAMENTO", tipo: "numerico", valor: "7.5", observacao: "medicao ok" }
+                { codigo: "MEN_TEMP_INSUFLAMENTO", tipo: "numerico", valor: "7.5", observacao: "medicao ok" },
+                { codigo: "MEN_FOTO_INSUFLAMENTO", tipo: "foto", valor: "/storage/os/os-1/checklist/insuflamento.jpg", observacao: null },
+                { codigo: "MEN_FOTO_FILTRO", tipo: "foto", valor: "/storage/os/os-1/checklist/filtro.jpg", observacao: null }
               ]
             } as never
           ]
@@ -54,6 +59,12 @@ test("PMOC PDF inclui resumo do checklist executado no APK sem mudar a estrutura
     .toString("latin1");
 
   assert.match(pdf, /Checklist APK/);
+  assert.match(pdf, /EXECU/);
+  assert.match(pdf, /EVID/);
+  assert.match(pdf, /antes\.jpg/);
+  assert.match(pdf, /depois\.jpg/);
+  assert.match(pdf, /insuflamento\.jpg/);
+  assert.match(pdf, /filtro\.jpg/);
   assert.match(pdf, /Limpeza ou substituição dos filtros: Executado/);
   assert.match(pdf, /Teste do controle remoto\/comandos: Irregularidade encontrada/);
   assert.match(pdf, /Temperatura de insuflamento: 7\.5/);

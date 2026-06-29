@@ -152,7 +152,7 @@ test("gerarPdfPmocCliente retorna PDF com nome de arquivo e conteudo oficial", a
   assert.match(pdf, /Lei Federal nº 13\.589\/2018/);
   assert.match(pdf, /Portaria MS nº 3\.523\/1998/);
   assert.match(pdf, /Resolução ANVISA RE nº 09\/2003/);
-  assert.match(pdf, /\/Count 7/);
+  assert.match(pdf, /\/Count 9/);
   assert.ok(pdf.indexOf("(AIRMOVEBR") < pdf.indexOf("(IDENTIFICAÇÃO DO CLIENTE"));
   assert.ok(pdf.indexOf("(IDENTIFICAÇÃO DO CLIENTE") < pdf.indexOf("(OBJETIVO, RESPONSABILIDADES"));
   assert.ok(pdf.indexOf("(RESUMO DAS MÁQUINAS") < pdf.indexOf("(MÁQUINA N:001"));
