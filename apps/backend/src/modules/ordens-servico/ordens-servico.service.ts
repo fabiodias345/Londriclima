@@ -879,8 +879,22 @@ export class OrdensServicoService {
             select: {
               id: true,
               nome: true,
+              documento: true,
               email: true,
               pmocAtivo: true,
+              enderecos: {
+                orderBy: {
+                  principal: "desc"
+                },
+                take: 1,
+                select: {
+                  logradouro: true,
+                  numero: true,
+                  bairro: true,
+                  cidade: true,
+                  uf: true
+                }
+              },
               equipamentos: {
                 select: {
                   id: true
@@ -955,14 +969,15 @@ export class OrdensServicoService {
         ? [ordemServico.equipamento]
         : ordemServico.cliente?.equipamentos ?? [];
 
-      if (ordemServico.tipoServico !== OrdemServicoTipoServico.corretiva) {
+      if (ordemServico.tipoServico && ordemServico.tipoServico !== OrdemServicoTipoServico.corretiva) {
         const checklistTipo = ordemServico.checklistTipo ?? ChecklistTipo.mensal;
+        const checklistRespostas = ordemServico.checklistRespostas ?? [];
         const obrigatorios = codigosObrigatoriosChecklistPorServico(
           ordemServico.tipoServico,
           checklistTipo
         );
         const pendentes = equipamentos.filter((equipamento) => {
-          const respostasEquipamento = ordemServico.checklistRespostas.filter(
+          const respostasEquipamento = checklistRespostas.filter(
             (resposta) => resposta.equipamentoId === equipamento.id
           );
           const codigos = new Set(
@@ -1056,8 +1071,16 @@ export class OrdensServicoService {
       cliente?: {
         id: string;
         nome: string;
+        documento?: string | null;
         email: string | null;
         pmocAtivo: boolean;
+        enderecos?: Array<{
+          logradouro: string | null;
+          numero: string | null;
+          bairro: string | null;
+          cidade: string | null;
+          uf: string | null;
+        }>;
         equipamentos?: Array<{ id: string }>;
       } | null;
       equipamento?: { id?: string | null; marca?: string | null; modelo?: string | null; gasRefrigerante?: string | null } | null;
@@ -1095,12 +1118,16 @@ export class OrdensServicoService {
     const pdf = this.gerarPdfRelatorioAtendimento({
       osId,
       clienteNome: cliente.nome,
+      clienteDocumento: cliente.documento ?? null,
+      clienteEmail: cliente.email,
+      clienteEndereco: this.formatarEnderecoRelatorioAtendimento(cliente.enderecos?.[0] ?? null),
       titulo: ordemServico.titulo || "Atendimento tecnico",
       tipoServico: ordemServico.tipoServico || OrdemServicoTipoServico.preventiva,
       agendadaPara: ordemServico.agendadaPara ?? null,
       finalizadoEm,
       assinaturaUrl,
       nomeResponsavelAssinatura,
+      totalMaquinas,
       equipamento: ordemServico.equipamento ?? null,
       evidencias: ordemServico.evidencias ?? [],
       checklistRespostas: ordemServico.checklistRespostas ?? []
@@ -1134,12 +1161,16 @@ export class OrdensServicoService {
   private gerarPdfRelatorioAtendimento(input: {
     osId: string;
     clienteNome: string;
+    clienteDocumento: string | null;
+    clienteEmail: string | null;
+    clienteEndereco: string;
     titulo: string;
     tipoServico: OrdemServicoTipoServico;
     agendadaPara: Date | null;
     finalizadoEm: Date;
     assinaturaUrl: string;
     nomeResponsavelAssinatura: string;
+    totalMaquinas: number;
     equipamento: { marca?: string | null; modelo?: string | null; gasRefrigerante?: string | null } | null;
     evidencias: Array<{ tipo: EvidenciaTipo; descricao: string | null; storageUrl: string; criadoEm: Date }>;
     checklistRespostas: Array<{ codigo: string; tipo: string; valor: string; observacao: string | null }>;
@@ -1148,6 +1179,20 @@ export class OrdensServicoService {
       ...input,
       storageRoot: this.resolveStorageRoot()
     });
+  }
+
+  private formatarEnderecoRelatorioAtendimento(endereco?: {
+    logradouro: string | null;
+    numero: string | null;
+    bairro: string | null;
+    cidade: string | null;
+    uf: string | null;
+  } | null) {
+    if (!endereco) {
+      return "nao informado";
+    }
+
+    return [endereco.logradouro, endereco.numero, endereco.bairro, endereco.cidade, endereco.uf].filter(Boolean).join(", ");
   }
 
   private slugArquivo(valor: string) {
