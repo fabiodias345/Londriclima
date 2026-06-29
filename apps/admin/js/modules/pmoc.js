@@ -385,7 +385,7 @@ function syncAgendaOsServiceFields() {
     ? "Manutencao corretiva"
     : isInstallation
       ? "Instalacao de ar-condicionado"
-      : `Manutencao preventiva ${agendaOsChecklistTypeSelect?.value || "mensal"}`;
+      : "Manutencao preventiva " + (agendaOsChecklistTypeSelect?.value || "mensal");
 }
 
 async function submitRecurrence(event) {
