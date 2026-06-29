@@ -1,120 +1,6 @@
+import { ATIVIDADES_MANUTENCAO, CONTRATADA_PMOC, ENGENHEIRO_PADRAO_PMOC, EnderecoPmoc, MaquinaPmoc, OrdemPmoc, PeriodicidadePmoc, PreviaPmoc } from "./admin-pmoc-pdf-models";
+import { carregarArquivoStorage, criarPdfBuffer, PdfPage } from "./admin-pmoc-pdf-writer";
 import { resumirChecklistPmoc } from "./admin-pmoc-checklist-resumo";
-
-type EnderecoPmoc = {
-  logradouro?: string | null;
-  numero?: string | null;
-  complemento?: string | null;
-  bairro?: string | null;
-  cidade?: string | null;
-  uf?: string | null;
-  cep?: string | null;
-} | null;
-
-type OrdemPmoc = {
-  titulo?: string | null;
-  problema_relatado?: string | null;
-  agendada_para?: string | null;
-  concluida_em?: string | null;
-  tecnico?: { nome?: string | null } | null;
-  equipe?: { nome?: string | null } | null;
-  checklist_tipo?: "mensal" | "trimestral" | "semestral" | "anual" | null;
-  eventos?: Array<{ latitude?: number | null; longitude?: number | null; registrado_em?: string | null }>;
-  evidencias?: Array<{ tipo?: string | null; storage_url?: string | null }>;
-  checklist?: { procedimentos?: string[]; servico_realizado?: string | null } | null;
-  checklist_respostas?: Array<{ codigo?: string | null; tipo?: string | null; valor?: string | null; observacao?: string | null }>;
-  assinatura?: { nome_responsavel?: string | null } | null;
-  observacoes?: Array<{ texto?: string | null }>;
-};
-
-type MaquinaPmoc = {
-  tipo?: string | null;
-  patrimonio?: string | null;
-  codigo_barras?: string | null;
-  marca?: string | null;
-  modelo?: string | null;
-  capacidade_btu?: number | null;
-  gas_refrigerante?: string | null;
-  numero_serie?: string | null;
-  local_instalacao?: string | null;
-  area_climatizada_m2?: number | null;
-  ocupantes_fixo?: number | null;
-  ocupantes_variavel?: number | null;
-  pendencias?: string[];
-  os_concluidas: OrdemPmoc[];
-};
-
-type PreviaPmoc = {
-  cliente: {
-    nome: string;
-    documento?: string | null;
-    telefone?: string | null;
-    email?: string | null;
-    pmoc_art_numero?: string | null;
-    endereco: EnderecoPmoc;
-  };
-  engenheiro_responsavel?: {
-    nome?: string | null;
-    cpf?: string | null;
-    crea?: string | null;
-    email?: string | null;
-    telefone?: string | null;
-  } | null;
-  periodo: { inicio: string | null; fim: string | null };
-  total_maquinas: number;
-  total_os_concluidas: number;
-  pronto_para_pdf: boolean;
-  pendencias: string[];
-  maquinas: MaquinaPmoc[];
-};
-
-type PdfPage = string[];
-
-const PAGE = { width: 612, height: 842, margin: 36 };
-const CONTRATADA_PMOC = {
-  razaoSocial: "M. Lima Manutenções Prediais e Industriais LTDA",
-  nomeFantasia: "AIRMOVEBR",
-  cnpj: "04.959.153/0001-11",
-  endereco: "Avenida Paissandu, 526 - Maringá/PR - CEP 87050-130",
-  telefone: "(43) 99100-0035",
-  email: "airmovebr@gmail.com"
-};
-const ENGENHEIRO_PADRAO_PMOC = {
-  nome: "André Mendes dos Santos",
-  titulo: "Eng. Mecânico",
-  crea: "PR-206737/D",
-  registro: "89389",
-  rnp: "1721220267"
-};
-
-type PeriodicidadePmoc = "mensal" | "trimestral" | "semestral" | "anual";
-
-const ATIVIDADES_MANUTENCAO: Array<[string, string, PeriodicidadePmoc]> = [
-  ["4.1", "Limpeza dos filtros de ar e/ou substituição", "mensal"],
-  ["4.2", "Limpeza externa do gabinete do evaporador", "mensal"],
-  ["4.3", "Verificar operação de drenagem", "mensal"],
-  ["4.4", "Verificar e corrigir ruídos e vibrações anormais", "mensal"],
-  ["4.5", "Verificar termostatos, controles e sensores", "mensal"],
-  ["4.6", "Higienizar evaporadores com bactericida", "mensal"],
-  ["4.7", "Verificar e eliminar odores desagradáveis", "mensal"],
-  ["4.8", "Limpeza das serpentinas do evaporador", "trimestral"],
-  ["4.9", "Limpeza do ventilador/rotor do evaporador", "trimestral"],
-  ["4.10", "Limpeza da bandeja de condensado", "trimestral"],
-  ["4.11", "Reaperto de terminais/conexões elétricas", "trimestral"],
-  ["4.12", "Verificar corrente/pressão/tensão", "semestral"],
-  ["4.13", "Limpeza do condensador", "semestral"],
-  ["4.14", "Verificar estado dos compressores", "semestral"],
-  ["4.15", "Lubrificação geral do equipamento", "semestral"],
-  ["4.16", "Verificar estado dos suportes/coxins", "semestral"],
-  ["4.17", "Verificar e corrigir focos de corrosão", "semestral"],
-  ["4.18", "Verificar isolantes térmicos das linhas", "semestral"],
-  ["4.19", "Teste do controle remoto e comandos", "anual"],
-  ["4.20", "Higienização completa da evaporadora", "anual"],
-  ["4.21", "Higienização completa da condensadora", "anual"],
-  ["4.22", "Verificação completa do circuito frigorífico", "anual"],
-  ["4.23", "Inspeção completa dos componentes elétricos", "anual"],
-  ["4.24", "Verificação do isolamento térmico das tubulações", "anual"],
-  ["4.25", "Medição das temperaturas de insuflamento e retorno", "anual"]
-];
 
 export class AdminPmocPdfRendererService {
   gerar(previa: PreviaPmoc) {
@@ -131,7 +17,7 @@ export class AdminPmocPdfRendererService {
     }
 
     pages.push(this.criarDeclaracaoFinal(previa));
-    return this.criarPdf(pages);
+    return criarPdfBuffer(pages);
   }
 
   private criarCapa(previa: PreviaPmoc): PdfPage {
@@ -290,7 +176,6 @@ export class AdminPmocPdfRendererService {
       fontSize: 5.8
     });
     const linhasChecklist = this.linhasChecklistApk(primeiraOs);
-    const linhasEvidencias = this.linhasEvidenciasApp(primeiraOs);
     this.footer(page, 5 + indice * 2);
     this.cabecalho(execucaoPage, previa, `MÁQUINA N:${numero} - EXECUÇÃO E EVIDÊNCIAS`);
     this.sectionTitle(execucaoPage, "EXECUÇÃO NO APP", 735);
@@ -306,13 +191,13 @@ export class AdminPmocPdfRendererService {
         ["GPS", this.formatarGps(primeiraOs)],
         ["Assinatura", primeiraOs?.assinatura?.nome_responsavel || "Não informado"]
       ],
-      20,
+      17,
       7
     );
-    this.sectionTitle(execucaoPage, "EVIDÊNCIAS DO APP", 545);
-    this.table(execucaoPage, 36, 520, [145, 395], [["Foto", "Arquivo"], ...linhasEvidencias], { rowHeight: 20, fontSize: 7 });
-    this.sectionTitle(execucaoPage, "CHECKLIST APK", 390);
-    this.table(execucaoPage, 36, 365, [145, 395], [["Campo", "Informação"], ...linhasChecklist], { rowHeight: 20, fontSize: 7 });
+    this.sectionTitle(execucaoPage, "CHECKLIST APK", 570);
+    this.table(execucaoPage, 36, 545, [145, 395], [["Campo", "Informação"], ...linhasChecklist], { rowHeight: 16, fontSize: 6.2 });
+    this.sectionTitle(execucaoPage, "FOTOS", 290);
+    this.adicionarFotosApp(execucaoPage, primeiraOs, 36, 105);
     this.compat(page, [
       `Área climatizada m2 ${this.formatarNumero(maquina.area_climatizada_m2)}`,
       `Ocupantes fixos ${this.formatarNumero(maquina.ocupantes_fixo)}`,
@@ -382,29 +267,37 @@ export class AdminPmocPdfRendererService {
 
   private linhasChecklistApk(ordem: OrdemPmoc | null) {
     return resumirChecklistPmoc(ordem?.checklist_tipo, ordem?.checklist_respostas, (storageUrl) => this.obterNomeArquivo(storageUrl))
-      .slice(0, 4)
       .map((linha, index) => [index === 0 ? "Checklist APK" : `Checklist APK ${index + 1}`, linha]);
   }
 
-  private linhasEvidenciasApp(ordem: OrdemPmoc | null) {
-    const linhas: string[][] = [];
-    const urls = new Set<string>();
-    const adicionar = (rotulo: string, storageUrl?: string | null) => {
-      if (!storageUrl || urls.has(storageUrl)) return;
-      urls.add(storageUrl);
-      linhas.push([rotulo, this.obterNomeArquivo(storageUrl)]);
+  private adicionarFotosApp(page: PdfPage, ordem: OrdemPmoc | null, x: number, y: number) {
+    const urls = this.urlsEvidenciasApp(ordem).slice(0, 4);
+    urls.forEach((url, index) => {
+      const imagem = carregarArquivoStorage(url);
+      if (!imagem) return;
+      const left = x + index * 138;
+      this.rect(page, left, y, 120, 120);
+      this.text(page, this.obterNomeArquivo(url), left, y - 12, 6.5, false, 18, "0.38 0.42 0.48");
+      page.imagens = page.imagens ?? [];
+      page.imagens.push({ buffer: imagem, x: left + 1, y: y + 1, width: 118, height: 118 });
+    });
+  }
+
+  private urlsEvidenciasApp(ordem: OrdemPmoc | null) {
+    const urls: string[] = [];
+    const vistos = new Set<string>();
+    const adicionar = (storageUrl?: string | null) => {
+      if (!storageUrl || vistos.has(storageUrl)) return;
+      vistos.add(storageUrl);
+      urls.push(storageUrl);
     };
 
-    for (const evidencia of ordem?.evidencias ?? []) {
-      const rotulo = evidencia.tipo === "antes" ? "Antes" : evidencia.tipo === "depois" ? "Depois" : "Foto";
-      adicionar(rotulo, evidencia.storage_url);
-    }
-
+    for (const evidencia of ordem?.evidencias ?? []) adicionar(evidencia.storage_url);
     for (const resposta of ordem?.checklist_respostas ?? []) {
-      if (resposta.tipo === "foto") adicionar(resposta.codigo || "Checklist", resposta.valor);
+      if (resposta.tipo === "foto") adicionar(resposta.valor);
     }
 
-    return linhas.length ? linhas.slice(0, 6) : [["Evidências", "Nenhuma evidência registrada."]];
+    return urls;
   }
 
   private obterPeriodicidadePrevia(previa: PreviaPmoc): PeriodicidadePmoc {
@@ -523,46 +416,6 @@ export class AdminPmocPdfRendererService {
       page.push(`q ${fillColor} ${x} ${y} ${width} ${height} re f Q`);
     }
     page.push(`q 0.82 0.85 0.88 RG ${x} ${y} ${width} ${height} re S Q`);
-  }
-
-  private criarPdf(pages: PdfPage[]) {
-    const objetos = [
-      "<< /Type /Catalog /Pages 2 0 R >>",
-      "",
-      "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
-      "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>"
-    ];
-    const pageObjectIds: number[] = [];
-
-    for (const page of pages) {
-      const conteudo = `0.2 w\n0 G\n${page.join("\n")}`;
-      const pageObjectId = objetos.length + 1;
-      const contentObjectId = objetos.length + 2;
-      pageObjectIds.push(pageObjectId);
-      objetos.push(
-        `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PAGE.width} ${PAGE.height}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${contentObjectId} 0 R >>`,
-        `<< /Length ${Buffer.byteLength(conteudo, "latin1")} >>\nstream\n${conteudo}\nendstream`
-      );
-    }
-
-    objetos[1] = `<< /Type /Pages /Kids [${pageObjectIds.map((id) => `${id} 0 R`).join(" ")}] /Count ${pageObjectIds.length} >>`;
-    let pdf = "%PDF-1.4\n";
-    const offsets = [0];
-
-    for (let index = 0; index < objetos.length; index += 1) {
-      offsets.push(Buffer.byteLength(pdf, "latin1"));
-      pdf += `${index + 1} 0 obj\n${objetos[index]}\nendobj\n`;
-    }
-
-    const xrefOffset = Buffer.byteLength(pdf, "latin1");
-    pdf += `xref\n0 ${objetos.length + 1}\n0000000000 65535 f \n`;
-    pdf += offsets
-      .slice(1)
-      .map((offset) => `${String(offset).padStart(10, "0")} 00000 n \n`)
-      .join("");
-    pdf += `trailer\n<< /Size ${objetos.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
-
-    return Buffer.from(pdf, "latin1");
   }
 
   private numeroPmoc(previa: PreviaPmoc) {
