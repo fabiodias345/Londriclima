@@ -1,6 +1,6 @@
 # Memoria AIRMOVEBR
 
-Atualizado em: 25/06/2026
+Atualizado em: 29/06/2026
 
 ## Contexto
 
@@ -95,6 +95,14 @@ site -> pre-chamado -> admin -> O.S. -> app tecnico -> checklist/fotos/GPS/assin
   - `https://airmovebr.com.br/`
   - `https://admin.airmovebr.com.br/`
   - `https://api.airmovebr.com.br/api/v1/health`
+
+## Diagnostico rapido
+
+- Se o login funciona mas o painel abre sem clientes, maquinas ou dados reais, testar primeiro o banco de dados/producao:
+  - validar `/api/v1/admin/clientes` com token do usuario logado;
+  - contar `clientes`, `equipamentos` e `usuarios` no Postgres da Locaweb;
+  - conferir se o `empresa_id` do usuario logado e o mesmo `empresa_id` dos clientes/equipamentos.
+- Caso `admin` entre em empresa vazia, corrigir o vinculo do usuario antes de investigar frontend, DNS ou cache.
 
 ## Pendencias futuras
 

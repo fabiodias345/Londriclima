@@ -61,6 +61,17 @@ async function startEquipmentScanner() {
   }
 }
 
+function placeEquipmentScannerButtonNearCodeInput() {
+  const codeInput = equipmentForm?.elements?.codigo_barras;
+
+  if (!(codeInput instanceof HTMLInputElement) || !scanEquipmentCodeButton) {
+    return;
+  }
+
+  scanEquipmentCodeButton.textContent = "Escanear QR/codigo";
+  codeInput.insertAdjacentElement("afterend", scanEquipmentCodeButton);
+}
+
 function stopEquipmentScanner() {
   if (equipmentScanTimer) {
     window.clearInterval(equipmentScanTimer);
@@ -80,6 +91,8 @@ function stopEquipmentScanner() {
 
   equipmentScannerPanel?.classList.add("hidden");
 }
+
+placeEquipmentScannerButtonNearCodeInput();
 
 function onlyDigits(value) {
   return Array.from(String(value || ""))

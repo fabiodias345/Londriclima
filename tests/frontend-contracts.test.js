@@ -111,7 +111,7 @@ test("admin autentica, guarda token e protege chamadas administrativas", () => {
   const html = read("apps/admin/index.html");
   const main = read("apps/admin/js/main.js");
 
-  assert.match(html, /<script type="module" src="\.\/js\/main\.js\?v=20260628-acessos"><\/script>/);
+  assert.match(html, /<script type="module" src="\.\/js\/main\.js\?v=\d{8}-[a-z]+"><\/script>/);
   assert.doesNotMatch(main, /import "\.\.\/script\.js"/);
   assert.match(main, /adminModules/);
   assertFileExists("apps/admin/js/modules/api.js");
@@ -303,6 +303,9 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(script, /\/admin\/equipamentos\/\$\{equipmentId\}/);
   assert.match(script, /BarcodeDetector/);
   assert.match(script, /qr_code/);
+  assert.match(script, /function placeEquipmentScannerButtonNearCodeInput/);
+  assert.match(script, /codigo_barras/);
+  assert.match(script, /insertAdjacentElement\("afterend", scanEquipmentCodeButton\)/);
   assert.match(script, /data-action="renovar-acesso-equipamento"/);
   assert.match(script, /data-action="apagar-equipamento"/);
   assert.match(html, /id="backToClientsButton"/);
