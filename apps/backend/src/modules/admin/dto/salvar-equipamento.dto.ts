@@ -17,9 +17,9 @@ export class SalvarEquipamentoDto {
   @IsNotEmpty()
   marca: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  modelo: string;
+  modelo?: string;
 
   @IsOptional()
   @IsInt()

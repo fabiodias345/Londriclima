@@ -209,6 +209,7 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(html, /name="codigo_barras"/);
   assert.match(html, /Código de barras ou QR Code/);
   assert.match(html, /Ler codigo\/QR/);
+  assert.doesNotMatch(html, /name="modelo"[^>]+required/);
   assert.match(html, /name="gas_refrigerante"/);
   assert.match(html, /R-410A/);
   assert.match(html, /id="scanEquipmentCodeButton"/);

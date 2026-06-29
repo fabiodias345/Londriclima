@@ -63,7 +63,7 @@ export class AdminEquipamentosService {
         patrimonio: dto.patrimonio?.trim() || null,
         codigoBarras: dto.codigo_barras?.trim() || null,
         marca: dto.marca.trim(),
-        modelo: dto.modelo.trim(),
+        modelo: dto.modelo?.trim() || "",
         capacidadeBtu: dto.capacidade_btu,
         gasRefrigerante: dto.gas_refrigerante?.trim() || null,
         numeroSerie: dto.numero_serie?.trim() || null,

@@ -1,3 +1,5 @@
+import { resumirChecklistPmoc } from "./admin-pmoc-checklist-resumo";
+
 type EnderecoPmoc = {
   logradouro?: string | null;
   numero?: string | null;
@@ -19,6 +21,7 @@ type OrdemPmoc = {
   eventos?: Array<{ latitude?: number | null; longitude?: number | null; registrado_em?: string | null }>;
   evidencias?: Array<{ tipo?: string | null; storage_url?: string | null }>;
   checklist?: { procedimentos?: string[]; servico_realizado?: string | null } | null;
+  checklist_respostas?: Array<{ codigo?: string | null; tipo?: string | null; valor?: string | null; observacao?: string | null }>;
   assinatura?: { nome_responsavel?: string | null } | null;
   observacoes?: Array<{ texto?: string | null }>;
 };
@@ -285,6 +288,7 @@ export class AdminPmocPdfRendererService {
       rowHeight: 17,
       fontSize: 6.5
     });
+    const linhasChecklist = this.linhasChecklistApk(primeiraOs);
     this.keyValueTable(
       page,
       36,
@@ -295,10 +299,12 @@ export class AdminPmocPdfRendererService {
         ["Técnico/Equipe", primeiraOs?.tecnico?.nome || primeiraOs?.equipe?.nome || "Não informado"],
         ["OS", primeiraOs?.titulo || "Não informado"],
         ["Evidências", this.formatarEvidencias(primeiraOs)],
-        ["GPS", this.formatarGps(primeiraOs)]
+        ["GPS", this.formatarGps(primeiraOs)],
+        ["Assinatura", primeiraOs?.assinatura?.nome_responsavel || "Não informado"],
+        ...linhasChecklist
       ],
-      13,
-      6.5
+      11,
+      6
     );
     this.compat(page, [
       `Área climatizada m2 ${this.formatarNumero(maquina.area_climatizada_m2)}`,
@@ -365,6 +371,12 @@ export class AdminPmocPdfRendererService {
         modo === "prevista" ? this.rotuloPeriodicidade(periodicidadePrevista) : executado(periodicidadePrevista)
       ])
     ];
+  }
+
+  private linhasChecklistApk(ordem: OrdemPmoc | null) {
+    return resumirChecklistPmoc(ordem?.checklist_tipo, ordem?.checklist_respostas, (storageUrl) => this.obterNomeArquivo(storageUrl))
+      .slice(0, 4)
+      .map((linha, index) => [index === 0 ? "Checklist APK" : `Checklist APK ${index + 1}`, linha]);
   }
 
   private obterPeriodicidadePrevia(previa: PreviaPmoc): PeriodicidadePmoc {
