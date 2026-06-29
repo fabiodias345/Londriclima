@@ -566,7 +566,6 @@ export class AdminRelatorioTecnicoCoreService {
       })
     ]);
     const osApagadasPorCliente = this.mapearOsRelatoriosAvulsosApagados(relatoriosApagados);
-    const osEnviadasPorCliente = this.mapearOsRelatoriosAvulsosApagados(relatoriosEnviados);
     const ultimoEnvioPorCliente = this.mapearUltimoEnvioRelatorioAvulso(relatoriosEnviados);
     const clientes = await this.prisma.cliente.findMany({
       where: {
@@ -625,8 +624,7 @@ export class AdminRelatorioTecnicoCoreService {
         ])
       );
       const osApagadas = osApagadasPorCliente.get(cliente.id) ?? new Set<string>();
-      const osEnviadas = osEnviadasPorCliente.get(cliente.id) ?? new Set<string>();
-      const osVisiveis = osConcluidas.filter((ordemId) => !osApagadas.has(ordemId) && !osEnviadas.has(ordemId));
+      const osVisiveis = osConcluidas.filter((ordemId) => !osApagadas.has(ordemId));
       const totalOsConcluidas = osVisiveis.length;
 
       return {
@@ -651,7 +649,7 @@ export class AdminRelatorioTecnicoCoreService {
 
   async obterPreviaRelatorioAvulsoCliente(clienteId: string, usuario: AuthenticatedUser) {
     const cliente = await this.obterClienteRelatorioAvulso(clienteId, usuario);
-    const osIgnoradas = await this.obterOsRelatoriosAvulsosIgnorados(usuario.empresa_id, clienteId);
+    const osIgnoradas = await this.obterOsRelatoriosAvulsosApagados(usuario.empresa_id, clienteId);
     const ordensPorEquipamento = this.mapearOrdensPorEquipamentoChecklist(cliente.ordensServico ?? []);
     const maquinas = cliente.equipamentos
       .map((equipamento) =>
@@ -814,7 +812,7 @@ export class AdminRelatorioTecnicoCoreService {
     return porCliente;
   }
 
-  private async obterOsRelatoriosAvulsosIgnorados(empresaId: string, clienteId: string) {
+  private async obterOsRelatoriosAvulsosApagados(empresaId: string, clienteId: string) {
     const automacaoAgendada = (this.prisma as {
       automacaoAgendada?: {
         findMany?: (args: unknown) => Promise<Array<{ payload: Prisma.JsonValue }>>;
@@ -829,10 +827,7 @@ export class AdminRelatorioTecnicoCoreService {
       where: {
         empresaId,
         tipo: AutomacaoTipo.enviar_email,
-        OR: [
-          { payload: { path: ["tipo"], equals: "relatorio_tecnico_avulso" } },
-          { payload: { path: ["tipo"], equals: "relatorio_tecnico_avulso_apagado" } }
-        ]
+        payload: { path: ["tipo"], equals: "relatorio_tecnico_avulso_apagado" }
       },
       select: {
         payload: true
@@ -1463,7 +1458,7 @@ export class AdminRelatorioTecnicoCoreService {
   }
 
   private filtrarOrdensRelatorioAvulso<T extends { id: string }>(ordens: T[], osIgnoradas: Set<string>) {
-    return ordens.filter((ordem) => !osIgnoradas.has(ordem.id));
+    return ordens.filter((ordem) => !osIgnoradas.has(ordem.id)).slice(0, 1);
   }
 
   private mapearMaquinaRelatorioTecnico(equipamento: {

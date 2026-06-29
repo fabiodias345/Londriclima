@@ -483,7 +483,47 @@ test("listarRelatoriosAvulsos mostra OS multi-equipamento pelas respostas do che
   assert.equal(resposta.items[0].pronto_para_envio, true);
 });
 
-test("gerarPdfRelatorioAvulsoCliente usa somente OS ainda nao enviada", async () => {
+test("listarRelatoriosAvulsos continua mostrando cliente com relatorio enviado", async () => {
+  const prisma = {
+    cliente: {
+      findMany: async () => [
+        {
+          id: "cliente-1",
+          nome: "Cliente Avulso",
+          email: "cliente@example.com",
+          telefone: "43988887777",
+          atualizadoEm: new Date("2026-06-13T10:00:00.000Z"),
+          equipamentos: [{ id: "equipamento-1", ordensServico: [{ id: "os-equipamento-1" }] }],
+          ordensServico: []
+        }
+      ]
+    },
+    automacaoAgendada: {
+      findMany: async ({ where }: { where: { payload: { equals: string } } }) =>
+        where.payload.equals === "relatorio_tecnico_avulso"
+          ? [
+              {
+                criadoEm: new Date("2026-06-13T10:00:00.000Z"),
+                payload: {
+                  tipo: "relatorio_tecnico_avulso",
+                  cliente_id: "cliente-1",
+                  os_ids: ["os-equipamento-1"]
+                }
+              }
+            ]
+          : []
+    }
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.listarRelatoriosAvulsos(usuario);
+
+  assert.equal(resposta.total, 1);
+  assert.equal(resposta.items[0].total_os_concluidas, 1);
+  assert.equal(resposta.items[0].ultimo_envio?.email, null);
+});
+
+test("gerarPdfRelatorioAvulsoCliente usa somente a OS mais recente", async () => {
   const equipamento = criarEquipamentoPmocTeste("equipamento-1", "Sala", "AV-001", "SN-AV-1", "2026-06-11T12:00:00.000Z");
   equipamento.ordensServico.unshift({
     ...equipamento.ordensServico[0],
@@ -510,17 +550,6 @@ test("gerarPdfRelatorioAvulsoCliente usa somente OS ainda nao enviada", async ()
         equipamentos: [equipamento],
         ordensServico: []
       })
-    },
-    automacaoAgendada: {
-      findMany: async () => [
-        {
-          payload: {
-            tipo: "relatorio_tecnico_avulso",
-            cliente_id: "cliente-1",
-            os_ids: ["os-equipamento-1"]
-          }
-        }
-      ]
     }
   };
   const service = criarService(prisma);
@@ -588,7 +617,7 @@ test("gerarPdfRelatorioAvulsoCliente nao duplica a mesma foto", async () => {
   }
 });
 
-test("gerarPdfRelatorioAvulsoCliente separa duas manutencoes da mesma maquina", async () => {
+test("gerarPdfRelatorioAvulsoCliente mostra apenas a manutencao mais recente da mesma maquina", async () => {
   const fotoAntesPath = resolve(process.cwd(), "..", "..", "storage", "os", "os-equipamento-1-corretiva", "evidencias", "antes.jpg");
   const fotoDepoisPath = resolve(process.cwd(), "..", "..", "storage", "os", "os-equipamento-1-corretiva", "evidencias", "depois.jpg");
   mkdirSync(dirname(fotoAntesPath), { recursive: true });
@@ -651,13 +680,13 @@ test("gerarPdfRelatorioAvulsoCliente separa duas manutencoes da mesma maquina", 
     const pdf = await service.gerarPdfRelatorioAvulsoCliente("cliente-1", usuario);
     const textoPdf = pdf.buffer.toString("latin1");
 
-    assert.match(textoPdf, /MANUTENCAO N:001 DE 002/);
-    assert.match(textoPdf, /MANUTENCAO N:002 DE 002/);
+    assert.match(textoPdf, /MANUTENCAO N:001 DE 001/);
     assert.match(textoPdf, /OS: Corretiva compressor/);
     assert.match(textoPdf, /Problema encontrado\s+queimou o compressor/);
     assert.match(textoPdf, /Acao realizada\s+trocado o mesmo/);
     assert.match(textoPdf, /Pecas utilizadas\s+compressor/);
-    assert.match(textoPdf, /OS: PMOC mensal/);
+    assert.doesNotMatch(textoPdf, /OS: PMOC mensal/);
+    assert.doesNotMatch(textoPdf, /Motor travado/);
     assert.match(textoPdf, /Antes --- antes\.jpg/);
     assert.match(textoPdf, /Depois --- depois\.jpg/);
     assert.match(textoPdf, /\/Subtype \/Image/);
