@@ -1,8 +1,6 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import {
   ChecklistTipo,
-  OrdemServicoEventoAcao,
-  OrdemServicoStatus,
   PlanoRecorrenciaFrequencia,
   Prisma,
   UsuarioRole
@@ -11,6 +9,14 @@ import { PrismaService } from "../../../database/prisma.service";
 import { AuthenticatedUser } from "../../auth/auth-user";
 import { SalvarOsAgendaDto } from "../dto/salvar-os-agenda.dto";
 import { SalvarPlanoRecorrenciaDto } from "../dto/salvar-plano-recorrencia.dto";
+import {
+  aplicarDiaGeracao,
+  checklistTipoDaFrequencia,
+  normalizarCalendarioRecorrencia,
+  normalizarDiaGeracao
+} from "./admin-recorrencia-calendario";
+import { criarOrdemRecorrente, PlanoRecorrenciaParaGeracao } from "./admin-recorrencia-generator";
+import { mapearPlanoRecorrencia } from "./admin-recorrencia-mappers";
 
 @Injectable()
 export class AdminRecorrenciaService {
@@ -36,6 +42,8 @@ export class AdminRecorrenciaService {
         detalhes: true,
         frequencia: true,
         checklistTipo: true,
+        calendario: true,
+        diaGeracao: true,
         proximaExecucao: true,
         valorCobrado: true,
         ativo: true,
@@ -85,13 +93,16 @@ export class AdminRecorrenciaService {
       total: planos.length,
       ativos: planos.filter((plano) => plano.ativo).length,
       vencidos: planos.filter((plano) => plano.ativo && plano.proximaExecucao <= agora).length,
-      items: planos.map((plano) => this.mapearPlanoRecorrencia(plano))
+      items: planos.map((plano) => mapearPlanoRecorrencia(plano))
     };
   }
 
   async criarPlanoRecorrencia(dto: SalvarPlanoRecorrenciaDto, usuario: AuthenticatedUser) {
     await this.garantirClienteAgenda(dto.cliente_id, usuario);
     await this.validarDestinoAgenda(this.prisma, dto, usuario);
+    const calendario = normalizarCalendarioRecorrencia(dto.calendario, dto.frequencia);
+    const primeiraExecucao = new Date(dto.proxima_execucao);
+    const diaGeracao = normalizarDiaGeracao(dto.dia_geracao ?? primeiraExecucao.getUTCDate());
 
     const plano = await this.prisma.planoRecorrencia.create({
       data: {
@@ -103,8 +114,10 @@ export class AdminRecorrenciaService {
         titulo: this.normalizarTextoObrigatorio(dto.titulo, "Titulo do plano e obrigatorio."),
         detalhes: this.normalizarTextoOpcional(dto.detalhes),
         frequencia: dto.frequencia,
-        checklistTipo: dto.checklist_tipo ?? this.checklistTipoDaFrequencia(dto.frequencia),
-        proximaExecucao: new Date(dto.proxima_execucao),
+        checklistTipo: dto.checklist_tipo ?? checklistTipoDaFrequencia(dto.frequencia),
+        calendario,
+        diaGeracao,
+        proximaExecucao: aplicarDiaGeracao(primeiraExecucao, diaGeracao),
         valorCobrado: dto.valor_cobrado !== undefined ? new Prisma.Decimal(dto.valor_cobrado) : undefined,
         ativo: dto.ativo ?? true
       },
@@ -137,6 +150,9 @@ export class AdminRecorrenciaService {
 
     await this.garantirClienteAgenda(dto.cliente_id, usuario);
     await this.validarDestinoAgenda(this.prisma, dto, usuario);
+    const calendario = normalizarCalendarioRecorrencia(dto.calendario, dto.frequencia);
+    const proximaExecucao = new Date(dto.proxima_execucao);
+    const diaGeracao = normalizarDiaGeracao(dto.dia_geracao ?? proximaExecucao.getUTCDate());
 
     const plano = await this.prisma.planoRecorrencia.update({
       where: {
@@ -150,8 +166,10 @@ export class AdminRecorrenciaService {
         titulo: this.normalizarTextoObrigatorio(dto.titulo, "Titulo do plano e obrigatorio."),
         detalhes: this.normalizarTextoOpcional(dto.detalhes),
         frequencia: dto.frequencia,
-        checklistTipo: dto.checklist_tipo ?? this.checklistTipoDaFrequencia(dto.frequencia),
-        proximaExecucao: new Date(dto.proxima_execucao),
+        checklistTipo: dto.checklist_tipo ?? checklistTipoDaFrequencia(dto.frequencia),
+        calendario,
+        diaGeracao,
+        proximaExecucao: aplicarDiaGeracao(proximaExecucao, diaGeracao),
         valorCobrado: dto.valor_cobrado !== undefined ? new Prisma.Decimal(dto.valor_cobrado) : null,
         ativo: dto.ativo ?? true
       },
@@ -185,6 +203,8 @@ export class AdminRecorrenciaService {
           detalhes: true,
           frequencia: true,
           checklistTipo: true,
+          calendario: true,
+          diaGeracao: true,
           proximaExecucao: true,
           valorCobrado: true,
           ativo: true,
@@ -212,56 +232,44 @@ export class AdminRecorrenciaService {
         throw new ConflictException("Plano recorrente inativo.");
       }
 
-      const ordem = await tx.ordemServico.create({
-        data: {
-          empresaId: plano.empresaId,
-          clienteId: plano.clienteId,
-          enderecoId: plano.cliente.enderecos[0]?.id ?? undefined,
-          equipamentoId: plano.equipamentoId ?? undefined,
-          equipeId: plano.equipeId ?? undefined,
-          tecnicoId: plano.tecnicoId ?? undefined,
-          status: OrdemServicoStatus.aberta,
-          checklistTipo: plano.checklistTipo,
-          titulo: plano.titulo,
-          problemaRelatado: plano.detalhes,
-          agendadaPara: plano.proximaExecucao,
-          valorCobrado: plano.valorCobrado ?? undefined
-        },
-        select: {
-          id: true,
-          status: true,
-          atualizadaEm: true
-        }
-      });
-
-      await tx.ordemServicoEvento.create({
-        data: {
-          empresaId: usuario.empresa_id,
-          ordemServicoId: ordem.id,
-          usuarioId: usuario.id,
-          acao: OrdemServicoEventoAcao.aprovar,
-          statusAnterior: OrdemServicoStatus.pre_chamado,
-          statusNovo: OrdemServicoStatus.aberta,
-          registradoEm: new Date()
-        }
-      });
-
-      const proximaExecucao = this.calcularProximaExecucao(plano.proximaExecucao, plano.frequencia);
-      await tx.planoRecorrencia.update({
-        where: {
-          id: plano.id
-        },
-        data: {
-          ultimoOsId: ordem.id,
-          proximaExecucao
-        }
-      });
-
-      return {
-        ...this.mapearAtualizacaoOrdem(ordem),
-        proxima_execucao: proximaExecucao.toISOString()
-      };
+      return criarOrdemRecorrente(tx, plano, usuario.id);
     });
+  }
+
+  async gerarOrdensRecorrentesVencidas(agora = new Date()) {
+    const planos = await this.prisma.planoRecorrencia.findMany({
+      where: {
+        ativo: true,
+        proximaExecucao: {
+          lte: agora
+        }
+      },
+      orderBy: {
+        proximaExecucao: "asc"
+      },
+      take: 20,
+      select: {
+        id: true
+      }
+    });
+
+    let geradas = 0;
+    let falhas = 0;
+
+    for (const plano of planos) {
+      try {
+        await this.gerarOrdemSistema(plano.id);
+        geradas += 1;
+      } catch {
+        falhas += 1;
+      }
+    }
+
+    return {
+      verificados: planos.length,
+      geradas,
+      falhas
+    };
   }
 
   async apagarPlanoRecorrencia(planoId: string, usuario: AuthenticatedUser) {
@@ -369,69 +377,6 @@ export class AdminRecorrenciaService {
     }
   }
 
-  private calcularProximaExecucao(data: Date, frequencia: PlanoRecorrenciaFrequencia) {
-    const mesesPorFrequencia: Record<PlanoRecorrenciaFrequencia, number> = {
-      [PlanoRecorrenciaFrequencia.mensal]: 1,
-      [PlanoRecorrenciaFrequencia.trimestral]: 3,
-      [PlanoRecorrenciaFrequencia.semestral]: 6,
-      [PlanoRecorrenciaFrequencia.anual]: 12
-    };
-    const proxima = new Date(data);
-    proxima.setMonth(proxima.getMonth() + mesesPorFrequencia[frequencia]);
-    return proxima;
-  }
-
-  private checklistTipoDaFrequencia(frequencia: PlanoRecorrenciaFrequencia): ChecklistTipo {
-    const porFrequencia: Record<PlanoRecorrenciaFrequencia, ChecklistTipo> = {
-      [PlanoRecorrenciaFrequencia.mensal]: ChecklistTipo.mensal,
-      [PlanoRecorrenciaFrequencia.trimestral]: ChecklistTipo.trimestral,
-      [PlanoRecorrenciaFrequencia.semestral]: ChecklistTipo.semestral,
-      [PlanoRecorrenciaFrequencia.anual]: ChecklistTipo.anual
-    };
-    return porFrequencia[frequencia];
-  }
-
-  private mapearPlanoRecorrencia(plano: {
-    id: string;
-    titulo: string;
-    detalhes: string | null;
-    frequencia: PlanoRecorrenciaFrequencia;
-    checklistTipo: ChecklistTipo;
-    proximaExecucao: Date;
-    valorCobrado: Prisma.Decimal | null;
-    ativo: boolean;
-    atualizadoEm: Date;
-    cliente: { id: string; nome: string; telefone: string | null };
-    equipamento: { id: string; patrimonio: string | null; marca: string; modelo: string; localInstalacao: string | null } | null;
-    equipe: { id: string; nome: string } | null;
-    tecnico: { id: string; nome: string } | null;
-    ultimoOs: { id: string; titulo: string; agendadaPara: Date | null; status: OrdemServicoStatus } | null;
-  }) {
-    return {
-      id: plano.id,
-      titulo: plano.titulo,
-      detalhes: plano.detalhes,
-      frequencia: plano.frequencia,
-      checklist_tipo: plano.checklistTipo,
-      proxima_execucao: plano.proximaExecucao.toISOString(),
-      valor_cobrado: plano.valorCobrado?.toNumber() ?? null,
-      ativo: plano.ativo,
-      atualizado_em: plano.atualizadoEm.toISOString(),
-      cliente: plano.cliente,
-      equipamento: plano.equipamento,
-      equipe: plano.equipe,
-      tecnico: plano.tecnico,
-      ultima_os: plano.ultimoOs
-        ? {
-            id: plano.ultimoOs.id,
-            titulo: plano.ultimoOs.titulo,
-            agendada_para: plano.ultimoOs.agendadaPara?.toISOString() ?? null,
-            status: plano.ultimoOs.status
-          }
-        : null
-    };
-  }
-
   private normalizarTextoObrigatorio(valor: string | undefined, mensagem: string) {
     const texto = valor?.trim();
 
@@ -447,11 +392,49 @@ export class AdminRecorrenciaService {
     return texto || null;
   }
 
-  private mapearAtualizacaoOrdem(ordem: { id: string; status: OrdemServicoStatus; atualizadaEm: Date }) {
-    return {
-      os_id: ordem.id,
-      status: ordem.status,
-      atualizado_em: ordem.atualizadaEm.toISOString()
-    };
+  private async gerarOrdemSistema(planoId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const plano = await tx.planoRecorrencia.findFirst({
+        where: {
+          id: planoId,
+          ativo: true
+        },
+        select: {
+          id: true,
+          empresaId: true,
+          clienteId: true,
+          equipamentoId: true,
+          equipeId: true,
+          tecnicoId: true,
+          titulo: true,
+          detalhes: true,
+          frequencia: true,
+          checklistTipo: true,
+          calendario: true,
+          diaGeracao: true,
+          proximaExecucao: true,
+          valorCobrado: true,
+          cliente: {
+            select: {
+              enderecos: {
+                orderBy: {
+                  principal: "desc"
+                },
+                take: 1,
+                select: {
+                  id: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      if (!plano) {
+        throw new NotFoundException("Plano recorrente nao encontrado.");
+      }
+
+      return criarOrdemRecorrente(tx, plano as PlanoRecorrenciaParaGeracao, null);
+    });
   }
 }

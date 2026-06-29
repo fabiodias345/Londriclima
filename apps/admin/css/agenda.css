@@ -392,6 +392,21 @@
   gap: 14px;
 }
 
+.recurrence-calendar {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.recurrence-calendar legend {
+  grid-column: 1 / -1;
+}
+
+.recurrence-calendar label {
+  display: grid;
+  gap: 6px;
+}
+
 .recurrence-list {
   display: grid;
 }

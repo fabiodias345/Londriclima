@@ -46,6 +46,7 @@ function renderAgendaServiceCard(item) {
         <span>\${item.agendada_para ? formatAgendaTime(item.agendada_para) : "Definir horario"}</span>
       </div>
       <div>
+        <span>\${escapeHtml(formatRecurrenceCalendar(item.calendario))}</span>
         <span>\${escapeHtml(item.equipamento ? formatAgendaEquipment(item.equipamento) : "Todos os equipamentos do cliente")}</span>
         <span>\${escapeHtml(item.equipe?.nome || item.tecnico?.nome || "Equipe nao atribuida")}</span>
       </div>
@@ -101,6 +102,17 @@ function formatRecurrenceFrequency(value) {
     semestral: "Semestral",
     anual: "Anual"
   }[value] || value;
+}
+
+function formatRecurrenceCalendar(calendar) {
+  const labels = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+  const items = labels
+    .map((label, index) => {
+      const value = calendar?.[String(index + 1)];
+      return value && value !== "nenhum" ? \`\${label}: \${formatRecurrenceFrequency(value)}\` : "";
+    })
+    .filter(Boolean);
+  return items.length ? items.join(" | ") : "Calendario nao configurado";
 }
 
 async function generateRecurrenceOs(planId) {

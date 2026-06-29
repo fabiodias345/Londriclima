@@ -82,7 +82,9 @@ async function loadClientesForAgenda() {
 async function loadRecorrencias() {
   recurrenceStatus.textContent = "Carregando...";
   if (recurrenceForm instanceof HTMLFormElement && !recurrenceForm.elements.proxima_execucao.value) {
-    recurrenceForm.elements.proxima_execucao.value = \`\${getLocalDateKey(new Date())}T08:00\`;
+    const today = new Date();
+    recurrenceForm.elements.proxima_execucao.value = \`\${getLocalDateKey(today)}T08:00\`;
+    recurrenceForm.elements.dia_geracao.value = today.getDate();
   }
   await Promise.all([
     loadDispatchOptions(),

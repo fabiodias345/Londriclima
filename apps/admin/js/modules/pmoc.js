@@ -388,6 +388,15 @@ function syncAgendaOsServiceFields() {
       : "Manutencao preventiva " + (agendaOsChecklistTypeSelect?.value || "mensal");
 }
 
+function getRecurrenceCalendarPayload(data) {
+  return Object.fromEntries(
+    Array.from({ length: 12 }, (_, index) => {
+      const month = String(index + 1);
+      return [month, String(data.get(\`calendario_\${month}\`) || "nenhum")];
+    })
+  );
+}
+
 async function submitRecurrence(event) {
   event.preventDefault();
 
@@ -405,6 +414,8 @@ async function submitRecurrence(event) {
     titulo: String(data.get("titulo") || ""),
     detalhes: String(data.get("detalhes") || ""),
     frequencia: String(data.get("frequencia") || "mensal"),
+    calendario: getRecurrenceCalendarPayload(data),
+    dia_geracao: data.get("dia_geracao") ? Number(data.get("dia_geracao")) : 1,
     proxima_execucao: data.get("proxima_execucao")
       ? new Date(String(data.get("proxima_execucao"))).toISOString()
       : "",

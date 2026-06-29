@@ -475,7 +475,7 @@
               </select>
             </label>
             <label>
-              Frequencia
+              Frequencia padrao
               <select name="frequencia" required>
                 <option value="mensal">Mensal</option>
                 <option value="trimestral">Trimestral</option>
@@ -484,8 +484,12 @@
               </select>
             </label>
             <label>
-              Proxima data
+              Primeira OS
               <input name="proxima_execucao" type="datetime-local" required />
+            </label>
+            <label>
+              Dia fixo
+              <input name="dia_geracao" type="number" min="1" max="31" value="1" required />
             </label>
             <label>
               Equipe
@@ -511,6 +515,21 @@
               Detalhes
               <textarea name="detalhes" rows="3" placeholder="Rotina, observacoes e escopo da visita"></textarea>
             </label>
+            <fieldset class="form-fieldset recurrence-calendar full-span">
+              <legend>Calendario anual</legend>
+              <label>Jan<select name="calendario_1"><option value="mensal">Mensal</option><option value="trimestral">Trimestral</option><option value="semestral">Semestral</option><option value="anual">Anual</option><option value="nenhum">Nenhum</option></select></label>
+              <label>Fev<select name="calendario_2"><option value="mensal">Mensal</option><option value="trimestral">Trimestral</option><option value="semestral">Semestral</option><option value="anual">Anual</option><option value="nenhum">Nenhum</option></select></label>
+              <label>Mar<select name="calendario_3"><option value="trimestral">Trimestral</option><option value="mensal">Mensal</option><option value="semestral">Semestral</option><option value="anual">Anual</option><option value="nenhum">Nenhum</option></select></label>
+              <label>Abr<select name="calendario_4"><option value="mensal">Mensal</option><option value="trimestral">Trimestral</option><option value="semestral">Semestral</option><option value="anual">Anual</option><option value="nenhum">Nenhum</option></select></label>
+              <label>Mai<select name="calendario_5"><option value="mensal">Mensal</option><option value="trimestral">Trimestral</option><option value="semestral">Semestral</option><option value="anual">Anual</option><option value="nenhum">Nenhum</option></select></label>
+              <label>Jun<select name="calendario_6"><option value="semestral">Semestral</option><option value="mensal">Mensal</option><option value="trimestral">Trimestral</option><option value="anual">Anual</option><option value="nenhum">Nenhum</option></select></label>
+              <label>Jul<select name="calendario_7"><option value="mensal">Mensal</option><option value="trimestral">Trimestral</option><option value="semestral">Semestral</option><option value="anual">Anual</option><option value="nenhum">Nenhum</option></select></label>
+              <label>Ago<select name="calendario_8"><option value="mensal">Mensal</option><option value="trimestral">Trimestral</option><option value="semestral">Semestral</option><option value="anual">Anual</option><option value="nenhum">Nenhum</option></select></label>
+              <label>Set<select name="calendario_9"><option value="trimestral">Trimestral</option><option value="mensal">Mensal</option><option value="semestral">Semestral</option><option value="anual">Anual</option><option value="nenhum">Nenhum</option></select></label>
+              <label>Out<select name="calendario_10"><option value="mensal">Mensal</option><option value="trimestral">Trimestral</option><option value="semestral">Semestral</option><option value="anual">Anual</option><option value="nenhum">Nenhum</option></select></label>
+              <label>Nov<select name="calendario_11"><option value="mensal">Mensal</option><option value="trimestral">Trimestral</option><option value="semestral">Semestral</option><option value="anual">Anual</option><option value="nenhum">Nenhum</option></select></label>
+              <label>Dez<select name="calendario_12"><option value="anual">Anual</option><option value="mensal">Mensal</option><option value="trimestral">Trimestral</option><option value="semestral">Semestral</option><option value="nenhum">Nenhum</option></select></label>
+            </fieldset>
             <div class="form-actions full-span">
               <button type="submit">Salvar plano</button>
               <p class="status" id="recurrenceFormStatus" role="status"></p>
@@ -1089,7 +1108,7 @@
     <script
       src="./vendor/leaflet/leaflet.js"
     ></script>
-    <script type="module" src="./js/main.js?v=20260629-eventsfix"></script>
+    <script type="module" src="./js/main.js?v=20260629-recorrencia"></script>
   </body>
 </html>
 

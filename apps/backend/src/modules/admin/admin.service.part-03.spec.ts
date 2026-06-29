@@ -368,6 +368,8 @@ test("gerarOrdemPlanoRecorrencia anual cria OS anual e avanca doze meses", async
         detalhes: "Limpeza preventiva",
         frequencia: PlanoRecorrenciaFrequencia.anual,
         checklistTipo: ChecklistTipo.anual,
+        calendario: { 7: ChecklistTipo.anual },
+        diaGeracao: 1,
         proximaExecucao: new Date("2026-07-01T11:00:00.000Z"),
         valorCobrado: new Prisma.Decimal(280),
         ativo: true,
@@ -391,6 +393,9 @@ test("gerarOrdemPlanoRecorrencia anual cria OS anual e avanca doze meses", async
     },
     ordemServicoEvento: {
       create: async () => undefined
+    },
+    planoRecorrenciaGeracao: {
+      create: async () => undefined
     }
   };
   const prisma = {
@@ -410,6 +415,8 @@ test("gerarOrdemPlanoRecorrencia anual cria OS anual e avanca doze meses", async
     os_id: "os-recorrente-1",
     status: OrdemServicoStatus.aberta,
     atualizado_em: "2026-06-18T12:00:00.000Z",
+    checklist_tipo: ChecklistTipo.anual,
+    competencia: "2026-07",
     proxima_execucao: "2027-07-01T11:00:00.000Z"
   });
 });

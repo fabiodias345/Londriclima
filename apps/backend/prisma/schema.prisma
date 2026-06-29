@@ -137,6 +137,7 @@ model Empresa {
   veiculoAbastecimentos VeiculoAbastecimento[]
   pmocRelatorios   PmocRelatorio[]
   planosRecorrencia PlanoRecorrencia[]
+  planosRecorrenciaGeracoes PlanoRecorrenciaGeracao[]
 
   @@map("empresas")
 }
@@ -428,6 +429,7 @@ model OrdemServico {
   segurancas OrdemServicoSeguranca[]
   automacoes AutomacaoAgendada[]
   planosRecorrenciaGerada PlanoRecorrencia[] @relation("PlanoRecorrenciaUltimaOs")
+  planoRecorrenciaGeracoes PlanoRecorrenciaGeracao[]
 
   @@index([empresaId, status])
   @@index([empresaId, agendadaPara])
@@ -470,6 +472,8 @@ model PlanoRecorrencia {
   detalhes  String?
   frequencia PlanoRecorrenciaFrequencia
   checklistTipo ChecklistTipo @default(mensal) @map("checklist_tipo")
+  calendario Json @default("{}")
+  diaGeracao Int @default(1) @map("dia_geracao")
   proximaExecucao DateTime @map("proxima_execucao")
   valorCobrado Decimal? @map("valor_cobrado") @db.Decimal(12, 2)
   ativo     Boolean @default(true)
@@ -482,11 +486,31 @@ model PlanoRecorrencia {
   equipe Equipe? @relation(fields: [equipeId], references: [id])
   tecnico Usuario? @relation("PlanoRecorrenciaTecnico", fields: [tecnicoId], references: [id])
   ultimoOs OrdemServico? @relation("PlanoRecorrenciaUltimaOs", fields: [ultimoOsId], references: [id])
+  geracoes PlanoRecorrenciaGeracao[]
 
   @@index([empresaId, ativo, proximaExecucao])
   @@index([clienteId])
   @@index([equipamentoId])
   @@map("planos_recorrencia")
+}
+
+model PlanoRecorrenciaGeracao {
+  id        String   @id @default(uuid()) @db.Uuid
+  empresaId String  @map("empresa_id") @db.Uuid
+  planoId   String  @map("plano_id") @db.Uuid
+  ordemServicoId String @map("ordem_servico_id") @db.Uuid
+  competenciaAno Int @map("competencia_ano")
+  competenciaMes Int @map("competencia_mes")
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+  plano PlanoRecorrencia @relation(fields: [planoId], references: [id], onDelete: Cascade)
+  ordemServico OrdemServico @relation(fields: [ordemServicoId], references: [id], onDelete: Cascade)
+
+  @@unique([planoId, competenciaAno, competenciaMes])
+  @@index([empresaId])
+  @@index([ordemServicoId])
+  @@map("planos_recorrencia_geracoes")
 }
 
 model OrdemServicoResponsavel {

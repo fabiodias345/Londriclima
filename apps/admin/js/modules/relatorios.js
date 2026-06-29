@@ -23,6 +23,8 @@ async function editRecurrence(planId) {
   await loadRecurrenceEquipments(item.cliente?.id || "");
   recurrenceForm.elements.equipamento_id.value = item.equipamento?.id || "";
   recurrenceForm.elements.frequencia.value = item.frequencia || "mensal";
+  recurrenceForm.elements.dia_geracao.value = item.dia_geracao || 1;
+  setRecurrenceCalendar(item.calendario || {});
   recurrenceForm.elements.proxima_execucao.value = formatInputDateTime(item.proxima_execucao);
   recurrenceForm.elements.equipe_id.value = item.equipe?.id || "";
   recurrenceForm.elements.tecnico_id.value = item.tecnico?.id || "";
@@ -83,8 +85,38 @@ function resetRecurrenceForm() {
   recurrenceForm?.reset();
 
   if (recurrenceForm instanceof HTMLFormElement) {
+    const today = new Date();
     recurrenceForm.elements.titulo.value = "PMOC preventivo";
-    recurrenceForm.elements.proxima_execucao.value = \`\${getLocalDateKey(new Date())}T08:00\`;
+    recurrenceForm.elements.dia_geracao.value = today.getDate();
+    recurrenceForm.elements.proxima_execucao.value = \`\${getLocalDateKey(today)}T08:00\`;
+    setRecurrenceCalendar({
+      1: "mensal",
+      2: "mensal",
+      3: "trimestral",
+      4: "mensal",
+      5: "mensal",
+      6: "semestral",
+      7: "mensal",
+      8: "mensal",
+      9: "trimestral",
+      10: "mensal",
+      11: "mensal",
+      12: "anual"
+    });
+  }
+}
+
+function setRecurrenceCalendar(calendar) {
+  if (!(recurrenceForm instanceof HTMLFormElement)) {
+    return;
+  }
+
+  for (let month = 1; month <= 12; month += 1) {
+    const field = recurrenceForm.elements[\`calendario_\${month}\`];
+
+    if (field instanceof HTMLSelectElement) {
+      field.value = calendar[String(month)] || calendar[month] || "nenhum";
+    }
   }
 }
 

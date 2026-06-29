@@ -11,6 +11,7 @@ import { AdminFrotaService } from "./services/admin-frota.service";
 import { AdminPmocPdfService } from "./services/admin-pmoc-pdf.service";
 import { AdminPmocService } from "./services/admin-pmoc.service";
 import { AdminPreChamadosService } from "./services/admin-pre-chamados.service";
+import { AdminRecorrenciaSchedulerService } from "./services/admin-recorrencia-scheduler.service";
 import { AdminRecorrenciaService } from "./services/admin-recorrencia.service";
 import { AdminRelatorioTecnicoCoreService } from "./services/admin-relatorio-tecnico-core.service";
 import { AdminRelatoriosService } from "./services/admin-relatorios.service";
@@ -23,6 +24,7 @@ import { AdminTecnicosService } from "./services/admin-tecnicos.service";
     AdminService,
     AdminAgendaService,
     AdminRecorrenciaService,
+    AdminRecorrenciaSchedulerService,
     AdminFrotaService,
     AdminClientesService,
     AdminEquipamentosService,
