@@ -507,13 +507,13 @@ function getOsEquipmentProgress(item) {
 
   if (Array.isArray(item.equipamentos) && item.equipamentos.length) {
     for (const equipment of item.equipamentos) {
-      equipmentsById.set(equipment.id || formatOsEquipmentQr(equipment), equipment);
+      equipmentsById.set(equipment.id || formatOsEquipmentLabel(equipment), equipment);
     }
   }
 
   if (Array.isArray(item.equipamentos_executados) && item.equipamentos_executados.length) {
     for (const equipment of item.equipamentos_executados) {
-      equipmentsById.set(equipment.id || formatOsEquipmentQr(equipment), {
+      equipmentsById.set(equipment.id || formatOsEquipmentLabel(equipment), {
         ...equipment,
         status_execucao: "feito"
       });
@@ -521,7 +521,7 @@ function getOsEquipmentProgress(item) {
   }
 
   if (!equipmentsById.size && item.equipamento) {
-    equipmentsById.set(item.equipamento.id || formatOsEquipmentQr(item.equipamento), {
+    equipmentsById.set(item.equipamento.id || formatOsEquipmentLabel(item.equipamento), {
       ...item.equipamento,
       status_execucao: item.status === "concluida" ? "feito" : "pendente"
     });
@@ -543,15 +543,15 @@ function renderOsEquipmentProgress(item) {
       \${equipments.map((equipment) => \`
         <span class="\${equipment.status_execucao === "feito" ? "is-done" : ""}">
           \${equipment.status_execucao === "feito" ? "[x]" : "[ ]"}
-          \${escapeHtml(formatOsEquipmentQr(equipment))}
+          \${escapeHtml(formatOsEquipmentLabel(equipment))}
         </span>
       \`).join("")}
     </div>
   \`;
 }
 
-function formatOsEquipmentQr(equipment) {
-  return equipment.patrimonio || equipment.codigo_qr || equipment.qr_code || equipment.id || "Sem QR";
+function formatOsEquipmentLabel(equipment) {
+  return equipment.patrimonio || equipment.local_instalacao || equipment.tipo || equipment.id || "Equipamento sem identificacao";
 }
 
 function renderOsExecutionSummary(item) {
@@ -940,6 +940,7 @@ pmocGenerateReportButton?.addEventListener("click", openPmocReportPreview);
 pmocRequestSignatureButton?.addEventListener("click", requestPmocEngineerSignature);
 recurrenceForm?.addEventListener("submit", submitRecurrence);
 refreshButton?.addEventListener("click", loadActiveView);
+document.addEventListener("visibilitychange", syncAutoRefresh);
 configButton?.addEventListener("click", async () => {
   setActiveView("configuracoes");
   await loadActiveView();

@@ -629,10 +629,6 @@
                 <input name="patrimonio" type="text" />
               </label>
               <label>
-                Código de barras ou QR Code
-                <input name="codigo_barras" type="text" placeholder="Leia ou digite o codigo da etiqueta" />
-              </label>
-              <label>
                 Marca
                 <input name="marca" type="text" required />
               </label>
@@ -671,16 +667,9 @@
               </label>
               <div class="form-actions">
                 <button type="submit">Salvar equipamento</button>
-                <button class="secondary-button" id="scanEquipmentCodeButton" type="button">Ler codigo/QR</button>
               </div>
               <p class="status" id="equipmentFormStatus" role="status"></p>
             </form>
-            <div class="scanner-panel hidden" id="equipmentScannerPanel">
-              <video id="equipmentScannerVideo" playsinline muted></video>
-              <div class="form-actions">
-                <button class="secondary-button" id="stopEquipmentScanButton" type="button">Fechar leitor</button>
-              </div>
-            </div>
             <div class="data-list compact-list" id="clientEquipmentList"></div>
           </section>
           <div class="data-list" id="clientesList"></div>

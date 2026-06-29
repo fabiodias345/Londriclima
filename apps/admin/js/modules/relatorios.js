@@ -380,7 +380,6 @@ async function submitEquipment(event) {
   const payload = removeEmptyValues({
     tipo: String(data.get("tipo") || ""),
     patrimonio: String(data.get("patrimonio") || ""),
-    codigo_barras: String(data.get("codigo_barras") || ""),
     marca: String(data.get("marca") || ""),
     modelo: String(data.get("modelo") || ""),
     capacidade_btu: data.get("capacidade_btu") ? Number(data.get("capacidade_btu")) : "",

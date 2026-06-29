@@ -432,19 +432,9 @@ clientEquipmentList?.addEventListener("click", async (event) => {
   }
 });
 
-scanEquipmentCodeButton?.addEventListener("click", () => {
-  void startEquipmentScanner();
-});
-
-stopEquipmentScanButton?.addEventListener("click", stopEquipmentScanner);
-
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !deleteClientModal?.classList.contains("hidden")) {
     closeDeleteClientModal();
-  }
-
-  if (event.key === "Escape" && !equipmentScannerPanel?.classList.contains("hidden")) {
-    stopEquipmentScanner();
   }
 });
 

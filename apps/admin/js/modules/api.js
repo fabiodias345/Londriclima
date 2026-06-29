@@ -171,10 +171,6 @@ const clientEquipmentStatus = document.querySelector("#clientEquipmentStatus");
 const clientEquipmentList = document.querySelector("#clientEquipmentList");
 const equipmentForm = document.querySelector("#equipmentForm");
 const equipmentFormStatus = document.querySelector("#equipmentFormStatus");
-const scanEquipmentCodeButton = document.querySelector("#scanEquipmentCodeButton");
-const stopEquipmentScanButton = document.querySelector("#stopEquipmentScanButton");
-const equipmentScannerPanel = document.querySelector("#equipmentScannerPanel");
-const equipmentScannerVideo = document.querySelector("#equipmentScannerVideo");
 const clientCount = document.querySelector("#clientCount");
 const clientOpenCount = document.querySelector("#clientOpenCount");
 const equipmentCount = document.querySelector("#equipmentCount");
@@ -220,6 +216,10 @@ const fleetReportList = document.querySelector("#fleetReportList");
 const fleetReportExportButton = document.querySelector("#fleetReportExportButton");
 
 let activeView = "preChamados";
+const AUTO_REFRESH_INTERVAL_MS = 10000;
+const AUTO_REFRESH_VIEWS = new Set(["preChamados", "agenda"]);
+let autoRefreshTimer = 0;
+let autoRefreshRunning = false;
 let activeConfigView = "empresa";
 let activeOsTab = "solicitacoes";
 let selectedOsDetailId = "";
@@ -246,8 +246,6 @@ let selectedEquipmentClientId = "";
 let selectedPmocClientId = "";
 let selectedPmocDossierClientId = "";
 let selectedPmocDossierMachines = [];
-let equipmentScanStream = null;
-let equipmentScanTimer = 0;
 let activeFleetTab = "mapa";
 let leafletMap = null;
 let fleetMarkerGroup = null;
@@ -278,11 +276,13 @@ function authHeaders() {
 function showDashboard() {
   loginPanel.classList.add("hidden");
   dashboard.classList.remove("hidden");
+  syncAutoRefresh();
 }
 
 function showLogin() {
   dashboard.classList.add("hidden");
   loginPanel.classList.remove("hidden");
+  syncAutoRefresh();
 }
 
 async function login(event) {
@@ -387,6 +387,32 @@ async function loadActiveView() {
   await loadOsWorkbench();
 }
 
+async function autoRefreshActiveView() {
+  if (autoRefreshRunning || document.hidden || !AUTO_REFRESH_VIEWS.has(activeView) || !getToken()) {
+    return;
+  }
+
+  autoRefreshRunning = true;
+  try {
+    await loadActiveView();
+  } finally {
+    autoRefreshRunning = false;
+  }
+}
+
+function syncAutoRefresh() {
+  if (autoRefreshTimer) {
+    window.clearInterval(autoRefreshTimer);
+    autoRefreshTimer = 0;
+  }
+
+  if (document.hidden || !AUTO_REFRESH_VIEWS.has(activeView) || !getToken()) {
+    return;
+  }
+
+  autoRefreshTimer = window.setInterval(autoRefreshActiveView, AUTO_REFRESH_INTERVAL_MS);
+}
+
 async function loadConfigView() {
   if (activeConfigView === "tecnicos") {
     await loadTecnicos();
@@ -468,6 +494,7 @@ function setActiveView(view) {
   pmocView.classList.toggle("hidden", view !== "pmoc");
   relatoriosView.classList.toggle("hidden", view !== "relatorios");
   relatoriosAvulsosView.classList.toggle("hidden", view !== "relatoriosAvulsos");
+  syncAutoRefresh();
 }
 
 function setConfigView(view) {
