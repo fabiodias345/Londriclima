@@ -46,7 +46,6 @@ function renderAgendaServiceCard(item) {
         <span>\${item.agendada_para ? formatAgendaTime(item.agendada_para) : "Definir horario"}</span>
       </div>
       <div>
-        <span>\${escapeHtml(formatRecurrenceCalendar(item.calendario))}</span>
         <span>\${escapeHtml(item.equipamento ? formatAgendaEquipment(item.equipamento) : "Todos os equipamentos do cliente")}</span>
         <span>\${escapeHtml(item.equipe?.nome || item.tecnico?.nome || "Equipe nao atribuida")}</span>
       </div>
@@ -75,7 +74,8 @@ function renderRecurrenceCard(item) {
     <article class="recurrence-card \${due ? "due" : ""}">
       <div>
         <strong>\${escapeHtml(item.titulo)}</strong>
-        <span>\${escapeHtml(item.cliente?.nome || "Cliente não informado")} - \${formatRecurrenceFrequency(item.frequencia)}</span>
+        <span>\${escapeHtml(item.cliente?.nome || "Cliente não informado")}</span>
+        <span>\${escapeHtml(formatRecurrenceCalendar(item.calendario))}</span>
         <span>\${escapeHtml(item.equipamento ? formatAgendaEquipment(item.equipamento) : "Todos os equipamentos do cliente")}</span>
       </div>
       <div>
