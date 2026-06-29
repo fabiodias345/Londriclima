@@ -817,6 +817,7 @@ void main() {
         ?.call();
     await tester.pumpAndSettle();
 
+    expect(find.text('Preencha: QR / codigo da maquina.'), findsOneWidget);
     final missingField = tester.widget<TextField>(
       find.byKey(const Key('machineField_modelo')),
     );
@@ -1373,6 +1374,11 @@ void main() {
       find.byKey(const Key('machineField_capacidade_btu')),
       findsOneWidget,
     );
+
+    final qrField = tester.widget<TextField>(
+      find.byKey(const Key('machineField_codigo_qr')),
+    );
+    expect(qrField.maxLength, 20);
 
     await tester.scrollUntilVisible(
       find.byKey(const Key('machineField_codigo_qr')),

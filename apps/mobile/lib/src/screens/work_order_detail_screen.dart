@@ -83,6 +83,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
   final ScrollController _scrollController = ScrollController();
   final Map<String, String> _checklistValues = {};
   final Map<String, GlobalKey> _checklistItemKeys = {};
+  final Map<String, GlobalKey> _machineFieldKeys = {};
   final List<Offset?> _signaturePoints = [];
   final TextEditingController _responsibleController = TextEditingController();
   final Set<String> _uploadingPhotoCodes = {};
@@ -342,9 +343,21 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
                       ? 'Cadastrar maquina'
                       : 'Completar cadastro da maquina',
                   children: [
+                    if (_errorMessage != null) ...[
+                      Text(
+                        _errorMessage!,
+                        key: const Key('machineFormError'),
+                        style: const TextStyle(
+                          color: Color(0xFFB3261E),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     ..._machineFieldLabels.entries.map(
                       (entry) => _MachineField(
                         fieldKey: entry.key,
+                        itemKey: _machineFieldKey(entry.key),
                         label: entry.value,
                         controller: _machineControllers[entry.key]!,
                         impossibleController:
@@ -640,9 +653,9 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
         _highlightedMachineFields
           ..clear()
           ..addAll(missing);
-        _errorMessage =
-            'Complete os dados da maquina ou marque impossivel coletar com observacao.';
+        _errorMessage = 'Preencha: ${_machineFieldLabel(missing.first)}.';
       });
+      _scrollToMachineField(missing.first);
       return;
     }
 
@@ -768,6 +781,24 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
         })
         .map((entry) => entry.key)
         .toList();
+  }
+
+  GlobalKey _machineFieldKey(String field) {
+    return _machineFieldKeys.putIfAbsent(field, GlobalKey.new);
+  }
+
+  void _scrollToMachineField(String field) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = _machineFieldKeys[field]?.currentContext;
+      if (context == null) {
+        return;
+      }
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 260),
+        alignment: 0.12,
+      );
+    });
   }
 
   Future<void> _saveAnnualDraft() => _saveChecklist(draft: true);
@@ -1803,6 +1834,7 @@ String _machineFieldLabel(String field) {
 class _MachineField extends StatelessWidget {
   const _MachineField({
     required this.fieldKey,
+    required this.itemKey,
     required this.label,
     required this.controller,
     required this.impossibleController,
@@ -1816,6 +1848,7 @@ class _MachineField extends StatelessWidget {
   });
 
   final String fieldKey;
+  final GlobalKey itemKey;
   final String label;
   final TextEditingController controller;
   final TextEditingController impossibleController;
@@ -1860,6 +1893,7 @@ class _MachineField extends StatelessWidget {
     );
 
     return Padding(
+      key: itemKey,
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1871,7 +1905,7 @@ class _MachineField extends StatelessWidget {
               enabled: !impossible,
               keyboardType: numeric ? TextInputType.number : TextInputType.text,
               textInputAction: TextInputAction.next,
-              maxLength: fieldKey == 'codigo_qr' ? 16 : null,
+              maxLength: fieldKey == 'codigo_qr' ? 20 : null,
               decoration: decoration,
               onChanged: (_) => onChanged(),
             )
