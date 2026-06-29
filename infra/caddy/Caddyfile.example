@@ -17,7 +17,8 @@ http://191.252.226.11 {
 	redir /admin /admin/
 
 	handle /admin/* {
-		header Cache-Control "no-store"
+		header Cache-Control "no-store, max-age=0"
+		header Clear-Site-Data "\"cache\""
 		root * /srv/admin
 		uri strip_prefix /admin
 		try_files {path} /index.html
@@ -54,7 +55,8 @@ admin.airmovebr.com.br {
 	}
 
 	handle {
-		header Cache-Control "no-store"
+		header Cache-Control "no-store, max-age=0"
+		header Clear-Site-Data "\"cache\""
 		root * /srv/admin
 		file_server
 	}
