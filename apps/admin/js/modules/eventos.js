@@ -406,7 +406,7 @@ function formatOsServiceType(item) {
     return "Instalação";
   }
 
-  return `Preventiva ${formatChecklistTipo(item.checklist_tipo).toLowerCase()}`;
+  return "Preventiva " + formatChecklistTipo(item.checklist_tipo).toLowerCase();
 }
 
 function renderOsTimeline(item) {
