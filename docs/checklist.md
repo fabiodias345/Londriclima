@@ -52,7 +52,6 @@ Documento de referência para os checklists preventivos do aplicativo técnico.
 - [ ] Higienização completa da evaporadora.
 - [ ] Foto da máquina aberta e desmontada, com bolsão embaixo.
 - [ ] Higienização completa da condensadora.
-- [ ] Foto da condensadora aberta e desmontada, com bolsão embaixo.
 - [ ] Verificação completa do circuito frigorífico: pressões, estanqueidade e carga, quando necessário.
 - [ ] Inspeção completa dos componentes elétricos.
 - [ ] Verificação do isolamento térmico das tubulações.

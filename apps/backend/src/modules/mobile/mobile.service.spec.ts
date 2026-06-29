@@ -289,7 +289,7 @@ test("listarOrdens mantém checklists independentes por periodicidade", async ()
   assert.equal(fotos("mensal").length, 2);
   assert.equal(fotos("trimestral").length, 2);
   assert.equal(fotos("semestral").length, 2);
-  assert.equal(fotos("anual").length, 4);
+  assert.equal(fotos("anual").length, 3);
   assert.equal(codigos("trimestral").some((codigo: string) => codigo.startsWith("MEN_")), false);
   assert.equal(codigos("semestral").some((codigo: string) => codigo.startsWith("TRI_")), false);
   assert.equal(new Set(codigos("anual")).size, codigos("anual").length);

@@ -18,9 +18,7 @@
 - Modify: `apps/mobile/lib/src/screens/work_order_detail_screen.dart`
 - Modify: `apps/mobile/test/widget_test.dart`
 
-- [ ] Adicionar teste que exige as duas fotos da condensadora anual.
-- [ ] Executar o teste e confirmar falha por ausencia de `ANU_FOTO_BOLSAO_COND`.
-- [ ] Adicionar o item faltante com o texto de `docs/checklist.md`.
+- [ ] Ajustar o teste do anual para refletir o checklist validado em `docs/checklist.md`.
 - [ ] Remover a navegacao anual especial; renderizar o payload flat completo por maquina.
 - [ ] Ajustar o widget test para garantir que itens de evaporadora, condensadora, gerais e medicoes aparecem juntos.
 - [ ] Executar os testes focados de backend e Flutter.

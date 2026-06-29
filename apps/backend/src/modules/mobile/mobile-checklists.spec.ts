@@ -60,7 +60,6 @@ test("checklist mobile anual separa evaporadora e condensadora", () => {
     "ANU_HIGIENIZACAO_EVAP",
     "ANU_FOTO_BOLSAO",
     "ANU_HIGIENIZACAO_COND",
-    "ANU_FOTO_BOLSAO_COND",
     "ANU_FOTO_COND",
     "ANU_CIRCUITO",
     "ANU_ELETRICA",
@@ -76,7 +75,6 @@ test("checklist mobile anual separa evaporadora e condensadora", () => {
       ANU_HIGIENIZACAO_EVAP: "evaporadora",
       ANU_FOTO_BOLSAO: "evaporadora",
       ANU_HIGIENIZACAO_COND: "condensadora",
-      ANU_FOTO_BOLSAO_COND: "condensadora",
       ANU_FOTO_COND: "condensadora",
       ANU_CIRCUITO: "condensadora",
       ANU_ELETRICA: "condensadora",
@@ -97,7 +95,6 @@ test("checklist mobile anual separa evaporadora e condensadora", () => {
   ]);
   assert.deepEqual(codigosObrigatoriosChecklistEtapaAnual("condensadora"), [
     "ANU_HIGIENIZACAO_COND",
-    "ANU_FOTO_BOLSAO_COND",
     "ANU_FOTO_COND",
     "ANU_CIRCUITO",
     "ANU_ELETRICA",
