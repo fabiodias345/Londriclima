@@ -566,6 +566,7 @@ export class AdminRelatorioTecnicoCoreService {
       })
     ]);
     const osApagadasPorCliente = this.mapearOsRelatoriosAvulsosApagados(relatoriosApagados);
+    const osEnviadasPorCliente = this.mapearOsRelatoriosAvulsosApagados(relatoriosEnviados);
     const ultimoEnvioPorCliente = this.mapearUltimoEnvioRelatorioAvulso(relatoriosEnviados);
     const clientes = await this.prisma.cliente.findMany({
       where: {
@@ -624,7 +625,8 @@ export class AdminRelatorioTecnicoCoreService {
         ])
       );
       const osApagadas = osApagadasPorCliente.get(cliente.id) ?? new Set<string>();
-      const osVisiveis = osConcluidas.filter((ordemId) => !osApagadas.has(ordemId));
+      const osEnviadas = osEnviadasPorCliente.get(cliente.id) ?? new Set<string>();
+      const osVisiveis = osConcluidas.filter((ordemId) => !osApagadas.has(ordemId) && !osEnviadas.has(ordemId));
       const totalOsConcluidas = osVisiveis.length;
 
       return {
@@ -649,15 +651,16 @@ export class AdminRelatorioTecnicoCoreService {
 
   async obterPreviaRelatorioAvulsoCliente(clienteId: string, usuario: AuthenticatedUser) {
     const cliente = await this.obterClienteRelatorioAvulso(clienteId, usuario);
+    const osIgnoradas = await this.obterOsRelatoriosAvulsosIgnorados(usuario.empresa_id, clienteId);
     const ordensPorEquipamento = this.mapearOrdensPorEquipamentoChecklist(cliente.ordensServico ?? []);
     const maquinas = cliente.equipamentos
       .map((equipamento) =>
         this.mapearMaquinaRelatorioTecnico({
           ...equipamento,
-          ordensServico: this.unirOrdensRelatorio(
+          ordensServico: this.filtrarOrdensRelatorioAvulso(this.unirOrdensRelatorio(
             equipamento.ordensServico,
             ordensPorEquipamento.get(equipamento.id) ?? []
-          )
+          ), osIgnoradas)
         })
       )
       .filter((maquina) => maquina.os_concluidas.length > 0);
@@ -809,6 +812,35 @@ export class AdminRelatorioTecnicoCoreService {
     }
 
     return porCliente;
+  }
+
+  private async obterOsRelatoriosAvulsosIgnorados(empresaId: string, clienteId: string) {
+    const automacaoAgendada = (this.prisma as {
+      automacaoAgendada?: {
+        findMany?: (args: unknown) => Promise<Array<{ payload: Prisma.JsonValue }>>;
+      };
+    }).automacaoAgendada;
+
+    if (!automacaoAgendada?.findMany) {
+      return new Set<string>();
+    }
+
+    const relatorios = await automacaoAgendada.findMany({
+      where: {
+        empresaId,
+        tipo: AutomacaoTipo.enviar_email,
+        OR: [
+          { payload: { path: ["tipo"], equals: "relatorio_tecnico_avulso" } },
+          { payload: { path: ["tipo"], equals: "relatorio_tecnico_avulso_apagado" } }
+        ]
+      },
+      select: {
+        payload: true
+      }
+    });
+    const porCliente = this.mapearOsRelatoriosAvulsosApagados(relatorios);
+
+    return porCliente.get(clienteId) ?? new Set<string>();
   }
 
   private mapearUltimoEnvioRelatorioAvulso(relatorios: Array<{ criadoEm: Date; payload: Prisma.JsonValue }>) {
@@ -1428,6 +1460,10 @@ export class AdminRelatorioTecnicoCoreService {
       const dataB = "concluidaEm" in b && b.concluidaEm instanceof Date ? b.concluidaEm.getTime() : 0;
       return dataB - dataA;
     });
+  }
+
+  private filtrarOrdensRelatorioAvulso<T extends { id: string }>(ordens: T[], osIgnoradas: Set<string>) {
+    return ordens.filter((ordem) => !osIgnoradas.has(ordem.id));
   }
 
   private mapearMaquinaRelatorioTecnico(equipamento: {
@@ -2245,6 +2281,7 @@ export class AdminRelatorioTecnicoCoreService {
 
     const imagens: Buffer[] = [];
     const urls = new Set<string>();
+    const hashes = new Set<string>();
 
     for (const evidencia of ordem.evidencias) {
       if (!evidencia.storage_url) {
@@ -2252,7 +2289,7 @@ export class AdminRelatorioTecnicoCoreService {
       }
 
       const imagem = this.carregarArquivoStorage(evidencia.storage_url);
-      if (imagem) {
+      if (imagem && this.registrarImagemRelatorioAvulso(imagem, hashes)) {
         urls.add(evidencia.storage_url);
         imagens.push(imagem);
       }
@@ -2264,13 +2301,24 @@ export class AdminRelatorioTecnicoCoreService {
       }
 
       const imagem = this.carregarArquivoStorage(resposta.valor);
-      if (imagem) {
+      if (imagem && this.registrarImagemRelatorioAvulso(imagem, hashes)) {
         urls.add(resposta.valor);
         imagens.push(imagem);
       }
     }
 
     return imagens;
+  }
+
+  private registrarImagemRelatorioAvulso(imagem: Buffer, hashes: Set<string>) {
+    const hash = createHash("sha256").update(imagem).digest("hex");
+
+    if (hashes.has(hash)) {
+      return false;
+    }
+
+    hashes.add(hash);
+    return true;
   }
 
   private carregarArquivoStorage(storageUrl: string) {

@@ -483,6 +483,111 @@ test("listarRelatoriosAvulsos mostra OS multi-equipamento pelas respostas do che
   assert.equal(resposta.items[0].pronto_para_envio, true);
 });
 
+test("gerarPdfRelatorioAvulsoCliente usa somente OS ainda nao enviada", async () => {
+  const equipamento = criarEquipamentoPmocTeste("equipamento-1", "Sala", "AV-001", "SN-AV-1", "2026-06-11T12:00:00.000Z");
+  equipamento.ordensServico.unshift({
+    ...equipamento.ordensServico[0],
+    id: "os-nova",
+    titulo: "Corretiva atual",
+    concluidaEm: new Date("2026-06-13T10:00:00.000Z"),
+    checklistRespostas: [
+      { codigo: "C1", tipo: "texto", valor: "Vazamento atual", observacao: null },
+      { codigo: "C2", tipo: "texto", valor: "Reparo atual", observacao: null }
+    ]
+  });
+  const prisma = {
+    cliente: {
+      findFirst: async () => ({
+        id: "cliente-1",
+        nome: "Cliente Avulso",
+        tipo: "pf",
+        documento: "12345678900",
+        telefone: "43988887777",
+        email: "cliente@example.com",
+        pmocAtivo: false,
+        atualizadoEm: new Date("2026-06-13T10:00:00.000Z"),
+        enderecos: [{ cidade: "Londrina", uf: "PR", bairro: "Centro" }],
+        equipamentos: [equipamento],
+        ordensServico: []
+      })
+    },
+    automacaoAgendada: {
+      findMany: async () => [
+        {
+          payload: {
+            tipo: "relatorio_tecnico_avulso",
+            cliente_id: "cliente-1",
+            os_ids: ["os-equipamento-1"]
+          }
+        }
+      ]
+    }
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.gerarPdfRelatorioAvulsoCliente("cliente-1", usuario);
+  const pdf = resposta.buffer.toString("latin1");
+
+  assert.match(pdf, /OS: Corretiva atual/);
+  assert.match(pdf, /Problema encontrado\s+Vazamento atual/);
+  assert.doesNotMatch(pdf, /OS: PMOC mensal/);
+  assert.doesNotMatch(pdf, /Motor travado/);
+});
+
+test("gerarPdfRelatorioAvulsoCliente nao duplica a mesma foto", async () => {
+  const fotoAPath = resolve(process.cwd(), "..", "..", "storage", "os", "os-foto-unica", "evidencias", "foto-a.jpg");
+  const fotoBPath = resolve(process.cwd(), "..", "..", "storage", "os", "os-foto-unica", "checklist", "foto-b.jpg");
+  mkdirSync(dirname(fotoAPath), { recursive: true });
+  mkdirSync(dirname(fotoBPath), { recursive: true });
+  const foto = Buffer.from([0xff, 0xd8, 0xff, 0xd9, 0x00]);
+  writeFileSync(fotoAPath, foto);
+  writeFileSync(fotoBPath, foto);
+  const equipamento = criarEquipamentoPmocTeste("equipamento-1", "Sala", "AV-001", "SN-AV-1", "2026-06-11T12:00:00.000Z");
+  equipamento.ordensServico[0].id = "os-foto-unica";
+  equipamento.ordensServico[0].evidencias = [
+    {
+      id: "ev-foto-a",
+      tipo: "antes",
+      descricao: "Foto unica",
+      storageUrl: "/storage/os/os-foto-unica/evidencias/foto-a.jpg",
+      mimeType: "image/jpeg",
+      tamanhoBytes: 1000,
+      criadoEm: new Date("2026-06-11T12:00:00.000Z")
+    }
+  ];
+  equipamento.ordensServico[0].checklistRespostas = [
+    { codigo: "C1", tipo: "texto", valor: "Foto unica", observacao: null },
+    { codigo: "C3", tipo: "foto", valor: "/storage/os/os-foto-unica/checklist/foto-b.jpg", observacao: null }
+  ];
+  const prisma = {
+    cliente: {
+      findFirst: async () => ({
+        id: "cliente-1",
+        nome: "Cliente Avulso",
+        tipo: "pf",
+        documento: "12345678900",
+        telefone: "43988887777",
+        email: "cliente@example.com",
+        pmocAtivo: false,
+        atualizadoEm: new Date("2026-06-12T10:00:00.000Z"),
+        enderecos: [{ cidade: "Londrina", uf: "PR", bairro: "Centro" }],
+        equipamentos: [equipamento],
+        ordensServico: []
+      })
+    }
+  };
+  const service = criarService(prisma);
+
+  try {
+    const resposta = await service.gerarPdfRelatorioAvulsoCliente("cliente-1", usuario);
+    const pdf = resposta.buffer.toString("latin1");
+
+    assert.equal((pdf.match(/\/Subtype \/Image/g) ?? []).length, 1);
+  } finally {
+    rmSync(resolve(process.cwd(), "..", "..", "storage", "os", "os-foto-unica"), { recursive: true, force: true });
+  }
+});
+
 test("gerarPdfRelatorioAvulsoCliente separa duas manutencoes da mesma maquina", async () => {
   const fotoAntesPath = resolve(process.cwd(), "..", "..", "storage", "os", "os-equipamento-1-corretiva", "evidencias", "antes.jpg");
   const fotoDepoisPath = resolve(process.cwd(), "..", "..", "storage", "os", "os-equipamento-1-corretiva", "evidencias", "depois.jpg");
