@@ -15,12 +15,10 @@ function renderRecorrencias(items) {
   if (!items.length) {
     const empty = '<article class="agenda-empty"><strong>Nenhum plano recorrente.</strong><span>Cadastre uma rotina para gerar OS futuras com poucos cliques.</span></article>';
     recurrenceList.innerHTML = empty;
-    renderRecurrenceCalendarBoard(items);
     return;
   }
 
   recurrenceList.innerHTML = items.map(renderRecurrenceCard).join("");
-  renderRecurrenceCalendarBoard(items);
 }
 
 function renderRecurrenceCard(item) {
@@ -43,35 +41,6 @@ function renderRecurrenceCard(item) {
         <button class="secondary-button compact-button" type="button" data-action="gerar-recorrencia-os" data-id="\${item.id}">Gerar OS</button>
       </div>
     </article>
-  \`;
-}
-
-function renderRecurrenceCalendarBoard(items) {
-  const board = document.querySelector("#recurrenceCalendarBoard");
-
-  if (!board) {
-    return;
-  }
-
-  if (!items.length) {
-    board.innerHTML = '<article class="agenda-empty"><strong>Nenhum calendario recorrente.</strong><span>Os meses aparecem depois que houver planos salvos.</span></article>';
-    return;
-  }
-
-  board.innerHTML = \`
-    <div class="recurrence-legend">
-      <span>Cinza: sem recorrencia</span><span>Vermelho: falta gerar</span><span>Azul: enviado ao tecnico</span>
-      <span>Verde: tecnico finalizou</span><span>Roxo: engenheiro</span><span>Dourado: cliente</span>
-    </div>
-    \${items.map((item) => \`
-      <article class="recurrence-calendar-row">
-        <div>
-          <strong>\${escapeHtml(item.cliente?.nome || "Cliente nao informado")}</strong>
-          <span>\${escapeHtml(item.titulo)} - \${escapeHtml(item.equipe?.nome || item.tecnico?.nome || "sem responsavel")}</span>
-        </div>
-        <div class="recurrence-calendar-grid">\${renderRecurrenceMonthCells(item)}</div>
-      </article>
-    \`).join("")}
   \`;
 }
 
@@ -111,14 +80,5 @@ function getRecurrenceMonthStatus(item, month) {
   }
 
   return { className: planned ? "is-planned" : "is-empty", label: planned ? "Previsto" : "Sem" };
-}
-
-function setRecurrenceTab(tab) {
-  document.querySelectorAll("[data-recurrence-tab]").forEach((button) => {
-    button.classList.toggle("active", button.dataset.recurrenceTab === tab);
-  });
-  document.querySelectorAll("[data-recurrence-panel]").forEach((panel) => {
-    panel.classList.toggle("hidden", panel.dataset.recurrencePanel !== tab);
-  });
 }
 `;

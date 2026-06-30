@@ -255,10 +255,9 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(script, /equipamento_id:\s*String\(data\.get\("equipamento_id"\) \|\| ""\)/);
   assert.match(script, /function generateRecurrenceOs/);
   assert.match(script, /\/admin\/planos-recorrencia\/\$\{planId\}\/gerar-os/);
-  assert.match(html, /data-recurrence-tab="clientes"/);
-  assert.match(html, /data-recurrence-tab="calendario"/);
-  assert.match(html, /id="recurrenceCalendarBoard"/);
-  assert.match(script, /function renderRecurrenceCalendarBoard/);
+  assert.doesNotMatch(html, /data-recurrence-tab=/);
+  assert.doesNotMatch(html, /id="recurrenceCalendarBoard"/);
+  assert.doesNotMatch(script, /function renderRecurrenceCalendarBoard/);
   assert.match(script, /is-technician-done/);
   assert.match(script, /is-engineer-sent/);
   assert.match(script, /is-client-sent/);

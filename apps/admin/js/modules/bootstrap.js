@@ -153,8 +153,6 @@ agendaOsClientSelect?.addEventListener("change", () => {
 recurrenceClientSelect?.addEventListener("change", () => {
   void loadRecurrenceEquipments(recurrenceClientSelect.value);
 });
-document.querySelector("[data-recurrence-tab='clientes']")?.addEventListener("click", () => setRecurrenceTab("clientes"));
-document.querySelector("[data-recurrence-tab='calendario']")?.addEventListener("click", () => setRecurrenceTab("calendario"));
 recurrenceList?.addEventListener("click", (event) => {
   const target = event.target;
   const button = target instanceof Element ? target.closest("[data-action]") : null;

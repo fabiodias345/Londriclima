@@ -1,26 +1,36 @@
-.recurrence-tabs {
-  padding: 14px 22px 0;
-  background: rgba(238, 243, 241, 0.68);
+.recurrence-form {
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  align-items: end;
+  padding: 18px 22px;
 }
 
-.recurrence-tab-panel {
-  min-width: 0;
+.recurrence-form .full-span {
+  grid-column: 1 / -1;
+}
+
+.recurrence-form textarea {
+  min-height: 72px;
+}
+
+.recurrence-calendar {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(130px, 1fr));
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.72);
 }
 
 .recurrence-client-card {
-  grid-template-columns: minmax(260px, 1fr) minmax(360px, 1.15fr) auto;
-  align-items: start;
+  grid-template-columns: minmax(240px, 0.75fr) minmax(420px, 1.1fr) auto;
+  align-items: center;
 }
 
-.recurrence-client-card .request-actions {
-  align-self: center;
-}
-
-.recurrence-month-strip,
-.recurrence-calendar-grid {
+.recurrence-month-strip {
   display: grid;
-  grid-template-columns: repeat(12, minmax(54px, 1fr));
-  gap: 6px;
+  grid-template-columns: repeat(12, minmax(48px, 1fr));
+  gap: 5px;
 }
 
 .recurrence-month-cell {
@@ -76,38 +86,4 @@
   border-color: rgba(245, 158, 11, 0.34);
   background: rgba(254, 243, 199, 0.96);
   color: #854d0e;
-}
-
-.recurrence-calendar-board {
-  display: grid;
-  gap: 14px;
-  padding: 22px;
-  border-top: 1px solid var(--line);
-  background: var(--white);
-}
-
-.recurrence-calendar-row {
-  display: grid;
-  grid-template-columns: minmax(220px, 0.7fr) minmax(540px, 1fr);
-  gap: 14px;
-  align-items: center;
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: #fbfcfc;
-}
-
-.recurrence-calendar-row span {
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 850;
-}
-
-.recurrence-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 900;
 }
