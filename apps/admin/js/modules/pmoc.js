@@ -453,7 +453,8 @@ async function submitRecurrence(event) {
 
     resetRecurrenceForm();
     recurrenceSaved = true;
+    activeRecurrenceFilter = "";
     await loadRecorrencias();
-    recurrenceFormStatus.textContent = "Plano salvo.";
+    recurrenceFormStatus.textContent = "Plano salvo e listado abaixo.";
   } catch {
 `;

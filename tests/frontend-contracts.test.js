@@ -274,6 +274,7 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(script, /\/admin\/planos-recorrencia\/\$\{planId\}\/gerar-os/);
   assert.match(script, /let recurrenceSaved = false/);
   assert.match(script, /recurrenceSaved\s*\?\s*"Plano salvo\. Atualize a lista se ele nao aparecer\."/);
+  assert.match(script, /activeRecurrenceFilter = "";\s*await loadRecorrencias\(\);\s*recurrenceFormStatus\.textContent = "Plano salvo e listado abaixo\."/);
   assert.doesNotMatch(html, /data-recurrence-tab=/);
   assert.doesNotMatch(html, /id="recurrenceCalendarBoard"/);
   assert.doesNotMatch(script, /function renderRecurrenceCalendarBoard/);
