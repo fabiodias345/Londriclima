@@ -156,19 +156,23 @@
           </article>
         </section>
 
-        <section class="summary-grid hidden" id="recorrenciasSummary" aria-label="Resumo de recorrencias">
-          <article>
-            <span>Planos ativos</span>
+        <section class="summary-grid recurrence-summary-grid hidden" id="recorrenciasSummary" aria-label="Resumo de recorrencias">
+          <button class="recurrence-filter-card recurrence-filter-active" type="button" data-recurrence-filter="ativos">
+            <span>Plano ativo</span>
             <strong id="recurrenceActiveCount">0</strong>
-          </article>
-          <article>
-            <span>Vencidos</span>
+          </button>
+          <button class="recurrence-filter-card recurrence-filter-technician" type="button" data-recurrence-filter="tecnico">
+            <span>Mandado tecnico</span>
+            <strong id="recurrenceTechnicianCount">0</strong>
+          </button>
+          <button class="recurrence-filter-card recurrence-filter-due" type="button" data-recurrence-filter="vencidos">
+            <span>Vencido</span>
             <strong id="recurrenceDueCount">0</strong>
-          </article>
-          <article>
-            <span>Proxima acao</span>
-            <strong>Gerar OS</strong>
-          </article>
+          </button>
+          <button class="recurrence-filter-card recurrence-filter-done" type="button" data-recurrence-filter="finalizados">
+            <span>Finalizado</span>
+            <strong id="recurrenceDoneCount">0</strong>
+          </button>
         </section>
 
         <section class="summary-grid hidden" id="clientesSummary" aria-label="Resumo de clientes">

@@ -186,6 +186,12 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(html, /name="agendada_para"/);
   assert.match(html, /name="tecnico_id"/);
   assert.match(html, /id="recorrenciasView"/);
+  assert.match(html, /data-recurrence-filter="ativos"/);
+  assert.match(html, /data-recurrence-filter="tecnico"/);
+  assert.match(html, /data-recurrence-filter="vencidos"/);
+  assert.match(html, /data-recurrence-filter="finalizados"/);
+  assert.match(html, /id="recurrenceTechnicianCount"/);
+  assert.match(html, /id="recurrenceDoneCount"/);
   assert.match(html, /id="recurrenceForm"/);
   assert.match(html, /id="recurrenceList"/);
   assert.match(html, /name="frequencia"/);
@@ -247,6 +253,11 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(script, /async function submitRecurrence/);
   assert.match(script, /function renderRecorrencias/);
   assert.match(script, /function renderRecurrenceCard/);
+  assert.match(script, /let activeRecurrenceFilter = ""/);
+  assert.match(script, /function setRecurrenceFilter/);
+  assert.match(script, /function filterRecurrenceItems/);
+  assert.match(script, /function updateRecurrenceSummary/);
+  assert.match(script, /recurrenceFilterButtons/);
   assert.match(script, /data-action="editar-recorrencia"/);
   assert.match(script, /data-action="apagar-recorrencia"/);
   assert.match(script, /function editRecurrence/);

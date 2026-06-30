@@ -965,6 +965,12 @@ for (const button of configTabButtons) {
   });
 }
 
+for (const button of recurrenceFilterButtons) {
+  button.addEventListener("click", () => {
+    setRecurrenceFilter(button.dataset.recurrenceFilter || "");
+  });
+}
+
 for (const button of fleetTabButtons) {
   button.addEventListener("click", () => {
     setFleetTab(button.dataset.fleetTab || "mapa");

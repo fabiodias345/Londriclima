@@ -99,10 +99,9 @@ async function loadRecorrencias() {
   }
 
   latestRecurrenceItems = result.items || [];
-  recurrenceActiveCount.textContent = result.ativos || 0;
-  recurrenceDueCount.textContent = result.vencidos || 0;
+  updateRecurrenceSummary(latestRecurrenceItems);
   recurrenceStatus.textContent = result.total === 1 ? "1 plano" : \`\${result.total} planos\`;
-  renderRecorrencias(latestRecurrenceItems);
+  renderRecorrencias(filterRecurrenceItems(latestRecurrenceItems));
 }
 
 async function loadClientes() {

@@ -1,3 +1,77 @@
+.recurrence-summary-grid {
+  grid-template-columns: repeat(4, minmax(160px, 1fr));
+}
+
+.recurrence-filter-card {
+  display: grid;
+  min-height: 120px;
+  gap: 14px;
+  padding: 24px 26px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.recurrence-filter-card:hover,
+.recurrence-filter-card.is-active {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.1);
+}
+
+.recurrence-filter-card span {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.recurrence-filter-card strong {
+  font-size: 38px;
+  line-height: 1;
+}
+
+.recurrence-filter-active {
+  border-color: rgba(16, 185, 129, 0.22);
+  background: #f0fdf7;
+}
+
+.recurrence-filter-technician {
+  border-color: rgba(37, 99, 235, 0.22);
+  background: #eff6ff;
+}
+
+.recurrence-filter-due {
+  border-color: rgba(244, 63, 94, 0.22);
+  background: #fff1f2;
+}
+
+.recurrence-filter-done {
+  border-color: rgba(245, 158, 11, 0.26);
+  background: #fffbeb;
+}
+
+.recurrence-filter-card.is-active {
+  border-color: currentColor;
+}
+
+.recurrence-filter-active.is-active {
+  color: #047857;
+}
+
+.recurrence-filter-technician.is-active {
+  color: #1d4ed8;
+}
+
+.recurrence-filter-due.is-active {
+  color: #be123c;
+}
+
+.recurrence-filter-done.is-active {
+  color: #b45309;
+}
+
 .recurrence-form {
   grid-template-columns: repeat(4, minmax(180px, 1fr));
   align-items: end;
@@ -86,4 +160,14 @@
   border-color: rgba(245, 158, 11, 0.34);
   background: rgba(254, 243, 199, 0.96);
   color: #854d0e;
+}
+
+.recurrence-generate-button.is-due {
+  border-color: rgba(220, 38, 38, 0.24);
+  background: #fff1f2;
+  color: #be123c;
+}
+
+.recurrence-generate-button.is-muted {
+  opacity: 0.62;
 }

@@ -1,13 +1,13 @@
 # Resumo AIRMOVEBR
 
-Atualizado em: 27/06/2026
+Atualizado em: 30/06/2026
 
 Este arquivo deve registrar somente o que falta fazer ou validar. Historico implementado fica no Git e nos testes.
 
 ## Proximo foco
 
 1. Validar no APK os checklists simplificados mensal, trimestral, semestral e anual em uso real de campo.
-2. Implementar separadamente o questionario interno de seguranca da execucao, sem exibir no relatorio do cliente.
+2. Melhorar finalizacao da O.S. no app depois da validacao dos tecnicos.
 3. Adaptar posteriormente o relatorio tecnico e o PDF PMOC aos novos codigos de checklist.
 
 ## App tecnico - pendencias futuras
@@ -26,14 +26,11 @@ Este arquivo deve registrar somente o que falta fazer ou validar. Historico impl
 
 ## Painel admin - pendencias futuras
 
-- Confirmar se planos preventivos permitem editar e apagar em producao.
-- Confirmar se O.S. gerada errada pode ser apagada/cancelada pelo painel.
-- Validar o fluxo:
-  - criar preventiva;
-  - gerar O.S.;
-  - enviar para campo;
-  - acompanhar execucao;
-  - concluir e revisar historico.
+- Recorrencia em producao validada: scheduler da Locaweb gerou O.S. automatica para Luri/Paulo em 30/06/2026 e o APK recebeu apos atualizar.
+- Falta validar no painel a correcao operacional de O.S. gerada errada:
+  - editar;
+  - cancelar/apagar;
+  - revisar historico.
 
 ## PMOC futuro
 

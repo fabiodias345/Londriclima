@@ -78,6 +78,7 @@ site -> pre-chamado -> admin -> O.S. -> app tecnico -> checklist/fotos/GPS/assin
 - O.S. precisa permitir corrigir erro operacional com editar/cancelar/apagar conforme regra aprovada.
 - Planos preventivos precisam manter editar e apagar.
 - O painel deve ser usado para gerar O.S. real e validar o app no campo.
+- Recorrencia em producao ja gera O.S. automaticamente pelo scheduler do backend quando `proxima_execucao` vence; em 30/06/2026 gerou O.S. para Luri/Paulo e avancou o plano para 30/07/2026.
 
 ## PMOC e relatorios
 
@@ -103,6 +104,11 @@ site -> pre-chamado -> admin -> O.S. -> app tecnico -> checklist/fotos/GPS/assin
   - contar `clientes`, `equipamentos` e `usuarios` no Postgres da Locaweb;
   - conferir se o `empresa_id` do usuario logado e o mesmo `empresa_id` dos clientes/equipamentos.
 - Caso `admin` entre em empresa vazia, corrigir o vinculo do usuario antes de investigar frontend, DNS ou cache.
+- Se uma O.S. recorrente nao aparecer no APK, conferir primeiro na Locaweb:
+  - logs do backend com `AdminRecorrenciaSchedulerService`;
+  - tabela `ordens_servico` por `criada_em`/`agendada_para`;
+  - `tecnico_id` da O.S. e login do tecnico no app;
+  - refresh/logout-login no APK antes de culpar geracao da O.S.
 
 ## Pendencias futuras
 
