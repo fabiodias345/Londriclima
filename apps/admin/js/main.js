@@ -2,7 +2,6 @@ import { apiModule, apiRoot } from "./modules/api.js?v=20260630-recostatus";
 import { authModule, authRoot } from "./modules/auth.js?v=20260630-recostatus";
 import { agendaModule, agendaRoot } from "./modules/agenda.js?v=20260630-recostatus";
 import { recurrenceUiModule } from "./modules/recurrence-ui.js?v=20260630-recostatus";
-import { recurrenceStatusRoot } from "./modules/recurrence-status.js?v=20260630-recostatus";
 import { clientesModule, clientesRoot } from "./modules/clientes.js?v=20260630-recostatus";
 import { frotaModule, frotaRoot } from "./modules/frota.js?v=20260630-recostatus";
 import { pmocModule, pmocRoot } from "./modules/pmoc.js?v=20260630-recostatus";
@@ -32,7 +31,6 @@ const adminSources = [
   authRoot,
   frotaRoot,
   agendaRoot,
-  recurrenceStatusRoot,
   recorrenciasRoot,
   clientesRoot,
   pmocRoot,
