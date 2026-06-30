@@ -281,6 +281,15 @@ export class AdminClientesService {
           }
         });
 
+        await tx.planoRecorrenciaGeracao.deleteMany({
+          where: {
+            ordemServicoId: {
+              in: ordemIds
+            },
+            empresaId: usuario.empresa_id
+          }
+        });
+
         if (checklistIds.length) {
           await tx.ordemServicoPeca.deleteMany({
             where: {
@@ -291,6 +300,15 @@ export class AdminClientesService {
             }
           });
         }
+
+        await tx.ordemServicoChecklistResposta.deleteMany({
+          where: {
+            ordemServicoId: {
+              in: ordemIds
+            },
+            empresaId: usuario.empresa_id
+          }
+        });
 
         await tx.ordemServicoChecklist.deleteMany({
           where: {
@@ -329,6 +347,15 @@ export class AdminClientesService {
         });
 
         await tx.ordemServicoEvento.deleteMany({
+          where: {
+            ordemServicoId: {
+              in: ordemIds
+            },
+            empresaId: usuario.empresa_id
+          }
+        });
+
+        await tx.ordemServicoSeguranca.deleteMany({
           where: {
             ordemServicoId: {
               in: ordemIds

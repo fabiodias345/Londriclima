@@ -630,12 +630,15 @@ test("apagarCliente remove historico operacional e equipamentos do cliente", asy
   const chamadas = {
     automacoesWhere: undefined as unknown,
     responsaveisWhere: undefined as unknown,
+    geracoesWhere: undefined as unknown,
     pecasWhere: undefined as unknown,
+    respostasWhere: undefined as unknown,
     checklistWhere: undefined as unknown,
     evidenciasWhere: undefined as unknown,
     assinaturaWhere: undefined as unknown,
     observacaoWhere: undefined as unknown,
     eventosWhere: undefined as unknown,
+    segurancasWhere: undefined as unknown,
     ordensWhere: undefined as unknown,
     equipamentosWhere: undefined as unknown,
     clienteWhere: undefined as unknown
@@ -660,9 +663,19 @@ test("apagarCliente remove historico operacional e equipamentos do cliente", asy
         chamadas.responsaveisWhere = where;
       }
     },
+    planoRecorrenciaGeracao: {
+      deleteMany: async ({ where }: { where: unknown }) => {
+        chamadas.geracoesWhere = where;
+      }
+    },
     ordemServicoPeca: {
       deleteMany: async ({ where }: { where: unknown }) => {
         chamadas.pecasWhere = where;
+      }
+    },
+    ordemServicoChecklistResposta: {
+      deleteMany: async ({ where }: { where: unknown }) => {
+        chamadas.respostasWhere = where;
       }
     },
     ordemServicoChecklist: {
@@ -688,6 +701,11 @@ test("apagarCliente remove historico operacional e equipamentos do cliente", asy
     ordemServicoEvento: {
       deleteMany: async ({ where }: { where: unknown }) => {
         chamadas.eventosWhere = where;
+      }
+    },
+    ordemServicoSeguranca: {
+      deleteMany: async ({ where }: { where: unknown }) => {
+        chamadas.segurancasWhere = where;
       }
     },
     ordemServico: {
@@ -744,17 +762,20 @@ test("apagarCliente remove historico operacional e equipamentos do cliente", asy
 
   assert.deepEqual(chamadas.automacoesWhere, ordemFiltro);
   assert.deepEqual(chamadas.responsaveisWhere, ordemFiltro);
+  assert.deepEqual(chamadas.geracoesWhere, ordemFiltro);
   assert.deepEqual(chamadas.pecasWhere, {
     checklistId: {
       in: ["checklist-1"]
     },
     empresaId: "empresa-1"
   });
+  assert.deepEqual(chamadas.respostasWhere, ordemFiltro);
   assert.deepEqual(chamadas.checklistWhere, ordemFiltro);
   assert.deepEqual(chamadas.evidenciasWhere, ordemFiltro);
   assert.deepEqual(chamadas.assinaturaWhere, ordemFiltro);
   assert.deepEqual(chamadas.observacaoWhere, ordemFiltro);
   assert.deepEqual(chamadas.eventosWhere, ordemFiltro);
+  assert.deepEqual(chamadas.segurancasWhere, ordemFiltro);
   assert.deepEqual(chamadas.ordensWhere, {
     id: {
       in: ["os-1"]
