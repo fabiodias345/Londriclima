@@ -54,13 +54,69 @@ function renderAgendaServiceCard(item) {
   \`;
 }
 
+const RECURRENCE_MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+const RECURRENCE_TECHNICIAN_STATUSES = new Set(["aberta", "em_deslocamento", "em_atendimento"]);
+
+function isRecurrenceDue(item) {
+  return Boolean(item.ativo && new Date(item.proxima_execucao).getTime() <= Date.now());
+}
+
+function isRecurrenceSentToTechnician(item) {
+  return RECURRENCE_TECHNICIAN_STATUSES.has(item.ultima_os?.status || "");
+}
+
+function isRecurrenceDone(item) {
+  return item.ultima_os?.status === "concluida";
+}
+
+function updateRecurrenceSummary(items) {
+  const counts = {
+    ativos: items.filter((item) => item.ativo).length,
+    tecnico: items.filter(isRecurrenceSentToTechnician).length,
+    vencidos: items.filter(isRecurrenceDue).length,
+    finalizados: items.filter(isRecurrenceDone).length
+  };
+
+  recurrenceActiveCount.textContent = counts.ativos;
+  recurrenceTechnicianCount.textContent = counts.tecnico;
+  recurrenceDueCount.textContent = counts.vencidos;
+  recurrenceDoneCount.textContent = counts.finalizados;
+  updateRecurrenceFilterButtons();
+}
+
+function filterRecurrenceItems(items) {
+  const filters = {
+    ativos: (item) => item.ativo,
+    tecnico: isRecurrenceSentToTechnician,
+    vencidos: isRecurrenceDue,
+    finalizados: isRecurrenceDone
+  };
+  const filter = filters[activeRecurrenceFilter];
+
+  return filter ? items.filter(filter) : items;
+}
+
+function setRecurrenceFilter(filter) {
+  activeRecurrenceFilter = activeRecurrenceFilter === filter ? "" : filter;
+  updateRecurrenceFilterButtons();
+  renderRecorrencias(filterRecurrenceItems(latestRecurrenceItems));
+}
+
+function updateRecurrenceFilterButtons() {
+  for (const button of recurrenceFilterButtons) {
+    button.classList.toggle("is-active", button.dataset.recurrenceFilter === activeRecurrenceFilter);
+  }
+}
+
 function renderRecorrencias(items) {
   if (!recurrenceList) {
     return;
   }
 
   if (!items.length) {
-    recurrenceList.innerHTML = '<article class="agenda-empty"><strong>Nenhum plano recorrente.</strong><span>Cadastre uma rotina para gerar OS futuras com poucos cliques.</span></article>';
+    recurrenceList.innerHTML = activeRecurrenceFilter
+      ? '<article class="agenda-empty"><strong>Nenhum plano neste filtro.</strong><span>Toque no filtro ativo para voltar a lista completa.</span></article>'
+      : '<article class="agenda-empty"><strong>Nenhum plano recorrente.</strong><span>Cadastre uma rotina para gerar OS futuras com poucos cliques.</span></article>';
     return;
   }
 
@@ -68,7 +124,7 @@ function renderRecorrencias(items) {
 }
 
 function renderRecurrenceCard(item) {
-  const due = item.ativo && new Date(item.proxima_execucao).getTime() <= Date.now();
+  const due = isRecurrenceDue(item);
 
   return \`
     <article class="recurrence-card \${due ? "due" : ""}">
@@ -89,7 +145,7 @@ function renderRecurrenceCard(item) {
       <div class="request-actions">
         <button class="secondary-button compact-button" type="button" data-action="editar-recorrencia" data-id="\${item.id}">Editar</button>
         <button class="secondary-button compact-button danger-button" type="button" data-action="apagar-recorrencia" data-id="\${item.id}">Apagar</button>
-        <button class="secondary-button compact-button" type="button" data-action="gerar-recorrencia-os" data-id="\${item.id}">Gerar OS</button>
+        <button class="secondary-button compact-button recurrence-generate-button \${due ? "is-due" : "is-muted"}" type="button" data-action="gerar-recorrencia-os" data-id="\${item.id}">Gerar OS</button>
       </div>
     </article>
   \`;

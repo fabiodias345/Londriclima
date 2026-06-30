@@ -112,10 +112,10 @@ test("admin autentica, guarda token e protege chamadas administrativas", () => {
   const main = read("apps/admin/js/main.js");
 
   assert.match(html, /<script type="module" src="\.\/js\/main\.js\?v=\d{8}-[a-z]+"><\/script>/);
-  assert.match(html, /\.\/js\/main\.js\?v=20260630-recshow/);
-  assert.match(main, /\?v=20260630-recshow/g);
+  assert.match(html, /\.\/js\/main\.js\?v=20260630-recfix/);
+  assert.match(main, /\?v=20260630-recfix/g);
   assert.doesNotMatch(html, /20260629-recorrencia/);
-  assert.doesNotMatch(main, /20260630-recorrencia-filtros|20260630-apiadmin/);
+  assert.doesNotMatch(main, /20260630-recorrencia-filtros|20260630-apiadmin|20260630-recshow/);
   assert.doesNotMatch(main, /import "\.\.\/script\.js"/);
   assert.match(main, /adminModules/);
   assertFileExists("apps/admin/js/modules/api.js");
