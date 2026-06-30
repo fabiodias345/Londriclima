@@ -5,7 +5,9 @@ export const relatoriosModule = {
 };
 
 export const relatoriosRoot = `
-    recurrenceFormStatus.textContent = "API indisponivel.";
+    recurrenceFormStatus.textContent = recurrenceSaved
+      ? "Plano salvo. Atualize a lista se ele nao aparecer."
+      : "API indisponivel.";
   } finally {
     button.disabled = false;
   }

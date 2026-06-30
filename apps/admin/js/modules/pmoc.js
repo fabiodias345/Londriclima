@@ -429,6 +429,7 @@ async function submitRecurrence(event) {
 
   button.disabled = true;
   recurrenceFormStatus.textContent = "Salvando plano...";
+  let recurrenceSaved = false;
 
   try {
     const response = await fetch(\`\${apiBaseUrl}\${path}\`, {
@@ -451,6 +452,7 @@ async function submitRecurrence(event) {
     }
 
     resetRecurrenceForm();
+    recurrenceSaved = true;
     await loadRecorrencias();
     recurrenceFormStatus.textContent = "Plano salvo.";
   } catch {

@@ -112,6 +112,10 @@ test("admin autentica, guarda token e protege chamadas administrativas", () => {
   const main = read("apps/admin/js/main.js");
 
   assert.match(html, /<script type="module" src="\.\/js\/main\.js\?v=\d{8}-[a-z]+"><\/script>/);
+  assert.match(html, /\.\/js\/main\.js\?v=20260630-apiadmin/);
+  assert.match(main, /\?v=20260630-apiadmin/g);
+  assert.doesNotMatch(html, /20260629-recorrencia/);
+  assert.doesNotMatch(main, /20260630-recorrencia-filtros/);
   assert.doesNotMatch(main, /import "\.\.\/script\.js"/);
   assert.match(main, /adminModules/);
   assertFileExists("apps/admin/js/modules/api.js");
@@ -268,6 +272,8 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(script, /equipamento_id:\s*String\(data\.get\("equipamento_id"\) \|\| ""\)/);
   assert.match(script, /function generateRecurrenceOs/);
   assert.match(script, /\/admin\/planos-recorrencia\/\$\{planId\}\/gerar-os/);
+  assert.match(script, /let recurrenceSaved = false/);
+  assert.match(script, /recurrenceSaved\s*\?\s*"Plano salvo\. Atualize a lista se ele nao aparecer\."/);
   assert.doesNotMatch(html, /data-recurrence-tab=/);
   assert.doesNotMatch(html, /id="recurrenceCalendarBoard"/);
   assert.doesNotMatch(script, /function renderRecurrenceCalendarBoard/);
