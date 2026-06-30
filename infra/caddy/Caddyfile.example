@@ -49,6 +49,10 @@ airmovebr.com.br {
 admin.airmovebr.com.br {
 	encode gzip
 
+	handle /api/v1/* {
+		reverse_proxy backend:3000
+	}
+
 	handle /storage/* {
 		root * /srv
 		file_server

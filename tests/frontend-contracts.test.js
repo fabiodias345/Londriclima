@@ -124,6 +124,8 @@ test("admin autentica, guarda token e protege chamadas administrativas", () => {
   assertFileExists("apps/admin/js/modules/pmoc.js");
 
   assert.match(script, /http:\/\/localhost:3000\/api\/v1/);
+  assert.match(script, /window\.location\.hostname === "admin\.airmovebr\.com\.br"/);
+  assert.match(script, /`\$\{window\.location\.origin\}\/api\/v1`/);
   assert.match(script, /https:\/\/api\.airmovebr\.com\.br\/api\/v1/);
   assert.match(script, /\/auth\/login/);
   assert.match(script, /localStorage\.setItem\("airmovebr_access_token"/);
