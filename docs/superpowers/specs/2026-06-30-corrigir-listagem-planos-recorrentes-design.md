@@ -6,10 +6,10 @@ O backend salva o plano recorrente, mas o painel não o exibe. O commit `7d7a42b
 
 ## Correção
 
-- importar `recurrenceUiRoot` em `apps/admin/js/main.js`;
-- incluir `recurrenceUiRoot` em `adminSources`, após `agendaRoot`;
+- importar `recurrenceStatusRoot` em `apps/admin/js/main.js`;
+- incluir `recurrenceStatusRoot` em `adminSources`, após `agendaRoot`;
 - atualizar a versão de cache de `main.js` em `apps/admin/index.html`;
-- manter `recurrence-status.js` fora do bundle para evitar funções duplicadas.
+- manter `recurrenceUiRoot` fora do bundle para evitar funções duplicadas.
 
 ## Validação
 
