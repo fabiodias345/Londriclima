@@ -145,6 +145,7 @@ test("admin autentica, guarda token e protege chamadas administrativas", () => {
 test("admin possui views funcionais para agenda clientes e relatorios", () => {
   const html = read("apps/admin/index.html");
   const script = readAdminJs();
+  const styles = readAdminCss();
   const agendaModule = read("apps/admin/js/modules/agenda.js");
   const recorrenciasModule = read("apps/admin/js/modules/recorrencias.js");
   const clientesModule = read("apps/admin/js/modules/clientes.js");
@@ -254,6 +255,14 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(script, /equipamento_id:\s*String\(data\.get\("equipamento_id"\) \|\| ""\)/);
   assert.match(script, /function generateRecurrenceOs/);
   assert.match(script, /\/admin\/planos-recorrencia\/\$\{planId\}\/gerar-os/);
+  assert.match(html, /data-recurrence-tab="clientes"/);
+  assert.match(html, /data-recurrence-tab="calendario"/);
+  assert.match(html, /id="recurrenceCalendarBoard"/);
+  assert.match(script, /function renderRecurrenceCalendarBoard/);
+  assert.match(script, /is-technician-done/);
+  assert.match(script, /is-engineer-sent/);
+  assert.match(script, /is-client-sent/);
+  assert.match(styles, /recurrence\.css/);
   assert.match(script, /const AGENDA_LOOKAHEAD_DAYS = 180/);
   assert.match(script, /offset <= AGENDA_LOOKAHEAD_DAYS/);
   assert.match(script, /selectedAgendaDate = button\.dataset\.agendaDate/);

@@ -1,6 +1,7 @@
 import { apiModule, apiRoot } from "./modules/api.js?v=20260629-recorrencia";
 import { authModule, authRoot } from "./modules/auth.js?v=20260629-recorrencia";
 import { agendaModule, agendaRoot } from "./modules/agenda.js?v=20260629-recorrencia";
+import { recurrenceUiModule, recurrenceUiRoot } from "./modules/recurrence-ui.js?v=20260629-recorrencia";
 import { clientesModule, clientesRoot } from "./modules/clientes.js?v=20260629-recorrencia";
 import { frotaModule, frotaRoot } from "./modules/frota.js?v=20260629-recorrencia";
 import { pmocModule, pmocRoot } from "./modules/pmoc.js?v=20260629-recorrencia";
@@ -14,6 +15,7 @@ export const adminModules = {
   api: apiModule,
   auth: authModule,
   agenda: agendaModule,
+  recurrenceUi: recurrenceUiModule,
   clientes: clientesModule,
   frota: frotaModule,
   pmoc: pmocModule,
@@ -29,6 +31,7 @@ const adminSources = [
   authRoot,
   frotaRoot,
   agendaRoot,
+  recurrenceUiRoot,
   recorrenciasRoot,
   clientesRoot,
   pmocRoot,

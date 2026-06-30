@@ -1,0 +1,113 @@
+.recurrence-tabs {
+  padding: 14px 22px 0;
+  background: rgba(238, 243, 241, 0.68);
+}
+
+.recurrence-tab-panel {
+  min-width: 0;
+}
+
+.recurrence-client-card {
+  grid-template-columns: minmax(260px, 1fr) minmax(360px, 1.15fr) auto;
+  align-items: start;
+}
+
+.recurrence-client-card .request-actions {
+  align-self: center;
+}
+
+.recurrence-month-strip,
+.recurrence-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(54px, 1fr));
+  gap: 6px;
+}
+
+.recurrence-month-cell {
+  display: grid;
+  min-height: 54px;
+  align-content: center;
+  gap: 3px;
+  padding: 8px 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #eef3f1;
+  color: var(--muted);
+  text-align: center;
+}
+
+.recurrence-month-cell strong {
+  color: inherit;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.recurrence-month-cell span {
+  color: inherit;
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.recurrence-month-cell.is-missing {
+  border-color: rgba(220, 38, 38, 0.28);
+  background: rgba(254, 226, 226, 0.96);
+  color: #7f1d1d;
+}
+
+.recurrence-month-cell.is-generated {
+  border-color: rgba(37, 99, 235, 0.28);
+  background: rgba(219, 234, 254, 0.96);
+  color: #1d4ed8;
+}
+
+.recurrence-month-cell.is-technician-done {
+  border-color: rgba(16, 185, 129, 0.28);
+  background: rgba(209, 250, 229, 0.96);
+  color: #065f46;
+}
+
+.recurrence-month-cell.is-engineer-sent {
+  border-color: rgba(124, 58, 237, 0.3);
+  background: rgba(237, 233, 254, 0.96);
+  color: #5b21b6;
+}
+
+.recurrence-month-cell.is-client-sent {
+  border-color: rgba(245, 158, 11, 0.34);
+  background: rgba(254, 243, 199, 0.96);
+  color: #854d0e;
+}
+
+.recurrence-calendar-board {
+  display: grid;
+  gap: 14px;
+  padding: 22px;
+  border-top: 1px solid var(--line);
+  background: var(--white);
+}
+
+.recurrence-calendar-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.7fr) minmax(540px, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fbfcfc;
+}
+
+.recurrence-calendar-row span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.recurrence-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
