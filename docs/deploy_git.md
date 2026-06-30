@@ -1,7 +1,7 @@
 git switch dev
 git status
 git add -A
-git commit -m "periodicidade"
+git commit -m "apagar_cliente"
 git push origin dev
 git switch main
 git merge --ff-only dev
