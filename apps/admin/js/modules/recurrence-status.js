@@ -1,11 +1,4 @@
-export const recurrenceUiModule = {
-  view: "recorrencias",
-  summaryId: "recurrenceUi",
-  viewId: "recurrenceUi"
-};
-
-export const recurrenceUiRoot = `
-const RECURRENCE_MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+export const recurrenceStatusRoot = `
 const RECURRENCE_TECHNICIAN_STATUSES = new Set(["aberta", "em_deslocamento", "em_atendimento"]);
 
 function getRecurrenceDate(value) {
@@ -104,10 +97,9 @@ function renderRecorrencias(items) {
   }
 
   if (!items.length) {
-    const empty = activeRecurrenceFilter
+    recurrenceList.innerHTML = activeRecurrenceFilter
       ? '<article class="agenda-empty"><strong>Nenhum plano neste filtro.</strong><span>Toque no filtro ativo para voltar a lista completa.</span></article>'
       : '<article class="agenda-empty"><strong>Nenhum plano recorrente.</strong><span>Cadastre uma rotina para gerar OS futuras com poucos cliques.</span></article>';
-    recurrenceList.innerHTML = empty;
     return;
   }
 
@@ -119,15 +111,20 @@ function renderRecurrenceCard(item) {
   const expired = isRecurrenceExpired(item);
 
   return \`
-    <article class="recurrence-card recurrence-client-card \${expired ? "due" : ""} \${generating ? "is-generating" : ""}">
+    <article class="recurrence-card \${expired ? "due" : ""} \${generating ? "is-generating" : ""}">
       <div>
-        <strong>\${escapeHtml(item.cliente?.nome || "Cliente nao informado")}</strong>
-        <span>\${escapeHtml(item.titulo)}</span>
+        <strong>\${escapeHtml(item.titulo)}</strong>
+        <span>\${escapeHtml(item.cliente?.nome || "Cliente não informado")}</span>
+        <span>\${escapeHtml(formatRecurrenceCalendar(item.calendario))}</span>
         <span>\${escapeHtml(item.equipamento ? formatAgendaEquipment(item.equipamento) : "Todos os equipamentos do cliente")}</span>
-        <span>Responsavel: \${escapeHtml(item.equipe?.nome || item.tecnico?.nome || "Definir na agenda")}</span>
       </div>
-      <div class="recurrence-month-strip">
-        \${renderRecurrenceMonthCells(item)}
+      <div>
+        <span>Proxima OS</span>
+        <strong>\${formatDateTime(item.proxima_execucao)}</strong>
+      </div>
+      <div>
+        <span>Responsavel</span>
+        <strong>\${escapeHtml(item.equipe?.nome || item.tecnico?.nome || "Definir na agenda")}</strong>
       </div>
       <div class="request-actions">
         <button class="secondary-button compact-button" type="button" data-action="editar-recorrencia" data-id="\${item.id}">Editar</button>
@@ -138,43 +135,58 @@ function renderRecurrenceCard(item) {
   \`;
 }
 
-function renderRecurrenceMonthCells(item) {
-  return RECURRENCE_MONTHS.map((label, index) => {
-    const status = getRecurrenceMonthStatus(item, index + 1);
-    return \`<article class="recurrence-month-cell \${status.className}"><strong>\${label}</strong><span>\${status.label}</span></article>\`;
-  }).join("");
+function formatRecurrenceFrequency(value) {
+  return {
+    mensal: "Mensal",
+    trimestral: "Trimestral",
+    semestral: "Semestral",
+    anual: "Anual"
+  }[value] || value;
 }
 
-function getRecurrenceMonthStatus(item, month) {
-  const planned = Boolean(item.calendario?.[String(month)] && item.calendario[String(month)] !== "nenhum");
-  const order = item.ultima_os || {};
-  const orderDate = order.agendada_para ? new Date(order.agendada_para) : null;
-  const sameOrderMonth = orderDate && !Number.isNaN(orderDate.getTime()) && orderDate.getMonth() + 1 === month;
-  const nextDate = item.proxima_execucao ? new Date(item.proxima_execucao) : null;
-  const generating = nextDate && !Number.isNaN(nextDate.getTime()) && nextDate.getMonth() + 1 === month && isRecurrenceGenerating(item);
-  const expired = (sameOrderMonth && order.status !== "concluida" && isBeforeCurrentMonth(orderDate))
-    || (nextDate && nextDate.getMonth() + 1 === month && isRecurrenceExpired(item));
+function formatRecurrenceCalendar(calendar) {
+  const labels = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+  const items = labels
+    .map((label, index) => {
+      const value = calendar?.[String(index + 1)];
+      return value && value !== "nenhum" ? \`\${label}: \${formatRecurrenceFrequency(value)}\` : "";
+    })
+    .filter(Boolean);
+  return items.length ? items.join(" | ") : "Calendario nao configurado";
+}
 
-  if (sameOrderMonth && (order.email_cliente_enviado_em || order.enviado_cliente_em || order.email_entregue)) {
-    return { className: "is-client-sent", label: "Cliente" };
+async function generateRecurrenceOs(planId) {
+  generatingRecurrencePlanIds.add(planId);
+  updateRecurrenceSummary(latestRecurrenceItems);
+  renderRecorrencias(filterRecurrenceItems(latestRecurrenceItems));
+  recurrenceStatus.textContent = "Gerando OS...";
+
+  try {
+    const response = await fetch(\`\${apiBaseUrl}/admin/planos-recorrencia/\${planId}/gerar-os\`, {
+      method: "POST",
+      headers: authHeaders()
+    });
+
+    if (await handleUnauthorized(response)) {
+      return;
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      recurrenceStatus.textContent = error.message || "Nao foi possivel gerar a OS.";
+      return;
+    }
+
+    await loadRecorrencias();
+    if (activeView === "agenda") {
+      await loadAgenda();
+    }
+  } catch {
+    recurrenceStatus.textContent = "API indisponivel.";
+  } finally {
+    generatingRecurrencePlanIds.delete(planId);
+    updateRecurrenceSummary(latestRecurrenceItems);
+    renderRecorrencias(filterRecurrenceItems(latestRecurrenceItems));
   }
-
-  if (sameOrderMonth && (order.engenheiro_encaminhado_em || order.enviado_engenheiro_em || order.assinafy_document_id)) {
-    return { className: "is-engineer-sent", label: "Engenheiro" };
-  }
-
-  if (sameOrderMonth && order.status === "concluida") {
-    return { className: "is-technician-done", label: "Finalizada" };
-  }
-
-  if (sameOrderMonth || generating) {
-    return { className: "is-generated", label: "Tecnico" };
-  }
-
-  if (planned && expired) {
-    return { className: "is-missing", label: "Vencida" };
-  }
-
-  return { className: planned ? "is-planned" : "is-empty", label: planned ? "Previsto" : "Sem" };
 }
 `;

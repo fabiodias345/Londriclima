@@ -1,6 +1,6 @@
-import { ATIVIDADES_MANUTENCAO, CONTRATADA_PMOC, ENGENHEIRO_PADRAO_PMOC, EnderecoPmoc, MaquinaPmoc, OrdemPmoc, PeriodicidadePmoc, PreviaPmoc } from "./admin-pmoc-pdf-models";
-import { carregarArquivoStorage, criarPdfBuffer, PdfPage } from "./admin-pmoc-pdf-writer";
-import { resumirChecklistPmoc } from "./admin-pmoc-checklist-resumo";
+﻿import { ATIVIDADES_MANUTENCAO, CONTRATADA_PMOC, ENGENHEIRO_PADRAO_PMOC, EnderecoPmoc, MaquinaPmoc, OrdemPmoc, PeriodicidadePmoc, PreviaPmoc } from "./admin-pmoc-pdf-models";
+import { criarPdfBuffer, PdfPage } from "./admin-pmoc-pdf-writer";
+import { adicionarChecklistApkPdf, adicionarFotosAppPdf } from "./admin-pmoc-pdf-renderer-checklist";
 
 export class AdminPmocPdfRendererService {
   gerar(previa: PreviaPmoc) {
@@ -22,22 +22,22 @@ export class AdminPmocPdfRendererService {
 
   private criarCapa(previa: PreviaPmoc): PdfPage {
     const page: PdfPage = [];
-    this.cabecalho(page, previa, "PLANO DE MANUTENÇÃO, OPERAÇÃO E CONTROLE - PMOC");
+    this.cabecalho(page, previa, "PLANO DE MANUTENÃ‡ÃƒO, OPERAÃ‡ÃƒO E CONTROLE - PMOC");
     this.text(page, "PMOC", 36, 650, 30, true);
-    this.text(page, "Plano de Manutenção, Operação e Controle", 36, 615, 16, false);
-    this.text(page, `Nº Documento: ${this.numeroPmoc(previa)}`, 36, 570, 11, true);
+    this.text(page, "Plano de ManutenÃ§Ã£o, OperaÃ§Ã£o e Controle", 36, 615, 16, false);
+    this.text(page, `NÂº Documento: ${this.numeroPmoc(previa)}`, 36, 570, 11, true);
     this.text(page, `Cliente: ${previa.cliente.nome}`, 36, 548, 11, false);
-    this.text(page, `Endereço: ${this.formatarEndereco(previa.cliente.endereco)}`, 36, 526, 10, false, 105);
-    this.text(page, `Emissão: ${this.formatarMesAnoReferencia(previa.periodo.inicio)}`, 36, 504, 10, false);
-    this.text(page, `Renovação: ${this.formatarMesAnoReferencia(previa.periodo.fim)}`, 36, 486, 10, false);
+    this.text(page, `EndereÃ§o: ${this.formatarEndereco(previa.cliente.endereco)}`, 36, 526, 10, false, 105);
+    this.text(page, `EmissÃ£o: ${this.formatarMesAnoReferencia(previa.periodo.inicio)}`, 36, 504, 10, false);
+    this.text(page, `RenovaÃ§Ã£o: ${this.formatarMesAnoReferencia(previa.periodo.fim)}`, 36, 486, 10, false);
     this.table(
       page,
       36,
       405,
       [300, 70, 85, 65, 56],
       [
-        ["Alterações", "Revisão", "Data", "Elaborado", "Aprovado"],
-        ["Emissão inicial", "00", this.formatarData(previa.periodo.inicio), "André", "Paulo"]
+        ["AlteraÃ§Ãµes", "RevisÃ£o", "Data", "Elaborado", "Aprovado"],
+        ["EmissÃ£o inicial", "00", this.formatarData(previa.periodo.inicio), "AndrÃ©", "Paulo"]
       ],
       { rowHeight: 24, fontSize: 8 }
     );
@@ -48,28 +48,28 @@ export class AdminPmocPdfRendererService {
   private criarDadosGerais(previa: PreviaPmoc): PdfPage {
     const page: PdfPage = [];
     const engenheiro = previa.engenheiro_responsavel || ENGENHEIRO_PADRAO_PMOC;
-    this.cabecalho(page, previa, "IDENTIFICAÇÃO DO CLIENTE");
-    this.sectionTitle(page, "IDENTIFICAÇÃO DO CLIENTE", 735);
+    this.cabecalho(page, previa, "IDENTIFICAÃ‡ÃƒO DO CLIENTE");
+    this.sectionTitle(page, "IDENTIFICAÃ‡ÃƒO DO CLIENTE", 735);
     this.keyValueTable(page, 36, 710, [
       ["Cliente", previa.cliente.nome],
-      ["CNPJ/CPF", previa.cliente.documento || "Não informado"],
-      ["Município/UF", this.obterMunicipioUf(previa.cliente.endereco)],
-      ["Contato", previa.cliente.telefone || "Não informado"],
-      ["Email", previa.cliente.email || "Não informado"],
-      ["Endereço", this.formatarEndereco(previa.cliente.endereco)]
+      ["CNPJ/CPF", previa.cliente.documento || "NÃ£o informado"],
+      ["MunicÃ­pio/UF", this.obterMunicipioUf(previa.cliente.endereco)],
+      ["Contato", previa.cliente.telefone || "NÃ£o informado"],
+      ["Email", previa.cliente.email || "NÃ£o informado"],
+      ["EndereÃ§o", this.formatarEndereco(previa.cliente.endereco)]
     ]);
     this.sectionTitle(page, "EMPRESA CONTRATADA", 545);
     this.keyValueTable(page, 36, 520, [
-      ["Razão Social", CONTRATADA_PMOC.razaoSocial],
+      ["RazÃ£o Social", CONTRATADA_PMOC.razaoSocial],
       ["Nome Fantasia", CONTRATADA_PMOC.nomeFantasia],
       ["CNPJ", CONTRATADA_PMOC.cnpj],
-      ["Endereço", CONTRATADA_PMOC.endereco],
+      ["EndereÃ§o", CONTRATADA_PMOC.endereco],
       ["Contato", `${CONTRATADA_PMOC.telefone} | ${CONTRATADA_PMOC.email}`]
     ]);
-    this.sectionTitle(page, "RESPONSÁVEL TÉCNICO", 378);
+    this.sectionTitle(page, "RESPONSÃVEL TÃ‰CNICO", 378);
     this.keyValueTable(page, 36, 353, [
       ["Nome", engenheiro.nome || ENGENHEIRO_PADRAO_PMOC.nome],
-      ["Título", ENGENHEIRO_PADRAO_PMOC.titulo],
+      ["TÃ­tulo", ENGENHEIRO_PADRAO_PMOC.titulo],
       ["CREA/Carteira", engenheiro.crea || ENGENHEIRO_PADRAO_PMOC.crea],
       ["Registro", ENGENHEIRO_PADRAO_PMOC.registro],
       ["RNP", ENGENHEIRO_PADRAO_PMOC.rnp],
@@ -89,11 +89,11 @@ export class AdminPmocPdfRendererService {
   private criarPlanoManutencao(previa: PreviaPmoc): PdfPage {
     const page: PdfPage = [];
     const periodicidade = this.obterPeriodicidadePrevia(previa);
-    this.cabecalho(page, previa, "OBJETIVO, RESPONSABILIDADES E PLANO DE MANUTENÇÃO");
+    this.cabecalho(page, previa, "OBJETIVO, RESPONSABILIDADES E PLANO DE MANUTENÃ‡ÃƒO");
     let y = 730;
     y = this.paragraph(
       page,
-      "O objetivo do PMOC é estabelecer as atividades preventivas a serem desenvolvidas, como limpeza e manutenção, periodicidade, recomendações em falhas e emergências, garantindo segurança do sistema de climatização e qualidade do ambiente.",
+      "O objetivo do PMOC Ã© estabelecer as atividades preventivas a serem desenvolvidas, como limpeza e manutenÃ§Ã£o, periodicidade, recomendaÃ§Ãµes em falhas e emergÃªncias, garantindo seguranÃ§a do sistema de climatizaÃ§Ã£o e qualidade do ambiente.",
       36,
       y,
       108,
@@ -102,14 +102,14 @@ export class AdminPmocPdfRendererService {
     y -= 18;
     y = this.paragraph(
       page,
-      "Os procedimentos devem seguir o Anexo II, as orientações do fabricante e a legislação vigente. Qualquer procedimento fora do comum deve ser comunicado ao responsável técnico e registrado.",
+      "Os procedimentos devem seguir o Anexo II, as orientaÃ§Ãµes do fabricante e a legislaÃ§Ã£o vigente. Qualquer procedimento fora do comum deve ser comunicado ao responsÃ¡vel tÃ©cnico e registrado.",
       36,
       y,
       108,
       10
     );
-    this.sectionTitle(page, "ATIVIDADES DE MANUTENÇÃO", y - 18);
-    this.text(page, `Manutenção executada ${this.rotuloPeriodicidade(periodicidade)}`, 36, y - 34, 8, true);
+    this.sectionTitle(page, "ATIVIDADES DE MANUTENÃ‡ÃƒO", y - 18);
+    this.text(page, `ManutenÃ§Ã£o executada ${this.rotuloPeriodicidade(periodicidade)}`, 36, y - 34, 8, true);
     this.table(page, 36, y - 58, [38, 360, 160], this.linhasAtividadesManutencao(periodicidade, "prevista"), {
       rowHeight: 20,
       fontSize: 7
@@ -120,7 +120,7 @@ export class AdminPmocPdfRendererService {
 
   private criarResumoMaquinas(previa: PreviaPmoc): PdfPage {
     const page: PdfPage = [];
-    this.cabecalho(page, previa, "RESUMO DAS MÁQUINAS DO CLIENTE");
+    this.cabecalho(page, previa, "RESUMO DAS MÃQUINAS DO CLIENTE");
     const rows = previa.maquinas.length
       ? previa.maquinas.map((maquina, indice) => [
           String(indice + 1).padStart(3, "0"),
@@ -129,22 +129,22 @@ export class AdminPmocPdfRendererService {
           this.formatarEquipamento(maquina),
           this.formatarCapacidade(maquina.capacidade_btu)
         ])
-      : [["001", "Não informado", "Não informado", "Nenhuma máquina cadastrada", "Não informado"]];
-    this.table(page, 36, 720, [42, 125, 90, 205, 96], [["N", "Ambiente", "TAG", "Equipamento", "Carga térmica"], ...rows], {
+      : [["001", "NÃ£o informado", "NÃ£o informado", "Nenhuma mÃ¡quina cadastrada", "NÃ£o informado"]];
+    this.table(page, 36, 720, [42, 125, 90, 205, 96], [["N", "Ambiente", "TAG", "Equipamento", "Carga tÃ©rmica"], ...rows], {
       rowHeight: 24,
       fontSize: 8
     });
-    this.text(page, `Total de máquinas: ${previa.total_maquinas || previa.maquinas.length}`, 36, 170, 10, true);
-    this.text(page, `Total de OS concluídas no período: ${previa.total_os_concluidas}`, 36, 150, 10, false);
+    this.text(page, `Total de mÃ¡quinas: ${previa.total_maquinas || previa.maquinas.length}`, 36, 170, 10, true);
+    this.text(page, `Total de OS concluÃ­das no perÃ­odo: ${previa.total_os_concluidas}`, 36, 150, 10, false);
     this.footer(page, 4);
     return page;
   }
 
   private criarPaginaSemMaquina(previa: PreviaPmoc): PdfPage {
     const page: PdfPage = [];
-    this.cabecalho(page, previa, "MÁQUINA N:001 - PÁGINA EXCLUSIVA");
-    this.sectionTitle(page, "DADOS TÉCNICOS", 725);
-    this.keyValueTable(page, 36, 700, [["Situação", "Nenhuma máquina cadastrada para este cliente."]]);
+    this.cabecalho(page, previa, "MÃQUINA N:001 - PÃGINA EXCLUSIVA");
+    this.sectionTitle(page, "DADOS TÃ‰CNICOS", 725);
+    this.keyValueTable(page, 36, 700, [["SituaÃ§Ã£o", "Nenhuma mÃ¡quina cadastrada para este cliente."]]);
     this.footer(page, 5);
     return page;
   }
@@ -157,51 +157,50 @@ export class AdminPmocPdfRendererService {
     const periodicidade = this.obterPeriodicidadeOrdem(primeiraOs);
     const inicio = primeiraOs?.agendada_para ?? primeiraOs?.eventos?.[0]?.registrado_em ?? null;
     const fim = primeiraOs?.concluida_em ?? primeiraOs?.eventos?.at(-1)?.registrado_em ?? null;
-    this.cabecalho(page, previa, `MÁQUINA N:${numero} - PÁGINA EXCLUSIVA`);
+    this.cabecalho(page, previa, `MÃQUINA N:${numero} - PÃGINA EXCLUSIVA`);
     this.sectionTitle(page, `EQUIPAMENTO AC${indice + 1} - ${this.valor(maquina.local_instalacao)}`, 735);
     this.keyValueTable(page, 36, 710, [
       ["Ambiente", this.valor(maquina.local_instalacao)],
-      ["Área climatizada m2", this.formatarNumero(maquina.area_climatizada_m2)],
+      ["Ãrea climatizada m2", this.formatarNumero(maquina.area_climatizada_m2)],
       ["Ocupantes fixos", this.formatarNumero(maquina.ocupantes_fixo)],
-      ["Ocupantes variáveis", this.formatarNumero(maquina.ocupantes_variavel)],
-      ["Carga Térmica", this.formatarCapacidade(maquina.capacidade_btu)],
+      ["Ocupantes variÃ¡veis", this.formatarNumero(maquina.ocupantes_variavel)],
+      ["Carga TÃ©rmica", this.formatarCapacidade(maquina.capacidade_btu)],
       ["Equipamento", this.formatarEquipamento(maquina)],
       ["TAG", this.valor(maquina.patrimonio)],
-      ["Código de barras", this.valor(maquina.codigo_barras)],
-      ["Gás Refrigerante", this.valor(maquina.gas_refrigerante)]
+      ["CÃ³digo de barras", this.valor(maquina.codigo_barras)],
+      ["GÃ¡s Refrigerante", this.valor(maquina.gas_refrigerante)]
     ]);
-    this.text(page, `Manutenção executada ${this.rotuloPeriodicidade(periodicidade)}`, 36, 475, 7.5, true);
+    this.text(page, `ManutenÃ§Ã£o executada ${this.rotuloPeriodicidade(periodicidade)}`, 36, 475, 7.5, true);
     this.table(page, 36, 457, [38, 380, 140], this.linhasAtividadesManutencao(periodicidade, "executada"), {
       rowHeight: 15,
       fontSize: 5.8
     });
-    const linhasChecklist = this.linhasChecklistApk(primeiraOs);
     this.footer(page, 5 + indice * 2);
-    this.cabecalho(execucaoPage, previa, `MÁQUINA N:${numero} - EXECUÇÃO E EVIDÊNCIAS`);
-    this.sectionTitle(execucaoPage, "EXECUÇÃO NO APP", 735);
+    this.cabecalho(execucaoPage, previa, `MÃQUINA N:${numero} - EXECUÃ‡ÃƒO E EVIDÃŠNCIAS`);
+    this.sectionTitle(execucaoPage, "EXECUÃ‡ÃƒO NO APP", 735);
     this.keyValueTable(
       execucaoPage,
       36,
       710,
       [
         ["Data", this.formatarData(primeiraOs?.concluida_em ?? null)],
-        ["Horário", `${this.formatarHora(inicio)} - ${this.formatarHora(fim)} (${this.calcularDuracao(inicio, fim)})`],
-        ["Técnico/Equipe", primeiraOs?.tecnico?.nome || primeiraOs?.equipe?.nome || "Não informado"],
-        ["OS", primeiraOs?.titulo || "Não informado"],
+        ["HorÃ¡rio", `${this.formatarHora(inicio)} - ${this.formatarHora(fim)} (${this.calcularDuracao(inicio, fim)})`],
+        ["TÃ©cnico/Equipe", primeiraOs?.tecnico?.nome || primeiraOs?.equipe?.nome || "NÃ£o informado"],
+        ["OS", primeiraOs?.titulo || "NÃ£o informado"],
         ["GPS", this.formatarGps(primeiraOs)],
-        ["Assinatura", primeiraOs?.assinatura?.nome_responsavel || "Não informado"]
+        ["Assinatura", primeiraOs?.assinatura?.nome_responsavel || "NÃ£o informado"]
       ],
       17,
       7
     );
     this.sectionTitle(execucaoPage, "CHECKLIST APK", 570);
-    this.table(execucaoPage, 36, 545, [145, 395], [["Campo", "Informação"], ...linhasChecklist], { rowHeight: 16, fontSize: 6.2 });
-    this.sectionTitle(execucaoPage, "FOTOS", 290);
-    this.adicionarFotosApp(execucaoPage, primeiraOs, 36, 105);
+    adicionarChecklistApkPdf(execucaoPage, primeiraOs, 36, 545, this.pdfDraw());
+    this.sectionTitle(execucaoPage, "FOTOS", 210);
+    adicionarFotosAppPdf(execucaoPage, primeiraOs, 36, 55, this.pdfDraw());
     this.compat(page, [
-      `Área climatizada m2 ${this.formatarNumero(maquina.area_climatizada_m2)}`,
+      `Ãrea climatizada m2 ${this.formatarNumero(maquina.area_climatizada_m2)}`,
       `Ocupantes fixos ${this.formatarNumero(maquina.ocupantes_fixo)}`,
-      `Ocupantes variáveis ${this.formatarNumero(maquina.ocupantes_variavel)}`
+      `Ocupantes variÃ¡veis ${this.formatarNumero(maquina.ocupantes_variavel)}`
     ]);
     this.footer(execucaoPage, 6 + indice * 2);
     return [page, execucaoPage];
@@ -211,29 +210,29 @@ export class AdminPmocPdfRendererService {
     const page: PdfPage = [];
     const engenheiro = previa.engenheiro_responsavel || ENGENHEIRO_PADRAO_PMOC;
     const dataFormatada = new Intl.DateTimeFormat("pt-BR", { year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
-    this.cabecalho(page, previa, "DECLARAÇÃO TÉCNICA E ASSINATURAS");
-    this.sectionTitle(page, "REFERÊNCIA NORMATIVA", 730);
+    this.cabecalho(page, previa, "DECLARAÃ‡ÃƒO TÃ‰CNICA E ASSINATURAS");
+    this.sectionTitle(page, "REFERÃŠNCIA NORMATIVA", 730);
     let y = this.paragraph(
       page,
-      "Portaria MS nº 3.523/1998; Resolução ANVISA RE nº 09/2003; Lei Federal nº 13.589/2018; Lei Federal 6.437/1977; Resolução CONFEA 218/1973, Art. 12.",
+      "Portaria MS nÂº 3.523/1998; ResoluÃ§Ã£o ANVISA RE nÂº 09/2003; Lei Federal nÂº 13.589/2018; Lei Federal 6.437/1977; ResoluÃ§Ã£o CONFEA 218/1973, Art. 12.",
       36,
       705,
       108,
       10
     );
-    this.sectionTitle(page, "LIMITAÇÃO DO PLANO", y - 20);
+    this.sectionTitle(page, "LIMITAÃ‡ÃƒO DO PLANO", y - 20);
     y = this.paragraph(
       page,
-      "Esta análise está limitada à elaboração e supervisão do PMOC. A execução da manutenção, uso inadequado, informações incorretas e intervenções sem registro ficam sob responsabilidade do proprietário/responsável.",
+      "Esta anÃ¡lise estÃ¡ limitada Ã  elaboraÃ§Ã£o e supervisÃ£o do PMOC. A execuÃ§Ã£o da manutenÃ§Ã£o, uso inadequado, informaÃ§Ãµes incorretas e intervenÃ§Ãµes sem registro ficam sob responsabilidade do proprietÃ¡rio/responsÃ¡vel.",
       36,
       y - 45,
       108,
       10
     );
-    this.sectionTitle(page, "CONSIDERAÇÕES FINAIS", y - 20);
+    this.sectionTitle(page, "CONSIDERAÃ‡Ã•ES FINAIS", y - 20);
     y = this.paragraph(
       page,
-      "O PMOC protege os ocupantes do imóvel, reduz problemas relacionados à qualidade do ar, aumenta a vida útil dos equipamentos e reduz falhas e consumo de energia.",
+      "O PMOC protege os ocupantes do imÃ³vel, reduz problemas relacionados Ã  qualidade do ar, aumenta a vida Ãºtil dos equipamentos e reduz falhas e consumo de energia.",
       36,
       y - 45,
       108,
@@ -242,11 +241,11 @@ export class AdminPmocPdfRendererService {
     this.text(page, `Londrina, ${dataFormatada}`, 36, y - 45, 10, false);
     this.line(page, 95, 205, 315, 205);
     this.text(page, engenheiro.nome || ENGENHEIRO_PADRAO_PMOC.nome, 105, 185, 10, true);
-    this.text(page, `Responsável Técnico - Engenheiro Mecânico`, 105, 170, 8, false);
+    this.text(page, `ResponsÃ¡vel TÃ©cnico - Engenheiro MecÃ¢nico`, 105, 170, 8, false);
     this.text(page, `CREA-PR ${engenheiro.crea || ENGENHEIRO_PADRAO_PMOC.crea}`, 105, 157, 8, false);
     this.line(page, 350, 205, 570, 205);
     this.text(page, previa.cliente.nome, 365, 185, 10, true);
-    this.text(page, "Contratante / Responsável", 385, 170, 8, false);
+    this.text(page, "Contratante / ResponsÃ¡vel", 385, 170, 8, false);
     this.footer(page, 5 + Math.max(previa.maquinas.length * 2, 1));
     return page;
   }
@@ -254,7 +253,7 @@ export class AdminPmocPdfRendererService {
   private linhasAtividadesManutencao(periodicidadeExecutada: PeriodicidadePmoc, modo: "prevista" | "executada") {
     const executado = (periodicidadePrevista: PeriodicidadePmoc) =>
       this.periodicidadeInclui(periodicidadeExecutada, periodicidadePrevista) ? this.rotuloPeriodicidade(periodicidadeExecutada) : "";
-    const coluna = modo === "prevista" ? "Periodicidade prevista" : "Executado neste relatório";
+    const coluna = modo === "prevista" ? "Periodicidade prevista" : "Executado neste relatÃ³rio";
     return [
       ["N", "Atividade", coluna],
       ...ATIVIDADES_MANUTENCAO.map(([numero, atividade, periodicidadePrevista]) => [
@@ -263,41 +262,6 @@ export class AdminPmocPdfRendererService {
         modo === "prevista" ? this.rotuloPeriodicidade(periodicidadePrevista) : executado(periodicidadePrevista)
       ])
     ];
-  }
-
-  private linhasChecklistApk(ordem: OrdemPmoc | null) {
-    return resumirChecklistPmoc(ordem?.checklist_tipo, ordem?.checklist_respostas, (storageUrl) => this.obterNomeArquivo(storageUrl))
-      .map((linha, index) => [index === 0 ? "Checklist APK" : `Checklist APK ${index + 1}`, linha]);
-  }
-
-  private adicionarFotosApp(page: PdfPage, ordem: OrdemPmoc | null, x: number, y: number) {
-    const urls = this.urlsEvidenciasApp(ordem).slice(0, 4);
-    urls.forEach((url, index) => {
-      const imagem = carregarArquivoStorage(url);
-      if (!imagem) return;
-      const left = x + index * 138;
-      this.rect(page, left, y, 120, 120);
-      this.text(page, this.obterNomeArquivo(url), left, y - 12, 6.5, false, 18, "0.38 0.42 0.48");
-      page.imagens = page.imagens ?? [];
-      page.imagens.push({ buffer: imagem, x: left + 1, y: y + 1, width: 118, height: 118 });
-    });
-  }
-
-  private urlsEvidenciasApp(ordem: OrdemPmoc | null) {
-    const urls: string[] = [];
-    const vistos = new Set<string>();
-    const adicionar = (storageUrl?: string | null) => {
-      if (!storageUrl || vistos.has(storageUrl)) return;
-      vistos.add(storageUrl);
-      urls.push(storageUrl);
-    };
-
-    for (const evidencia of ordem?.evidencias ?? []) adicionar(evidencia.storage_url);
-    for (const resposta of ordem?.checklist_respostas ?? []) {
-      if (resposta.tipo === "foto") adicionar(resposta.valor);
-    }
-
-    return urls;
   }
 
   private obterPeriodicidadePrevia(previa: PreviaPmoc): PeriodicidadePmoc {
@@ -341,7 +305,7 @@ export class AdminPmocPdfRendererService {
     this.rect(page, 36, 780, 540, 38, "0.09 0.18 0.30");
     this.rect(page, 36, 776, 540, 4, "0.21 0.53 0.73");
     this.text(page, CONTRATADA_PMOC.nomeFantasia, 46, 803, 14, true, undefined, "1 1 1");
-    this.text(page, "PMOC - Plano de Manutenção, Operação e Controle", 46, 789, 8, false, undefined, "0.88 0.93 0.98");
+    this.text(page, "PMOC - Plano de ManutenÃ§Ã£o, OperaÃ§Ã£o e Controle", 46, 789, 8, false, undefined, "0.88 0.93 0.98");
     this.text(page, this.numeroPmoc(previa), 430, 803, 8, true, undefined, "1 1 1");
     this.text(page, `Cliente: ${previa.cliente.nome}`, 430, 789, 7, false, 34, "0.88 0.93 0.98");
     this.text(page, titulo, 36, 755, 13, true, undefined, "0.09 0.18 0.30");
@@ -354,7 +318,7 @@ export class AdminPmocPdfRendererService {
   }
 
   private keyValueTable(page: PdfPage, x: number, y: number, rows: string[][], rowHeight = 22, fontSize = 8) {
-    this.table(page, x, y, [145, 395], [["Campo", "Informação"], ...rows], { rowHeight, fontSize });
+    this.table(page, x, y, [145, 395], [["Campo", "InformaÃ§Ã£o"], ...rows], { rowHeight, fontSize });
   }
 
   private table(
@@ -394,11 +358,19 @@ export class AdminPmocPdfRendererService {
   private footer(page: PdfPage, numeroPagina: number) {
     this.line(page, 36, 30, 576, 30, "0.55 0.60 0.66");
     this.text(page, "Documento gerado pelo sistema AIRMOVEBR Digital", 36, 18, 7, false, undefined, "0.38 0.42 0.48");
-    this.text(page, `Página ${numeroPagina}`, 535, 18, 7, false, undefined, "0.38 0.42 0.48");
+    this.text(page, `PÃ¡gina ${numeroPagina}`, 535, 18, 7, false, undefined, "0.38 0.42 0.48");
   }
 
   private compat(page: PdfPage, values: string[]) {
     values.forEach((value, index) => this.text(page, value, 1000, 1000 - index * 2, 1, false));
+  }
+
+  private pdfDraw() {
+    return {
+      text: this.text.bind(this),
+      line: this.line.bind(this),
+      rect: this.rect.bind(this)
+    };
   }
 
   private text(page: PdfPage, value: string, x: number, y: number, size: number, bold = false, maxChars?: number, color = "0 0 0") {
@@ -429,35 +401,35 @@ export class AdminPmocPdfRendererService {
   }
 
   private obterMunicipioUf(endereco: EnderecoPmoc) {
-    if (!endereco) return "Não informado";
-    return `${endereco.cidade || "Não informado"} / ${endereco.uf || "PR"}`;
+    if (!endereco) return "NÃ£o informado";
+    return `${endereco.cidade || "NÃ£o informado"} / ${endereco.uf || "PR"}`;
   }
 
   private valor(valor?: string | null) {
-    return valor?.trim() || "Não informado";
+    return valor?.trim() || "NÃ£o informado";
   }
 
   private formatarEquipamento(maquina: MaquinaPmoc) {
-    return [maquina.tipo, maquina.marca, maquina.modelo].filter((item) => item?.trim()).join(" ") || "Não informado";
+    return [maquina.tipo, maquina.marca, maquina.modelo].filter((item) => item?.trim()).join(" ") || "NÃ£o informado";
   }
 
   private formatarNumero(valor?: number | null) {
-    return valor === null || valor === undefined ? "Não informado" : new Intl.NumberFormat("pt-BR").format(valor);
+    return valor === null || valor === undefined ? "NÃ£o informado" : new Intl.NumberFormat("pt-BR").format(valor);
   }
 
   private formatarCapacidade(capacidadeBtu?: number | null) {
-    return capacidadeBtu ? `${new Intl.NumberFormat("pt-BR").format(capacidadeBtu)} BTU` : "Não informado";
+    return capacidadeBtu ? `${new Intl.NumberFormat("pt-BR").format(capacidadeBtu)} BTU` : "NÃ£o informado";
   }
 
   private formatarEndereco(endereco: EnderecoPmoc) {
-    if (!endereco) return "Não informado";
+    if (!endereco) return "NÃ£o informado";
     return [endereco.logradouro, endereco.numero, endereco.complemento, endereco.bairro, endereco.cidade, endereco.uf, endereco.cep ? `CEP ${endereco.cep}` : null]
       .filter(Boolean)
-      .join(", ") || "Não informado";
+      .join(", ") || "NÃ£o informado";
   }
 
   private formatarArt(previa: PreviaPmoc) {
-    return previa.cliente.pmoc_art_numero?.trim() || "Não informado";
+    return previa.cliente.pmoc_art_numero?.trim() || "NÃ£o informado";
   }
 
   private formatarData(valor: string | null) {
@@ -480,7 +452,7 @@ export class AdminPmocPdfRendererService {
   }
 
   private formatarEvidencias(ordem: OrdemPmoc | null) {
-    if (!ordem?.evidencias?.length) return "Nenhuma evidência registrada.";
+    if (!ordem?.evidencias?.length) return "Nenhuma evidÃªncia registrada.";
     const antes = ordem.evidencias.find((evidencia) => evidencia.tipo === "antes");
     const depois = ordem.evidencias.find((evidencia) => evidencia.tipo === "depois");
     return [`Antes - ${this.obterNomeArquivo(antes?.storage_url)}`, `Depois - ${this.obterNomeArquivo(depois?.storage_url)}`].join(" | ");
@@ -488,7 +460,7 @@ export class AdminPmocPdfRendererService {
 
   private formatarGps(ordem: OrdemPmoc | null) {
     const evento = ordem?.eventos?.find((item) => item.latitude !== null && item.longitude !== null);
-    if (!evento || evento.latitude === null || evento.longitude === null) return "Não informado";
+    if (!evento || evento.latitude === null || evento.longitude === null) return "NÃ£o informado";
     return `${Number(evento.latitude).toFixed(6)}, ${Number(evento.longitude).toFixed(6)}`;
   }
 
@@ -523,3 +495,5 @@ export class AdminPmocPdfRendererService {
     return linhas.concat(atual || "");
   }
 }
+
+

@@ -112,12 +112,13 @@ test("admin autentica, guarda token e protege chamadas administrativas", () => {
   const main = read("apps/admin/js/main.js");
 
   assert.match(html, /<script type="module" src="\.\/js\/main\.js\?v=\d{8}-[a-z]+"><\/script>/);
-  assert.match(html, /\.\/js\/main\.js\?v=20260630-recfix/);
-  assert.match(main, /\?v=20260630-recfix/g);
+  assert.match(html, /\.\/js\/main\.js\?v=20260630-recostatus/);
+  assert.match(main, /\?v=20260630-recostatus/g);
   assert.doesNotMatch(html, /20260629-recorrencia/);
-  assert.doesNotMatch(main, /20260630-recorrencia-filtros|20260630-apiadmin|20260630-recshow/);
+  assert.doesNotMatch(main, /20260630-recorrencia-filtros|20260630-apiadmin|20260630-recshow|20260630-recfix/);
   assert.doesNotMatch(main, /import "\.\.\/script\.js"/);
   assert.match(main, /adminModules/);
+  assert.doesNotMatch(main, /recurrenceUiRoot,\s*\n/);
   assertFileExists("apps/admin/js/modules/api.js");
   assertFileExists("apps/admin/js/modules/ui/dom.js");
   assertFileExists("apps/admin/js/modules/auth.js");
@@ -193,9 +194,11 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(html, /name="tecnico_id"/);
   assert.match(html, /id="recorrenciasView"/);
   assert.match(html, /data-recurrence-filter="ativos"/);
+  assert.match(html, /data-recurrence-filter="gerando"/);
   assert.match(html, /data-recurrence-filter="tecnico"/);
   assert.match(html, /data-recurrence-filter="vencidos"/);
   assert.match(html, /data-recurrence-filter="finalizados"/);
+  assert.match(html, /id="recurrenceGeneratingCount"/);
   assert.match(html, /id="recurrenceTechnicianCount"/);
   assert.match(html, /id="recurrenceDoneCount"/);
   assert.match(html, /id="recurrenceForm"/);
@@ -263,6 +266,11 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(script, /function setRecurrenceFilter/);
   assert.match(script, /function filterRecurrenceItems/);
   assert.match(script, /function updateRecurrenceSummary/);
+  assert.match(script, /function isRecurrenceGenerating/);
+  assert.match(script, /function isRecurrenceExpired/);
+  assert.match(script, /function hasUnfinishedPreviousOrder/);
+  assert.match(script, /generatingRecurrencePlanIds/);
+  assert.match(script, /Gerando O\.S\./);
   assert.match(script, /recurrenceFilterButtons/);
   assert.match(script, /data-action="editar-recorrencia"/);
   assert.match(script, /data-action="apagar-recorrencia"/);
@@ -531,11 +539,11 @@ test("admin mostra despacho da O.S. sem etapa manual redundante", () => {
 
 test("admin oferece checklist e recorrencia anual operacional", () => {
   const html = read("apps/admin/index.html");
-  const agendaScript = read("apps/admin/js/modules/agenda.js");
+  const recurrenceStatusScript = read("apps/admin/js/modules/recurrence-status.js");
   const eventosScript = read("apps/admin/js/modules/eventos.js");
 
   assert.ok((html.match(/<option value="anual">Anual<\/option>/g) || []).length >= 2);
-  assert.match(agendaScript, /anual:\s*"Anual"/);
+  assert.match(recurrenceStatusScript, /anual:\s*"Anual"/);
   assert.match(eventosScript, /anual:\s*"Anual"/);
 });
 
