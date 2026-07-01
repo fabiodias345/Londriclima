@@ -2,6 +2,7 @@ const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const { readdirSync, readFileSync } = require("node:fs");
 const { join } = require("node:path");
+const { pathToFileURL } = require("node:url");
 
 const root = join(__dirname, "..");
 
@@ -112,15 +113,15 @@ test("admin autentica, guarda token e protege chamadas administrativas", () => {
   const main = read("apps/admin/js/main.js");
 
   assert.match(html, /<script type="module" src="\.\/js\/main\.js\?v=\d{8}-[a-z]+"><\/script>/);
-  assert.match(html, /\.\/js\/main\.js\?v=20260630-reclist/);
-  assert.match(main, /\?v=20260630-reclist/g);
+  assert.match(html, /\.\/js\/main\.js\?v=20260630-runtimefix/);
+  assert.match(main, /\?v=20260630-runtimefix/g);
   assert.doesNotMatch(html, /20260629-recorrencia/);
   assert.doesNotMatch(main, /20260630-recorrencia-filtros|20260630-apiadmin|20260630-recshow|20260630-recfix/);
   assert.doesNotMatch(main, /import "\.\.\/script\.js"/);
   assert.match(main, /adminModules/);
   assert.doesNotMatch(main, /recurrenceUiRoot,\s*\n/);
-  assert.match(main, /import \{ recurrenceStatusRoot \} from "\.\/modules\/recurrence-status\.js\?v=20260630-reclist"/);
-  assert.match(main, /agendaRoot,\s*recurrenceStatusRoot,\s*recorrenciasRoot/);
+  assert.match(main, /import \{ recurrenceStatusRoot \} from "\.\/modules\/recurrence-status\.js\?v=20260630-runtimefix"/);
+  assert.match(main, /const adminSources = \[\s*recurrenceStatusRoot,\s*apiRoot/);
   assertFileExists("apps/admin/js/modules/api.js");
   assertFileExists("apps/admin/js/modules/ui/dom.js");
   assertFileExists("apps/admin/js/modules/auth.js");
@@ -149,6 +150,53 @@ test("admin autentica, guarda token e protege chamadas administrativas", () => {
   assert.match(script, /\/admin\/relatorios\/frota/);
   assert.match(script, /\/admin\/engenheiros\/\$\{engineerId\}/);
   assert.match(script, /response\.status !== 401/);
+});
+
+test("admin compila o bundle concatenado antes do deploy", async () => {
+  const loadModule = async (relativePath) => import(pathToFileURL(join(root, relativePath)).href);
+  const [
+    recurrenceStatus,
+    api,
+    auth,
+    frota,
+    agenda,
+    recorrencias,
+    clientes,
+    pmoc,
+    relatorios,
+    dom,
+    eventos,
+    bootstrap
+  ] = await Promise.all([
+    loadModule("apps/admin/js/modules/recurrence-status.js"),
+    loadModule("apps/admin/js/modules/api.js"),
+    loadModule("apps/admin/js/modules/auth.js"),
+    loadModule("apps/admin/js/modules/frota.js"),
+    loadModule("apps/admin/js/modules/agenda.js"),
+    loadModule("apps/admin/js/modules/recorrencias.js"),
+    loadModule("apps/admin/js/modules/clientes.js"),
+    loadModule("apps/admin/js/modules/pmoc.js"),
+    loadModule("apps/admin/js/modules/relatorios.js"),
+    loadModule("apps/admin/js/modules/ui/dom.js"),
+    loadModule("apps/admin/js/modules/eventos.js"),
+    loadModule("apps/admin/js/modules/bootstrap.js")
+  ]);
+  const adminSources = [
+    recurrenceStatus.recurrenceStatusRoot,
+    api.apiRoot,
+    auth.authRoot,
+    frota.frotaRoot,
+    agenda.agendaRoot,
+    recorrencias.recorrenciasRoot,
+    clientes.clientesRoot,
+    pmoc.pmocRoot,
+    relatorios.relatoriosRoot,
+    dom.domRoot,
+    eventos.eventsRoot,
+    bootstrap.bootstrapRoot
+  ];
+
+  assert.doesNotThrow(() => Function(adminSources.join("\n")));
 });
 
 test("admin possui views funcionais para agenda clientes e relatorios", () => {
