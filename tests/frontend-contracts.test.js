@@ -153,6 +153,7 @@ test("admin autentica, guarda token e protege chamadas administrativas", () => {
 });
 
 test("admin compila o bundle concatenado antes do deploy", async () => {
+  const main = read("apps/admin/js/main.js");
   const loadModule = async (relativePath) => import(pathToFileURL(join(root, relativePath)).href);
   const [
     recurrenceStatus,
@@ -181,20 +182,31 @@ test("admin compila o bundle concatenado antes do deploy", async () => {
     loadModule("apps/admin/js/modules/eventos.js"),
     loadModule("apps/admin/js/modules/bootstrap.js")
   ]);
-  const adminSources = [
-    recurrenceStatus.recurrenceStatusRoot,
-    api.apiRoot,
-    auth.authRoot,
-    frota.frotaRoot,
-    agenda.agendaRoot,
-    recorrencias.recorrenciasRoot,
-    clientes.clientesRoot,
-    pmoc.pmocRoot,
-    relatorios.relatoriosRoot,
-    dom.domRoot,
-    eventos.eventsRoot,
-    bootstrap.bootstrapRoot
-  ];
+  const sourceByName = {
+    recurrenceStatusRoot: recurrenceStatus.recurrenceStatusRoot,
+    apiRoot: api.apiRoot,
+    authRoot: auth.authRoot,
+    frotaRoot: frota.frotaRoot,
+    agendaRoot: agenda.agendaRoot,
+    recorrenciasRoot: recorrencias.recorrenciasRoot,
+    clientesRoot: clientes.clientesRoot,
+    pmocRoot: pmoc.pmocRoot,
+    relatoriosRoot: relatorios.relatoriosRoot,
+    domRoot: dom.domRoot,
+    eventsRoot: eventos.eventsRoot,
+    bootstrapRoot: bootstrap.bootstrapRoot
+  };
+  const sourceList = main.match(/const adminSources = \[([\s\S]*?)\];/);
+
+  assert.ok(sourceList, "adminSources deve existir em main.js");
+  const adminSources = sourceList[1]
+    .split(",")
+    .map((name) => name.trim())
+    .filter(Boolean)
+    .map((name) => {
+      assert.ok(sourceByName[name], `fonte desconhecida em adminSources: ${name}`);
+      return sourceByName[name];
+    });
 
   assert.doesNotThrow(() => Function(adminSources.join("\n")));
 });
