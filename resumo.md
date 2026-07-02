@@ -15,7 +15,6 @@ Somente pendencias e proximos passos. Historico concluido fica no Git e nos test
 
 Executar e validar uma fase antes de iniciar a seguinte.
 
-1. **Fase 1 - estrutura de dados:** adicionar Camara Fria como categoria de servico e equipamento, mantendo preventiva, corretiva, instalacao e avulso.
 2. **Fase 2 - painel administrativo:** incluir Camara Fria nos cadastros, filtros e criacao/edicao de O.S.
 3. **Fase 3 - backend e banco:** criar migration, atualizar API e preservar registros existentes.
 4. **Fase 4 - checklist no APK:** implementar perguntas, respostas, descricao condicional e temperatura em graus Celsius.

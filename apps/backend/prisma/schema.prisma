@@ -98,6 +98,11 @@ enum OrdemServicoTipoServico {
   instalacao
 }
 
+enum CategoriaAtendimento {
+  ar_condicionado
+  camara_fria
+}
+
 model Empresa {
   id        String   @id @default(uuid()) @db.Uuid
   nome      String
@@ -362,6 +367,7 @@ model Equipamento {
   id        String   @id @default(uuid()) @db.Uuid
   empresaId String  @map("empresa_id") @db.Uuid
   clienteId String  @map("cliente_id") @db.Uuid
+  categoria CategoriaAtendimento @default(ar_condicionado)
   codigoPublico String? @unique @map("codigo_publico")
   senhaPublicaHash String? @map("senha_publica_hash")
   acessoPublicoAtivo Boolean @default(false) @map("acesso_publico_ativo")
@@ -403,6 +409,7 @@ model OrdemServico {
   equipeId  String? @map("equipe_id") @db.Uuid
   tecnicoId String? @map("tecnico_id") @db.Uuid
   status    OrdemServicoStatus @default(pre_chamado)
+  categoriaServico CategoriaAtendimento @default(ar_condicionado) @map("categoria_servico")
   tipoServico OrdemServicoTipoServico @default(preventiva) @map("tipo_servico")
   checklistTipo ChecklistTipo @default(mensal) @map("checklist_tipo")
   titulo    String
