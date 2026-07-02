@@ -1,57 +1,45 @@
 # Resumo AIRMOVEBR
 
-Atualizado em: 30/06/2026
+Atualizado em: 02/07/2026
 
-Este arquivo deve registrar somente o que falta fazer ou validar. Historico implementado fica no Git e nos testes.
+Somente pendencias e proximos passos. Historico concluido fica no Git e nos testes.
 
-## Proximo foco
+## Regras
 
-1. Validar no APK os checklists simplificados mensal, trimestral, semestral e anual em uso real de campo.
-2. Melhorar finalizacao da O.S. no app depois da validacao dos tecnicos.
-3. Adaptar posteriormente o relatorio tecnico e o PDF PMOC aos novos codigos de checklist.
+- Executar uma fase por vez e validar antes de continuar.
+- Arquivo novo ou editado: maximo de 500 linhas.
+- Segredos e credenciais nunca entram no Git.
+- Backup na mesma VM serve apenas para restauracao rapida; copia externa e obrigatoria.
 
-## App tecnico - pendencias futuras
+## Proximo foco - camara fria e relatorios
 
-- Checklists agora sao independentes por periodicidade e precisam de validacao visual no aparelho.
-- Confirmar em campo o fluxo anual por etapas, com escolha entre evaporadoras ou condensadoras primeiro.
-- Confirmar restauracao de respostas, fotos por maquina e sincronizacao offline em rede instavel.
-- Melhorar a finalizacao da O.S.:
-  - resumo antes da assinatura;
-  - area de assinatura maior;
-  - botao fixo de finalizar;
-  - mensagens claras para nome, assinatura, checklist ou sync faltando.
-- APK funcional em aparelho fisico; falta aprovacao dos tecnicos.
-- Gerar APK novo depois da validacao visual.
-- Publicar as alteracoes quando o fluxo estiver aprovado pelos tecnicos.
+Executar e validar uma fase antes de iniciar a seguinte.
 
-## Painel admin - pendencias futuras
+1. **Fase 1 - estrutura de dados:** adicionar Camara Fria como categoria de servico e equipamento, mantendo preventiva, corretiva, instalacao e avulso.
+2. **Fase 2 - painel administrativo:** incluir Camara Fria nos cadastros, filtros e criacao/edicao de O.S.
+3. **Fase 3 - backend e banco:** criar migration, atualizar API e preservar registros existentes.
+4. **Fase 4 - checklist no APK:** implementar perguntas, respostas, descricao condicional e temperatura em graus Celsius.
+5. **Fase 5 - fotos:** exigir fotos da evaporadora, condensadora e controlador.
+6. **Fase 6 - assinatura do tecnico:** adicionar nome e assinatura do tecnico ao final de todos os checklists, mantendo a assinatura do responsavel.
+7. **Fase 7 - relatorio Camara Fria:** gerar PDF com dados da O.S., checklist, fotos e assinaturas conforme o modelo recebido.
+8. **Fase 8 - componentes PDF:** separar cabecalho, cartoes, checklist, fotos e assinaturas em arquivos reutilizaveis.
+9. **Fase 9 - relatorios avulsos:** aplicar o novo padrao visual.
+10. **Fase 10 - relatorios PMOC:** aplicar o padrao visual sem remover ART, engenheiro, periodicidade ou dados obrigatorios.
+11. **Fase 11 - validacao final:** testar painel, banco, APK, finalizacao da O.S. e os tres tipos de PDF.
 
-- Recorrencia em producao validada: scheduler da Locaweb gerou O.S. automatica para Luri/Paulo em 30/06/2026 e o APK recebeu apos atualizar.
-- Falta validar no painel a correcao operacional de O.S. gerada errada:
-  - editar;
-  - cancelar/apagar;
-  - revisar historico.
+## Backup automatico - validacoes pendentes
 
-## PMOC futuro
+Estado atual: backups locais e externo ativos a cada 6 horas; monitoramento horario, alerta por e-mail e restauracao mensal isolada tambem ativos.
 
-- PMOC ajustado para mostrar periodicidade executada no relatorio, sem colunas ambíguas de X.
-- Conferir PDF PMOC real depois do deploy e ajustar se necessario.
-- Manter PMOC separado por cliente/endereco.
-- Uma pagina por maquina.
-- Nao misturar O.S., fotos ou equipamentos entre clientes.
-- Adicionar dados faltantes de maquina quando necessario:
-  - area climatizada;
-  - ocupantes fixos;
-  - ocupantes variaveis.
+### Fase B6 - restauracao e monitoramento
 
-## Deploy e validacao
+- Conferir a primeira execucao do snapshot semanal da Locaweb depois do proximo domingo.
+- Confirmar recebimento do e-mail real de teste do alerta.
 
-- Antes de publicar:
-  - `flutter analyze`
-  - testes Flutter afetados;
-  - `npm.cmd run backend:build` se backend mudar;
-  - teste manual no celular;
-  - health da API.
-- Producao atual:
-  - VM: `191.252.226.11`
-  - repo: `/opt/airmovebr/repo`
+## Pendencias posteriores
+
+- Validar no APK os checklists mensal, trimestral, semestral e anual em campo.
+- Melhorar a finalizacao da O.S. apos retorno dos tecnicos.
+- Validar no painel edicao, cancelamento e exclusao de O.S. gerada errada.
+- Conferir o PDF PMOC real e adaptar relatorios aos novos codigos de checklist.
+- Gerar novo APK e publicar somente depois da validacao no aparelho.

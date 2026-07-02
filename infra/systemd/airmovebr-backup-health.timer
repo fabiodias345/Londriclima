@@ -1,0 +1,11 @@
+[Unit]
+Description=Check AIRMOVEBR backups hourly
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+AccuracySec=1min
+Unit=airmovebr-backup-health.service
+
+[Install]
+WantedBy=timers.target

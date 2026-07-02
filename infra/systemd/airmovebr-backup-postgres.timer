@@ -1,0 +1,11 @@
+[Unit]
+Description=Run AIRMOVEBR PostgreSQL backup every 6 hours
+
+[Timer]
+OnCalendar=*-*-* 00,06,12,18:15:00 America/Sao_Paulo
+Persistent=true
+AccuracySec=1min
+Unit=airmovebr-backup-postgres.service
+
+[Install]
+WantedBy=timers.target

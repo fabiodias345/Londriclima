@@ -1,0 +1,11 @@
+[Unit]
+Description=Run AIRMOVEBR storage backup every 6 hours
+
+[Timer]
+OnCalendar=*-*-* 00,06,12,18:45:00 America/Sao_Paulo
+Persistent=true
+AccuracySec=1min
+Unit=airmovebr-backup-storage.service
+
+[Install]
+WantedBy=timers.target

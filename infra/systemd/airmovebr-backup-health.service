@@ -1,0 +1,21 @@
+[Unit]
+Description=AIRMOVEBR backup health check
+After=network-online.target
+Wants=network-online.target
+OnFailure=airmovebr-backup-alert@%n.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/airmovebr-check-backup-health
+User=root
+Group=root
+UMask=0077
+CacheDirectory=airmovebr-restic
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadOnlyPaths=/etc/airmovebr /var/backups/airmovebr/postgres /var/backups/airmovebr/storage
+ReadWritePaths=/var/cache/airmovebr-restic
+RestrictAddressFamilies=AF_INET AF_INET6
+TimeoutStartSec=10min

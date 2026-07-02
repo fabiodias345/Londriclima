@@ -1,0 +1,16 @@
+[Unit]
+Description=AIRMOVEBR backup alert for %i
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/airmovebr-send-backup-alert %i
+User=root
+Group=root
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadOnlyPaths=/opt/airmovebr/repo/.env.production
+RestrictAddressFamilies=AF_INET AF_INET6
+TimeoutStartSec=2min

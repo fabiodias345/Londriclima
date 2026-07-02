@@ -1,0 +1,21 @@
+[Unit]
+Description=AIRMOVEBR encrypted external backup
+After=network-online.target airmovebr-backup-postgres.service airmovebr-backup-storage.service
+Wants=network-online.target
+OnFailure=airmovebr-backup-alert@%n.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/airmovebr-backup-external
+User=root
+Group=root
+UMask=0077
+CacheDirectory=airmovebr-restic
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadOnlyPaths=/etc/airmovebr /var/backups/airmovebr/postgres /var/backups/airmovebr/storage
+ReadWritePaths=/var/cache/airmovebr-restic /run/lock
+RestrictAddressFamilies=AF_INET AF_INET6
+TimeoutStartSec=2h

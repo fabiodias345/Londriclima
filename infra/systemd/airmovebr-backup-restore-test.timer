@@ -1,0 +1,11 @@
+[Unit]
+Description=Run AIRMOVEBR restore test monthly
+
+[Timer]
+OnCalendar=*-*-01 05:00:00 America/Sao_Paulo
+Persistent=true
+AccuracySec=1min
+Unit=airmovebr-backup-restore-test.service
+
+[Install]
+WantedBy=timers.target

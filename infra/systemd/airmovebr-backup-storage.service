@@ -1,0 +1,19 @@
+[Unit]
+Description=AIRMOVEBR storage backup
+After=docker.service
+RequiresMountsFor=/var/lib/docker/volumes/infra_storage_data/_data
+OnFailure=airmovebr-backup-alert@%n.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/airmovebr-backup-storage
+User=root
+Group=root
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=full
+ReadOnlyPaths=/var/lib/docker/volumes/infra_storage_data/_data
+ReadWritePaths=/var/backups/airmovebr/storage /run/lock
+TimeoutStartSec=30min

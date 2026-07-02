@@ -1,0 +1,18 @@
+[Unit]
+Description=AIRMOVEBR PostgreSQL backup
+After=docker.service
+Requires=docker.service
+OnFailure=airmovebr-backup-alert@%n.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/airmovebr-backup-postgres
+User=root
+Group=root
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=full
+ReadWritePaths=/var/backups/airmovebr/postgres /run/lock
+TimeoutStartSec=30min

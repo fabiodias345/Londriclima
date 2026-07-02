@@ -1,0 +1,22 @@
+[Unit]
+Description=AIRMOVEBR monthly backup restore test
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+OnFailure=airmovebr-backup-alert@%n.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/airmovebr-test-backup-restore
+User=root
+Group=root
+UMask=0077
+CacheDirectory=airmovebr-restic
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=full
+ReadOnlyPaths=/etc/airmovebr
+ReadWritePaths=/var/cache/airmovebr-restic /var/tmp /run/docker.sock
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+TimeoutStartSec=2h
