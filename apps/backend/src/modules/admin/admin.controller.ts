@@ -241,6 +241,19 @@ export class AdminController {
     return this.adminService.listarTecnicos(usuario);
   }
 
+  @Get("tecnicos/:tecnicoId/documentos/:documentoId")
+  @Header("Content-Type", "application/pdf")
+  async obterDocumentoFuncionario(
+    @Param("tecnicoId", new ParseUUIDPipe()) tecnicoId: string,
+    @Param("documentoId", new ParseUUIDPipe()) documentoId: string,
+    @CurrentUser() usuario: AuthenticatedUser,
+    @Res({ passthrough: true }) response: HeaderResponse
+  ) {
+    const documento = await this.adminService.obterDocumentoFuncionario(tecnicoId, documentoId, usuario);
+    response.setHeader("Content-Disposition", `attachment; filename="${documento.filename}"`);
+    return new StreamableFile(documento.buffer);
+  }
+
   @Post("tecnicos")
   criarTecnico(@Body() dto: SalvarTecnicoDto, @CurrentUser() usuario: AuthenticatedUser) {
     return this.adminService.criarTecnico(dto, usuario);

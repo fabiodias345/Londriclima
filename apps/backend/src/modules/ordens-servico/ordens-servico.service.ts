@@ -859,6 +859,7 @@ export class OrdensServicoService {
     const finalizadoEm = new Date(dto.finalizado_em);
     let assinaturaUrl = "";
     let assinaturaTecnicoUrl = "";
+    let fotoTecnicoUrl = "";
     let automacoesFinalizacao: Prisma.AutomacaoAgendadaCreateManyInput[] = [];
 
     await this.prisma.$transaction(async (tx) => {
@@ -1022,17 +1023,27 @@ export class OrdensServicoService {
         throw new ConflictException("Assinatura já registrada para esta OS.");
       }
 
+      const tecnicoLogado = await tx.usuario.findFirst({
+        where: {
+          id: usuario.id,
+          empresaId: ordemServico.empresaId,
+          ativo: true
+        },
+        select: {
+          nome: true,
+          fotoPerfilStorageUrl: true,
+          assinaturaStorageUrl: true
+        }
+      });
+      if (!tecnicoLogado?.assinaturaStorageUrl || !tecnicoLogado.fotoPerfilStorageUrl) {
+        throw new UnprocessableEntityException("Complete o cadastro inicial com foto e assinatura antes de finalizar a OS.");
+      }
+
       const assinaturaBuffer = this.criarBufferAssinatura(dto.assinatura_cliente_base64);
-      const assinaturaTecnicoBuffer = this.criarBufferAssinatura(
-        dto.assinatura_tecnico_base64 ?? dto.assinatura_cliente_base64
-      );
 
       assinaturaUrl = await this.salvarAssinatura(osId, assinaturaBuffer);
-      assinaturaTecnicoUrl = await this.salvarAssinatura(
-        osId,
-        assinaturaTecnicoBuffer,
-        "assinatura-tecnico.png"
-      );
+      assinaturaTecnicoUrl = tecnicoLogado.assinaturaStorageUrl;
+      fotoTecnicoUrl = tecnicoLogado.fotoPerfilStorageUrl;
 
       await tx.ordemServicoAssinatura.create({
         data: {
@@ -1040,8 +1051,9 @@ export class OrdensServicoService {
           ordemServicoId: osId,
           nomeResponsavel: dto.nome_responsavel_assinatura,
           storageUrl: assinaturaUrl,
-          nomeTecnico: dto.nome_tecnico_assinatura ?? usuario.email,
+          nomeTecnico: tecnicoLogado.nome,
           assinaturaTecnicoStorageUrl: assinaturaTecnicoUrl,
+          fotoTecnicoStorageUrl: fotoTecnicoUrl,
           latitude: new Prisma.Decimal(dto.latitude),
           longitude: new Prisma.Decimal(dto.longitude),
           assinadoEm: finalizadoEm
@@ -1077,7 +1089,8 @@ export class OrdensServicoService {
         assinaturaUrl,
         dto.nome_responsavel_assinatura,
         assinaturaTecnicoUrl,
-        dto.nome_tecnico_assinatura ?? usuario.email
+        tecnicoLogado.nome,
+        fotoTecnicoUrl
       );
 
       await tx.automacaoAgendada.createMany({
@@ -1150,7 +1163,8 @@ export class OrdensServicoService {
     assinaturaUrl: string,
     nomeResponsavelAssinatura: string,
     assinaturaTecnicoUrl: string,
-    nomeTecnicoAssinatura: string
+    nomeTecnicoAssinatura: string,
+    fotoTecnicoUrl: string
   ): Prisma.AutomacaoAgendadaCreateManyInput[] {
     const base = AUTOMACOES_FINALIZACAO.map((tipo) => ({
       empresaId: ordemServico.empresaId,
@@ -1188,6 +1202,7 @@ export class OrdensServicoService {
       nomeResponsavelAssinatura,
       assinaturaTecnicoUrl,
       nomeTecnicoAssinatura,
+      fotoTecnicoUrl,
       totalMaquinas,
       equipamento: ordemServico.equipamento ?? null,
       equipamentos: (ordemServico.equipamento?.id
@@ -1246,6 +1261,7 @@ export class OrdensServicoService {
     nomeResponsavelAssinatura: string;
     assinaturaTecnicoUrl: string;
     nomeTecnicoAssinatura: string;
+    fotoTecnicoUrl: string;
     totalMaquinas: number;
     equipamento: {
       id?: string | null;

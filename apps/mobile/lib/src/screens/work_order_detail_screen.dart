@@ -87,9 +87,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
   final Map<String, GlobalKey> _checklistItemKeys = {};
   final Map<String, GlobalKey> _machineFieldKeys = {};
   final List<Offset?> _signaturePoints = [];
-  final List<Offset?> _technicianSignaturePoints = [];
   final TextEditingController _responsibleController = TextEditingController();
-  late final TextEditingController _technicianController;
   final Set<String> _uploadingPhotoCodes = {};
   final Map<String, TextEditingController> _textControllers = {};
   final Map<String, TextEditingController> _noteControllers = {};
@@ -129,7 +127,6 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
     }
     _scrollController.dispose();
     _responsibleController.dispose();
-    _technicianController.dispose();
     super.dispose();
   }
 
@@ -137,7 +134,6 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
   void initState() {
     super.initState();
     _order = widget.order;
-    _technicianController = TextEditingController(text: widget.technicianName);
     _equipments = List<WorkOrderEquipment>.of(_equipmentsFor(widget.order));
     _initialEvidenceSaved = _equipments.any(
       (equipment) => equipment.checklistResponses.any(
@@ -954,17 +950,9 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
 
     var responsibleName = _responsibleController.text.trim();
     final hasSignature = _signaturePoints.whereType<Offset>().isNotEmpty;
-    final technicianName = _technicianController.text.trim();
-    final hasTechnicianSignature = _technicianSignaturePoints
-        .whereType<Offset>()
-        .isNotEmpty;
-    if (responsibleName.isEmpty ||
-        !hasSignature ||
-        technicianName.isEmpty ||
-        !hasTechnicianSignature) {
+    if (responsibleName.isEmpty || !hasSignature) {
       setState(() {
-        _errorMessage =
-            'Informe responsavel e tecnico e colete as duas assinaturas.';
+        _errorMessage = 'Informe o responsavel e colete a assinatura.';
       });
       return;
     }
@@ -993,10 +981,6 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
         FinalizeWorkOrderInput(
           signatureBase64: await _signatureDataUrl(_signaturePoints),
           responsibleName: responsibleName,
-          technicianSignatureBase64: await _signatureDataUrl(
-            _technicianSignaturePoints,
-          ),
-          technicianName: technicianName,
           latitude: location.latitude,
           longitude: location.longitude,
           finalizedAt: DateTime.now(),
@@ -1226,41 +1210,6 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
         decoration: const InputDecoration(labelText: 'Nome do responsavel'),
       ),
       const SizedBox(height: 12),
-      TextField(
-        key: const Key('technicianNameField'),
-        controller: _technicianController,
-        enabled: _initialEvidenceSaved,
-        textInputAction: TextInputAction.next,
-        decoration: const InputDecoration(labelText: 'Nome do tecnico'),
-      ),
-      const SizedBox(height: 12),
-      const Text(
-        'Assinatura do tecnico',
-        style: TextStyle(fontWeight: FontWeight.w800),
-      ),
-      const SizedBox(height: 8),
-      _SignaturePad(
-        signatureKey: const Key('technicianSignaturePad'),
-        points: _technicianSignaturePoints,
-        enabled: _initialEvidenceSaved,
-        onChanged: (points) {
-          setState(() {
-            _technicianSignaturePoints
-              ..clear()
-              ..addAll(points);
-          });
-        },
-      ),
-      const SizedBox(height: 8),
-      OutlinedButton.icon(
-        key: const Key('clearTechnicianSignatureButton'),
-        onPressed: !_initialEvidenceSaved || _technicianSignaturePoints.isEmpty
-            ? null
-            : () => setState(_technicianSignaturePoints.clear),
-        icon: const Icon(Icons.backspace_outlined),
-        label: const Text('Limpar assinatura do tecnico'),
-      ),
-      const SizedBox(height: 16),
       const Text(
         'Assinatura do responsavel',
         style: TextStyle(fontWeight: FontWeight.w800),

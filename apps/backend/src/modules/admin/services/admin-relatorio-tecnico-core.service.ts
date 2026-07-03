@@ -1235,7 +1235,9 @@ export class AdminRelatorioTecnicoCoreService {
         select: {
           id: true,
           nome: true,
-          email: true
+          email: true,
+          fotoPerfilStorageUrl: true,
+          assinaturaStorageUrl: true
         }
       },
       equipe: {
@@ -1319,6 +1321,9 @@ export class AdminRelatorioTecnicoCoreService {
           id: true,
           nomeResponsavel: true,
           storageUrl: true,
+          nomeTecnico: true,
+          assinaturaTecnicoStorageUrl: true,
+          fotoTecnicoStorageUrl: true,
           latitude: true,
           longitude: true,
           assinadoEm: true
@@ -1495,7 +1500,7 @@ export class AdminRelatorioTecnicoCoreService {
       agendadaPara: Date | null;
       concluidaEm: Date | null;
       valorCobrado: Prisma.Decimal | null;
-      tecnico: { id: string; nome: string; email: string } | null;
+      tecnico: { id: string; nome: string; email: string; fotoPerfilStorageUrl: string | null; assinaturaStorageUrl: string | null } | null;
       equipe: { id: string; nome: string; membros?: Array<{ usuario: { nome: string } }> } | null;
       eventos: Array<{
         id: string;
@@ -1540,6 +1545,9 @@ export class AdminRelatorioTecnicoCoreService {
         id: string;
         nomeResponsavel: string;
         storageUrl: string;
+        nomeTecnico: string | null;
+        assinaturaTecnicoStorageUrl: string | null;
+        fotoTecnicoStorageUrl: string | null;
         latitude: Prisma.Decimal;
         longitude: Prisma.Decimal;
         assinadoEm: Date;
@@ -1584,7 +1592,7 @@ export class AdminRelatorioTecnicoCoreService {
     agendadaPara: Date | null;
     concluidaEm: Date | null;
     valorCobrado: Prisma.Decimal | null;
-    tecnico: { id: string; nome: string; email: string } | null;
+    tecnico: { id: string; nome: string; email: string; fotoPerfilStorageUrl: string | null; assinaturaStorageUrl: string | null } | null;
       equipe: { id: string; nome: string; membros?: Array<{ usuario: { nome: string } }> } | null;
     eventos: Array<{
       id: string;
@@ -1629,6 +1637,9 @@ export class AdminRelatorioTecnicoCoreService {
       id: string;
       nomeResponsavel: string;
       storageUrl: string;
+      nomeTecnico: string | null;
+      assinaturaTecnicoStorageUrl: string | null;
+      fotoTecnicoStorageUrl: string | null;
       latitude: Prisma.Decimal;
       longitude: Prisma.Decimal;
       assinadoEm: Date;
@@ -1650,7 +1661,18 @@ export class AdminRelatorioTecnicoCoreService {
       agendada_para: ordem.agendadaPara?.toISOString() ?? null,
       concluida_em: ordem.concluidaEm?.toISOString() ?? null,
       valor_cobrado: ordem.valorCobrado?.toNumber() ?? null,
-      tecnico: ordem.tecnico,
+      tecnico: ordem.tecnico ? {
+        id: ordem.tecnico.id,
+        nome: ordem.tecnico.nome,
+        email: ordem.tecnico.email,
+        foto_perfil_storage_url: ordem.tecnico.fotoPerfilStorageUrl,
+        assinatura_storage_url: ordem.tecnico.assinaturaStorageUrl
+      } : null,
+      tecnico_executor: ordem.assinatura?.nomeTecnico ? {
+        nome: ordem.assinatura.nomeTecnico,
+        foto_perfil_storage_url: ordem.assinatura.fotoTecnicoStorageUrl,
+        assinatura_storage_url: ordem.assinatura.assinaturaTecnicoStorageUrl
+      } : null,
       equipe: ordem.equipe,
       eventos: ordem.eventos.map((evento) => ({
         id: evento.id,
@@ -2081,6 +2103,24 @@ export class AdminRelatorioTecnicoCoreService {
         imagens: this.carregarImagensRelatorioAvulso(ordem)
       });
 
+      const executor = ordem?.tecnico_executor ?? ordem?.tecnico;
+      if (executor) {
+        paginas.push({
+          linhas: [
+            ...cabecalho,
+            ...montarCartaoRelatorioTecnico("IDENTIFICACAO DO TECNICO", [
+              ["Campo", "Informacao"],
+              ["Tecnico", executor.nome || "nao informado"],
+              ["Foto", executor.foto_perfil_storage_url ? "Cadastro conferido" : "nao informada"],
+              ["Assinatura", executor.assinatura_storage_url ? "Cadastro conferido" : "nao informada"]
+            ]),
+            "",
+            "Identidade vinculada ao usuario autenticado responsavel pela execucao."
+          ],
+          imagens: this.carregarIdentidadeTecnicoRelatorio(executor)
+        });
+      }
+
       return paginas;
     });
   }
@@ -2284,6 +2324,19 @@ export class AdminRelatorioTecnicoCoreService {
     ordem: PreviaRelatorioAvulsoCliente["maquinas"][number]["os_concluidas"][number] | null
   ) {
     return carregarFotosRelatorioTecnico(ordem, (storageUrl) => this.carregarArquivoStorage(storageUrl));
+  }
+
+  private carregarIdentidadeTecnicoRelatorio(tecnico: {
+    foto_perfil_storage_url?: string | null;
+    assinatura_storage_url?: string | null;
+  }) {
+    const imagens: Buffer[] = [];
+    for (const url of [tecnico.foto_perfil_storage_url, tecnico.assinatura_storage_url]) {
+      if (!url) continue;
+      const buffer = this.carregarArquivoStorage(url);
+      if (buffer) imagens.push(buffer);
+    }
+    return imagens;
   }
 
   private carregarArquivoStorage(storageUrl: string) {

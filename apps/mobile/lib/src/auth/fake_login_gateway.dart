@@ -20,4 +20,13 @@ class FakeLoginGateway implements MobileLoginGateway {
 
     return null;
   }
+
+  @override
+  Future<LoginSession?> completeFirstAccess(FirstAccessRegistration registration) async {
+    return LoginSession(
+      repository: FakeWorkOrderRepository(),
+      fleetRepository: FakeFleetRepository(),
+      technicianName: registration.name,
+    );
+  }
 }

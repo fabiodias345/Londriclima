@@ -361,6 +361,10 @@ tecnicosList?.addEventListener("click", (event) => {
   if (target.dataset.action === "apagar-tecnico" && target.dataset.id) {
     void deleteTecnico(target.dataset.id);
   }
+
+  if (target.dataset.action === "baixar-documento-funcionario" && target.dataset.id && target.dataset.documentoId) {
+    void downloadFuncionarioDocumento(target.dataset.id, target.dataset.documentoId);
+  }
 });
 
 equipesList?.addEventListener("click", (event) => {

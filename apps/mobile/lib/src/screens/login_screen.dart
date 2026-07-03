@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../auth/onboarding_required_exception.dart';
 import '../auth/mobile_login_gateway.dart';
 import '../models/work_order.dart';
 import '../services/barcode_scanner_service.dart';
 import '../services/checklist_photo_picker.dart';
 import '../services/location_service.dart';
 import '../theme/app_theme.dart';
+import 'first_access_screen.dart';
 import 'dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -51,6 +53,29 @@ class _LoginScreenState extends State<LoginScreen> {
     final LoginSession? session;
     try {
       session = await widget.loginGateway.login(user, password);
+    } on OnboardingRequiredException catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isLoading = false;
+        _errorMessage = null;
+      });
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => FirstAccessScreen(
+            loginGateway: widget.loginGateway,
+            onboardingToken: error.onboardingToken,
+            technicianName: error.technicianName,
+            locationService: widget.locationService,
+            photoPicker: widget.photoPicker,
+            barcodeScanner: widget.barcodeScanner,
+          ),
+        ),
+      );
+      return;
     } on Object {
       if (!mounted) {
         return;

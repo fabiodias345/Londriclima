@@ -10,6 +10,7 @@ import 'package:airmovebr_mobile/src/services/barcode_scanner_service.dart';
 import 'package:airmovebr_mobile/src/repositories/work_order_repository.dart';
 import 'package:airmovebr_mobile/src/repositories/fleet_repository.dart';
 import 'package:airmovebr_mobile/src/screens/login_screen.dart';
+import 'package:airmovebr_mobile/src/screens/first_access_screen.dart';
 import 'package:airmovebr_mobile/src/screens/work_order_detail_screen.dart';
 import 'package:airmovebr_mobile/src/theme/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -65,6 +66,24 @@ void main() {
     expect(find.text('3 equipamentos'), findsOneWidget);
     expect(find.text('Split Hi-Wall 24.000 BTUs'), findsOneWidget);
     expect(find.byKey(const Key('syncNowButton')), findsOneWidget);
+  });
+
+  testWidgets('primeiro acesso exige dados, foto e assinatura do tecnico', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: FirstAccessScreen(
+          loginGateway: const _GatewayComFalha(),
+          onboardingToken: 'token-onboarding',
+          technicianName: 'Joao Tecnico',
+        ),
+      ),
+    );
+
+    expect(find.byKey(const Key('firstAccessNameField')), findsOneWidget);
+    expect(find.byKey(const Key('firstAccessCpfField')), findsOneWidget);
+    expect(find.byKey(const Key('firstAccessPhoneField')), findsOneWidget);
+    expect(find.byKey(const Key('firstAccessPhotoButton')), findsOneWidget);
+    expect(find.byKey(const Key('firstAccessSignaturePad')), findsOneWidget);
   });
 
   testWidgets('filtro pendentes mostra somente OS pendente', (tester) async {
@@ -1133,7 +1152,6 @@ void main() {
     await gesture.moveBy(const Offset(80, 30));
     await gesture.up();
     await tester.pumpAndSettle();
-    await _signPad(tester, const Key('technicianSignaturePad'));
     await tester.ensureVisible(find.byKey(const Key('finishWorkOrderButton')));
     final finishButton = tester.widget<FilledButton>(
       find.byKey(const Key('finishWorkOrderButton')),
@@ -1159,13 +1177,8 @@ void main() {
     expect(repository.syncPendingCalls, 1);
     expect(repository.finishedOrderId, 'OS-API');
     expect(repository.finishInput?.responsibleName, 'Cliente Teste');
-    expect(repository.finishInput?.technicianName, 'Joao Tecnico');
     expect(
       repository.finishInput?.signatureBase64,
-      startsWith('data:image/png;base64,'),
-    );
-    expect(
-      repository.finishInput?.technicianSignatureBase64,
       startsWith('data:image/png;base64,'),
     );
     expect(repository.finishInput?.latitude, -23.3048);
@@ -1233,7 +1246,6 @@ void main() {
     await gesture.moveBy(const Offset(80, 30));
     await gesture.up();
     await tester.pumpAndSettle();
-    await _signPad(tester, const Key('technicianSignaturePad'));
     await tester.ensureVisible(find.byKey(const Key('finishWorkOrderButton')));
     final finishButton = tester.widget<FilledButton>(
       find.byKey(const Key('finishWorkOrderButton')),
@@ -1340,7 +1352,6 @@ void main() {
     await gesture.moveBy(const Offset(80, 30));
     await gesture.up();
     await tester.pumpAndSettle();
-    await _signPad(tester, const Key('technicianSignaturePad'));
     await tester.ensureVisible(find.byKey(const Key('finishWorkOrderButton')));
     final finishButton = tester.widget<FilledButton>(
       find.byKey(const Key('finishWorkOrderButton')),
@@ -1412,7 +1423,6 @@ void main() {
       'Teste AIRMOVEBR',
     );
     await _signPad(tester, const Key('signaturePad'));
-    await _signPad(tester, const Key('technicianSignaturePad'));
 
     final nameField = tester.widget<TextField>(
       find.byKey(const Key('responsibleNameField')),
@@ -2013,6 +2023,11 @@ class _GatewayComFalha implements MobileLoginGateway {
   Future<LoginSession?> login(String user, String password) async {
     throw const SocketException('API indisponivel');
   }
+
+  @override
+  Future<LoginSession?> completeFirstAccess(FirstAccessRegistration registration) async {
+    throw const SocketException('API indisponivel');
+  }
 }
 
 class _GatewayDeTeste implements MobileLoginGateway {
@@ -2023,6 +2038,15 @@ class _GatewayDeTeste implements MobileLoginGateway {
 
   @override
   Future<LoginSession?> login(String user, String password) async {
+    return LoginSession(
+      repository: repository,
+      fleetRepository: fleetRepository ?? FakeFleetRepository(),
+      technicianName: 'Joao Tecnico',
+    );
+  }
+
+  @override
+  Future<LoginSession?> completeFirstAccess(FirstAccessRegistration registration) async {
     return LoginSession(
       repository: repository,
       fleetRepository: fleetRepository ?? FakeFleetRepository(),

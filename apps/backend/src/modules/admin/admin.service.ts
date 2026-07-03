@@ -80,6 +80,10 @@ export class AdminService {
     return this.preChamadosService.listarPreChamados(usuario);
   }
 
+  async obterDocumentoFuncionario(tecnicoId: string, documentoId: string, usuario: AuthenticatedUser) {
+    return this.tecnicosService.obterDocumentoFuncionario(tecnicoId, documentoId, usuario);
+  }
+
   async listarOpcoesDespacho(usuario: AuthenticatedUser) {
     const [equipes, tecnicos] = await Promise.all([
       this.prisma.equipe.findMany({
@@ -121,6 +125,7 @@ export class AdminService {
         where: {
           empresaId: usuario.empresa_id,
           ativo: true,
+          primeiroAcessoPendente: false,
           role: {
             in: [UsuarioRole.admin, UsuarioRole.tecnico, UsuarioRole.auxiliar]
           }

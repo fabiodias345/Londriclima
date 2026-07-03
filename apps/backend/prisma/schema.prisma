@@ -143,6 +143,7 @@ model Empresa {
   pmocRelatorios   PmocRelatorio[]
   planosRecorrencia PlanoRecorrencia[]
   planosRecorrenciaGeracoes PlanoRecorrenciaGeracao[]
+  funcionarioDocumentos FuncionarioDocumento[]
 
   @@map("empresas")
 }
@@ -154,9 +155,14 @@ model Usuario {
   login     String?     @unique
   email     String
   telefone  String?
+  cpf       String?
   senhaHash String     @map("senha_hash")
   role      UsuarioRole
   ativo     Boolean    @default(true)
+  fotoPerfilStorageUrl String? @map("foto_perfil_storage_url")
+  assinaturaStorageUrl String? @map("assinatura_storage_url")
+  primeiroAcessoPendente Boolean @default(false) @map("primeiro_acesso_pendente")
+  primeiroAcessoEm DateTime? @map("primeiro_acesso_em")
   ultimoLoginEm DateTime? @map("ultimo_login_em")
   criadoEm  DateTime   @default(now()) @map("criado_em")
   atualizadoEm DateTime @updatedAt @map("atualizado_em")
@@ -172,10 +178,34 @@ model Usuario {
   segurancas OrdemServicoSeguranca[]
   veiculoAbastecimentos VeiculoAbastecimento[]
   pmocRelatoriosCriados PmocRelatorio[] @relation("PmocRelatorioCriador")
+  documentosFuncionario FuncionarioDocumento[]
 
   @@unique([empresaId, email])
+  @@unique([empresaId, cpf])
   @@index([empresaId])
   @@map("usuarios")
+}
+
+model FuncionarioDocumento {
+  id              String   @id @default(uuid()) @db.Uuid
+  empresaId       String   @map("empresa_id") @db.Uuid
+  usuarioId       String   @map("usuario_id") @db.Uuid
+  tipo            String
+  versao          String
+  nomeFuncionario String   @map("nome_funcionario")
+  cpf             String
+  storageUrl      String   @map("storage_url")
+  sha256          String
+  aceitoEm        DateTime @map("aceito_em")
+  criadoEm        DateTime @default(now()) @map("criado_em")
+
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@unique([usuarioId, tipo, versao])
+  @@index([empresaId])
+  @@index([usuarioId])
+  @@map("funcionario_documentos")
 }
 
 model Equipe {
@@ -647,6 +677,7 @@ model OrdemServicoAssinatura {
   storageUrl String @map("storage_url")
   nomeTecnico String? @map("nome_tecnico")
   assinaturaTecnicoStorageUrl String? @map("assinatura_tecnico_storage_url")
+  fotoTecnicoStorageUrl String? @map("foto_tecnico_storage_url")
   latitude Decimal @db.Decimal(10, 7)
   longitude Decimal @db.Decimal(10, 7)
   assinadoEm DateTime @map("assinado_em")

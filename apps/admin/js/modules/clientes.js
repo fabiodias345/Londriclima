@@ -9,6 +9,13 @@ export const clientesRoot = `
   for (const item of items) {
     const row = document.createElement("article");
     row.className = "data-row";
+    const documento = item.documentos?.[0];
+    const cadastroStatus = item.primeiro_acesso_pendente
+      ? "Cadastro inicial pendente"
+      : "Cadastro concluido" + (item.primeiro_acesso_em ? " em " + new Date(item.primeiro_acesso_em).toLocaleDateString("pt-BR") : "");
+    const documentoBotao = documento
+      ? '<button class="secondary-button compact-button" type="button" data-action="baixar-documento-funcionario" data-id="' + escapeHtml(item.id) + '" data-documento-id="' + escapeHtml(documento.id) + '">Termo assinado</button>'
+      : "";
     row.innerHTML = \`
       <div>
         <strong>\${escapeHtml(item.nome)}</strong>
@@ -47,14 +54,35 @@ function renderTecnicos(items) {
       <div>
         <span>\${escapeHtml(item.email)}</span>
         <span>\${formatPhone(item.telefone)}</span>
+        <span>\${escapeHtml(cadastroStatus)}</span>
       </div>
       <div class="data-row-actions">
+        \${documentoBotao}
         <button class="secondary-button compact-button" type="button" data-action="editar-tecnico" data-id="\${item.id}">Editar</button>
         <button class="danger-button compact-button" type="button" data-action="apagar-tecnico" data-id="\${item.id}">Apagar</button>
       </div>
     \`;
     tecnicosList.appendChild(row);
   }
+}
+
+async function downloadFuncionarioDocumento(tecnicoId, documentoId) {
+  tecnicosStatus.textContent = "Baixando documento...";
+  const response = await fetch(\`\${apiBaseUrl}/admin/tecnicos/\${tecnicoId}/documentos/\${documentoId}\`, {
+    headers: { Authorization: \`Bearer \${getToken()}\` }
+  });
+  if (!response.ok) {
+    tecnicosStatus.textContent = "Nao foi possivel baixar o documento.";
+    return;
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "termo-responsabilidade-funcionario.pdf";
+  link.click();
+  URL.revokeObjectURL(url);
+  tecnicosStatus.textContent = "Documento baixado.";
 }
 
 function renderEquipes(items) {

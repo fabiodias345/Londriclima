@@ -20,6 +20,7 @@ type RelatorioTecnicoInput = {
   nomeResponsavelAssinatura: string;
   assinaturaTecnicoUrl?: string;
   nomeTecnicoAssinatura?: string;
+  fotoTecnicoUrl?: string;
   storageRoot: string;
   totalMaquinas: number;
   equipamento: {
@@ -62,6 +63,7 @@ export class OrdensServicoRelatorioTecnicoRenderer {
         checklistTipo: input.checklistTipo ?? ChecklistTipo.mensal,
         assinaturaTecnicoUrl: input.assinaturaTecnicoUrl ?? input.assinaturaUrl,
         nomeTecnicoAssinatura: input.nomeTecnicoAssinatura ?? "não informado",
+        fotoTecnicoUrl: input.fotoTecnicoUrl,
         equipamento: input.equipamento ? {
           ...input.equipamento,
           codigoQr: input.equipamento.codigoBarras
@@ -74,6 +76,10 @@ export class OrdensServicoRelatorioTecnicoRenderer {
     const imagens = [
       ...input.evidencias.map((evidencia) => this.carregarArquivoStorage(input.storageRoot, evidencia.storageUrl)),
       this.carregarArquivoStorage(input.storageRoot, input.assinaturaUrl)
+    ].filter(Boolean) as Buffer[];
+    const identidadeTecnico = [
+      input.fotoTecnicoUrl ? this.carregarArquivoStorage(input.storageRoot, input.fotoTecnicoUrl) : null,
+      input.assinaturaTecnicoUrl ? this.carregarArquivoStorage(input.storageRoot, input.assinaturaTecnicoUrl) : null
     ].filter(Boolean) as Buffer[];
 
     return this.criarPdfVisual(
@@ -135,6 +141,18 @@ export class OrdensServicoRelatorioTecnicoRenderer {
           "Declaro para os devidos fins que o servico descrito neste relatorio foi executado integralmente."
         ],
         imagens
+      }, {
+        linhas: [
+          "IDENTIFICACAO DO TECNICO",
+          "Validacao automatica pelo acesso autenticado no aplicativo",
+          "",
+          this.formatarLinhaCampo("Tecnico", input.nomeTecnicoAssinatura || "nao informado"),
+          this.formatarLinhaCampo("Foto", input.fotoTecnicoUrl ? "Cadastro conferido" : "nao informada"),
+          this.formatarLinhaCampo("Assinatura", input.assinaturaTecnicoUrl ? "Cadastro conferido" : "nao informada"),
+          "",
+          "A identidade acima pertence ao usuario autenticado que concluiu esta ordem de servico."
+        ],
+        imagens: identidadeTecnico
       }
       ],
     );

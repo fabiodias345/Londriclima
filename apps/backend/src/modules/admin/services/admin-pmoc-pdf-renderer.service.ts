@@ -1,5 +1,5 @@
 ﻿import { ATIVIDADES_MANUTENCAO, CONTRATADA_PMOC, ENGENHEIRO_PADRAO_PMOC, EnderecoPmoc, MaquinaPmoc, OrdemPmoc, PeriodicidadePmoc, PreviaPmoc } from "./admin-pmoc-pdf-models";
-import { criarPdfBuffer, PdfPage } from "./admin-pmoc-pdf-writer";
+import { carregarArquivoStorage, criarPdfBuffer, PdfPage } from "./admin-pmoc-pdf-writer";
 import { adicionarChecklistApkPdf, adicionarFotosAppPdf } from "./admin-pmoc-pdf-renderer-checklist";
 export class AdminPmocPdfRendererService {
   gerar(previa: PreviaPmoc) {
@@ -13,6 +13,7 @@ export class AdminPmocPdfRendererService {
     } else {
       previa.maquinas.forEach((maquina, indice) => pages.push(...this.criarPaginasMaquina(previa, maquina, indice)));
     }
+    pages.push(...this.criarPaginasTecnicos(previa));
     pages.push(this.criarDeclaracaoFinal(previa));
     return criarPdfBuffer(pages);
   }
@@ -244,6 +245,37 @@ export class AdminPmocPdfRendererService {
     this.text(page, "Contratante / Responsável", 385, 170, 8, false);
     this.footer(page, 5 + Math.max(previa.maquinas.length * 2, 1));
     return page;
+  }
+
+  private criarPaginasTecnicos(previa: PreviaPmoc): PdfPage[] {
+    const tecnicos = new Map<string, NonNullable<OrdemPmoc["tecnico"]>>();
+    for (const maquina of previa.maquinas) {
+      for (const ordem of maquina.os_concluidas) {
+        const tecnico = ordem.tecnico_executor ?? ordem.tecnico;
+        if (tecnico?.nome) tecnicos.set(tecnico.nome, tecnico);
+      }
+    }
+
+    return [...tecnicos.values()].map((tecnico, index) => {
+      const page: PdfPage = [];
+      this.cabecalho(page, previa, "IDENTIFICACAO DO TECNICO EXECUTOR");
+      this.sectionTitle(page, "TECNICO RESPONSAVEL PELA EXECUCAO", 725);
+      this.keyValueTable(page, 36, 700, [
+        ["Nome", tecnico.nome || "Nao informado"],
+        ["Foto", tecnico.foto_perfil_storage_url ? "Cadastro conferido" : "Nao informada"],
+        ["Assinatura", tecnico.assinatura_storage_url ? "Cadastro conferido" : "Nao informada"]
+      ]);
+      this.text(page, "Foto do tecnico", 70, 540, 9, true);
+      this.text(page, "Assinatura cadastrada", 330, 540, 9, true);
+      const foto = tecnico.foto_perfil_storage_url ? carregarArquivoStorage(tecnico.foto_perfil_storage_url) : null;
+      const assinatura = tecnico.assinatura_storage_url ? carregarArquivoStorage(tecnico.assinatura_storage_url) : null;
+      page.imagens = [];
+      if (foto) page.imagens.push({ buffer: foto, x: 70, y: 270, width: 170, height: 240 });
+      if (assinatura) page.imagens.push({ buffer: assinatura, x: 330, y: 350, width: 210, height: 100 });
+      this.text(page, "Identidade obtida do cadastro do usuario autenticado no aplicativo.", 70, 235, 8);
+      this.footer(page, 5 + Math.max(previa.maquinas.length * 2, 1) + index);
+      return page;
+    });
   }
 
   private linhasAtividadesManutencao(periodicidadeExecutada: PeriodicidadePmoc, modo: "prevista" | "executada") {

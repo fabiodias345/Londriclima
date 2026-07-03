@@ -1,5 +1,28 @@
 import '../repositories/work_order_repository.dart';
 import '../repositories/fleet_repository.dart';
+import '../models/work_order.dart';
+
+class FirstAccessRegistration {
+  const FirstAccessRegistration({
+    required this.onboardingToken,
+    required this.password,
+    required this.name,
+    required this.cpf,
+    required this.phone,
+    required this.photo,
+    required this.signaturePng,
+    required this.termAccepted,
+  });
+
+  final String onboardingToken;
+  final String password;
+  final String name;
+  final String cpf;
+  final String phone;
+  final ChecklistPhotoFile photo;
+  final List<int> signaturePng;
+  final bool termAccepted;
+}
 
 class LoginSession {
   const LoginSession({
@@ -15,4 +38,6 @@ class LoginSession {
 
 abstract class MobileLoginGateway {
   Future<LoginSession?> login(String user, String password);
+
+  Future<LoginSession?> completeFirstAccess(FirstAccessRegistration registration);
 }

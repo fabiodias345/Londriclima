@@ -23,4 +23,18 @@ class HybridLoginGateway implements MobileLoginGateway {
 
     return ApiLoginGateway(baseUrl: baseUrl).login(user, password);
   }
+
+  @override
+  Future<LoginSession?> completeFirstAccess(FirstAccessRegistration registration) async {
+    if (demoMode) {
+      return _fakeLoginGateway.completeFirstAccess(registration);
+    }
+
+    final baseUrl = apiBaseUrl;
+    if (baseUrl == null) {
+      throw StateError('MOBILE_API_BASE_URL nao configurada.');
+    }
+
+    return ApiLoginGateway(baseUrl: baseUrl).completeFirstAccess(registration);
+  }
 }

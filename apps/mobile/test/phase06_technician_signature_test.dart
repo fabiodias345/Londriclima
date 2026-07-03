@@ -6,7 +6,7 @@ import 'package:airmovebr_mobile/src/repositories/api_work_order_repository.dart
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('finalizacao envia nome e assinatura do tecnico', () async {
+  test('finalizacao usa identidade autenticada do tecnico no backend', () async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     addTearDown(() => server.close(force: true));
     late Map<String, dynamic> payload;
@@ -40,8 +40,6 @@ void main() {
       FinalizeWorkOrderInput(
         signatureBase64: 'cliente-base64',
         responsibleName: 'Maria Souza',
-        technicianSignatureBase64: 'tecnico-base64',
-        technicianName: 'Joao Tecnico',
         latitude: -23.3,
         longitude: -51.1,
         finalizedAt: DateTime.utc(2026, 7, 2, 18),
@@ -49,7 +47,7 @@ void main() {
     );
     await responseFuture;
 
-    expect(payload['assinatura_tecnico_base64'], 'tecnico-base64');
-    expect(payload['nome_tecnico_assinatura'], 'Joao Tecnico');
+    expect(payload.containsKey('assinatura_tecnico_base64'), isFalse);
+    expect(payload.containsKey('nome_tecnico_assinatura'), isFalse);
   });
 }

@@ -36,6 +36,7 @@ export type RelatorioCamaraFriaInput = {
   nomeResponsavelAssinatura: string;
   assinaturaTecnicoUrl: string;
   nomeTecnicoAssinatura: string;
+  fotoTecnicoUrl?: string;
   storageRoot: string;
   totalMaquinas: number;
   equipamento: Omit<EquipamentoRelatorio, "id"> | null;
@@ -170,8 +171,10 @@ export class OrdensServicoRelatorioCamaraFriaRenderer {
 
   private montarPaginaAssinaturas(input: RelatorioCamaraFriaInput): Pagina {
     const assinaturas: ImagemPagina[] = [];
+    const foto = input.fotoTecnicoUrl ? this.carregarArquivo(input.storageRoot, input.fotoTecnicoUrl) : null;
     const tecnico = this.carregarArquivo(input.storageRoot, input.assinaturaTecnicoUrl);
     const responsavel = this.carregarArquivo(input.storageRoot, input.assinaturaUrl);
+    if (foto) assinaturas.push({ label: "Foto do técnico", buffer: foto });
     if (tecnico) assinaturas.push({ label: "Assinatura do técnico", buffer: tecnico });
     if (responsavel) assinaturas.push({ label: "Assinatura do responsável", buffer: responsavel });
     return {

@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { createHmac, timingSafeEqual } from "node:crypto";
 
-type TokenType = "access" | "refresh";
+type TokenType = "access" | "refresh" | "onboarding";
 
 type JwtHeader = {
   alg: "HS256";
@@ -24,7 +24,8 @@ type InternalTokenPayload = TokenPayload & {
 
 const TOKEN_EXPIRATION_SECONDS: Record<TokenType, number> = {
   access: 15 * 60,
-  refresh: 30 * 24 * 60 * 60
+  refresh: 30 * 24 * 60 * 60,
+  onboarding: 60 * 60
 };
 
 @Injectable()
