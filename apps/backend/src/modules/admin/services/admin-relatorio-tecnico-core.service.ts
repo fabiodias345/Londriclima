@@ -1974,41 +1974,41 @@ export class AdminRelatorioTecnicoCoreService {
 
   private montarCapaRelatorioAvulso(previa: PreviaRelatorioAvulsoCliente) {
     return [
-      "AIRMOVEBR - RELATORIO TECNICO AVULSO",
-      "Documento nao PMOC emitido automaticamente pela plataforma AIRMOVEBR",
+      "AIRMOVEBR - RELATÓRIO TÉCNICO AVULSO",
+      "Documento não PMOC emitido automaticamente pela plataforma AIRMOVEBR",
       "",
       `Data: ${this.formatarDataPmoc(new Date().toISOString())}`,
       "",
-      ...montarCartaoRelatorioTecnico("RELATORIO DE MANUTENCAO", [
-        ["Tipo de documento", "Documento nao PMOC"],
-        ["Status", "ORDEM DE SERVICO CONCLUIDA"]
+      ...montarCartaoRelatorioTecnico("RELATÓRIO DE MANUTENÇÃO", [
+        ["Tipo de documento", "Documento não PMOC"],
+        ["Status", "ORDEM DE SERVIÇO CONCLUÍDA"]
       ]),
       "",
       ...montarCartaoRelatorioTecnico("DADOS DA EMPRESA", [
-        ["Campo", "Informacao"],
-        ["Razao Social", "AIRMOVEBR"],
+        ["Campo", "Informação"],
+        ["Razão Social", "AIRMOVEBR"],
         ["Base operacional", "Londrina, PR"],
-        ["Dominio", "airmovebr.com.br"]
+        ["Domínio", "airmovebr.com.br"]
       ]),
       "",
       ...montarCartaoRelatorioTecnico("DADOS DO CLIENTE", [
-        ["Campo", "Informacao"],
+        ["Campo", "Informação"],
         ["Cliente", previa.cliente.nome],
-        ["Documento", previa.cliente.documento || "nao informado"],
+        ["Documento", previa.cliente.documento || "não informado"],
         ["E-mail", previa.cliente.email || "pendente"],
-        ["Endereco", this.formatarEnderecoPmoc(previa.cliente.endereco)]
+        ["Endereço", this.formatarEnderecoPmoc(previa.cliente.endereco)]
       ]),
       "",
-      ...montarCartaoRelatorioTecnico("EQUIPE RESPONSAVEL", [
-        ["Campo", "Informacao"],
-        ["Periodo", `${this.formatarDataPmoc(previa.periodo.inicio)} a ${this.formatarDataPmoc(previa.periodo.fim)}`],
-        ["Total de OS Concluidas", String(previa.total_os_concluidas)],
-        ["Total de Maquinas", String(previa.total_maquinas)],
-        ["Pendencias", previa.pendencias.join(", ") || "Nenhuma"]
+      ...montarCartaoRelatorioTecnico("EQUIPE RESPONSÁVEL", [
+        ["Campo", "Informação"],
+        ["Período", `${this.formatarDataPmoc(previa.periodo.inicio)} a ${this.formatarDataPmoc(previa.periodo.fim)}`],
+        ["Total de OS Concluídas", String(previa.total_os_concluidas)],
+        ["Total de Máquinas", String(previa.total_maquinas)],
+        ["Pendências", previa.pendencias.join(", ") || "Nenhuma"]
       ]),
       "",
-      "DECLARACAO DE CONCLUSAO",
-      "Este relatorio consolida o servico executado, evidencias, GPS e assinatura do cliente."
+      "DECLARAÇÃO DE CONCLUSÃO",
+      "Este relatório consolida o serviço executado, evidências, GPS e assinatura do cliente."
     ];
   }
 
@@ -2028,14 +2028,14 @@ export class AdminRelatorioTecnicoCoreService {
       });
       const cabecalho = montarCabecalhoRelatorioTecnico(indice, ordemIndice, ordens.length);
       const linhasServico = [
-        `OS: ${ordem?.titulo || "nao informada"}`,
-        formatarLinhaCampoRelatorioPdf("Status", "ORDEM DE SERVICO CONCLUIDA"),
+        `OS: ${ordem?.titulo || "não informada"}`,
+        formatarLinhaCampoRelatorioPdf("Status", "ORDEM DE SERVIÇO CONCLUÍDA"),
         formatarLinhaCampoRelatorioPdf(
-          "Data e Horario",
+          "Data e Horário",
           `${this.formatarDataPmoc(ordem?.concluida_em ?? null)} - ${this.formatarHoraPmoc(inicio)} -> ${this.formatarHoraPmoc(fim)} (${this.calcularDuracaoPmoc(inicio, fim)})`
         ),
-        formatarLinhaCampoRelatorioPdf("Tecnico", this.formatarResponsavelRelatorioAvulso(ordem)),
-        formatarLinhaCampoRelatorioPdf("Problema relatado", ordem?.problema_relatado || "nao informado"),
+        formatarLinhaCampoRelatorioPdf("Técnico", this.formatarResponsavelRelatorioAvulso(ordem)),
+        formatarLinhaCampoRelatorioPdf("Problema relatado", ordem?.problema_relatado || "não informado"),
         ...servicoRealizado.map(([label, valor]) => formatarLinhaCampoRelatorioPdf(label, valor))
       ];
       const primeiroBlocoServico = linhasServico.slice(0, 14);
@@ -2044,11 +2044,11 @@ export class AdminRelatorioTecnicoCoreService {
         linhas: [
           ...cabecalho,
           ...montarCartaoRelatorioTecnico("DADOS DO EQUIPAMENTO", [
-            ["Campo", "Informacao"],
+            ["Campo", "Informação"],
             ...this.obterLinhasEquipamentoRelatorioAvulso(maquina)
           ]),
           "",
-          ...montarCartaoRelatorioTecnico("SERVICO EXECUTADO", [["Campo", "Informacao"]]),
+          ...montarCartaoRelatorioTecnico("SERVIÇO EXECUTADO", [["Campo", "Informação"]]),
           ...primeiroBlocoServico
         ]
       }];
@@ -2057,7 +2057,7 @@ export class AdminRelatorioTecnicoCoreService {
         paginas.push({
           linhas: [
             ...cabecalho,
-            ...montarCartaoRelatorioTecnico("SERVICO EXECUTADO - CONTINUACAO", [["Campo", "Informacao"]]),
+            ...montarCartaoRelatorioTecnico("SERVIÇO EXECUTADO - CONTINUAÇÃO", [["Campo", "Informação"]]),
             ...bloco
           ]
         });
@@ -2066,17 +2066,17 @@ export class AdminRelatorioTecnicoCoreService {
       paginas.push({
         linhas: [
           ...cabecalho,
-          ...montarCartaoRelatorioTecnico("EVIDENCIAS E VALIDACAO", [
-            ["Campo", "Informacao"],
+          ...montarCartaoRelatorioTecnico("EVIDÊNCIAS E VALIDAÇÃO", [
+            ["Campo", "Informação"],
             ["Fotos", this.formatarEvidenciasPmoc(ordem)],
             ...montarLinhasAssinaturaRelatorioTecnico(ordem)
           ]),
           "",
-          "OBSERVACOES",
-          ...(ordem?.observacoes.length ? ordem.observacoes.map((observacao) => observacao.texto) : ["Sem observacoes visiveis."]),
+          "OBSERVAÇÕES",
+          ...(ordem?.observacoes.length ? ordem.observacoes.map((observacao) => observacao.texto) : ["Sem observações visíveis."]),
           "",
-          "DECLARACAO DE CONCLUSAO",
-          "Declaro para os devidos fins que o servico descrito neste relatorio foi executado integralmente, sem pendencias registradas na emissao."
+          "DECLARAÇÃO DE CONCLUSÃO",
+          "Declaro para os devidos fins que o serviço descrito neste relatório foi executado integralmente, sem pendências registradas na emissão."
         ],
         imagens: this.carregarImagensRelatorioAvulso(ordem)
       });
@@ -2174,7 +2174,7 @@ export class AdminRelatorioTecnicoCoreService {
       "0.21 0.53 0.73 rg",
       "42 772 528 4 re f"
     ];
-    const titulo = linhas[0] ?? "AIRMOVEBR - RELATORIO DE MANUTENCAO";
+    const titulo = linhas[0] ?? "AIRMOVEBR - RELATÓRIO DE MANUTENÇÃO";
     const subtitulo = linhas[1] ?? "";
     comandos.push(this.comandoTextoPdf(titulo, 54, 804, 15, "F2", "1 1 1"));
     comandos.push(this.comandoTextoPdf(subtitulo, 54, 787, 9, "F1", "0.88 0.93 0.98"));
@@ -2210,7 +2210,7 @@ export class AdminRelatorioTecnicoCoreService {
         const valorQuebrado = this.quebrarLinhaPdf(celulas.valor, 60);
         const totalLinhas = Math.max(labelQuebrado.length, valorQuebrado.length);
         const altura = Math.max(22, totalLinhas * 11 + 10);
-        const cabecalho = /^Campo\s+Informacao$/i.test(linha.trim());
+        const cabecalho = /^Campo\s+Informacao$/i.test(this.normalizarComparacaoPdf(linha.trim()));
         const fill = cabecalho ? "0.94 0.95 0.96" : "1 1 1";
         comandos.push(`% ${this.normalizarTextoPdf(linha)}`);
         comandos.push(`${fill} rg\n42 ${y - altura + 6} 528 ${altura} re f`);
@@ -2245,7 +2245,9 @@ export class AdminRelatorioTecnicoCoreService {
   }
 
   private ehTituloSecaoRelatorioAvulso(linha: string) {
-    return /^(DADOS|EQUIPE|SERVICO|EVIDENCIAS|OBSERVACOES|DECLARACAO|MAQUINA)/.test(linha);
+    return /^(DADOS|EQUIPE|SERVICO|EVIDENCIAS|OBSERVACOES|DECLARACAO|MAQUINA)/.test(
+      this.normalizarComparacaoPdf(linha)
+    );
   }
 
   private ehLinhaTabelaRelatorioAvulso(linha: string) {
@@ -2268,13 +2270,13 @@ export class AdminRelatorioTecnicoCoreService {
 
   private obterLinhasEquipamentoRelatorioAvulso(maquina: PreviaRelatorioAvulsoCliente["maquinas"][number]) {
     return [
-      ["Identificador Interno", maquina.patrimonio || maquina.codigo_barras || "nao informado"],
-      ["Marca / Modelo", `${maquina.marca || "nao informada"} ${maquina.modelo || ""}`.trim()],
-      ["Fluido Refrigerante", maquina.gas_refrigerante || "pendente"],
+      ["Identificador interno", maquina.patrimonio || maquina.codigo_barras || "não informado"],
+      ["Marca / Modelo", `${maquina.marca || "não informada"} ${maquina.modelo || ""}`.trim()],
+      ["Fluido refrigerante", maquina.gas_refrigerante || "pendente"],
       ["Capacidade", this.formatarCapacidadePmoc(maquina.capacidade_btu)],
-      ["Ambiente Instalado", maquina.local_instalacao || "nao informado"],
-      ["N de Serie", maquina.numero_serie || "nao informado"],
-      ["Codigo Interno", maquina.codigo_barras || "nao informado"]
+      ["Ambiente instalado", maquina.local_instalacao || "não informado"],
+      ["Nº de Série", maquina.numero_serie || "não informado"],
+      ["Código interno", maquina.codigo_barras || "não informado"]
     ] as Array<[string, string]>;
   }
 
@@ -2485,8 +2487,8 @@ export class AdminRelatorioTecnicoCoreService {
     }
 
     return [
-      ["Problema relatado", ordem?.problema_relatado || "nao informado"],
-      ["Servico realizado", ordem?.checklist?.servico_realizado || "nao informado"]
+      ["Problema relatado", ordem?.problema_relatado || "não informado"],
+      ["Serviço realizado", ordem?.checklist?.servico_realizado || "não informado"]
     ];
   }
 
@@ -2569,14 +2571,14 @@ export class AdminRelatorioTecnicoCoreService {
   private obterLabelRespostaRelatorioAvulso(codigo: string) {
     return {
       C1: "Problema encontrado",
-      C2: "Acao realizada",
-      C4: "Pecas utilizadas",
-      C5: "Observacao final",
+      C2: "Ação realizada",
+      C4: "Peças utilizadas",
+      C5: "Observação final",
       M1: "EPIs utilizados",
       M2: "Desligar pelo controle remoto",
       M3: "Abrir tampa frontal",
       M5: "Lavar filtros",
-      M6: "Condicao dos filtros",
+      M6: "Condição dos filtros",
       M7: "Limpeza da serpentina",
       M8: "Limpeza da evaporadora",
       M9: "Dreno desobstruido",
@@ -2584,36 +2586,36 @@ export class AdminRelatorioTecnicoCoreService {
       M11: "Reinstalar filtros",
       M12: "Fechar tampa",
       M13: "Ligar disjuntor",
-      M14: "Funcao Dry se existir por 10 minutos",
+      M14: "Função Dry se existir por 10 minutos",
       M15: "Temperatura de entrada do ar",
       M17: "Temperatura de insuflamento",
       M18: "Foto da evaporadora limpa",
-      T1: "Fixacao e suportes",
-      T2: "Isolamento termico",
+      T1: "Fixação e suportes",
+      T2: "Isolamento térmico",
       T3: "Dreno limpo",
       T4: "Gabinete limpo",
-      T5: "Ruido",
+      T5: "Ruído",
       T6: "Fluxo de ar pelas aletas normal",
       S1: "Acesso a condensadora",
       S2: "Limpar serpentina condensadora",
       S3: "Foto da condensadora limpa",
-      S4: "Oxidacao, danos ou entupimentos",
+      S4: "Oxidação, danos ou entupimentos",
       S5: "Efetuado limpeza geral",
-      S6: "Pressao do fluido refrigerante",
+      S6: "Pressão do fluido refrigerante",
       S7: "Tipo de fluido refrigerante",
-      S8: "Efetuado inspecao eletrica conexoes",
+      S8: "Efetuado inspeção elétrica conexões",
       S9: "Corrente",
-      S10: "Protecoes eletricas funcionando",
+      S10: "Proteções elétricas funcionando",
       S11: "Reinstalar componentes",
       S12: "Religado e verificado",
-      S13: "Observacao",
-      A1: "Inspecao geral anual",
+      S13: "Observação",
+      A1: "Inspeção geral anual",
       A2: "Teste de rendimento",
-      A3: "Avaliacao de ruido",
-      A4: "Avaliacao de vibracao",
-      A5: "Recomendacoes tecnicas",
+      A3: "Avaliação de ruído",
+      A4: "Avaliação de vibração",
+      A5: "Recomendações técnicas",
       A6: "Plano de acoes",
-      A7: "Relatorio consolidado anual"
+      A7: "Relatório consolidado anual"
     }[codigo] ?? codigo;
   }
 
@@ -2621,7 +2623,7 @@ export class AdminRelatorioTecnicoCoreService {
     ordem: PreviaRelatorioAvulsoCliente["maquinas"][number]["os_concluidas"][number] | null
   ) {
     if (!ordem) {
-      return "nao informado";
+      return "não informado";
     }
 
     if (ordem.tecnico?.nome) {
@@ -2629,7 +2631,7 @@ export class AdminRelatorioTecnicoCoreService {
     }
 
     if (!ordem.equipe?.nome) {
-      return "nao informado";
+      return "não informado";
     }
 
     const membros = (ordem.equipe.membros ?? [])
@@ -2645,19 +2647,19 @@ export class AdminRelatorioTecnicoCoreService {
 
   private formatarLinhaMaquinaPmoc(maquina: PreviaPmocCliente["maquinas"][number]) {
     return [
-      this.limitarCampoPmoc(maquina.modelo || "nao informado", 18),
-      this.limitarCampoPmoc(maquina.marca || "nao informada", 11),
-      this.limitarCampoPmoc(maquina.numero_serie || "nao informada", 13),
+      this.limitarCampoPmoc(maquina.modelo || "não informado", 18),
+      this.limitarCampoPmoc(maquina.marca || "não informada", 11),
+      this.limitarCampoPmoc(maquina.numero_serie || "não informada", 13),
       this.limitarCampoPmoc(maquina.gas_refrigerante || "pendente", 7),
       this.limitarCampoPmoc(this.formatarCapacidadePmoc(maquina.capacidade_btu), 11),
-      this.limitarCampoPmoc(maquina.local_instalacao || "nao informado", 12),
-      this.limitarCampoPmoc(maquina.patrimonio || "nao informado", 11),
-      maquina.codigo_barras || "nao informado"
+      this.limitarCampoPmoc(maquina.local_instalacao || "não informado", 12),
+      this.limitarCampoPmoc(maquina.patrimonio || "não informado", 11),
+      maquina.codigo_barras || "não informado"
     ].join("  ");
   }
 
   private formatarCapacidadePmoc(capacidadeBtu: number | null) {
-    return capacidadeBtu ? `${new Intl.NumberFormat("pt-BR").format(capacidadeBtu)} BTU` : "nao informada";
+    return capacidadeBtu ? `${new Intl.NumberFormat("pt-BR").format(capacidadeBtu)} BTU` : "não informada";
   }
 
   private limitarCampoPmoc(valor: string, tamanho: number) {
@@ -2688,7 +2690,7 @@ export class AdminRelatorioTecnicoCoreService {
     const evento = ordem?.eventos.find((item) => item.latitude !== null && item.longitude !== null);
 
     if (!evento || evento.latitude === null || evento.longitude === null) {
-      return "nao informado";
+      return "não informado";
     }
 
     return `${evento.latitude.toFixed(6)}, ${evento.longitude.toFixed(6)}`;
@@ -2704,7 +2706,7 @@ export class AdminRelatorioTecnicoCoreService {
 
   private formatarEnderecoPmoc(endereco: PreviaPmocCliente["cliente"]["endereco"]) {
     if (!endereco) {
-      return "nao informado";
+      return "não informado";
     }
 
     return [endereco.logradouro, endereco.numero, endereco.bairro, endereco.cidade, endereco.uf].filter(Boolean).join(", ");
@@ -2770,10 +2772,13 @@ export class AdminRelatorioTecnicoCoreService {
   }
 
   private normalizarTextoPdf(valor: string) {
-    return valor
+    return valor.replace(/[^\x20-\x7E\xA0-\xFF]/g, " ");
+  }
+
+  private normalizarComparacaoPdf(valor: string) {
+    return this.normalizarTextoPdf(valor)
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^\x20-\x7E]/g, " ");
+      .replace(/[\u0300-\u036f]/g, "");
   }
 
   private escaparTextoPdf(valor: string) {

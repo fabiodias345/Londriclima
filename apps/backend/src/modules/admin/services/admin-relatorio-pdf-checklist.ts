@@ -23,8 +23,8 @@ export function montarLinhasChecklistRelatorioTecnico(checklist: ChecklistRelato
   }
 
   return [
-    ["Problema relatado", checklist.problemaRelatado || "nao informado"],
-    ["Servico realizado", checklist.servicoRealizado || "nao informado"]
+    ["Problema relatado", checklist.problemaRelatado || "não informado"],
+    ["Serviço realizado", checklist.servicoRealizado || "não informado"]
   ] as Array<[string, string]>;
 }
 
@@ -56,14 +56,14 @@ export function deveExibirRespostaRelatorioTecnico(resposta: { codigo: string; v
 export function obterLabelRespostaRelatorioTecnico(codigo: string) {
   return {
     C1: "Problema encontrado",
-    C2: "Acao realizada",
-    C4: "Pecas utilizadas",
-    C5: "Observacao final",
+    C2: "Ação realizada",
+    C4: "Peças utilizadas",
+    C5: "Observação final",
     M1: "EPIs utilizados",
     M2: "Desligar pelo controle remoto",
     M3: "Abrir tampa frontal",
     M5: "Lavar filtros",
-    M6: "Condicao dos filtros",
+    M6: "Condição dos filtros",
     M7: "Limpeza da serpentina",
     M8: "Limpeza da evaporadora",
     M9: "Dreno desobstruido",
@@ -71,36 +71,36 @@ export function obterLabelRespostaRelatorioTecnico(codigo: string) {
     M11: "Reinstalar filtros",
     M12: "Fechar tampa",
     M13: "Ligar disjuntor",
-    M14: "Funcao Dry se existir por 10 minutos",
+    M14: "Função Dry se existir por 10 minutos",
     M15: "Temperatura de entrada do ar",
     M17: "Temperatura de insuflamento",
     M18: "Foto da evaporadora limpa",
-    T1: "Fixacao e suportes",
-    T2: "Isolamento termico",
+    T1: "Fixação e suportes",
+    T2: "Isolamento térmico",
     T3: "Dreno limpo",
     T4: "Gabinete limpo",
-    T5: "Ruido",
+    T5: "Ruído",
     T6: "Fluxo de ar pelas aletas normal",
     S1: "Acesso a condensadora",
     S2: "Limpar serpentina condensadora",
     S3: "Foto da condensadora limpa",
-    S4: "Oxidacao, danos ou entupimentos",
+    S4: "Oxidação, danos ou entupimentos",
     S5: "Efetuado limpeza geral",
-    S6: "Pressao do fluido refrigerante",
+    S6: "Pressão do fluido refrigerante",
     S7: "Tipo de fluido refrigerante",
-    S8: "Efetuado inspecao eletrica conexoes",
+    S8: "Efetuado inspeção elétrica conexões",
     S9: "Corrente",
-    S10: "Protecoes eletricas funcionando",
+    S10: "Proteções elétricas funcionando",
     S11: "Reinstalar componentes",
     S12: "Religado e verificado",
-    S13: "Observacao",
-    A1: "Inspecao geral anual",
+    S13: "Observação",
+    A1: "Inspeção geral anual",
     A2: "Teste de rendimento",
-    A3: "Avaliacao de ruido",
-    A4: "Avaliacao de vibracao",
-    A5: "Recomendacoes tecnicas",
-    A6: "Plano de acoes",
-    A7: "Relatorio consolidado anual"
+    A3: "Avaliação de ruído",
+    A4: "Avaliação de vibração",
+    A5: "Recomendações técnicas",
+    A6: "Plano de ações",
+    A7: "Relatório consolidado anual"
   }[codigo] ?? codigo;
 }
 

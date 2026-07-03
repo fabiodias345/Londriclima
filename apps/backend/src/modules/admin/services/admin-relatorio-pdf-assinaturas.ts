@@ -14,7 +14,7 @@ function formatarGpsRelatorioTecnico(ordem: OrdemAssinaturaRelatorioTecnicoPdf |
   const evento = ordem?.eventos?.find((item) => item.latitude !== null && item.longitude !== null);
 
   if (!evento || evento.latitude === null || evento.longitude === null) {
-    return "nao informado";
+    return "não informado";
   }
 
   return `${evento.latitude.toFixed(6)}, ${evento.longitude.toFixed(6)}`;

@@ -10,14 +10,14 @@ import {
 
 test("componentes do PDF montam cabecalho e cartoes reutilizaveis", () => {
   assert.deepEqual(montarCabecalhoRelatorioTecnico(0, 1, 3), [
-    "MAQUINA N:001",
-    "MANUTENCAO N:002 DE 003",
+    "MÁQUINA N:001",
+    "MANUTENÇÃO N:002 DE 003",
     ""
   ]);
 
-  assert.deepEqual(montarCartaoRelatorioTecnico("DADOS DO EQUIPAMENTO", [["Campo", "Informacao"], ["Cliente", "ACME"]]), [
+  assert.deepEqual(montarCartaoRelatorioTecnico("DADOS DO EQUIPAMENTO", [["Campo", "Informação"], ["Cliente", "ACME"]]), [
     "DADOS DO EQUIPAMENTO",
-    "Campo                               Informacao",
+    "Campo                               Informação",
     "Cliente                             ACME"
   ]);
 });
