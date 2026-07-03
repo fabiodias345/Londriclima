@@ -2090,8 +2090,8 @@ export class AdminRelatorioTecnicoCoreService {
     const objetos = [
       "<< /Type /Catalog /Pages 2 0 R >>",
       "",
-      "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-      "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>"
+      "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
+      "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>"
     ];
     const pageObjectIds: number[] = [];
 
@@ -2782,7 +2782,17 @@ export class AdminRelatorioTecnicoCoreService {
   }
 
   private escaparTextoPdf(valor: string) {
-    return this.normalizarTextoPdf(valor).replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+    return Array.from(this.normalizarTextoPdf(valor), (caractere) => {
+      const codigo = caractere.charCodeAt(0);
+
+      if (caractere === "\\") return "\\\\";
+      if (caractere === "(") return "\\(";
+      if (caractere === ")") return "\\)";
+      if (codigo < 0x20) return " ";
+      if (codigo >= 0x80) return `\\${codigo.toString(8).padStart(3, "0")}`;
+
+      return caractere;
+    }).join("");
   }
 
   private slugArquivo(valor: string) {
