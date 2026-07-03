@@ -248,9 +248,11 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(html, /id="agendaOsForm"/);
   assert.match(html, /name="cliente_id"/);
   assert.match(html, /name="tipo_servico"/);
+  assert.match(html, /name="categoria_servico"/);
   assert.match(html, /name="checklist_tipo"/);
   assert.match(html, /Preventiva/);
   assert.match(html, /Corretiva/);
+  assert.match(html, /Camara Fria/);
   assert.match(html, /Instalação|Instalacao/);
   assert.match(html, /name="agendada_para"/);
   assert.match(html, /name="tecnico_id"/);
@@ -419,6 +421,23 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(script, /backToClientsButton\?\.addEventListener\("click", resetClientForm\)/);
   assert.match(script, /clientesList\.classList\.add\("hidden"\)/);
   assert.match(script, /clientesList\.classList\.remove\("hidden"\)/);
+});
+
+test("admin diferencia ar-condicionado e camara fria no painel operacional", () => {
+  const html = read("apps/admin/index.html");
+  const script = readAdminJs();
+
+  assert.match(html, /id="osCategoryFilter"/);
+  assert.match(html, /name="categoria"/);
+  assert.match(html, /name="categoria_servico"/);
+  assert.match(html, /<option value="ar_condicionado">Ar-condicionado<\/option>/);
+  assert.match(html, /<option value="camara_fria">Camara Fria<\/option>/);
+  assert.match(script, /const osCategoryFilter = document\.querySelector\("#osCategoryFilter"\)/);
+  assert.match(script, /function normalizeServiceCategory/);
+  assert.match(script, /function formatServiceCategoryLabel/);
+  assert.match(script, /function applyEquipmentCategoryPreset/);
+  assert.match(script, /function applyAgendaServiceCategoryPreset/);
+  assert.match(script, /categoria_servico/);
 });
 
 test("admin organiza O.S. como fichario operacional", () => {

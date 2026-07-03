@@ -25,6 +25,8 @@ pmocSearchInput?.addEventListener("input", () => {
 
 agendaOsServiceTypeSelect?.addEventListener("change", syncAgendaOsServiceFields);
 agendaOsChecklistTypeSelect?.addEventListener("change", syncAgendaOsServiceFields);
+agendaOsCategorySelect?.addEventListener("change", applyAgendaServiceCategoryPreset);
+equipmentCategorySelect?.addEventListener("change", applyEquipmentCategoryPreset);
 
 pmocSearchResults?.addEventListener("click", (event) => {
   const target = event.target;
@@ -193,6 +195,16 @@ osSearchInput?.addEventListener("input", () => {
 
   renderOsAgendaItems(filterOsAgendaItems(latestAgendaItems));
 });
+
+osCategoryFilter?.addEventListener("change", () => {
+  if (activeOsTab === "solicitacoes") {
+    return;
+  }
+
+  renderOsAgendaItems(filterOsAgendaItems(latestAgendaItems));
+});
+
+applyEquipmentCategoryPreset();
 
 newOsShortcutButton?.addEventListener("click", () => {
   void openAgendaOsModal();

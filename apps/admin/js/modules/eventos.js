@@ -162,18 +162,26 @@ function filterOsRequests(items) {
 
 function filterOsAgendaItems(items) {
   const query = normalizeSearch(osSearchInput?.value || "");
+  const categoryFilter = normalizeServiceCategory(osCategoryFilter?.value || "ar_condicionado");
+  const hasCategoryFilter = Boolean(osCategoryFilter?.value);
   const tabItems = filterOsAgendaItemsByTab(items, activeOsTab);
 
   return tabItems.filter((item) => {
+    const itemCategory = getOrderServiceCategory(item);
     const text = normalizeSearch([
       item.titulo,
       item.cliente?.nome,
       item.equipamento ? formatAgendaEquipment(item.equipamento) : "",
+      formatServiceCategoryLabel(itemCategory),
       item.equipe?.nome,
       item.tecnico?.nome,
       formatAddress(item.endereco),
       formatStatus(item.status)
     ].filter(Boolean).join(" "));
+
+    if (hasCategoryFilter && itemCategory !== categoryFilter) {
+      return false;
+    }
 
     return !query || text.includes(query);
   });
@@ -240,6 +248,7 @@ function renderOsCard(item) {
 function renderOsCompactMeta(item) {
   return \`
     <span><strong>Equipamentos</strong>\${escapeHtml(renderOsEquipmentTarget(item))}</span>
+    <span><strong>Categoria</strong>\${escapeHtml(formatServiceCategoryLabel(getOrderServiceCategory(item)))}</span>
     <span><strong>Responsavel</strong>\${escapeHtml(item.equipe?.nome || item.tecnico?.nome || "Nao atribuido")}</span>
     <span><strong>Data/hora</strong>\${item.agendada_para ? formatDateTime(item.agendada_para) : "Sem horario"}</span>
   \`;
@@ -296,6 +305,7 @@ function renderOsDetail(item) {
     <div class="os-detail-facts">
       <span><strong>Cliente</strong>\${escapeHtml(item.cliente?.nome || "Nao informado")}</span>
       <span><strong>Equipamentos</strong>\${escapeHtml(renderOsEquipmentTarget(item))}</span>
+      <span><strong>Categoria</strong>\${escapeHtml(formatServiceCategoryLabel(getOrderServiceCategory(item)))}</span>
       <span><strong>Responsável</strong>\${escapeHtml(item.equipe?.nome || item.tecnico?.nome || "Não atribuído")}</span>
       <span><strong>Status</strong>\${escapeHtml(formatStatus(item.status))}</span>
       <span><strong>Data/hora</strong>\${item.agendada_para ? formatDateTime(item.agendada_para) : "Sem horário"}</span>
@@ -399,8 +409,9 @@ function formatChecklistTipo(value) {
 }
 
 function formatOsServiceType(item) {
+  const categoryLabel = formatServiceCategoryLabel(getOrderServiceCategory(item));
   if (item.tipo_servico === "corretiva") {
-    return "Corretiva";
+    return \`Corretiva - \${categoryLabel}\`;
   }
   if (item.tipo_servico === "instalacao") {
     return "Instalação";

@@ -1,6 +1,6 @@
 import * as assert from "node:assert/strict";
 import { test } from "node:test";
-import { ChecklistTipo, OrdemServicoTipoServico } from "@prisma/client";
+import { CategoriaAtendimento, ChecklistTipo, OrdemServicoTipoServico } from "@prisma/client";
 import {
   codigosObrigatoriosChecklistEtapaAnual,
   codigosObrigatoriosChecklistPorServico,
@@ -100,6 +100,49 @@ test("checklist mobile anual separa evaporadora e condensadora", () => {
     "ANU_ELETRICA",
     "ANU_ISOLAMENTO"
   ]);
+});
+
+test("checklist mobile de camara fria usa perguntas estruturadas e temperaturas em celsius", () => {
+  const checklist = montarChecklistMobilePorServico(
+    OrdemServicoTipoServico.preventiva,
+    ChecklistTipo.anual,
+    CategoriaAtendimento.camara_fria
+  );
+
+  assert.deepEqual(checklist.map((item) => item.codigo), [
+    "CFA_CONTROLADOR",
+    "CFA_PORTA",
+    "CFA_DEGELO",
+    "CFA_HIGIENIZACAO_EVAP",
+    "CFA_DRENO_EVAP",
+    "CFA_HIGIENIZACAO_COND",
+    "CFA_CIRCUITO",
+    "CFA_ELETRICA",
+    "CFA_TEMP_AMBIENTE",
+    "CFA_TEMP_RETORNO",
+    "CFA_FOTO_CONTROLADOR",
+    "CFA_FOTO_EVAP",
+    "CFA_FOTO_COND"
+  ]);
+  assert.deepEqual(codigosObrigatoriosChecklistEtapaAnual("evaporadora", CategoriaAtendimento.camara_fria), [
+    "CFA_CONTROLADOR",
+    "CFA_PORTA",
+    "CFA_DEGELO",
+    "CFA_HIGIENIZACAO_EVAP",
+    "CFA_DRENO_EVAP",
+    "CFA_TEMP_AMBIENTE",
+    "CFA_TEMP_RETORNO",
+    "CFA_FOTO_CONTROLADOR",
+    "CFA_FOTO_EVAP"
+  ]);
+  assert.deepEqual(codigosObrigatoriosChecklistEtapaAnual("condensadora", CategoriaAtendimento.camara_fria), [
+    "CFA_HIGIENIZACAO_COND",
+    "CFA_CIRCUITO",
+    "CFA_ELETRICA",
+    "CFA_FOTO_COND"
+  ]);
+  assert.equal(checklist.filter((item) => item.tipo === "foto").length, 3);
+  assert.equal(checklist.filter((item) => item.tipo === "numerico").every((item) => item.unidade === "\u00B0C"), true);
 });
 
 test("checklist mobile instalacao usa fluxo proprio", () => {

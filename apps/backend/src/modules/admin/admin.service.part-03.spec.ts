@@ -2,6 +2,7 @@
 import { NotFoundException } from "@nestjs/common";
 import {
 ChecklistTipo,
+CategoriaAtendimento,
 OrdemServicoEventoAcao,
 OrdemServicoStatus,
 OrdemServicoTipoServico,
@@ -112,6 +113,7 @@ test("criarOrdemAgenda cria OS aberta para cliente da empresa e registra evento"
     {
       cliente_id: "cliente-1",
       titulo: "Manutencao preventiva",
+      categoria_servico: CategoriaAtendimento.camara_fria,
       tipo_servico: OrdemServicoTipoServico.preventiva,
       checklist_tipo: ChecklistTipo.anual,
       detalhes: "Limpeza e revisao",
@@ -125,6 +127,10 @@ test("criarOrdemAgenda cria OS aberta para cliente da empresa e registra evento"
   assert.equal((chamadas.createData as { clienteId: string }).clienteId, "cliente-1");
   assert.equal((chamadas.createData as { enderecoId: string }).enderecoId, "endereco-1");
   assert.equal((chamadas.createData as { status: OrdemServicoStatus }).status, OrdemServicoStatus.aberta);
+  assert.equal(
+    (chamadas.createData as { categoriaServico: CategoriaAtendimento }).categoriaServico,
+    CategoriaAtendimento.camara_fria
+  );
   assert.equal((chamadas.createData as { tipoServico: OrdemServicoTipoServico }).tipoServico, OrdemServicoTipoServico.preventiva);
   assert.equal((chamadas.createData as { checklistTipo: ChecklistTipo }).checklistTipo, ChecklistTipo.anual);
   assert.equal((chamadas.createData as { titulo: string }).titulo, "Manutencao preventiva");
@@ -176,6 +182,7 @@ test("reprogramarOrdemAgenda atualiza horario e responsaveis de OS operacional",
     {
       cliente_id: "cliente-1",
       titulo: "Revisao remarcada",
+      categoria_servico: CategoriaAtendimento.camara_fria,
       tipo_servico: OrdemServicoTipoServico.corretiva,
       checklist_tipo: ChecklistTipo.anual,
       agendada_para: "2026-06-18T13:30:00.000Z"
@@ -184,6 +191,10 @@ test("reprogramarOrdemAgenda atualiza horario e responsaveis de OS operacional",
   );
 
   assert.equal((chamadas.updateData as { titulo: string }).titulo, "Revisao remarcada");
+  assert.equal(
+    (chamadas.updateData as { categoriaServico: CategoriaAtendimento }).categoriaServico,
+    CategoriaAtendimento.camara_fria
+  );
   assert.equal((chamadas.updateData as { tipoServico: OrdemServicoTipoServico }).tipoServico, OrdemServicoTipoServico.corretiva);
   assert.equal((chamadas.updateData as { checklistTipo: ChecklistTipo }).checklistTipo, ChecklistTipo.mensal);
   assert.equal((chamadas.updateData as { clienteId: string }).clienteId, "cliente-1");
@@ -258,6 +269,7 @@ test("listarAgenda retorna checklist_tipo para conferencia do app tecnico", asyn
           titulo: "PMOC mensal",
           problemaRelatado: "Limpeza preventiva",
           status: OrdemServicoStatus.aberta,
+          categoriaServico: CategoriaAtendimento.camara_fria,
           tipoServico: OrdemServicoTipoServico.preventiva,
           agendadaPara: new Date("2026-06-18T13:30:00.000Z"),
           criadaEm: new Date("2026-06-18T12:00:00.000Z"),
@@ -269,6 +281,7 @@ test("listarAgenda retorna checklist_tipo para conferencia do app tecnico", asyn
           tecnico: { id: "tecnico-1", nome: "Tecnico Campo" },
           equipamento: {
             id: "equipamento-1",
+            categoria: CategoriaAtendimento.camara_fria,
             patrimonio: "AC1",
             marca: "Gree",
             modelo: "Split",
@@ -284,7 +297,9 @@ test("listarAgenda retorna checklist_tipo para conferencia do app tecnico", asyn
   const resposta = await service.listarAgenda(usuario);
 
   assert.equal(resposta.items[0].tipo_servico, OrdemServicoTipoServico.preventiva);
+  assert.equal(resposta.items[0].categoria_servico, CategoriaAtendimento.camara_fria);
   assert.equal(resposta.items[0].checklist_tipo, ChecklistTipo.trimestral);
+  assert.equal(resposta.items[0].equipamento?.categoria, CategoriaAtendimento.camara_fria);
   assert.deepEqual(chamadas.where, {
     empresaId: "empresa-1",
     status: {

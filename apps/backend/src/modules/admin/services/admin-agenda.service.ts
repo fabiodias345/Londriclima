@@ -1,5 +1,6 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import {
+  CategoriaAtendimento,
   ChecklistTipo,
   OrdemServicoEventoAcao,
   OrdemServicoStatus,
@@ -49,6 +50,7 @@ export class AdminAgendaService {
         titulo: true,
         problemaRelatado: true,
         status: true,
+        categoriaServico: true,
         tipoServico: true,
         agendadaPara: true,
         criadaEm: true,
@@ -62,6 +64,7 @@ export class AdminAgendaService {
             equipamentos: {
               select: {
                 id: true,
+                categoria: true,
                 patrimonio: true,
                 marca: true,
                 modelo: true,
@@ -92,6 +95,7 @@ export class AdminAgendaService {
         equipamento: {
           select: {
             id: true,
+            categoria: true,
             patrimonio: true,
             marca: true,
             modelo: true,
@@ -104,6 +108,7 @@ export class AdminAgendaService {
             equipamento: {
               select: {
                 id: true,
+                categoria: true,
                 patrimonio: true,
                 marca: true,
                 modelo: true,
@@ -167,6 +172,7 @@ export class AdminAgendaService {
         titulo: ordem.titulo,
         detalhes: ordem.problemaRelatado,
         status: ordem.status,
+        categoria_servico: ordem.categoriaServico,
         tipo_servico: ordem.tipoServico,
         agendada_para: ordem.agendadaPara?.toISOString() ?? null,
         criada_em: ordem.criadaEm.toISOString(),
@@ -222,6 +228,7 @@ export class AdminAgendaService {
       equipamentoId: string;
       equipamento?: {
         id: string;
+        categoria: CategoriaAtendimento;
         patrimonio: string | null;
         marca: string | null;
         modelo: string | null;
@@ -233,6 +240,7 @@ export class AdminAgendaService {
       string,
       {
         id: string;
+        categoria: CategoriaAtendimento;
         patrimonio: string | null;
         marca: string | null;
         modelo: string | null;
@@ -257,6 +265,7 @@ export class AdminAgendaService {
   private mapearEquipamentosExecucao(ordem: {
     equipamento: {
       id: string;
+      categoria: CategoriaAtendimento;
       patrimonio: string | null;
       marca: string | null;
       modelo: string | null;
@@ -265,6 +274,7 @@ export class AdminAgendaService {
     cliente: {
       equipamentos: Array<{
         id: string;
+        categoria: CategoriaAtendimento;
         patrimonio: string | null;
         marca: string | null;
         modelo: string | null;
@@ -276,6 +286,7 @@ export class AdminAgendaService {
       equipamentoId: string;
       equipamento?: {
         id: string;
+        categoria: CategoriaAtendimento;
         patrimonio: string | null;
         marca: string | null;
         modelo: string | null;
@@ -287,6 +298,7 @@ export class AdminAgendaService {
       string,
       {
         id: string;
+        categoria: CategoriaAtendimento;
         patrimonio: string | null;
         marca: string | null;
         modelo: string | null;
@@ -318,6 +330,7 @@ export class AdminAgendaService {
 
     return equipamentos.map((equipamento) => ({
       id: equipamento.id,
+      categoria: equipamento.categoria,
       patrimonio: equipamento.patrimonio,
       marca: equipamento.marca,
       modelo: equipamento.modelo,
@@ -366,6 +379,7 @@ export class AdminAgendaService {
           equipeId: dto.equipe_id || undefined,
           tecnicoId: dto.tecnico_id || undefined,
           status: OrdemServicoStatus.aberta,
+          categoriaServico: dto.categoria_servico ?? CategoriaAtendimento.ar_condicionado,
           tipoServico: dto.tipo_servico ?? OrdemServicoTipoServico.preventiva,
           checklistTipo: this.normalizarChecklistTipo(dto),
           titulo: this.normalizarTextoObrigatorio(dto.titulo, "Titulo da OS e obrigatorio."),
@@ -463,6 +477,10 @@ export class AdminAgendaService {
 
       if (dto.tipo_servico !== undefined) {
         data.tipoServico = dto.tipo_servico;
+      }
+
+      if (dto.categoria_servico !== undefined) {
+        data.categoriaServico = dto.categoria_servico;
       }
 
       if (dto.checklist_tipo !== undefined || dto.tipo_servico !== undefined) {

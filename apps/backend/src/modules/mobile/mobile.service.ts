@@ -186,7 +186,8 @@ export class MobileService {
       checklist_tipo: ordem.checklistTipo ?? ChecklistTipo.mensal,
       checklist: montarChecklistMobilePorServico(
         ordem.tipoServico ?? OrdemServicoTipoServico.preventiva,
-        ordem.checklistTipo ?? ChecklistTipo.mensal
+        ordem.checklistTipo ?? ChecklistTipo.mensal,
+        ordem.categoriaServico
       ),
       status: ordem.status,
       data: ordem.agendadaPara?.toISOString() ?? null,
@@ -228,7 +229,8 @@ export class MobileService {
     const tipo = ordem.checklistTipo ?? ChecklistTipo.mensal;
     const obrigatorios = codigosObrigatoriosChecklistPorServico(
       ordem.tipoServico ?? OrdemServicoTipoServico.preventiva,
-      tipo
+      tipo,
+      ordem.categoriaServico
     );
     const respondidos = new Set(
       respostasEquipamento
@@ -236,7 +238,8 @@ export class MobileService {
         .map((resposta: any) => resposta.codigo)
     );
 
-    const etapasAnuaisConcluidas = tipo !== ChecklistTipo.anual ||
+    const etapasAnuaisConcluidas = ordem.tipoServico !== OrdemServicoTipoServico.preventiva ||
+      tipo !== ChecklistTipo.anual ||
       Object.values(MARCADORES_CONCLUSAO_CHECKLIST_ANUAL).every((codigo) =>
         respostasEquipamento.some(
           (resposta: any) => resposta.codigo === codigo && marcadorConclusaoChecklistAnualValido(resposta)

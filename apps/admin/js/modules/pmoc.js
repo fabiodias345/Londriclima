@@ -264,6 +264,7 @@ async function openAgendaOsModal(osId = "") {
 
   if (item) {
     agendaOsForm.elements.cliente_id.value = item.cliente?.id || "";
+    agendaOsForm.elements.categoria_servico.value = getOrderServiceCategory(item);
     agendaOsForm.elements.tipo_servico.value = item.tipo_servico || "preventiva";
     agendaOsForm.elements.checklist_tipo.value = item.checklist_tipo || "mensal";
     agendaOsForm.elements.titulo.value = item.titulo || "";
@@ -274,9 +275,10 @@ async function openAgendaOsModal(osId = "") {
     agendaOsForm.elements.valor_cobrado.value = item.valor_cobrado || "";
     await loadAgendaEquipments(item.cliente?.id || "", item.equipamento?.id || "");
   } else {
+    agendaOsForm.elements.categoria_servico.value = "ar_condicionado";
     agendaOsForm.elements.tipo_servico.value = "preventiva";
     agendaOsForm.elements.checklist_tipo.value = "mensal";
-    agendaOsForm.elements.titulo.value = "Manutencao preventiva mensal";
+    agendaOsForm.elements.titulo.value = getDefaultOsTitle("ar_condicionado", "preventiva", "mensal");
     agendaOsForm.elements.agendada_para.value = \`\${selectedAgendaDate || getLocalDateKey(new Date())}T08:00\`;
     await loadAgendaEquipments("");
   }
@@ -299,6 +301,7 @@ async function submitAgendaOs(event) {
 
   const button = agendaOsForm.querySelector("button[type='submit']");
   const data = new FormData(agendaOsForm);
+  const categoriaServico = normalizeServiceCategory(String(data.get("categoria_servico") || "ar_condicionado"));
   const payload = removeEmptyValues({
     cliente_id: String(data.get("cliente_id") || ""),
     equipamento_id: String(data.get("equipamento_id") || ""),
@@ -306,7 +309,12 @@ async function submitAgendaOs(event) {
     tecnico_id: String(data.get("tecnico_id") || ""),
     tipo_servico: String(data.get("tipo_servico") || "preventiva"),
     checklist_tipo: String(data.get("checklist_tipo") || "mensal"),
-    titulo: String(data.get("titulo") || ""),
+    titulo: buildOsTitleForCategory(
+      String(data.get("titulo") || ""),
+      categoriaServico,
+      String(data.get("tipo_servico") || "preventiva"),
+      String(data.get("checklist_tipo") || "mensal")
+    ),
     detalhes: String(data.get("detalhes") || ""),
     agendada_para: data.get("agendada_para")
       ? new Date(String(data.get("agendada_para"))).toISOString()
@@ -352,6 +360,7 @@ async function submitAgendaOs(event) {
 
 function syncAgendaOsServiceFields() {
   const serviceType = agendaOsServiceTypeSelect?.value || "preventiva";
+  const serviceCategory = normalizeServiceCategory(agendaOsCategorySelect?.value || "ar_condicionado");
   const isPreventive = serviceType === "preventiva";
   const isCorrective = serviceType === "corretiva";
   const isInstallation = serviceType === "instalacao";
@@ -368,24 +377,29 @@ function syncAgendaOsServiceFields() {
   }
 
   const currentTitle = titleInput.value.trim();
-  const defaultTitles = [
-    "Manutencao preventiva mensal",
-    "Manutencao preventiva trimestral",
-    "Manutencao preventiva semestral",
-    "Manutencao preventiva anual",
-    "Manutencao corretiva",
-    "Instalacao de ar-condicionado"
-  ];
-
-  if (currentTitle && !defaultTitles.includes(currentTitle)) {
+  if (currentTitle && !isKnownOsTitle(currentTitle)) {
     return;
   }
 
-  titleInput.value = isCorrective
-    ? "Manutencao corretiva"
-    : isInstallation
-      ? "Instalacao de ar-condicionado"
-      : "Manutencao preventiva " + (agendaOsChecklistTypeSelect?.value || "mensal");
+  titleInput.value = getDefaultOsTitle(
+    serviceCategory,
+    isCorrective ? "corretiva" : isInstallation ? "instalacao" : "preventiva",
+    agendaOsChecklistTypeSelect?.value || "mensal"
+  );
+}
+
+function applyEquipmentCategoryPreset() {
+  if (!(equipmentCategorySelect instanceof HTMLSelectElement) || !(equipmentForm?.elements?.tipo instanceof HTMLInputElement)) {
+    return;
+  }
+
+  equipmentForm.elements.tipo.placeholder = equipmentCategorySelect.value === "camara_fria"
+    ? "Monobloco, walk-in, expositor..."
+    : "Split, cassete, VRF, fancoil...";
+}
+
+function applyAgendaServiceCategoryPreset() {
+  syncAgendaOsServiceFields();
 }
 
 function getRecurrenceCalendarPayload(data) {

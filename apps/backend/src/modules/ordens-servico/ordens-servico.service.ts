@@ -7,6 +7,7 @@ import {
 } from "@nestjs/common";
 import {
   AutomacaoTipo,
+  CategoriaAtendimento,
   ChecklistTipo,
   EvidenciaTipo,
   OrdemServicoEventoAcao,
@@ -597,6 +598,7 @@ export class OrdensServicoService {
           empresaId: true,
           clienteId: true,
           status: true,
+          categoriaServico: true,
           checklistTipo: true,
           evidencias: {
             select: {
@@ -677,7 +679,10 @@ export class OrdensServicoService {
           valores.set(resposta.codigo, resposta.valor);
         }
         for (const etapa of new Set(etapasConcluidas)) {
-          const incompleta = codigosObrigatoriosChecklistEtapaAnual(etapa).some(
+          const incompleta = codigosObrigatoriosChecklistEtapaAnual(
+            etapa,
+            ordemServico.categoriaServico ?? CategoriaAtendimento.ar_condicionado
+          ).some(
             (codigo) => !(valores.get(codigo)?.trim())
           );
           if (incompleta) {
@@ -865,6 +870,7 @@ export class OrdensServicoService {
           status: true,
           titulo: true,
           tipoServico: true,
+          categoriaServico: true,
           checklistTipo: true,
           agendadaPara: true,
           equipamento: {
@@ -974,7 +980,8 @@ export class OrdensServicoService {
         const checklistRespostas = ordemServico.checklistRespostas ?? [];
         const obrigatorios = codigosObrigatoriosChecklistPorServico(
           ordemServico.tipoServico,
-          checklistTipo
+          checklistTipo,
+          ordemServico.categoriaServico ?? CategoriaAtendimento.ar_condicionado
         );
         const pendentes = equipamentos.filter((equipamento) => {
           const respostasEquipamento = checklistRespostas.filter(

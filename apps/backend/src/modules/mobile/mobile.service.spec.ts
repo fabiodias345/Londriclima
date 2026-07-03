@@ -1,4 +1,4 @@
-import { ChecklistTipo, OrdemServicoStatus, OrdemServicoTipoServico, UsuarioRole } from "@prisma/client";
+import { CategoriaAtendimento, ChecklistTipo, OrdemServicoStatus, OrdemServicoTipoServico, UsuarioRole } from "@prisma/client";
 import * as assert from "node:assert/strict";
 import { test } from "node:test";
 import { MobileService } from "./mobile.service";
@@ -155,6 +155,51 @@ test("listarOrdens retorna checklist semestral independente definido pelo backen
     ]
   );
   assert.equal(ordem.checklist[0].tipo, "select_obs");
+});
+
+test("listarOrdens retorna checklist de camara fria conforme categoria da OS", async () => {
+  const prisma = {
+    ordemServico: {
+      findMany: async () => [
+        {
+          id: "os-cf",
+          clienteId: "cliente-1",
+          titulo: "Camara fria mensal",
+          tipoServico: OrdemServicoTipoServico.preventiva,
+          categoriaServico: CategoriaAtendimento.camara_fria,
+          checklistTipo: ChecklistTipo.mensal,
+          status: OrdemServicoStatus.aberta,
+          agendadaPara: new Date("2026-06-22T12:00:00.000Z"),
+          cliente: { nome: "Hospital Norte", equipamentos: [] },
+          endereco: null,
+          equipamento: null,
+          responsaveis: []
+        }
+      ]
+    }
+  };
+
+  const resultado = await criarService(prisma).listarOrdens(usuario);
+
+  assert.deepEqual(
+    resultado.items[0].checklist.map((item: { codigo: string }) => item.codigo),
+    [
+      "CFM_PORTA",
+      "CFM_CONTROLADOR",
+      "CFM_DEGELO",
+      "CFM_EVAP_DRENO",
+      "CFM_TEMP_AMBIENTE",
+      "CFM_TEMP_RETORNO",
+      "CFM_FOTO_CONTROLADOR",
+      "CFM_FOTO_EVAP",
+      "CFM_FOTO_COND"
+    ]
+  );
+  assert.equal(
+    resultado.items[0].checklist.filter((item: { tipo: string }) => item.tipo === "foto").length,
+    3
+  );
+  assert.equal(resultado.items[0].checklist[4].unidade, "\u00B0C");
 });
 
 test("listarOrdens retorna checklist mensal simplificado sem seguranca interna", async () => {
@@ -389,6 +434,50 @@ test("listarOrdens retorna checklist de instalacao e marca equipamento feito", a
     ]
   );
   assert.equal(resultado.items[0].equipamentos[0].status_execucao, "feito");
+});
+
+
+test("listarOrdens de camara fria exige as tres fotos para marcar equipamento feito", async () => {
+  const equipamento = { id: "eq-1", modelo: "Camara", localInstalacao: "Deposito" };
+  const ordem = {
+    id: "os-cf-feito",
+    clienteId: "cliente-1",
+    titulo: "Camara fria mensal",
+    tipoServico: OrdemServicoTipoServico.preventiva,
+    categoriaServico: CategoriaAtendimento.camara_fria,
+    checklistTipo: ChecklistTipo.mensal,
+    status: OrdemServicoStatus.em_atendimento,
+    agendadaPara: new Date("2026-06-22T12:00:00.000Z"),
+    cliente: { nome: "Hospital Norte", equipamentos: [equipamento] },
+    endereco: null,
+    equipamento: null,
+    responsaveis: [],
+    checklistRespostas: [
+      { equipamentoId: equipamento.id, codigo: "CFM_PORTA", tipo: "select_obs", valor: "Normal", observacao: null },
+      { equipamentoId: equipamento.id, codigo: "CFM_CONTROLADOR", tipo: "select_obs", valor: "Normal", observacao: null },
+      { equipamentoId: equipamento.id, codigo: "CFM_DEGELO", tipo: "select_obs", valor: "Normal", observacao: null },
+      { equipamentoId: equipamento.id, codigo: "CFM_EVAP_DRENO", tipo: "select_obs", valor: "Executado", observacao: null },
+      { equipamentoId: equipamento.id, codigo: "CFM_TEMP_AMBIENTE", tipo: "numerico", valor: "2", observacao: null },
+      { equipamentoId: equipamento.id, codigo: "CFM_TEMP_RETORNO", tipo: "numerico", valor: "5", observacao: null },
+      { equipamentoId: equipamento.id, codigo: "CFM_FOTO_CONTROLADOR", tipo: "foto", valor: "/storage/controlador.jpg", observacao: null },
+      { equipamentoId: equipamento.id, codigo: "CFM_FOTO_EVAP", tipo: "foto", valor: "/storage/evap.jpg", observacao: null }
+    ]
+  };
+  const prisma = { ordemServico: { findMany: async () => [ordem] } };
+
+  const pendente = await criarService(prisma).listarOrdens(usuario);
+  assert.equal(pendente.items[0].equipamentos[0].status_execucao, "em_andamento");
+
+  ordem.checklistRespostas.push({
+    equipamentoId: equipamento.id,
+    codigo: "CFM_FOTO_COND",
+    tipo: "foto",
+    valor: "/storage/cond.jpg",
+    observacao: null
+  });
+
+  const concluido = await criarService(prisma).listarOrdens(usuario);
+  assert.equal(concluido.items[0].equipamentos[0].status_execucao, "feito");
 });
 
 test("listarVeiculos retorna carros ativos da empresa para o app", async () => {

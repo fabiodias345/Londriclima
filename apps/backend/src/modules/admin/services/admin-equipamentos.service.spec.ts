@@ -1,4 +1,4 @@
-import { OrdemServicoStatus } from "@prisma/client";
+import { CategoriaAtendimento, OrdemServicoStatus } from "@prisma/client";
 import * as assert from "node:assert/strict";
 import { test } from "node:test";
 import { AdminEquipamentosService } from "./admin-equipamentos.service";
@@ -50,4 +50,58 @@ test("criarEquipamentoCliente permite modelo vazio para tecnico preencher em cam
 
   assert.equal((chamadas.createData as { modelo: string }).modelo, "");
   assert.equal(resposta.modelo, "");
+});
+
+test("criarEquipamentoCliente persiste categoria de atendimento informada", async () => {
+  const chamadas = {
+    createData: undefined as unknown
+  };
+  const prisma = {
+    cliente: {
+      findFirst: async () => ({ id: "cliente-1" })
+    },
+    equipamento: {
+      findUnique: async () => null,
+      create: async ({ data }: { data: Record<string, unknown> }) => {
+        chamadas.createData = data;
+        return {
+          id: "equipamento-1",
+          codigoPublico: data.codigoPublico,
+          acessoPublicoAtivo: true,
+          categoria: data.categoria,
+          tipo: "Camara fria - Monobloco",
+          patrimonio: null,
+          codigoBarras: null,
+          marca: data.marca,
+          modelo: "CF-1",
+          capacidadeBtu: null,
+          gasRefrigerante: null,
+          numeroSerie: null,
+          localInstalacao: null,
+          areaClimatizadaM2: null,
+          ocupantesFixo: null,
+          ocupantesVariavel: null,
+          atualizadoEm: new Date("2026-07-02T10:00:00.000Z"),
+          ordensServico: [] as Array<{ id: string; status: OrdemServicoStatus }>
+        };
+      }
+    }
+  };
+  const service = new AdminEquipamentosService(prisma as never);
+
+  const resposta = await service.criarEquipamentoCliente(
+    "cliente-1",
+    {
+      categoria: CategoriaAtendimento.camara_fria,
+      marca: "Heatcraft",
+      modelo: "CF-1"
+    },
+    usuario as never
+  );
+
+  assert.equal(
+    (chamadas.createData as { categoria: CategoriaAtendimento }).categoria,
+    CategoriaAtendimento.camara_fria
+  );
+  assert.equal(resposta.categoria, CategoriaAtendimento.camara_fria);
 });

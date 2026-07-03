@@ -1,4 +1,4 @@
-import { ChecklistTipo, OrdemServicoTipoServico } from "@prisma/client";
+import { CategoriaAtendimento, ChecklistTipo, OrdemServicoTipoServico } from "@prisma/client";
 
 export type ChecklistItemTipo = "select_obs" | "numerico" | "foto";
 export type ChecklistEtapa = "geral" | "evaporadora" | "condensadora" | "medicoes";
@@ -124,11 +124,70 @@ const checklistInstalacao: ChecklistItem[] = [
   foto("INS_FOTO_COND", "Foto da condensadora instalada", "condensadora")
 ];
 
-export function montarChecklistMobile(tipo: ChecklistTipo): ChecklistItem[] {
-  return checklistPorTipo[tipo].map((item) => ({
+const checklistCamaraFriaPorTipo: Record<ChecklistTipo, ChecklistItem[]> = {
+  mensal: [
+    inspecao("CFM_PORTA", "Vedação e fechamento da porta", "geral"),
+    inspecao("CFM_CONTROLADOR", "Controlador, setpoint e alarmes", "geral"),
+    inspecao("CFM_DEGELO", "Funcionamento do degelo", "geral"),
+    acao("CFM_EVAP_DRENO", "Limpeza do evaporador e conferência do dreno", "evaporadora"),
+    temperatura("CFM_TEMP_AMBIENTE", "Temperatura ambiente da câmara"),
+    temperatura("CFM_TEMP_RETORNO", "Temperatura de retorno"),
+    foto("CFM_FOTO_CONTROLADOR", "Foto do controlador com temperatura visivel", "evaporadora"),
+    foto("CFM_FOTO_EVAP", "Foto da evaporadora", "evaporadora"),
+    foto("CFM_FOTO_COND", "Foto da condensadora", "condensadora")
+  ],
+  trimestral: [
+    inspecao("CFT_PORTA", "Vedação e fechamento da porta", "geral"),
+    inspecao("CFT_CONTROLADOR", "Controlador, sensores e alarmes", "geral"),
+    inspecao("CFT_DEGELO", "Funcionamento do degelo", "geral"),
+    acao("CFT_EVAP_SERPENTINA", "Limpeza da serpentina do evaporador", "evaporadora"),
+    inspecao("CFT_VENTILADORES", "Ventiladores do evaporador", "evaporadora"),
+    acao("CFT_CONDENSADORA", "Limpeza superficial da condensadora", "condensadora"),
+    temperatura("CFT_TEMP_AMBIENTE", "Temperatura ambiente da câmara"),
+    temperatura("CFT_TEMP_RETORNO", "Temperatura de retorno"),
+    foto("CFT_FOTO_CONTROLADOR", "Foto do controlador com temperatura visivel", "evaporadora"),
+    foto("CFT_FOTO_EVAP", "Foto da evaporadora", "evaporadora"),
+    foto("CFT_FOTO_COND", "Foto da condensadora", "condensadora")
+  ],
+  semestral: [
+    inspecao("CFS_CONTROLADOR", "Controlador, sensores e alarmes", "geral"),
+    inspecao("CFS_VEDACAO_PORTA", "Vedação e fechamento da porta", "geral"),
+    acao("CFS_HIGIENIZACAO_EVAP", "Higienização completa do evaporador", "evaporadora"),
+    acao("CFS_HIGIENIZACAO_COND", "Higienização completa da condensadora", "condensadora"),
+    inspecao("CFS_ELETRICA", "Componentes elétricos e conexões", "geral"),
+    inspecao("CFS_DEGELO", "Ciclo de degelo e drenagem", "geral"),
+    temperatura("CFS_TEMP_AMBIENTE", "Temperatura ambiente da câmara"),
+    temperatura("CFS_TEMP_RETORNO", "Temperatura de retorno"),
+    foto("CFS_FOTO_CONTROLADOR", "Foto do controlador com temperatura visivel", "evaporadora"),
+    foto("CFS_FOTO_EVAP", "Foto da evaporadora", "evaporadora"),
+    foto("CFS_FOTO_COND", "Foto da condensadora", "condensadora")
+  ],
+  anual: [
+    inspecao("CFA_CONTROLADOR", "Controlador, setpoint e alarmes", "evaporadora"),
+    inspecao("CFA_PORTA", "Vedação e fechamento da porta", "evaporadora"),
+    inspecao("CFA_DEGELO", "Funcionamento do degelo", "evaporadora"),
+    acao("CFA_HIGIENIZACAO_EVAP", "Higienização completa do evaporador", "evaporadora"),
+    inspecao("CFA_DRENO_EVAP", "Dreno e bandeja do evaporador", "evaporadora"),
+    acao("CFA_HIGIENIZACAO_COND", "Higienização completa da condensadora", "condensadora"),
+    inspecao("CFA_CIRCUITO", "Circuito frigorífico, pressões e estanqueidade", "condensadora"),
+    inspecao("CFA_ELETRICA", "Componentes elétricos da condensadora", "condensadora"),
+    temperatura("CFA_TEMP_AMBIENTE", "Temperatura ambiente da câmara", "evaporadora"),
+    temperatura("CFA_TEMP_RETORNO", "Temperatura de retorno", "evaporadora"),
+    foto("CFA_FOTO_CONTROLADOR", "Foto do controlador com temperatura visivel", "evaporadora"),
+    foto("CFA_FOTO_EVAP", "Foto da evaporadora", "evaporadora"),
+    foto("CFA_FOTO_COND", "Foto da condensadora", "condensadora")
+  ]
+};
+
+function copiarChecklist(checklist: ChecklistItem[]): ChecklistItem[] {
+  return checklist.map((item) => ({
     ...item,
     ...(item.opcoes ? { opcoes: [...item.opcoes] } : {})
   }));
+}
+
+export function montarChecklistMobile(tipo: ChecklistTipo): ChecklistItem[] {
+  return copiarChecklist(checklistPorTipo[tipo]);
 }
 
 export function codigosObrigatoriosChecklist(tipo: ChecklistTipo): string[] {
@@ -137,13 +196,15 @@ export function codigosObrigatoriosChecklist(tipo: ChecklistTipo): string[] {
 
 export function montarChecklistMobilePorServico(
   tipoServico: OrdemServicoTipoServico | "preventiva" | "corretiva",
-  checklistTipo: ChecklistTipo
+  checklistTipo: ChecklistTipo,
+  categoria: CategoriaAtendimento = CategoriaAtendimento.ar_condicionado
 ): ChecklistItem[] {
   if (tipoServico === OrdemServicoTipoServico.instalacao) {
-    return checklistInstalacao.map((item) => ({
-      ...item,
-      ...(item.opcoes ? { opcoes: [...item.opcoes] } : {})
-    }));
+    return copiarChecklist(checklistInstalacao);
+  }
+
+  if (categoria === CategoriaAtendimento.camara_fria) {
+    return copiarChecklist(checklistCamaraFriaPorTipo[checklistTipo]);
   }
 
   return montarChecklistMobile(checklistTipo);
@@ -151,17 +212,29 @@ export function montarChecklistMobilePorServico(
 
 export function codigosObrigatoriosChecklistPorServico(
   tipoServico: OrdemServicoTipoServico | "preventiva" | "corretiva",
-  checklistTipo: ChecklistTipo
+  checklistTipo: ChecklistTipo,
+  categoria: CategoriaAtendimento = CategoriaAtendimento.ar_condicionado
 ): string[] {
   if (tipoServico === OrdemServicoTipoServico.instalacao) {
     return checklistInstalacao.map((item) => item.codigo);
   }
 
+  if (categoria === CategoriaAtendimento.camara_fria) {
+    return checklistCamaraFriaPorTipo[checklistTipo].map((item) => item.codigo);
+  }
+
   return codigosObrigatoriosChecklist(checklistTipo);
 }
 
-export function codigosObrigatoriosChecklistEtapaAnual(etapa: ChecklistEtapaAnual): string[] {
-  return checklistPorTipo.anual.filter((item) => item.etapa === etapa).map((item) => item.codigo);
+export function codigosObrigatoriosChecklistEtapaAnual(
+  etapa: ChecklistEtapaAnual,
+  categoria: CategoriaAtendimento = CategoriaAtendimento.ar_condicionado
+): string[] {
+  const checklistAnual = categoria === CategoriaAtendimento.camara_fria
+    ? checklistCamaraFriaPorTipo.anual
+    : checklistPorTipo.anual;
+
+  return checklistAnual.filter((item) => item.etapa === etapa).map((item) => item.codigo);
 }
 
 export function etapaAnualDoMarcador(codigo: string): ChecklistEtapaAnual | null {

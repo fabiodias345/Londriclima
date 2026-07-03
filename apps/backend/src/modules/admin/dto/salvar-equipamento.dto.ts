@@ -1,6 +1,11 @@
-import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, Min } from "class-validator";
+import { CategoriaAtendimento } from "@prisma/client";
+import { IsBoolean, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Min } from "class-validator";
 
 export class SalvarEquipamentoDto {
+  @IsOptional()
+  @IsEnum(CategoriaAtendimento)
+  categoria?: CategoriaAtendimento;
+
   @IsOptional()
   @IsString()
   tipo?: string;

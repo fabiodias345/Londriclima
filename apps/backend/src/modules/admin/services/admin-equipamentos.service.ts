@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
-import { OrdemServicoStatus, Prisma } from "@prisma/client";
+import { CategoriaAtendimento, OrdemServicoStatus, Prisma } from "@prisma/client";
 import { randomBytes, randomInt } from "node:crypto";
 import { PrismaService } from "../../../database/prisma.service";
 import { AuthenticatedUser } from "../../auth/auth-user";
@@ -59,6 +59,7 @@ export class AdminEquipamentosService {
         codigoPublico,
         senhaPublicaHash: await this.passwordHash.hash(senhaPublica),
         acessoPublicoAtivo: dto.acesso_publico_ativo ?? true,
+        categoria: dto.categoria ?? CategoriaAtendimento.ar_condicionado,
         tipo: dto.tipo?.trim() || null,
         patrimonio: dto.patrimonio?.trim() || null,
         codigoBarras: dto.codigo_barras?.trim() || null,
@@ -260,6 +261,7 @@ export class AdminEquipamentosService {
       id: true,
       codigoPublico: true,
       acessoPublicoAtivo: true,
+      categoria: true,
       tipo: true,
       patrimonio: true,
       codigoBarras: true,
@@ -286,6 +288,7 @@ export class AdminEquipamentosService {
     id: string;
     codigoPublico: string | null;
     acessoPublicoAtivo: boolean;
+    categoria: CategoriaAtendimento;
     tipo: string | null;
     patrimonio: string | null;
     codigoBarras: string | null;
@@ -305,6 +308,7 @@ export class AdminEquipamentosService {
       id: equipamento.id,
       codigo_publico: equipamento.codigoPublico,
       acesso_publico_ativo: equipamento.acessoPublicoAtivo,
+      categoria: equipamento.categoria,
       link_publico: equipamento.codigoPublico
         ? `/landing/equipamento.html?codigo=${equipamento.codigoPublico}`
         : null,

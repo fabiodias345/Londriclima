@@ -2276,9 +2276,11 @@ class _ChecklistField extends StatelessWidget {
 bool _requiresChecklistObservation(String code, String? selected) {
   final normalized = selected?.toLowerCase().trim() ?? '';
   return const {
-    'não executado',
+    'n\u00E3o executado',
+    'nao executado',
     'irregularidade encontrada',
-    'não testado',
+    'n\u00E3o testado',
+    'nao testado',
   }.contains(normalized);
 }
 

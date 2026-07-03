@@ -411,8 +411,9 @@ async function submitEquipment(event) {
 
   const button = equipmentForm.querySelector("button[type='submit']");
   const data = new FormData(equipmentForm);
+  const categoria = normalizeServiceCategory(String(data.get("categoria") || "ar_condicionado"));
   const payload = removeEmptyValues({
-    tipo: String(data.get("tipo") || ""),
+    tipo: buildEquipmentTypeForCategory(String(data.get("tipo") || ""), categoria),
     patrimonio: String(data.get("patrimonio") || ""),
     codigo_barras: String(data.get("codigo_barras") || ""),
     marca: String(data.get("marca") || ""),
@@ -450,6 +451,10 @@ async function submitEquipment(event) {
     }
 
     equipmentForm.reset();
+    if (equipmentCategorySelect instanceof HTMLSelectElement) {
+      equipmentCategorySelect.value = "ar_condicionado";
+    }
+    applyEquipmentCategoryPreset();
     equipmentForm.elements.acesso_publico_ativo.checked = true;
     equipmentFormStatus.textContent = \`Equipamento salvo. Senha do cliente: \${result.senha_publica}\`;
     await loadClientEquipments(selectedEquipmentClientId);

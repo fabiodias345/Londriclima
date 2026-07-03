@@ -283,6 +283,14 @@
               <span class="visually-hidden">Buscar O.S.</span>
               <input id="osSearchInput" type="search" placeholder="Buscar por cliente, telefone, endereco ou detalhe do servico..." />
             </label>
+            <label>
+              <span class="visually-hidden">Filtrar categoria da O.S.</span>
+              <select id="osCategoryFilter">
+                <option value="">Todas as categorias</option>
+                <option value="ar_condicionado">Ar-condicionado</option>
+                <option value="camara_fria">Camara Fria</option>
+              </select>
+            </label>
           </div>
           <div class="request-list" id="requestList"></div>
           <aside class="os-detail-panel" id="osDetailPanel" aria-label="Detalhe da O.S.">
@@ -639,6 +647,13 @@
               <p id="clientEquipmentStatus" role="status">Escolha um cliente para ver as máquinas.</p>
             </div>
             <form class="equipment-form" id="equipmentForm">
+              <label>
+                Categoria
+                <select name="categoria">
+                  <option value="ar_condicionado">Ar-condicionado</option>
+                  <option value="camara_fria">Camara Fria</option>
+                </select>
+              </label>
               <label>
                 Tipo
                 <input name="tipo" type="text" placeholder="Split, cassete, VRF, fancoil..." />
@@ -1049,6 +1064,13 @@
             Equipamento
             <select name="equipamento_id" id="agendaOsEquipmentSelect">
               <option value="">Sem equipamento definido</option>
+            </select>
+          </label>
+          <label>
+            Categoria
+            <select name="categoria_servico" id="agendaOsCategorySelect">
+              <option value="ar_condicionado">Ar-condicionado</option>
+              <option value="camara_fria">Camara Fria</option>
             </select>
           </label>
           <label>

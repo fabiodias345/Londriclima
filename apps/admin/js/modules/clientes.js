@@ -213,6 +213,7 @@ function renderClientEquipments(items) {
         <span>\${escapeHtml(item.local_instalacao || "Local não informado")}</span>
       </div>
       <div>
+        <span>Categoria: \${escapeHtml(formatServiceCategoryLabel(getEquipmentCategory(item)))}</span>
         <span>Patrimônio: \${escapeHtml(item.patrimonio || "não informado")}</span>
         <span>Código/QR: \${escapeHtml(item.codigo_barras || "não informado")}</span>
         <span>Gas: \${escapeHtml(item.gas_refrigerante || "pendente da primeira visita")}</span>

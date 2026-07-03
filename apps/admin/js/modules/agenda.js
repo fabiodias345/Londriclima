@@ -66,6 +66,123 @@ function formatAgendaEquipment(equipment) {
   ].filter(Boolean).join(" - ");
 }
 
+function normalizeServiceCategory(value) {
+  return value === "camara_fria" ? "camara_fria" : "ar_condicionado";
+}
+
+function normalizeCategoryHint(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function hasColdRoomHint(value) {
+  const text = normalizeCategoryHint(value);
+  return text.includes("camara fria") || text.includes("camara-fria") || text.includes("cold room");
+}
+
+function formatServiceCategoryLabel(value) {
+  return normalizeServiceCategory(value) === "camara_fria" ? "Camara Fria" : "Ar-condicionado";
+}
+
+function getEquipmentCategory(equipment) {
+  if (!equipment) {
+    return "ar_condicionado";
+  }
+
+  if (equipment.categoria) {
+    return normalizeServiceCategory(equipment.categoria);
+  }
+
+  return hasColdRoomHint(equipment.tipo) ? "camara_fria" : "ar_condicionado";
+}
+
+function getOrderServiceCategory(order) {
+  if (!order) {
+    return "ar_condicionado";
+  }
+
+  if (order.categoria_servico || order.categoriaServico) {
+    return normalizeServiceCategory(order.categoria_servico || order.categoriaServico);
+  }
+
+  if (order.equipamento) {
+    return getEquipmentCategory(order.equipamento);
+  }
+
+  return hasColdRoomHint(\`\${order.titulo || ""} \${order.detalhes || ""}\`) ? "camara_fria" : "ar_condicionado";
+}
+
+function getDefaultOsTitle(category, serviceType, checklistType) {
+  const normalizedCategory = normalizeServiceCategory(category);
+  const normalizedServiceType = String(serviceType || "preventiva");
+  const normalizedChecklistType = String(checklistType || "mensal");
+
+  if (normalizedServiceType === "corretiva") {
+    return normalizedCategory === "camara_fria"
+      ? "Manutencao corretiva - Camara fria"
+      : "Manutencao corretiva";
+  }
+
+  if (normalizedServiceType === "instalacao") {
+    return normalizedCategory === "camara_fria"
+      ? "Instalacao de camara fria"
+      : "Instalacao de ar-condicionado";
+  }
+
+  return normalizedCategory === "camara_fria"
+    ? \`Manutencao preventiva camara fria \${normalizedChecklistType}\`
+    : \`Manutencao preventiva \${normalizedChecklistType}\`;
+}
+
+function isKnownOsTitle(title) {
+  return [
+    "Manutencao preventiva mensal",
+    "Manutencao preventiva trimestral",
+    "Manutencao preventiva semestral",
+    "Manutencao preventiva anual",
+    "Manutencao preventiva camara fria mensal",
+    "Manutencao preventiva camara fria trimestral",
+    "Manutencao preventiva camara fria semestral",
+    "Manutencao preventiva camara fria anual",
+    "Manutencao corretiva",
+    "Manutencao corretiva - Camara fria",
+    "Instalacao de ar-condicionado",
+    "Instalacao de camara fria"
+  ].includes(String(title || "").trim());
+}
+
+function buildEquipmentTypeForCategory(type, category) {
+  const currentType = String(type || "").trim();
+  const normalizedCategory = normalizeServiceCategory(category);
+
+  if (!currentType) {
+    return normalizedCategory === "camara_fria" ? "Camara fria" : "";
+  }
+
+  if (normalizedCategory === "camara_fria") {
+    return hasColdRoomHint(currentType) ? currentType : \`Camara fria - \${currentType}\`;
+  }
+
+  return currentType.replace(/^Camara fria -\s*/i, "").trim();
+}
+
+function buildOsTitleForCategory(title, category, serviceType, checklistType) {
+  const currentTitle = String(title || "").trim();
+  const normalizedCategory = normalizeServiceCategory(category);
+
+  if (!currentTitle || isKnownOsTitle(currentTitle)) {
+    return getDefaultOsTitle(normalizedCategory, serviceType, checklistType);
+  }
+
+  if (normalizedCategory === "camara_fria") {
+    return hasColdRoomHint(currentTitle) ? currentTitle : \`Camara fria - \${currentTitle}\`;
+  }
+
+  return currentTitle.replace(/^Camara fria -\s*/i, "").trim();
+}
+
 function renderClientes(items) {
   clientesList.innerHTML = "";
 
