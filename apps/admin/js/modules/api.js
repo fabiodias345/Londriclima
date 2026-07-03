@@ -476,7 +476,7 @@ function setActiveView(view) {
     configuracoes: ["Administração", "Configurações"],
     pmoc: ["Conformidade técnica", "PMOC"],
     relatoriosAvulsos: ["Atendimento avulso", "Relatórios diretos ao cliente"],
-    relatorios: ["Gestão", "Dashboard"]
+    relatorios: ["Gestão", "Relatório operacional"]
   }[view] ?? ["Operação de O.S.", "O.S."];
 
   viewKicker.textContent = meta[0];

@@ -236,7 +236,8 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(html, /<option value="admin">Admin<\/option>/);
   assert.match(html, /data-config-view="equipes"/);
   assert.match(html, /data-config-view="engenheiros"/);
-  assert.match(html, /data-view="relatorios"/);
+  assert.doesNotMatch(html, /data-view="relatorios"/);
+  assert.doesNotMatch(html, />Dashboard<\/button>/);
   assert.match(html, /data-view="relatoriosAvulsos"/);
   assert.match(html, /id="agendaView"/);
   assert.match(html, /id="newAgendaOsButton"/);
