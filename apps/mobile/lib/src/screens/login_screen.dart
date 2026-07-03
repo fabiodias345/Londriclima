@@ -77,6 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
             locationService: widget.locationService,
             photoPicker: widget.photoPicker,
             barcodeScanner: widget.barcodeScanner,
+            technicianName: loginSession.technicianName,
           ),
         ),
       );
@@ -108,19 +109,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     Text(
                       'Acesso AIRMOVEBR',
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w900,
-                        color: neuroText,
-                        fontSize: 26,
-                      ),
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
+                            fontWeight: FontWeight.w900,
+                            color: neuroText,
+                            fontSize: 26,
+                          ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Entre para acessar a operacao.',
                       textAlign: TextAlign.center,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyLarge?.copyWith(
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: neuroMuted,
                         fontSize: 16,
                       ),

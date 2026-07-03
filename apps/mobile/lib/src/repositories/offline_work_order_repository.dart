@@ -597,6 +597,8 @@ class OfflineWorkOrderRepository implements WorkOrderRepository {
     return {
       'signature': input.signatureBase64,
       'responsible': input.responsibleName,
+      'technician_signature': input.technicianSignatureBase64,
+      'technician_name': input.technicianName,
       'latitude': input.latitude,
       'longitude': input.longitude,
       'finalized_at': input.finalizedAt.toIso8601String(),
@@ -607,6 +609,11 @@ class OfflineWorkOrderRepository implements WorkOrderRepository {
     return FinalizeWorkOrderInput(
       signatureBase64: json['signature'].toString(),
       responsibleName: json['responsible'].toString(),
+      technicianSignatureBase64:
+          json['technician_signature']?.toString() ??
+          json['signature'].toString(),
+      technicianName:
+          json['technician_name']?.toString() ?? json['responsible'].toString(),
       latitude: double.parse(json['latitude'].toString()),
       longitude: double.parse(json['longitude'].toString()),
       finalizedAt: DateTime.parse(json['finalized_at'].toString()),

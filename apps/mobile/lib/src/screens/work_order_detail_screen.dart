@@ -54,6 +54,7 @@ class WorkOrderDetailScreen extends StatefulWidget {
     required this.locationService,
     required this.photoPicker,
     required this.barcodeScanner,
+    this.technicianName = '',
   });
 
   final WorkOrder order;
@@ -61,6 +62,7 @@ class WorkOrderDetailScreen extends StatefulWidget {
   final LocationService locationService;
   final ChecklistPhotoPicker photoPicker;
   final BarcodeScannerService barcodeScanner;
+  final String technicianName;
 
   @override
   State<WorkOrderDetailScreen> createState() => _WorkOrderDetailScreenState();
@@ -85,7 +87,9 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
   final Map<String, GlobalKey> _checklistItemKeys = {};
   final Map<String, GlobalKey> _machineFieldKeys = {};
   final List<Offset?> _signaturePoints = [];
+  final List<Offset?> _technicianSignaturePoints = [];
   final TextEditingController _responsibleController = TextEditingController();
+  late final TextEditingController _technicianController;
   final Set<String> _uploadingPhotoCodes = {};
   final Map<String, TextEditingController> _textControllers = {};
   final Map<String, TextEditingController> _noteControllers = {};
@@ -125,6 +129,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
     }
     _scrollController.dispose();
     _responsibleController.dispose();
+    _technicianController.dispose();
     super.dispose();
   }
 
@@ -132,6 +137,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
   void initState() {
     super.initState();
     _order = widget.order;
+    _technicianController = TextEditingController(text: widget.technicianName);
     _equipments = List<WorkOrderEquipment>.of(_equipmentsFor(widget.order));
     _initialEvidenceSaved = _equipments.any(
       (equipment) => equipment.checklistResponses.any(
@@ -948,9 +954,17 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
 
     var responsibleName = _responsibleController.text.trim();
     final hasSignature = _signaturePoints.whereType<Offset>().isNotEmpty;
-    if (responsibleName.isEmpty || !hasSignature) {
+    final technicianName = _technicianController.text.trim();
+    final hasTechnicianSignature = _technicianSignaturePoints
+        .whereType<Offset>()
+        .isNotEmpty;
+    if (responsibleName.isEmpty ||
+        !hasSignature ||
+        technicianName.isEmpty ||
+        !hasTechnicianSignature) {
       setState(() {
-        _errorMessage = 'Informe o responsavel e colete a assinatura.';
+        _errorMessage =
+            'Informe responsavel e tecnico e colete as duas assinaturas.';
       });
       return;
     }
@@ -977,8 +991,12 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
       final updated = await widget.repository.finishWorkOrder(
         _order,
         FinalizeWorkOrderInput(
-          signatureBase64: await _signatureDataUrl(),
+          signatureBase64: await _signatureDataUrl(_signaturePoints),
           responsibleName: responsibleName,
+          technicianSignatureBase64: await _signatureDataUrl(
+            _technicianSignaturePoints,
+          ),
+          technicianName: technicianName,
           latitude: location.latitude,
           longitude: location.longitude,
           finalizedAt: DateTime.now(),
@@ -1015,13 +1033,13 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<String> _signatureDataUrl() async {
+  Future<String> _signatureDataUrl(List<Offset?> points) async {
     try {
       const size = Size(640, 220);
       final recorder = ui.PictureRecorder();
       final canvas = Canvas(recorder);
       canvas.drawColor(Colors.white, BlendMode.src);
-      _SignaturePainter(_signaturePoints).paint(canvas, size);
+      _SignaturePainter(points).paint(canvas, size);
       final image = await recorder
           .endRecording()
           .toImage(size.width.toInt(), size.height.toInt())
@@ -1208,7 +1226,48 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
         decoration: const InputDecoration(labelText: 'Nome do responsavel'),
       ),
       const SizedBox(height: 12),
+      TextField(
+        key: const Key('technicianNameField'),
+        controller: _technicianController,
+        enabled: _initialEvidenceSaved,
+        textInputAction: TextInputAction.next,
+        decoration: const InputDecoration(labelText: 'Nome do tecnico'),
+      ),
+      const SizedBox(height: 12),
+      const Text(
+        'Assinatura do tecnico',
+        style: TextStyle(fontWeight: FontWeight.w800),
+      ),
+      const SizedBox(height: 8),
       _SignaturePad(
+        signatureKey: const Key('technicianSignaturePad'),
+        points: _technicianSignaturePoints,
+        enabled: _initialEvidenceSaved,
+        onChanged: (points) {
+          setState(() {
+            _technicianSignaturePoints
+              ..clear()
+              ..addAll(points);
+          });
+        },
+      ),
+      const SizedBox(height: 8),
+      OutlinedButton.icon(
+        key: const Key('clearTechnicianSignatureButton'),
+        onPressed: !_initialEvidenceSaved || _technicianSignaturePoints.isEmpty
+            ? null
+            : () => setState(_technicianSignaturePoints.clear),
+        icon: const Icon(Icons.backspace_outlined),
+        label: const Text('Limpar assinatura do tecnico'),
+      ),
+      const SizedBox(height: 16),
+      const Text(
+        'Assinatura do responsavel',
+        style: TextStyle(fontWeight: FontWeight.w800),
+      ),
+      const SizedBox(height: 8),
+      _SignaturePad(
+        signatureKey: const Key('signaturePad'),
         points: _signaturePoints,
         enabled: _initialEvidenceSaved,
         onChanged: (points) {
@@ -1608,11 +1667,13 @@ class _StepTab extends StatelessWidget {
 
 class _SignaturePad extends StatefulWidget {
   const _SignaturePad({
+    required this.signatureKey,
     required this.points,
     required this.enabled,
     required this.onChanged,
   });
 
+  final Key signatureKey;
   final List<Offset?> points;
   final bool enabled;
   final ValueChanged<List<Offset?>> onChanged;
@@ -1641,7 +1702,7 @@ class _SignaturePadState extends State<_SignaturePad> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      key: const Key('signaturePad'),
+      key: widget.signatureKey,
       behavior: HitTestBehavior.opaque,
       onPanStart: widget.enabled
           ? (details) => _addPoint(details.localPosition)

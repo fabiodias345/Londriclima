@@ -858,7 +858,11 @@ export class OrdensServicoService {
   async finalizarOs(osId: string, dto: FinalizarOsDto, usuario: AuthenticatedUser) {
     const finalizadoEm = new Date(dto.finalizado_em);
     const assinaturaBuffer = this.criarBufferAssinatura(dto.assinatura_cliente_base64);
+    const assinaturaTecnicoBuffer = this.criarBufferAssinatura(
+      dto.assinatura_tecnico_base64 ?? dto.assinatura_cliente_base64
+    );
     let assinaturaUrl = "";
+    let assinaturaTecnicoUrl = "";
     let automacoesFinalizacao: Prisma.AutomacaoAgendadaCreateManyInput[] = [];
 
     await this.prisma.$transaction(async (tx) => {
@@ -876,9 +880,13 @@ export class OrdensServicoService {
           equipamento: {
             select: {
               id: true,
+              tipo: true,
               marca: true,
               modelo: true,
-              gasRefrigerante: true
+              gasRefrigerante: true,
+              numeroSerie: true,
+              codigoBarras: true,
+              localInstalacao: true
             }
           },
           cliente: {
@@ -903,7 +911,14 @@ export class OrdensServicoService {
               },
               equipamentos: {
                 select: {
-                  id: true
+                  id: true,
+                  tipo: true,
+                  marca: true,
+                  modelo: true,
+                  gasRefrigerante: true,
+                  numeroSerie: true,
+                  codigoBarras: true,
+                  localInstalacao: true
                 }
               }
             }
@@ -1012,6 +1027,11 @@ export class OrdensServicoService {
       }
 
       assinaturaUrl = await this.salvarAssinatura(osId, assinaturaBuffer);
+      assinaturaTecnicoUrl = await this.salvarAssinatura(
+        osId,
+        assinaturaTecnicoBuffer,
+        "assinatura-tecnico.png"
+      );
 
       await tx.ordemServicoAssinatura.create({
         data: {
@@ -1019,6 +1039,8 @@ export class OrdensServicoService {
           ordemServicoId: osId,
           nomeResponsavel: dto.nome_responsavel_assinatura,
           storageUrl: assinaturaUrl,
+          nomeTecnico: dto.nome_tecnico_assinatura ?? usuario.email,
+          assinaturaTecnicoStorageUrl: assinaturaTecnicoUrl,
           latitude: new Prisma.Decimal(dto.latitude),
           longitude: new Prisma.Decimal(dto.longitude),
           assinadoEm: finalizadoEm
@@ -1052,7 +1074,9 @@ export class OrdensServicoService {
         osId,
         finalizadoEm,
         assinaturaUrl,
-        dto.nome_responsavel_assinatura
+        dto.nome_responsavel_assinatura,
+        assinaturaTecnicoUrl,
+        dto.nome_tecnico_assinatura ?? usuario.email
       );
 
       await tx.automacaoAgendada.createMany({
@@ -1074,6 +1098,8 @@ export class OrdensServicoService {
       empresaId: string;
       titulo?: string;
       tipoServico?: OrdemServicoTipoServico;
+      categoriaServico?: CategoriaAtendimento;
+      checklistTipo?: ChecklistTipo;
       agendadaPara?: Date | null;
       cliente?: {
         id: string;
@@ -1088,11 +1114,30 @@ export class OrdensServicoService {
           cidade: string | null;
           uf: string | null;
         }>;
-        equipamentos?: Array<{ id: string }>;
+        equipamentos?: Array<{
+          id: string;
+          tipo?: string | null;
+          marca?: string | null;
+          modelo?: string | null;
+          gasRefrigerante?: string | null;
+          numeroSerie?: string | null;
+          codigoBarras?: string | null;
+          localInstalacao?: string | null;
+        }>;
       } | null;
-      equipamento?: { id?: string | null; marca?: string | null; modelo?: string | null; gasRefrigerante?: string | null } | null;
+      equipamento?: {
+        id?: string | null;
+        tipo?: string | null;
+        marca?: string | null;
+        modelo?: string | null;
+        gasRefrigerante?: string | null;
+        numeroSerie?: string | null;
+        codigoBarras?: string | null;
+        localInstalacao?: string | null;
+      } | null;
       evidencias?: Array<{ tipo: EvidenciaTipo; descricao: string | null; storageUrl: string; criadoEm: Date }>;
       checklistRespostas?: Array<{
+        equipamentoId?: string | null;
         codigo: string;
         tipo: string;
         valor: string;
@@ -1102,7 +1147,9 @@ export class OrdensServicoService {
     osId: string,
     finalizadoEm: Date,
     assinaturaUrl: string,
-    nomeResponsavelAssinatura: string
+    nomeResponsavelAssinatura: string,
+    assinaturaTecnicoUrl: string,
+    nomeTecnicoAssinatura: string
   ): Prisma.AutomacaoAgendadaCreateManyInput[] {
     const base = AUTOMACOES_FINALIZACAO.map((tipo) => ({
       empresaId: ordemServico.empresaId,
@@ -1115,7 +1162,9 @@ export class OrdensServicoService {
     }));
 
     const cliente = ordemServico.cliente;
-    const deveEnviarRelatorioAvulso = cliente?.email && !cliente.pmocAtivo;
+    const deveEnviarRelatorioAvulso = cliente?.email && (
+      !cliente.pmocAtivo || ordemServico.categoriaServico === CategoriaAtendimento.camara_fria
+    );
 
     if (!deveEnviarRelatorioAvulso) {
       return base;
@@ -1130,12 +1179,23 @@ export class OrdensServicoService {
       clienteEndereco: this.formatarEnderecoRelatorioAtendimento(cliente.enderecos?.[0] ?? null),
       titulo: ordemServico.titulo || "Atendimento tecnico",
       tipoServico: ordemServico.tipoServico || OrdemServicoTipoServico.preventiva,
+      categoriaServico: ordemServico.categoriaServico ?? CategoriaAtendimento.ar_condicionado,
+      checklistTipo: ordemServico.checklistTipo ?? ChecklistTipo.mensal,
       agendadaPara: ordemServico.agendadaPara ?? null,
       finalizadoEm,
       assinaturaUrl,
       nomeResponsavelAssinatura,
+      assinaturaTecnicoUrl,
+      nomeTecnicoAssinatura,
       totalMaquinas,
       equipamento: ordemServico.equipamento ?? null,
+      equipamentos: (ordemServico.equipamento?.id
+        ? [ordemServico.equipamento]
+        : cliente.equipamentos ?? []).map((equipamento) => ({
+          ...equipamento,
+          id: equipamento.id ?? "equipamento",
+          codigoQr: equipamento.codigoBarras
+        })),
       evidencias: ordemServico.evidencias ?? [],
       checklistRespostas: ordemServico.checklistRespostas ?? []
     });
@@ -1158,7 +1218,11 @@ export class OrdensServicoService {
           total_maquinas: totalMaquinas,
           total_os_concluidas: 1,
           os_ids: [osId],
-          pdf_filename: `${this.slugArquivo(`relatorio-tecnico-${cliente.nome}-${osId}`)}.pdf`,
+          pdf_filename: `${this.slugArquivo(
+            ordemServico.categoriaServico === CategoriaAtendimento.camara_fria
+              ? `relatorio-camara-fria-${cliente.nome}-${osId}`
+              : `relatorio-tecnico-${cliente.nome}-${osId}`
+          )}.pdf`,
           pdf_base64: pdf.toString("base64")
         } satisfies Prisma.JsonObject
       }
@@ -1173,14 +1237,43 @@ export class OrdensServicoService {
     clienteEndereco: string;
     titulo: string;
     tipoServico: OrdemServicoTipoServico;
+    categoriaServico: CategoriaAtendimento;
+    checklistTipo: ChecklistTipo;
     agendadaPara: Date | null;
     finalizadoEm: Date;
     assinaturaUrl: string;
     nomeResponsavelAssinatura: string;
+    assinaturaTecnicoUrl: string;
+    nomeTecnicoAssinatura: string;
     totalMaquinas: number;
-    equipamento: { marca?: string | null; modelo?: string | null; gasRefrigerante?: string | null } | null;
+    equipamento: {
+      id?: string | null;
+      tipo?: string | null;
+      marca?: string | null;
+      modelo?: string | null;
+      gasRefrigerante?: string | null;
+      numeroSerie?: string | null;
+      codigoBarras?: string | null;
+      localInstalacao?: string | null;
+    } | null;
+    equipamentos: Array<{
+      id: string;
+      tipo?: string | null;
+      marca?: string | null;
+      modelo?: string | null;
+      gasRefrigerante?: string | null;
+      numeroSerie?: string | null;
+      codigoQr?: string | null;
+      localInstalacao?: string | null;
+    }>;
     evidencias: Array<{ tipo: EvidenciaTipo; descricao: string | null; storageUrl: string; criadoEm: Date }>;
-    checklistRespostas: Array<{ codigo: string; tipo: string; valor: string; observacao: string | null }>;
+    checklistRespostas: Array<{
+      equipamentoId?: string | null;
+      codigo: string;
+      tipo: string;
+      valor: string;
+      observacao: string | null;
+    }>;
   }) {
     return this.relatorioTecnicoRenderer.renderizar({
       ...input,
@@ -1233,9 +1326,13 @@ export class OrdensServicoService {
     }
   }
 
-  private async salvarAssinatura(osId: string, assinatura: Buffer) {
+  private async salvarAssinatura(
+    osId: string,
+    assinatura: Buffer,
+    nomeArquivo = "assinatura.png"
+  ) {
     const storageRoot = this.resolveStorageRoot();
-    const relativePath = join("os", osId, "assinatura.png");
+    const relativePath = join("os", osId, nomeArquivo);
     const absolutePath = join(storageRoot, relativePath);
 
     await mkdir(join(storageRoot, "os", osId), { recursive: true });

@@ -706,91 +706,97 @@ void main() {
     expect(find.text('Selecionar maquina'), findsNothing);
   });
 
-
-  testWidgets('checklist de camara fria exige foto da evaporadora condensadora e controlador', (
-    tester,
-  ) async {
-    await tester.binding.setSurfaceSize(const Size(900, 1600));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-    final repository = _RepositorioDeTeste(
-      status: WorkOrderStatus.inProgress,
-      backendStatus: 'em_atendimento',
-      checklistType: 'mensal',
-      equipments: _singleEquipment,
-      checklist: const [
-        WorkOrderChecklistItem(
-          code: 'CFM_FOTO_CONTROLADOR',
-          label: 'Foto do controlador com temperatura',
-          kind: 'foto',
-          stage: 'evaporadora',
+  testWidgets(
+    'checklist de camara fria exige foto da evaporadora condensadora e controlador',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(900, 1600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final repository = _RepositorioDeTeste(
+        status: WorkOrderStatus.inProgress,
+        backendStatus: 'em_atendimento',
+        checklistType: 'mensal',
+        equipments: _singleEquipment,
+        checklist: const [
+          WorkOrderChecklistItem(
+            code: 'CFM_FOTO_CONTROLADOR',
+            label: 'Foto do controlador com temperatura',
+            kind: 'foto',
+            stage: 'evaporadora',
+          ),
+          WorkOrderChecklistItem(
+            code: 'CFM_FOTO_EVAP',
+            label: 'Foto da evaporadora',
+            kind: 'foto',
+            stage: 'evaporadora',
+          ),
+          WorkOrderChecklistItem(
+            code: 'CFM_FOTO_COND',
+            label: 'Foto da condensadora',
+            kind: 'foto',
+            stage: 'condensadora',
+          ),
+        ],
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: LoginScreen(
+            loginGateway: _GatewayDeTeste(repository: repository),
+            locationService: const _LocationServiceTeste(),
+            photoPicker: const _PhotoPickerTeste(),
+          ),
         ),
-        WorkOrderChecklistItem(
-          code: 'CFM_FOTO_EVAP',
-          label: 'Foto da evaporadora',
-          kind: 'foto',
-          stage: 'evaporadora',
-        ),
-        WorkOrderChecklistItem(
-          code: 'CFM_FOTO_COND',
-          label: 'Foto da condensadora',
-          kind: 'foto',
-          stage: 'condensadora',
-        ),
-      ],
-    );
-    await tester.pumpWidget(
-      MaterialApp(
-        home: LoginScreen(
-          loginGateway: _GatewayDeTeste(repository: repository),
-          locationService: const _LocationServiceTeste(),
-          photoPicker: const _PhotoPickerTeste(),
-        ),
-      ),
-    );
+      );
 
-    await tester.enterText(
-      find.byKey(const Key('loginUserField')),
-      'tecnico@airmovebr.local',
-    );
-    await tester.enterText(
-      find.byKey(const Key('loginPasswordField')),
-      '123456',
-    );
-    await tester.tap(find.byKey(const Key('loginSubmitButton')));
-    await tester.pumpAndSettle();
-    await _openMaintenance(tester);
-    await tester.tap(find.text('Cliente API'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('stepTab_machines')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('selectEquipment_EQ-102')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('checklistReadyButton')));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byKey(const Key('saveChecklistButton')));
-    await tester.pumpAndSettle();
-    expect(find.text('Preencha: Foto do controlador com temperatura.'), findsOneWidget);
-
-    for (final code in [
-      'CFM_FOTO_CONTROLADOR',
-      'CFM_FOTO_EVAP',
-      'CFM_FOTO_COND',
-    ]) {
-      await tester.ensureVisible(find.byKey(Key('checklist_photo_$code')));
-      await tester.tap(find.byKey(Key('checklist_photo_$code')));
+      await tester.enterText(
+        find.byKey(const Key('loginUserField')),
+        'tecnico@airmovebr.local',
+      );
+      await tester.enterText(
+        find.byKey(const Key('loginPasswordField')),
+        '123456',
+      );
+      await tester.tap(find.byKey(const Key('loginSubmitButton')));
       await tester.pumpAndSettle();
-    }
+      await _openMaintenance(tester);
+      await tester.tap(find.text('Cliente API'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('stepTab_machines')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('selectEquipment_EQ-102')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('checklistReadyButton')));
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('saveChecklistButton')));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('saveChecklistButton')));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Preencha: Foto do controlador com temperatura.'),
+        findsOneWidget,
+      );
 
-    expect(repository.savedChecklistResponses, {
-      'CFM_FOTO_CONTROLADOR': '/storage/os/OS-API/checklist/EQ-102/CFM_FOTO_CONTROLADOR.jpg',
-      'CFM_FOTO_EVAP': '/storage/os/OS-API/checklist/EQ-102/CFM_FOTO_EVAP.jpg',
-      'CFM_FOTO_COND': '/storage/os/OS-API/checklist/EQ-102/CFM_FOTO_COND.jpg',
-    });
-  });
+      for (final code in [
+        'CFM_FOTO_CONTROLADOR',
+        'CFM_FOTO_EVAP',
+        'CFM_FOTO_COND',
+      ]) {
+        await tester.ensureVisible(find.byKey(Key('checklist_photo_$code')));
+        await tester.tap(find.byKey(Key('checklist_photo_$code')));
+        await tester.pumpAndSettle();
+      }
+
+      await tester.tap(find.byKey(const Key('saveChecklistButton')));
+      await tester.pumpAndSettle();
+
+      expect(repository.savedChecklistResponses, {
+        'CFM_FOTO_CONTROLADOR':
+            '/storage/os/OS-API/checklist/EQ-102/CFM_FOTO_CONTROLADOR.jpg',
+        'CFM_FOTO_EVAP':
+            '/storage/os/OS-API/checklist/EQ-102/CFM_FOTO_EVAP.jpg',
+        'CFM_FOTO_COND':
+            '/storage/os/OS-API/checklist/EQ-102/CFM_FOTO_COND.jpg',
+      });
+    },
+  );
 
   testWidgets('salvar checklist vazio mostra item obrigatorio faltando', (
     tester,
@@ -1127,6 +1133,7 @@ void main() {
     await gesture.moveBy(const Offset(80, 30));
     await gesture.up();
     await tester.pumpAndSettle();
+    await _signPad(tester, const Key('technicianSignaturePad'));
     await tester.ensureVisible(find.byKey(const Key('finishWorkOrderButton')));
     final finishButton = tester.widget<FilledButton>(
       find.byKey(const Key('finishWorkOrderButton')),
@@ -1152,8 +1159,13 @@ void main() {
     expect(repository.syncPendingCalls, 1);
     expect(repository.finishedOrderId, 'OS-API');
     expect(repository.finishInput?.responsibleName, 'Cliente Teste');
+    expect(repository.finishInput?.technicianName, 'Joao Tecnico');
     expect(
       repository.finishInput?.signatureBase64,
+      startsWith('data:image/png;base64,'),
+    );
+    expect(
+      repository.finishInput?.technicianSignatureBase64,
       startsWith('data:image/png;base64,'),
     );
     expect(repository.finishInput?.latitude, -23.3048);
@@ -1202,6 +1214,7 @@ void main() {
           locationService: const _LocationServiceTeste(),
           photoPicker: const _PhotoPickerTeste(),
           barcodeScanner: const _BarcodeScannerTeste(null),
+          technicianName: 'Joao Tecnico',
         ),
       ),
     );
@@ -1220,6 +1233,7 @@ void main() {
     await gesture.moveBy(const Offset(80, 30));
     await gesture.up();
     await tester.pumpAndSettle();
+    await _signPad(tester, const Key('technicianSignaturePad'));
     await tester.ensureVisible(find.byKey(const Key('finishWorkOrderButton')));
     final finishButton = tester.widget<FilledButton>(
       find.byKey(const Key('finishWorkOrderButton')),
@@ -1239,7 +1253,10 @@ void main() {
       ),
       findsNothing,
     );
-    expect(find.text('Finalizacao aguardando sincronizacao.'), findsOneWidget);
+    expect(
+      repository.finishInput?.technicianSignatureBase64,
+      startsWith('data:image/png;base64,'),
+    );
   });
 
   testWidgets('falha ao finalizar OS mostra motivo visivel ao tecnico', (
@@ -1323,6 +1340,7 @@ void main() {
     await gesture.moveBy(const Offset(80, 30));
     await gesture.up();
     await tester.pumpAndSettle();
+    await _signPad(tester, const Key('technicianSignaturePad'));
     await tester.ensureVisible(find.byKey(const Key('finishWorkOrderButton')));
     final finishButton = tester.widget<FilledButton>(
       find.byKey(const Key('finishWorkOrderButton')),
@@ -1388,6 +1406,13 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('stepTab_finish')));
     await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('responsibleNameField')),
+      'Teste AIRMOVEBR',
+    );
+    await _signPad(tester, const Key('signaturePad'));
+    await _signPad(tester, const Key('technicianSignaturePad'));
 
     final nameField = tester.widget<TextField>(
       find.byKey(const Key('responsibleNameField')),
@@ -1973,6 +1998,14 @@ Future<void> _confirmSafetyAndStart(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+Future<void> _signPad(WidgetTester tester, Key key) async {
+  await tester.ensureVisible(find.byKey(key));
+  final gesture = await tester.startGesture(tester.getCenter(find.byKey(key)));
+  await gesture.moveBy(const Offset(80, 30));
+  await gesture.up();
+  await tester.pumpAndSettle();
+}
+
 class _GatewayComFalha implements MobileLoginGateway {
   const _GatewayComFalha();
 
@@ -1993,6 +2026,7 @@ class _GatewayDeTeste implements MobileLoginGateway {
     return LoginSession(
       repository: repository,
       fleetRepository: fleetRepository ?? FakeFleetRepository(),
+      technicianName: 'Joao Tecnico',
     );
   }
 }

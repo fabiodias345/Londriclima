@@ -19,6 +19,7 @@ class DashboardScreen extends StatefulWidget {
     required this.locationService,
     required this.photoPicker,
     required this.barcodeScanner,
+    this.technicianName = '',
   });
 
   final WorkOrderRepository repository;
@@ -26,6 +27,7 @@ class DashboardScreen extends StatefulWidget {
   final LocationService locationService;
   final ChecklistPhotoPicker photoPicker;
   final BarcodeScannerService barcodeScanner;
+  final String technicianName;
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -111,6 +113,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           locationService: widget.locationService,
           photoPicker: widget.photoPicker,
           barcodeScanner: widget.barcodeScanner,
+          technicianName: widget.technicianName,
         ),
       ),
     );

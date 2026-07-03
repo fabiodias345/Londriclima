@@ -41,6 +41,8 @@ function criarService(prisma: unknown, options: { onSalvarAssinatura?: () => voi
 const finalizarDto = {
   assinatura_cliente_base64: `data:image/png;base64,${assinaturaPngTeste}`,
   nome_responsavel_assinatura: "Maria Souza",
+  assinatura_tecnico_base64: `data:image/png;base64,${assinaturaPngTeste}`,
+  nome_tecnico_assinatura: "Joao Tecnico",
   latitude: -23.3048,
   longitude: -51.1701,
   finalizado_em: "2026-06-10T12:05:00-03:00"
@@ -620,6 +622,14 @@ test("finalizarOs conclui a OS, registra assinatura, evento e automacoes", async
   assert.equal(
     (chamadas.assinaturaData as { nomeResponsavel: string }).nomeResponsavel,
     "Maria Souza"
+  );
+  assert.equal(
+    (chamadas.assinaturaData as { nomeTecnico: string }).nomeTecnico,
+    "Joao Tecnico"
+  );
+  assert.equal(
+    (chamadas.assinaturaData as { assinaturaTecnicoStorageUrl: string }).assinaturaTecnicoStorageUrl,
+    "/storage/os/os-1/assinatura.png"
   );
   assert.equal((chamadas.eventoData as { acao: OrdemServicoEventoAcao }).acao, OrdemServicoEventoAcao.finalizar);
   assert.deepEqual(chamadas.updateData, {

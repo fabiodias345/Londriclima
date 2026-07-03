@@ -645,6 +645,8 @@ model OrdemServicoAssinatura {
   ordemServicoId String @unique @map("ordem_servico_id") @db.Uuid
   nomeResponsavel String @map("nome_responsavel")
   storageUrl String @map("storage_url")
+  nomeTecnico String? @map("nome_tecnico")
+  assinaturaTecnicoStorageUrl String? @map("assinatura_tecnico_storage_url")
   latitude Decimal @db.Decimal(10, 7)
   longitude Decimal @db.Decimal(10, 7)
   assinadoEm DateTime @map("assinado_em")

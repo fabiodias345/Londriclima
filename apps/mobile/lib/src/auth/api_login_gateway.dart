@@ -47,6 +47,10 @@ class ApiLoginGateway implements MobileLoginGateway {
           remote: ApiWorkOrderRepository(baseUrl: baseUrl, token: token),
         ),
         fleetRepository: ApiFleetRepository(baseUrl: baseUrl, token: token),
+        technicianName:
+            (decoded['usuario'] as Map<String, dynamic>?)?['nome']
+                ?.toString() ??
+            '',
       );
     } finally {
       client.close(force: true);

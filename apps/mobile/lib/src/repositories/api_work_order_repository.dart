@@ -214,6 +214,8 @@ class ApiWorkOrderRepository implements WorkOrderRepository {
         jsonEncode({
           'assinatura_cliente_base64': input.signatureBase64,
           'nome_responsavel_assinatura': input.responsibleName,
+          'assinatura_tecnico_base64': input.technicianSignatureBase64,
+          'nome_tecnico_assinatura': input.technicianName,
           'latitude': input.latitude,
           'longitude': input.longitude,
           'finalizado_em': input.finalizedAt.toIso8601String(),

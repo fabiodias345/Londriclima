@@ -1,9 +1,13 @@
-import { EvidenciaTipo, OrdemServicoTipoServico } from "@prisma/client";
+import { CategoriaAtendimento, ChecklistTipo, EvidenciaTipo, OrdemServicoTipoServico } from "@prisma/client";
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { normalizarImagemPdf } from "./ordens-servico-pdf-image.util";
+import { OrdensServicoRelatorioCamaraFriaRenderer } from "./ordens-servico-relatorio-camara-fria-renderer";
 
 type RelatorioTecnicoInput = {
+  osId?: string;
+  categoriaServico?: CategoriaAtendimento;
+  checklistTipo?: ChecklistTipo;
   clienteNome: string;
   clienteDocumento: string | null;
   clienteEmail: string | null;
@@ -14,15 +18,57 @@ type RelatorioTecnicoInput = {
   finalizadoEm: Date;
   assinaturaUrl: string;
   nomeResponsavelAssinatura: string;
+  assinaturaTecnicoUrl?: string;
+  nomeTecnicoAssinatura?: string;
   storageRoot: string;
   totalMaquinas: number;
-  equipamento: { marca?: string | null; modelo?: string | null; gasRefrigerante?: string | null } | null;
+  equipamento: {
+    id?: string | null;
+    tipo?: string | null;
+    marca?: string | null;
+    modelo?: string | null;
+    numeroSerie?: string | null;
+    codigoBarras?: string | null;
+    localInstalacao?: string | null;
+    gasRefrigerante?: string | null;
+  } | null;
+  equipamentos?: Array<{
+    id: string;
+    tipo?: string | null;
+    marca?: string | null;
+    modelo?: string | null;
+    numeroSerie?: string | null;
+    codigoQr?: string | null;
+    localInstalacao?: string | null;
+    gasRefrigerante?: string | null;
+  }>;
   evidencias: Array<{ tipo: EvidenciaTipo; descricao: string | null; storageUrl: string; criadoEm: Date }>;
-  checklistRespostas: Array<{ codigo: string; valor: string; observacao: string | null }>;
+  checklistRespostas: Array<{
+    equipamentoId?: string | null;
+    codigo: string;
+    tipo?: string;
+    valor: string;
+    observacao: string | null;
+  }>;
 };
 
 export class OrdensServicoRelatorioTecnicoRenderer {
   renderizar(input: RelatorioTecnicoInput) {
+    if (input.categoriaServico === CategoriaAtendimento.camara_fria) {
+      return new OrdensServicoRelatorioCamaraFriaRenderer().renderizar({
+        ...input,
+        osId: input.osId ?? input.titulo,
+        categoriaServico: CategoriaAtendimento.camara_fria,
+        checklistTipo: input.checklistTipo ?? ChecklistTipo.mensal,
+        assinaturaTecnicoUrl: input.assinaturaTecnicoUrl ?? input.assinaturaUrl,
+        nomeTecnicoAssinatura: input.nomeTecnicoAssinatura ?? "não informado",
+        equipamento: input.equipamento ? {
+          ...input.equipamento,
+          codigoQr: input.equipamento.codigoBarras
+        } : null,
+        equipamentos: input.equipamentos ?? []
+      });
+    }
     const checklistLinhas = this.formatarChecklist(input.checklistRespostas);
     const evidenciaLinhas = this.formatarEvidencias(input.evidencias);
     const imagens = [

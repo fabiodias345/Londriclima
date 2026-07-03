@@ -15,10 +15,8 @@ Somente pendencias e proximos passos. Historico concluido fica no Git e nos test
 
 Executar e validar uma fase antes de iniciar a seguinte.
 
-4. **Fase 4 - checklist no APK:** implementar perguntas, respostas, descricao condicional e temperatura em graus Celsius.
-5. **Fase 5 - fotos:** exigir fotos da evaporadora, condensadora e controlador.
-6. **Fase 6 - assinatura do tecnico:** adicionar nome e assinatura do tecnico ao final de todos os checklists, mantendo a assinatura do responsavel.
-7. **Fase 7 - relatorio Camara Fria:** gerar PDF com dados da O.S., checklist, fotos e assinaturas conforme o modelo recebido.
+6. **Fase 6 - assinatura do tecnico:** implementada localmente; falta gerar/instalar o APK e validar as duas assinaturas no aparelho.
+7. **Fase 7 - relatorio Camara Fria:** implementada e validada com PDF simulado; falta deploy e conferencia com uma O.S. real.
 8. **Fase 8 - componentes PDF:** separar cabecalho, cartoes, checklist, fotos e assinaturas em arquivos reutilizaveis.
 9. **Fase 9 - relatorios avulsos:** aplicar o novo padrao visual.
 10. **Fase 10 - relatorios PMOC:** aplicar o padrao visual sem remover ART, engenheiro, periodicidade ou dados obrigatorios.

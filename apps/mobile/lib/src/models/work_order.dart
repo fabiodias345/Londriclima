@@ -191,6 +191,8 @@ class FinalizeWorkOrderInput {
   const FinalizeWorkOrderInput({
     required this.signatureBase64,
     required this.responsibleName,
+    this.technicianSignatureBase64 = '',
+    this.technicianName = '',
     required this.latitude,
     required this.longitude,
     required this.finalizedAt,
@@ -198,6 +200,8 @@ class FinalizeWorkOrderInput {
 
   final String signatureBase64;
   final String responsibleName;
+  final String technicianSignatureBase64;
+  final String technicianName;
   final double latitude;
   final double longitude;
   final DateTime finalizedAt;

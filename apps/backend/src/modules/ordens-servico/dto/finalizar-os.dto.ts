@@ -10,6 +10,14 @@ export class FinalizarOsDto {
   @IsNotEmpty()
   nome_responsavel_assinatura: string;
 
+  @IsString()
+  @IsNotEmpty()
+  assinatura_tecnico_base64?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  nome_tecnico_assinatura?: string;
+
   @Type(() => Number)
   @IsNumber()
   @Min(-90)

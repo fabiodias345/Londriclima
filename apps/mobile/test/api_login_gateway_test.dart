@@ -9,10 +9,16 @@ void main() {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     Map<String, dynamic>? payload;
     final subscription = server.listen((request) async {
-      payload = jsonDecode(await utf8.decoder.bind(request).join())
-          as Map<String, dynamic>;
+      payload =
+          jsonDecode(await utf8.decoder.bind(request).join())
+              as Map<String, dynamic>;
       request.response.headers.contentType = ContentType.json;
-      request.response.write(jsonEncode({'access_token': 'token-teste'}));
+      request.response.write(
+        jsonEncode({
+          'access_token': 'token-teste',
+          'usuario': {'nome': 'Joao Tecnico'},
+        }),
+      );
       await request.response.close();
     });
 
@@ -22,6 +28,7 @@ void main() {
     final session = await gateway.login('tecnico', '123456');
 
     expect(session, isNotNull);
+    expect(session?.technicianName, 'Joao Tecnico');
     expect(payload, {'login': 'tecnico', 'senha': '123456'});
 
     await subscription.cancel();
