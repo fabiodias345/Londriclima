@@ -123,6 +123,8 @@ test("gerarPdfPmocCliente retorna PDF com nome de arquivo e conteudo oficial", a
   assert.equal(resposta.buffer.subarray(0, 4).toString("utf8"), "%PDF");
   const pdf = resposta.buffer.toString("latin1");
   assert.match(pdf, /Maria Souza/);
+  assert.match(pdf, /RELATÓRIO TÉCNICO PMOC/);
+  assert.match(pdf, /Documento PMOC/);
   assert.match(pdf, /PLANO DE MANUTENÇÃO, OPERAÇÃO E CONTROLE - PMOC/);
   assert.match(pdf, /Cliente\s+Maria Souza/);
   assert.match(pdf, /EMPRESA CONTRATADA/);
@@ -223,6 +225,9 @@ test("gerarPdfRelatorioAvulsoCliente usa respostas reais da corretiva sem checkl
   const pdf = resposta.buffer.toString("latin1");
 
   assert.match(pdf, /RELATORIO DE MANUTENCAO/);
+  assert.match(pdf, /RELATORIO TECNICO AVULSO/);
+  assert.match(pdf, /ORDEM DE SERVICO CONCLUIDA/);
+  assert.match(pdf, /Documento nao PMOC/);
   assert.match(pdf, /Problema encontrado\s+Motor travado/);
   assert.match(pdf, /Acao realizada\s+Motor destravado e testado/);
   assert.match(pdf, /Pecas utilizadas\s+Produtos de limpeza/);

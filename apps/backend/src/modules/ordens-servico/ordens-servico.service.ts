@@ -857,10 +857,6 @@ export class OrdensServicoService {
 
   async finalizarOs(osId: string, dto: FinalizarOsDto, usuario: AuthenticatedUser) {
     const finalizadoEm = new Date(dto.finalizado_em);
-    const assinaturaBuffer = this.criarBufferAssinatura(dto.assinatura_cliente_base64);
-    const assinaturaTecnicoBuffer = this.criarBufferAssinatura(
-      dto.assinatura_tecnico_base64 ?? dto.assinatura_cliente_base64
-    );
     let assinaturaUrl = "";
     let assinaturaTecnicoUrl = "";
     let automacoesFinalizacao: Prisma.AutomacaoAgendadaCreateManyInput[] = [];
@@ -1025,6 +1021,11 @@ export class OrdensServicoService {
       if (ordemServico.assinatura) {
         throw new ConflictException("Assinatura já registrada para esta OS.");
       }
+
+      const assinaturaBuffer = this.criarBufferAssinatura(dto.assinatura_cliente_base64);
+      const assinaturaTecnicoBuffer = this.criarBufferAssinatura(
+        dto.assinatura_tecnico_base64 ?? dto.assinatura_cliente_base64
+      );
 
       assinaturaUrl = await this.salvarAssinatura(osId, assinaturaBuffer);
       assinaturaTecnicoUrl = await this.salvarAssinatura(

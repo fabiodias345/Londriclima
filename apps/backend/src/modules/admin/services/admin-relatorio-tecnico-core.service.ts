@@ -37,6 +37,15 @@ import { AdminPreChamadosService } from "./admin-pre-chamados.service";
 import { AdminRecorrenciaService } from "./admin-recorrencia.service";
 import { AdminTecnicosService } from "./admin-tecnicos.service";
 import { AdminPmocPdfRendererService } from "./admin-pmoc-pdf-renderer.service";
+import {
+  carregarFotosRelatorioTecnico,
+  formatarLinhaCampoRelatorioPdf,
+  montarCabecalhoRelatorioTecnico,
+  montarCartaoRelatorioTecnico,
+  montarLinhasAssinaturaRelatorioTecnico,
+  montarLinhasChecklistRelatorioTecnico,
+  ordenarRespostasRelatorioTecnico
+} from "./admin-relatorio-pdf-componentes";
 
 type PreviaPmocCliente = Awaited<ReturnType<AdminRelatorioTecnicoCoreService["obterPreviaPmocCliente"]>>;
 type PreviaRelatorioAvulsoCliente = Awaited<ReturnType<AdminRelatorioTecnicoCoreService["obterPreviaRelatorioAvulsoCliente"]>>;
@@ -1965,36 +1974,38 @@ export class AdminRelatorioTecnicoCoreService {
 
   private montarCapaRelatorioAvulso(previa: PreviaRelatorioAvulsoCliente) {
     return [
-      "AIRMOVEBR - RELATORIO DE MANUTENCAO",
-      "Documento emitido automaticamente pela plataforma AIRMOVEBR",
+      "AIRMOVEBR - RELATORIO TECNICO AVULSO",
+      "Documento nao PMOC emitido automaticamente pela plataforma AIRMOVEBR",
       "",
       `Data: ${this.formatarDataPmoc(new Date().toISOString())}`,
       "",
-      "DADOS DA EMPRESA",
-      this.formatarLinhaCampoPmoc("Campo", "Informacao"),
-      this.formatarLinhaCampoPmoc("Razao Social", "AIRMOVEBR"),
-      this.formatarLinhaCampoPmoc("Base operacional", "Londrina, PR"),
-      this.formatarLinhaCampoPmoc("Dominio", "airmovebr.com.br"),
+      ...montarCartaoRelatorioTecnico("RELATORIO DE MANUTENCAO", [
+        ["Tipo de documento", "Documento nao PMOC"],
+        ["Status", "ORDEM DE SERVICO CONCLUIDA"]
+      ]),
       "",
-      "DADOS DO CLIENTE",
-      this.formatarLinhaCampoPmoc("Campo", "Informacao"),
-      this.formatarLinhaCampoPmoc("Cliente", previa.cliente.nome),
-      this.formatarLinhaCampoPmoc("Documento", previa.cliente.documento || "nao informado"),
-      this.formatarLinhaCampoPmoc("E-mail", previa.cliente.email || "pendente"),
-      this.formatarLinhaCampoPmoc("Endereco", this.formatarEnderecoPmoc(previa.cliente.endereco)),
+      ...montarCartaoRelatorioTecnico("DADOS DA EMPRESA", [
+        ["Campo", "Informacao"],
+        ["Razao Social", "AIRMOVEBR"],
+        ["Base operacional", "Londrina, PR"],
+        ["Dominio", "airmovebr.com.br"]
+      ]),
       "",
-      "EQUIPE RESPONSAVEL",
-      this.formatarLinhaCampoPmoc("Campo", "Informacao"),
-      this.formatarLinhaCampoPmoc(
-        "Periodo",
-        `${this.formatarDataPmoc(previa.periodo.inicio)} a ${this.formatarDataPmoc(previa.periodo.fim)}`
-      ),
-      this.formatarLinhaCampoPmoc(
-        "Total de OS Concluidas",
-        String(previa.total_os_concluidas)
-      ),
-      this.formatarLinhaCampoPmoc("Total de Maquinas", String(previa.total_maquinas)),
-      this.formatarLinhaCampoPmoc("Pendencias", previa.pendencias.join(", ") || "Nenhuma"),
+      ...montarCartaoRelatorioTecnico("DADOS DO CLIENTE", [
+        ["Campo", "Informacao"],
+        ["Cliente", previa.cliente.nome],
+        ["Documento", previa.cliente.documento || "nao informado"],
+        ["E-mail", previa.cliente.email || "pendente"],
+        ["Endereco", this.formatarEnderecoPmoc(previa.cliente.endereco)]
+      ]),
+      "",
+      ...montarCartaoRelatorioTecnico("EQUIPE RESPONSAVEL", [
+        ["Campo", "Informacao"],
+        ["Periodo", `${this.formatarDataPmoc(previa.periodo.inicio)} a ${this.formatarDataPmoc(previa.periodo.fim)}`],
+        ["Total de OS Concluidas", String(previa.total_os_concluidas)],
+        ["Total de Maquinas", String(previa.total_maquinas)],
+        ["Pendencias", previa.pendencias.join(", ") || "Nenhuma"]
+      ]),
       "",
       "DECLARACAO DE CONCLUSAO",
       "Este relatorio consolida o servico executado, evidencias, GPS e assinatura do cliente."
@@ -2010,33 +2021,34 @@ export class AdminRelatorioTecnicoCoreService {
     return ordens.flatMap((ordem, ordemIndice) => {
       const inicio = ordem?.agendada_para ?? ordem?.concluida_em ?? null;
       const fim = ordem?.concluida_em ?? null;
-      const servicoRealizado = this.obterLinhasServicoRelatorioAvulso(ordem);
-      const cabecalho = [
-        `MAQUINA N:${String(indice + 1).padStart(3, "0")}`,
-        `MANUTENCAO N:${String(ordemIndice + 1).padStart(3, "0")} DE ${String(ordens.length).padStart(3, "0")}`,
-        ""
-      ];
+      const servicoRealizado = montarLinhasChecklistRelatorioTecnico({
+        problemaRelatado: ordem?.problema_relatado,
+        servicoRealizado: ordem?.checklist?.servico_realizado,
+        respostas: ordem?.checklist_respostas ?? []
+      });
+      const cabecalho = montarCabecalhoRelatorioTecnico(indice, ordemIndice, ordens.length);
       const linhasServico = [
         `OS: ${ordem?.titulo || "nao informada"}`,
-        this.formatarLinhaCampoPmoc(
+        formatarLinhaCampoRelatorioPdf("Status", "ORDEM DE SERVICO CONCLUIDA"),
+        formatarLinhaCampoRelatorioPdf(
           "Data e Horario",
           `${this.formatarDataPmoc(ordem?.concluida_em ?? null)} - ${this.formatarHoraPmoc(inicio)} -> ${this.formatarHoraPmoc(fim)} (${this.calcularDuracaoPmoc(inicio, fim)})`
         ),
-        this.formatarLinhaCampoPmoc("Tecnico", this.formatarResponsavelRelatorioAvulso(ordem)),
-        this.formatarLinhaCampoPmoc("Problema relatado", ordem?.problema_relatado || "nao informado"),
-        ...servicoRealizado.map(([label, valor]) => this.formatarLinhaCampoPmoc(label, valor))
+        formatarLinhaCampoRelatorioPdf("Tecnico", this.formatarResponsavelRelatorioAvulso(ordem)),
+        formatarLinhaCampoRelatorioPdf("Problema relatado", ordem?.problema_relatado || "nao informado"),
+        ...servicoRealizado.map(([label, valor]) => formatarLinhaCampoRelatorioPdf(label, valor))
       ];
       const primeiroBlocoServico = linhasServico.slice(0, 14);
       const demaisBlocosServico = this.dividirLinhasRelatorioAvulso(linhasServico.slice(14), 18);
       const paginas: PaginaPdfTexto[] = [{
         linhas: [
           ...cabecalho,
-          "DADOS DO EQUIPAMENTO",
-          this.formatarLinhaCampoPmoc("Campo", "Informacao"),
-          ...this.obterLinhasEquipamentoRelatorioAvulso(maquina),
+          ...montarCartaoRelatorioTecnico("DADOS DO EQUIPAMENTO", [
+            ["Campo", "Informacao"],
+            ...this.obterLinhasEquipamentoRelatorioAvulso(maquina)
+          ]),
           "",
-          "SERVICO EXECUTADO",
-          this.formatarLinhaCampoPmoc("Campo", "Informacao"),
+          ...montarCartaoRelatorioTecnico("SERVICO EXECUTADO", [["Campo", "Informacao"]]),
           ...primeiroBlocoServico
         ]
       }];
@@ -2045,8 +2057,7 @@ export class AdminRelatorioTecnicoCoreService {
         paginas.push({
           linhas: [
             ...cabecalho,
-            "SERVICO EXECUTADO - CONTINUACAO",
-            this.formatarLinhaCampoPmoc("Campo", "Informacao"),
+            ...montarCartaoRelatorioTecnico("SERVICO EXECUTADO - CONTINUACAO", [["Campo", "Informacao"]]),
             ...bloco
           ]
         });
@@ -2055,11 +2066,11 @@ export class AdminRelatorioTecnicoCoreService {
       paginas.push({
         linhas: [
           ...cabecalho,
-          "EVIDENCIAS E VALIDACAO",
-          this.formatarLinhaCampoPmoc("Campo", "Informacao"),
-          this.formatarLinhaCampoPmoc("Fotos", this.formatarEvidenciasPmoc(ordem)),
-          this.formatarLinhaCampoPmoc("Coordenadas GPS", this.formatarGpsPmoc(ordem)),
-          this.formatarLinhaCampoPmoc("Assinatura do Cliente", ordem?.assinatura?.nome_responsavel || "pendente"),
+          ...montarCartaoRelatorioTecnico("EVIDENCIAS E VALIDACAO", [
+            ["Campo", "Informacao"],
+            ["Fotos", this.formatarEvidenciasPmoc(ordem)],
+            ...montarLinhasAssinaturaRelatorioTecnico(ordem)
+          ]),
           "",
           "OBSERVACOES",
           ...(ordem?.observacoes.length ? ordem.observacoes.map((observacao) => observacao.texto) : ["Sem observacoes visiveis."]),
@@ -2257,63 +2268,20 @@ export class AdminRelatorioTecnicoCoreService {
 
   private obterLinhasEquipamentoRelatorioAvulso(maquina: PreviaRelatorioAvulsoCliente["maquinas"][number]) {
     return [
-      this.formatarLinhaCampoPmoc("Identificador Interno", maquina.patrimonio || maquina.codigo_barras || "nao informado"),
-      this.formatarLinhaCampoPmoc("Marca / Modelo", `${maquina.marca || "nao informada"} ${maquina.modelo || ""}`.trim()),
-      this.formatarLinhaCampoPmoc("Fluido Refrigerante", maquina.gas_refrigerante || "pendente"),
-      this.formatarLinhaCampoPmoc("Capacidade", this.formatarCapacidadePmoc(maquina.capacidade_btu)),
-      this.formatarLinhaCampoPmoc("Ambiente Instalado", maquina.local_instalacao || "nao informado"),
-      this.formatarLinhaCampoPmoc("N de Serie", maquina.numero_serie || "nao informado"),
-      this.formatarLinhaCampoPmoc("Codigo Interno", maquina.codigo_barras || "nao informado")
-    ];
+      ["Identificador Interno", maquina.patrimonio || maquina.codigo_barras || "nao informado"],
+      ["Marca / Modelo", `${maquina.marca || "nao informada"} ${maquina.modelo || ""}`.trim()],
+      ["Fluido Refrigerante", maquina.gas_refrigerante || "pendente"],
+      ["Capacidade", this.formatarCapacidadePmoc(maquina.capacidade_btu)],
+      ["Ambiente Instalado", maquina.local_instalacao || "nao informado"],
+      ["N de Serie", maquina.numero_serie || "nao informado"],
+      ["Codigo Interno", maquina.codigo_barras || "nao informado"]
+    ] as Array<[string, string]>;
   }
 
   private carregarImagensRelatorioAvulso(
     ordem: PreviaRelatorioAvulsoCliente["maquinas"][number]["os_concluidas"][number] | null
   ) {
-    if (!ordem) {
-      return [];
-    }
-
-    const imagens: Buffer[] = [];
-    const urls = new Set<string>();
-    const hashes = new Set<string>();
-
-    for (const evidencia of ordem.evidencias) {
-      if (!evidencia.storage_url) {
-        continue;
-      }
-
-      const imagem = this.carregarArquivoStorage(evidencia.storage_url);
-      if (imagem && this.registrarImagemRelatorioAvulso(imagem, hashes)) {
-        urls.add(evidencia.storage_url);
-        imagens.push(imagem);
-      }
-    }
-
-    for (const resposta of this.ordenarRespostasRelatorioAvulso(ordem.checklist_respostas ?? [])) {
-      if (!resposta.valor?.startsWith("/storage/") || urls.has(resposta.valor)) {
-        continue;
-      }
-
-      const imagem = this.carregarArquivoStorage(resposta.valor);
-      if (imagem && this.registrarImagemRelatorioAvulso(imagem, hashes)) {
-        urls.add(resposta.valor);
-        imagens.push(imagem);
-      }
-    }
-
-    return imagens;
-  }
-
-  private registrarImagemRelatorioAvulso(imagem: Buffer, hashes: Set<string>) {
-    const hash = createHash("sha256").update(imagem).digest("hex");
-
-    if (hashes.has(hash)) {
-      return false;
-    }
-
-    hashes.add(hash);
-    return true;
+    return carregarFotosRelatorioTecnico(ordem, (storageUrl) => this.carregarArquivoStorage(storageUrl));
   }
 
   private carregarArquivoStorage(storageUrl: string) {
@@ -2537,14 +2505,7 @@ export class AdminRelatorioTecnicoCoreService {
   }
 
   private ordenarRespostasRelatorioAvulso<T extends { codigo: string }>(respostas: T[]) {
-    const ordem = this.obterOrdemRespostasRelatorioAvulso(respostas);
-    return [...respostas].sort((a, b) => {
-      const ordemA = ordem.indexOf(a.codigo);
-      const ordemB = ordem.indexOf(b.codigo);
-      const posicaoA = ordemA === -1 ? 999 : ordemA;
-      const posicaoB = ordemB === -1 ? 999 : ordemB;
-      return posicaoA === posicaoB ? a.codigo.localeCompare(b.codigo) : posicaoA - posicaoB;
-    });
+    return ordenarRespostasRelatorioTecnico(respostas);
   }
 
   private obterOrdemRespostasRelatorioAvulso(respostas: Array<{ codigo: string }>) {
@@ -2679,7 +2640,7 @@ export class AdminRelatorioTecnicoCoreService {
   }
 
   private formatarLinhaCampoPmoc(campo: string, valor: string) {
-    return `${campo.padEnd(35, " ")} ${valor || "nao informado"}`;
+    return formatarLinhaCampoRelatorioPdf(campo, valor);
   }
 
   private formatarLinhaMaquinaPmoc(maquina: PreviaPmocCliente["maquinas"][number]) {

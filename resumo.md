@@ -17,10 +17,10 @@ Executar e validar uma fase antes de iniciar a seguinte.
 
 6. **Fase 6 - assinatura do tecnico:** implementada localmente; falta gerar/instalar o APK e validar as duas assinaturas no aparelho.
 7. **Fase 7 - relatorio Camara Fria:** implementada e validada com PDF simulado; falta deploy e conferencia com uma O.S. real.
-8. **Fase 8 - componentes PDF:** separar cabecalho, cartoes, checklist, fotos e assinaturas em arquivos reutilizaveis.
-9. **Fase 9 - relatorios avulsos:** aplicar o novo padrao visual.
-10. **Fase 10 - relatorios PMOC:** aplicar o padrao visual sem remover ART, engenheiro, periodicidade ou dados obrigatorios.
-11. **Fase 11 - validacao final:** testar painel, banco, APK, finalizacao da O.S. e os tres tipos de PDF.
+8. **Fase 8 - componentes PDF:** implementada localmente; falta deploy junto da proxima publicacao.
+9. **Fase 9 - relatorios avulsos:** implementada localmente; falta deploy e conferencia com uma O.S. real.
+10. **Fase 10 - relatorios PMOC:** implementada localmente; falta deploy e conferencia com PDF real.
+11. **Fase 11 - validacao final:** validacao local concluida; falta deploy, APK no aparelho e conferencia com O.S./PDFs reais.
 
 ## Backup automatico - validacoes pendentes
 
