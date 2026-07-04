@@ -3,6 +3,7 @@ dist/
 coverage/
 .turbo/
 .cache/
+.superpowers/
 
 .env
 .env.*
