@@ -449,6 +449,21 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(script, /clientesList\.classList\.remove\("hidden"\)/);
 });
 
+test("admin organiza equipes com clientes filtraveis e membros operacionais", () => {
+  const html = read("apps/admin/index.html");
+  const script = readAdminJs();
+  const styles = readAdminCss();
+
+  assert.match(html, /id="equipeClientSearchInput"/);
+  assert.match(html, /id="equipeMembersList"/);
+  assert.match(script, /function renderEquipeClientOptions/);
+  assert.match(script, /tecnico\.role === "tecnico" \|\| tecnico\.role === "auxiliar"/);
+  assert.doesNotMatch(script, /<select name="membro_funcao_/);
+  assert.match(styles, /\.team-workspace/);
+  assert.match(styles, /\.team-client-list/);
+  assert.match(styles, /\.team-role-badge/);
+});
+
 test("admin diferencia ar-condicionado e camara fria no painel operacional", () => {
   const html = read("apps/admin/index.html");
   const script = readAdminJs();

@@ -181,6 +181,7 @@ const equipeForm = document.querySelector("#equipeForm");
 const equipeFormStatus = document.querySelector("#equipeFormStatus");
 const resetEquipeFormButton = document.querySelector("#resetEquipeFormButton");
 const equipeClientsSelect = document.querySelector("#equipeClientsSelect");
+const equipeClientSearchInput = document.querySelector("#equipeClientSearchInput");
 const equipeMembersList = document.querySelector("#equipeMembersList");
 const deleteClientModal = document.querySelector("#deleteClientModal");
 const deleteClientMessage = document.querySelector("#deleteClientMessage");

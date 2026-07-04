@@ -400,6 +400,10 @@ equipesList?.addEventListener("click", (event) => {
   }
 });
 
+equipeClientSearchInput?.addEventListener("input", () => {
+  renderEquipeClientOptions();
+});
+
 clientForm?.elements.tipo?.addEventListener("change", updateClientDocumentCopy);
 
 clientForm?.elements.telefone?.addEventListener("input", (event) => {

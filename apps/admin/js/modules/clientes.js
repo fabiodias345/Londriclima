@@ -8,7 +8,7 @@ export const clientesRoot = `
 
   for (const item of items) {
     const row = document.createElement("article");
-    row.className = "data-row";
+    row.className = "data-row team-summary-card";
     const documento = item.documentos?.[0];
     const cadastroStatus = item.primeiro_acesso_pendente
       ? "Cadastro inicial pendente"
@@ -202,22 +202,28 @@ function renderEquipes(items) {
   equipesList.innerHTML = "";
 
   if (!items.length) {
-    equipesList.innerHTML = '<article class="data-row"><strong>Nenhuma equipe cadastrada.</strong><span>Crie equipes por cliente ou use responsáveis avulsos na OS.</span></article>';
+    equipesList.innerHTML = '<article class="data-row team-list-empty"><strong>Nenhuma equipe cadastrada.</strong><span>Crie equipes com técnicos e auxiliares para acelerar o despacho.</span></article>';
     return;
   }
 
   for (const item of items) {
     const row = document.createElement("article");
     row.className = "data-row";
-    const membros = item.membros.map((membro) => \`\${membro.usuario.nome} (\${formatTeamRole(membro.funcao)})\`).join(", ");
-    const clientes = item.clientes.map((cliente) => cliente.nome).join(", ");
+    const membros = item.membros
+      .map((membro) => \`<span class="team-pill">\${escapeHtml(membro.usuario.nome)} · \${escapeHtml(formatAccessRole(membro.usuario.role))}</span>\`)
+      .join("");
+    const clientes = item.clientes
+      .map((cliente) => \`<span class="team-pill team-pill-muted">\${escapeHtml(cliente.nome)}</span>\`)
+      .join("");
     row.innerHTML = \`
       <div>
         <strong>\${escapeHtml(item.nome)}</strong>
-        <span>\${escapeHtml(clientes || "sem cliente fixo")}</span>
+        <span>\${item.clientes.length ? \`\${item.clientes.length} cliente(s) vinculado(s)\` : "Sem cliente vinculado"}</span>
       </div>
       <div>
-        <span>\${escapeHtml(membros || "sem membros")}</span>
+        <span>\${item.membros.length ? \`\${item.membros.length} membro(s) na equipe\` : "Sem membros"}</span>
+        <div class="team-pill-row">\${clientes || '<span class="team-pill team-pill-muted">Atendimento flexível</span>'}</div>
+        <div class="team-pill-row">\${membros || '<span class="team-pill">Sem membros</span>'}</div>
       </div>
       <div class="data-row-actions">
         <button class="secondary-button compact-button" type="button" data-action="editar-equipe" data-id="\${item.id}">Editar</button>
@@ -263,14 +269,36 @@ function renderClientTechnicianOptions(selectedId = clientTechnicianSelect?.valu
   }
 }
 
-function renderEquipeClientOptions(selectedIds = getSelectedValues(equipeClientsSelect)) {
+function getSelectedEquipeClientIds() {
+  if (!equipeClientsSelect) {
+    return [];
+  }
+
+  return [...equipeClientsSelect.querySelectorAll('input[name="cliente_ids"]:checked')]
+    .map((input) => input.value)
+    .filter(Boolean);
+}
+
+function renderEquipeClientOptions(selectedIds = getSelectedEquipeClientIds()) {
   if (!equipeClientsSelect) {
     return;
   }
 
-  equipeClientsSelect.innerHTML = latestClients
-    .map((item) => \`<option value="\${item.id}" \${selectedIds.includes(item.id) ? "selected" : ""}>\${escapeHtml(item.nome)}</option>\`)
+  const search = String(equipeClientSearchInput?.value || "").trim().toLowerCase();
+  const items = latestClients.filter((item) => !search || item.nome.toLowerCase().includes(search));
+
+  equipeClientsSelect.innerHTML = items
+    .map((item) => \`
+      <label class="team-client-option">
+        <input name="cliente_ids" type="checkbox" value="\${item.id}" \${selectedIds.includes(item.id) ? "checked" : ""} />
+        <span>\${escapeHtml(item.nome)}</span>
+      </label>
+    \`)
     .join("");
+
+  if (!items.length) {
+    equipeClientsSelect.innerHTML = '<span class="team-helper-text">Nenhum cliente encontrado.</span>';
+  }
 }
 
 function renderEquipeMembersList(selectedMembers = []) {
@@ -278,24 +306,24 @@ function renderEquipeMembersList(selectedMembers = []) {
     return;
   }
 
-  if (!latestTecnicos.length) {
-    equipeMembersList.innerHTML = '<span>Cadastre acessos antes de montar equipes.</span>';
+  const operacionais = latestTecnicos.filter((tecnico) => tecnico.role === "tecnico" || tecnico.role === "auxiliar");
+
+  if (!operacionais.length) {
+    equipeMembersList.innerHTML = '<span>Cadastre técnicos ou auxiliares antes de montar equipes.</span>';
     return;
   }
 
-  equipeMembersList.innerHTML = latestTecnicos.map((tecnico) => {
+  equipeMembersList.innerHTML = operacionais.map((tecnico) => {
     const selected = selectedMembers.find((membro) => membro.usuario_id === tecnico.id);
     const funcao = selected?.funcao || (tecnico.role === "auxiliar" ? "auxiliar" : "tecnico");
+    const label = funcao === "lider" ? "Líder" : formatAccessRole(tecnico.role);
 
     return \`
       <label class="team-member-option">
         <input name="membro_usuario_id" type="checkbox" value="\${tecnico.id}" \${selected ? "checked" : ""} />
-        <span>\${escapeHtml(tecnico.nome)} - \${escapeHtml(formatAccessRole(tecnico.role))}</span>
-        <select name="membro_funcao_\${tecnico.id}">
-          <option value="lider" \${funcao === "lider" ? "selected" : ""}>Lider</option>
-          <option value="tecnico" \${funcao === "tecnico" ? "selected" : ""}>Tecnico</option>
-          <option value="auxiliar" \${funcao === "auxiliar" ? "selected" : ""}>Auxiliar</option>
-        </select>
+        <input name="membro_funcao_\${tecnico.id}" type="hidden" value="\${funcao}" />
+        <span>\${escapeHtml(tecnico.nome)}</span>
+        <strong class="team-role-badge team-role-\${escapeHtml(funcao === "lider" ? "lider" : tecnico.role)}">\${escapeHtml(label)}</strong>
       </label>
     \`;
   }).join("");

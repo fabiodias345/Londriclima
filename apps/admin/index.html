@@ -915,30 +915,46 @@
 
         <section class="worklist hidden" id="equipesView">
           <div class="worklist-header">
-            <h2>Equipes por cliente</h2>
+            <div>
+              <h2>Equipes operacionais</h2>
+              <p>Monte equipes com tecnicos e auxiliares, vinculando clientes somente quando fizer sentido.</p>
+            </div>
             <p id="equipesStatus" role="status">Carregando...</p>
           </div>
-          <form class="client-form" id="equipeForm">
-            <input name="id" type="hidden" />
-            <label>
-              Nome da equipe
-              <input name="nome" type="text" placeholder="Equipe 01 HU" required />
-            </label>
-            <label>
-              Clientes vinculados
-              <select name="cliente_ids" id="equipeClientsSelect" multiple size="4"></select>
-            </label>
-            <fieldset class="form-fieldset">
-              <legend>Membros</legend>
-              <div class="checkbox-list" id="equipeMembersList"></div>
-            </fieldset>
-            <div class="form-actions">
-              <button type="submit">Salvar equipe</button>
-              <button class="secondary-button" id="resetEquipeFormButton" type="button">Nova</button>
-            </div>
-            <p class="status" id="equipeFormStatus" role="status"></p>
-          </form>
-          <div class="data-list" id="equipesList"></div>
+          <div class="team-workspace">
+            <form class="client-form team-form" id="equipeForm">
+              <input name="id" type="hidden" />
+              <div class="team-form-hero">
+                <div>
+                  <span class="kicker">Montagem rapida</span>
+                  <h3>Nova equipe</h3>
+                  <p>Admins nao entram aqui. A funcao de cada membro vem do proprio cadastro de acesso.</p>
+                </div>
+              </div>
+              <label>
+                Nome da equipe
+                <input name="nome" type="text" placeholder="Equipe Hospital Zona Sul" required />
+              </label>
+              <fieldset class="form-fieldset team-client-picker">
+                <legend>Clientes vinculados</legend>
+                <label class="team-search-field">
+                  <span>Buscar cliente</span>
+                  <input id="equipeClientSearchInput" type="search" placeholder="Digite para filtrar clientes" />
+                </label>
+                <div class="team-client-list" id="equipeClientsSelect"></div>
+              </fieldset>
+              <fieldset class="form-fieldset team-members-panel">
+                <legend>Membros disponiveis</legend>
+                <div class="checkbox-list team-member-grid" id="equipeMembersList"></div>
+              </fieldset>
+              <div class="form-actions">
+                <button type="submit">Salvar equipe</button>
+                <button class="secondary-button" id="resetEquipeFormButton" type="button">Nova</button>
+              </div>
+              <p class="status" id="equipeFormStatus" role="status"></p>
+            </form>
+            <div class="data-list team-list" id="equipesList"></div>
+          </div>
         </section>
 
         <section class="worklist pmoc-workspace hidden" id="pmocView">
