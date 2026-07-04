@@ -14,6 +14,7 @@ import { SalvarOsAgendaDto } from "./dto/salvar-os-agenda.dto";
 import { SalvarPlanoRecorrenciaDto } from "./dto/salvar-plano-recorrencia.dto";
 import { SalvarTecnicoDto } from "./dto/salvar-tecnico.dto";
 import { EncaminharConviteTecnicoDto } from "./dto/encaminhar-convite-tecnico.dto";
+import { GerarConviteTecnicoDto } from "./dto/gerar-convite-tecnico.dto";
 import { SalvarVeiculoDto } from "./dto/salvar-veiculo.dto";
 import { AdminService } from "./admin.service";
 
@@ -243,8 +244,8 @@ export class AdminController {
   }
 
   @Post("convites-tecnico")
-  gerarConviteTecnico(@CurrentUser() usuario: AuthenticatedUser) {
-    return this.adminService.gerarConviteTecnico(usuario);
+  gerarConviteTecnico(@Body() dto: GerarConviteTecnicoDto, @CurrentUser() usuario: AuthenticatedUser) {
+    return this.adminService.gerarConviteTecnico(dto, usuario);
   }
 
   @Get("convites-tecnico")

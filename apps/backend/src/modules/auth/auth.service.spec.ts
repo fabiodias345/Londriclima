@@ -313,3 +313,94 @@ test("finalizar primeiro acesso troca a senha, desativa a pendencia e emite toke
   });
 });
 
+test("cadastro com convite cria usuario com role auxiliar definida no convite", async () => {
+  const chamadas = {
+    usuarioCreate: undefined as unknown,
+    conviteUpdate: undefined as unknown,
+    documentoCreate: undefined as unknown,
+    signPayloads: [] as Array<{ payload: unknown; type: string }>
+  };
+  const tx = {
+    usuario: {
+      create: async (args: unknown) => {
+        chamadas.usuarioCreate = args;
+      },
+      findFirst: async () => null
+    },
+    conviteTecnico: {
+      updateMany: async (args: unknown) => {
+        chamadas.conviteUpdate = args;
+        return { count: 1 };
+      }
+    },
+    funcionarioDocumento: {
+      create: async (args: unknown) => {
+        chamadas.documentoCreate = args;
+      }
+    }
+  };
+  const prisma = {
+    conviteTecnico: {
+      findFirst: async () => ({
+        id: "convite-1",
+        empresaId: "empresa-1",
+        expiraEm: new Date(Date.now() + 60_000),
+        role: UsuarioRole.auxiliar
+      })
+    },
+    usuario: {
+      findFirst: async () => null
+    },
+    $transaction: async (callback: (value: typeof tx) => Promise<void>) => callback(tx)
+  };
+  const passwordHashService = {
+    hash: async () => "novo-hash"
+  };
+  const tokenService = {
+    sign: (payload: unknown, type: string) => {
+      chamadas.signPayloads.push({ payload, type });
+      return {
+        token: `${type}-token`,
+        expiresIn: type === "access" ? 900 : 2_592_000
+      };
+    }
+  };
+  const funcionarioStorageService = {
+    salvarCadastro: async () => ({
+      fotoStorageUrl: "/storage/funcionarios/empresa-1/usuario-2/perfil/foto.jpg",
+      assinaturaStorageUrl: "/storage/funcionarios/empresa-1/usuario-2/perfil/assinatura.png"
+    }),
+    salvarDocumentoPdf: async () => "/storage/funcionarios/empresa-1/usuario-2/documentos/termo.pdf"
+  };
+  const funcionarioTermoService = {
+    gerar: () => ({ pdf: Buffer.from("%PDF-1.4"), sha256: "hash-termo" })
+  };
+  const service = new AuthService(
+    prisma as never,
+    passwordHashService as never,
+    tokenService as never,
+    funcionarioStorageService as never,
+    funcionarioTermoService as never
+  );
+
+  const resposta = (await service.cadastrarComConvite({
+    codigo: "ABCD-EFGH",
+    nome: "Auxiliar Convite",
+    login: "auxiliar.convite",
+    email: "auxiliar@empresa.com",
+    telefone: "43999999999",
+    cpf: "12345678901",
+    senha: "12345678",
+    termo_aceito: true
+  }, {
+    foto: { originalname: "foto.jpg", mimetype: "image/jpeg", size: 10, buffer: Buffer.from("foto") },
+    assinatura: { originalname: "assinatura.png", mimetype: "image/png", size: 10, buffer: Buffer.from("assinatura") }
+  })) as any;
+
+  assert.equal((chamadas.usuarioCreate as { data: { role: UsuarioRole } }).data.role, UsuarioRole.auxiliar);
+  assert.equal((chamadas.documentoCreate as { data: { tipo: string } }).data.tipo, "termo_responsabilidade_app");
+  assert.equal((chamadas.conviteUpdate as { where: { id: string } }).where.id, "convite-1");
+  assert.equal(resposta.usuario.role, UsuarioRole.auxiliar);
+  assert.deepEqual(chamadas.signPayloads.map((item) => item.type), ["access", "refresh"]);
+});
+

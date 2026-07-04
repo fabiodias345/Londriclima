@@ -18,6 +18,7 @@ import { SalvarOsAgendaDto } from "./dto/salvar-os-agenda.dto";
 import { SalvarPlanoRecorrenciaDto } from "./dto/salvar-plano-recorrencia.dto";
 import { SalvarTecnicoDto } from "./dto/salvar-tecnico.dto";
 import { EncaminharConviteTecnicoDto } from "./dto/encaminhar-convite-tecnico.dto";
+import { GerarConviteTecnicoDto } from "./dto/gerar-convite-tecnico.dto";
 import { SalvarVeiculoDto } from "./dto/salvar-veiculo.dto";
 import { AdminAgendaService } from "./services/admin-agenda.service";
 import { AdminClientesService } from "./services/admin-clientes.service";
@@ -298,8 +299,8 @@ export class AdminService {
     return this.tecnicosService.listarTecnicos(usuario);
   }
 
-  async gerarConviteTecnico(usuario: AuthenticatedUser) {
-    return this.convitesTecnicoService.gerar(usuario);
+  async gerarConviteTecnico(dto: GerarConviteTecnicoDto, usuario: AuthenticatedUser) {
+    return this.convitesTecnicoService.gerar(dto, usuario);
   }
 
   async listarConvitesTecnico(usuario: AuthenticatedUser) {

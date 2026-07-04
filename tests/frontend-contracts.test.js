@@ -222,6 +222,7 @@ test("admin organiza acessos, convites e exclusao definitiva", () => {
   assert.match(html, /id="openTechnicianInviteButton"[^>]*>Gerar convite/);
   assert.match(html, /id="tecnicoFormPanel"/);
   assert.match(html, /id="technicianInvitePanel"/);
+  assert.match(html, /id="technicianInviteRole"/);
   assert.match(html, /id="technicianInviteEmailForm"/);
   assert.match(html, /Aguardando configura[cç][aã]o Meta/);
   assert.match(html, /WhatsApp[\s\S]*disabled/);

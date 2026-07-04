@@ -37,6 +37,7 @@ export class AuthService {
     }
     const convite = await this.buscarConviteValido(dto.codigo);
     if (!convite) throw new BadRequestException("Convite invalido ou expirado.");
+    const role = convite.role;
 
     const nome = dto.nome.trim();
     const login = dto.login.trim().toLowerCase();
@@ -92,7 +93,7 @@ export class AuthService {
             telefone: dto.telefone,
             cpf: dto.cpf,
             senhaHash,
-            role: UsuarioRole.tecnico,
+            role,
             ativo: true,
             fotoPerfilStorageUrl: storage.fotoStorageUrl,
             assinaturaStorageUrl: storage.assinaturaStorageUrl,
@@ -134,8 +135,8 @@ export class AuthService {
     }
 
     return this.criarRespostaAutenticacao(
-      { sub: usuarioId, empresa_id: convite.empresaId, email, role: UsuarioRole.tecnico },
-      { id: usuarioId, empresa_id: convite.empresaId, nome, email, role: UsuarioRole.tecnico }
+      { sub: usuarioId, empresa_id: convite.empresaId, email, role },
+      { id: usuarioId, empresa_id: convite.empresaId, nome, email, role }
     );
   }
 
@@ -148,7 +149,7 @@ export class AuthService {
         expiraEm: { gt: new Date() },
         empresa: { ativa: true }
       },
-      select: { id: true, empresaId: true, expiraEm: true }
+      select: { id: true, empresaId: true, expiraEm: true, role: true }
     });
   }
 

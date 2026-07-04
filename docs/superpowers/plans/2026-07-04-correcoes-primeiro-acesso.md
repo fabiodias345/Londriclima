@@ -10,6 +10,10 @@
 
 ---
 
+## Extensao aprovada em 2026-07-04
+
+- [ ] Ajustar o convite para escolher e persistir a funcao `tecnico` ou `auxiliar` no admin e no backend.
+
 ### Task 1: Corrigir abertura do primeiro cadastro
 
 **Files:**

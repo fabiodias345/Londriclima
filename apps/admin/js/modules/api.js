@@ -166,6 +166,7 @@ const tecnicoFormPanel = document.querySelector("#tecnicoFormPanel");
 const openTechnicianInviteButton = document.querySelector("#openTechnicianInviteButton");
 const closeTechnicianInviteButton = document.querySelector("#closeTechnicianInviteButton");
 const technicianInvitePanel = document.querySelector("#technicianInvitePanel");
+const technicianInviteRole = document.querySelector("#technicianInviteRole");
 const generateTechnicianInviteButton = document.querySelector("#generateTechnicianInviteButton");
 const technicianInviteStatus = document.querySelector("#technicianInviteStatus");
 const generatedTechnicianInvite = document.querySelector("#generatedTechnicianInvite");

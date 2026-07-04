@@ -103,6 +103,7 @@ function renderTechnicianInvites(items) {
     const row = document.createElement("article");
     row.className = "data-row";
     const labels = { pendente: "Pendente", utilizado: "Utilizado", vencido: "Vencido", cancelado: "Cancelado" };
+    const roleLabel = item.role === "auxiliar" ? "Auxiliar" : "Técnico";
     const tecnico = item.tecnico
       ? '<span>Cadastro: ' + escapeHtml(item.tecnico.nome) + ' (' + escapeHtml(item.tecnico.login || "") + ')</span>'
       : "";
@@ -110,7 +111,7 @@ function renderTechnicianInvites(items) {
       ? '<button class="danger-button compact-button" type="button" data-action="cancelar-convite-tecnico" data-id="' + escapeHtml(item.id) + '">Cancelar</button>'
       : "";
     row.innerHTML = '<div><strong>Convite final ' + escapeHtml(item.codigo_sufixo) + '</strong>'
-      + '<span>' + escapeHtml(labels[item.estado] || item.estado) + ' - vence em ' + new Date(item.expira_em).toLocaleString("pt-BR") + '</span>'
+      + '<span>' + escapeHtml(roleLabel) + ' - ' + escapeHtml(labels[item.estado] || item.estado) + ' - vence em ' + new Date(item.expira_em).toLocaleString("pt-BR") + '</span>'
       + tecnico + '</div><div class="data-row-actions">' + cancelar + '</div>';
     technicianInvitesList.appendChild(row);
   }
@@ -125,8 +126,14 @@ async function loadTechnicianInvites() {
 async function generateTechnicianInvite() {
   generateTechnicianInviteButton.disabled = true;
   technicianInviteStatus.textContent = "Gerando convite...";
+  const role = technicianInviteRole?.value === "auxiliar" ? "auxiliar" : "tecnico";
+  const roleLabel = role === "auxiliar" ? "Auxiliar" : "Técnico";
   try {
-    const response = await fetch(apiBaseUrl + "/admin/convites-tecnico", { method: "POST", headers: authHeaders() });
+    const response = await fetch(apiBaseUrl + "/admin/convites-tecnico", {
+      method: "POST",
+      headers: { ...authHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ role })
+    });
     if (await handleUnauthorized(response)) return;
     const result = await response.json().catch(() => ({}));
     if (!response.ok) {
@@ -137,7 +144,7 @@ async function generateTechnicianInvite() {
     generatedTechnicianInviteId = result.id;
     generatedTechnicianInviteExpiry.textContent = "Valido ate " + new Date(result.expira_em).toLocaleString("pt-BR");
     generatedTechnicianInvite.classList.remove("hidden");
-    technicianInviteStatus.textContent = "Convite gerado. Copie o codigo ou encaminhe por email.";
+    technicianInviteStatus.textContent = "Convite de " + roleLabel + " gerado. Copie o codigo ou encaminhe por email.";
     await loadTechnicianInvites();
   } catch {
     technicianInviteStatus.textContent = "API indisponivel.";

@@ -17,12 +17,14 @@ test("gerar convite vincula empresa, administrador e validade de 24 horas", asyn
       }
     }
   };
-  const resposta = await new AdminConvitesTecnicoService(prisma as never).gerar(admin);
+  const resposta = await new AdminConvitesTecnicoService(prisma as never).gerar({ role: "auxiliar" }, admin);
   assert.equal(data.empresaId, "empresa-1");
   assert.equal(data.criadoPorId, "admin-1");
+  assert.equal(data.role, "auxiliar");
   assert.match(data.codigoHash, /^[a-f0-9]{64}$/);
   assert.ok(data.expiraEm.getTime() - agora >= 86_399_000);
   assert.match(resposta.codigo, /^[A-Z2-9]{4}-[A-Z2-9]{4}$/);
+  assert.equal(resposta.role, "auxiliar");
 });
 
 test("cancelamento recusa convite utilizado", async () => {
@@ -52,7 +54,8 @@ test("encaminhar convite envia codigo por email", async () => {
         codigoHash: hashCodigoConvite(codigo),
         expiraEm: new Date(Date.now() + 60_000),
         canceladoEm: null,
-        usadoEm: null
+        usadoEm: null,
+        role: "auxiliar"
       })
     }
   };
@@ -72,6 +75,7 @@ test("encaminhar convite envia codigo por email", async () => {
 
   assert.equal(mensagem.to, "tecnico@exemplo.com");
   assert.match(mensagem.text, /ABCD-EFGH/);
+  assert.match(mensagem.text, /Funcao liberada: Auxiliar/);
   assert.deepEqual(resposta, { id: "convite-1", email: "tecnico@exemplo.com", enviado: true });
 });
 

@@ -24,6 +24,7 @@ Corrigir a listagem dos acessos existentes, profissionalizar o gerenciamento de 
 - manter os acessos existentes visiveis com acoes **Editar** e **Apagar**;
 - abrir o cadastro manual pelo botao **Cadastrar acesso**;
 - abrir o gerador pelo botao **Gerar convite**;
+- exigir a escolha da funcao do convite entre **Tecnico** e **Auxiliar** antes de gerar;
 - gerar um codigo curto, aleatorio e legivel, valido por 24 horas;
 - exibir o codigo completo ao administrador imediatamente apos a criacao, com validade e acao **Copiar codigo**;
 - permitir que o administrador use o codigo na hora, sem obrigar envio por email ou WhatsApp;
@@ -60,7 +61,7 @@ Corrigir a listagem dos acessos existentes, profissionalizar o gerenciamento de 
 - solicitar e validar o codigo do convite antes de abrir o formulario;
 - coletar nome completo, CPF, telefone, e-mail, login, senha, foto e assinatura;
 - exigir aceite do termo de responsabilidade;
-- criar o usuario como tecnico da empresa vinculada ao convite;
+- criar o usuario com a mesma funcao escolhida no convite, vinculado a empresa emissora;
 - gerar e armazenar o PDF do termo com foto, assinatura, versao, data e hash;
 - autenticar o tecnico e abrir o aplicativo ao concluir.
 

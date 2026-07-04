@@ -193,6 +193,7 @@ model ConviteTecnico {
   id              String    @id @default(uuid()) @db.Uuid
   empresaId       String    @map("empresa_id") @db.Uuid
   criadoPorId     String?   @map("criado_por_id") @db.Uuid
+  role            UsuarioRole
   codigoHash      String    @unique @map("codigo_hash")
   codigoSufixo    String    @map("codigo_sufixo") @db.Char(4)
   expiraEm        DateTime  @map("expira_em")

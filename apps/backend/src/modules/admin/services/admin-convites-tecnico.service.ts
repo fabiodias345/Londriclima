@@ -5,6 +5,7 @@ import { AuthenticatedUser } from "../../auth/auth-user";
 import { gerarCodigoConvite, hashCodigoConvite, normalizarCodigoConvite } from "../../auth/convite-tecnico-codigo";
 import { SmtpEmailService } from "../../automacoes/smtp-email.service";
 import { EncaminharConviteTecnicoDto } from "../dto/encaminhar-convite-tecnico.dto";
+import { GerarConviteTecnicoDto } from "../dto/gerar-convite-tecnico.dto";
 
 const VALIDADE_CONVITE_MS = 24 * 60 * 60 * 1000;
 
@@ -16,13 +17,15 @@ export class AdminConvitesTecnicoService {
     @Optional() private readonly config?: ConfigService
   ) {}
 
-  async gerar(usuario: AuthenticatedUser) {
+  async gerar(dto: GerarConviteTecnicoDto, usuario: AuthenticatedUser) {
     const codigo = gerarCodigoConvite();
     const expiraEm = new Date(Date.now() + VALIDADE_CONVITE_MS);
+    const role = dto.role === "auxiliar" ? "auxiliar" : "tecnico";
     const convite = await this.prisma.conviteTecnico.create({
       data: {
         empresaId: usuario.empresa_id,
         criadoPorId: usuario.id,
+        role,
         codigoHash: hashCodigoConvite(codigo),
         codigoSufixo: normalizarCodigoConvite(codigo).slice(-4),
         expiraEm
@@ -32,6 +35,7 @@ export class AdminConvitesTecnicoService {
     return {
       id: convite.id,
       codigo,
+      role,
       expira_em: expiraEm.toISOString(),
       criado_em: convite.criadoEm.toISOString()
     };
@@ -50,6 +54,7 @@ export class AdminConvitesTecnicoService {
         canceladoEm: true,
         usadoEm: true,
         criadoEm: true,
+        role: true,
         usuarioCriado: { select: { nome: true, login: true } }
       }
     });
@@ -58,6 +63,7 @@ export class AdminConvitesTecnicoService {
       items: convites.map((convite) => ({
         id: convite.id,
         codigo_sufixo: convite.codigoSufixo,
+        role: convite.role,
         estado: convite.usadoEm
           ? "utilizado"
           : convite.canceladoEm
@@ -90,7 +96,7 @@ export class AdminConvitesTecnicoService {
   async encaminharEmail(conviteId: string, dto: EncaminharConviteTecnicoDto, usuario: AuthenticatedUser) {
     const convite = await this.prisma.conviteTecnico.findFirst({
       where: { id: conviteId, empresaId: usuario.empresa_id },
-      select: { id: true, codigoHash: true, expiraEm: true, canceladoEm: true, usadoEm: true }
+      select: { id: true, codigoHash: true, expiraEm: true, canceladoEm: true, usadoEm: true, role: true }
     });
     if (!convite) throw new NotFoundException("Convite nao encontrado.");
     if (convite.canceladoEm || convite.usadoEm || convite.expiraEm <= new Date()) {
@@ -112,6 +118,7 @@ export class AdminConvitesTecnicoService {
         subject: "Convite para acesso AIRMOVEBR",
         text: [
           "Voce recebeu um convite para acessar o aplicativo AIRMOVEBR.",
+          `Funcao liberada: ${convite.role === "auxiliar" ? "Auxiliar" : "Tecnico"}`,
           "",
           `Codigo: ${dto.codigo.trim().toUpperCase()}`,
           `Valido ate: ${convite.expiraEm.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}`,
