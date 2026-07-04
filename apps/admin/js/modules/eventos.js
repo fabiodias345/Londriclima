@@ -71,9 +71,14 @@ function setFleetTab(tab) {
   }
 }
 
-function setOsTab(tab) {
+function setOsTab(tab, options = {}) {
   activeOsTab = tab;
-  closeOsDetail();
+  const shouldPreserveDetail = Boolean(options.preserveDetail && selectedOsDetailId);
+
+  if (!shouldPreserveDetail) {
+    closeOsDetail();
+  }
+
   updateOsSummaryCards();
   updateOsTabCounts();
 
@@ -87,6 +92,10 @@ function setOsTab(tab) {
   }
 
   renderOsAgendaItems(filterOsAgendaItems(latestAgendaItems));
+
+  if (shouldPreserveDetail) {
+    openOsDetail(selectedOsDetailId);
+  }
 }
 
 function updateOsSummaryCards() {

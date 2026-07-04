@@ -469,7 +469,7 @@ async function loadOsWorkbench() {
     loadAgendaForOsWorkbench()
   ]);
 
-  setOsTab(activeOsTab);
+  setOsTab(activeOsTab, { preserveDetail: true });
 }
 
 function setActiveView(view) {
