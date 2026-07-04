@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { AuthModule } from "../auth/auth.module";
+import { AutomacoesModule } from "../automacoes/automacoes.module";
 import { AdminController } from "./admin.controller";
 import { AdminService } from "./admin.service";
 import { AdminAgendaService } from "./services/admin-agenda.service";
@@ -19,7 +20,7 @@ import { AdminTecnicosService } from "./services/admin-tecnicos.service";
 import { AdminConvitesTecnicoService } from "./services/admin-convites-tecnico.service";
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, AutomacoesModule],
   controllers: [AdminController],
   providers: [
     AdminService,

@@ -113,14 +113,14 @@ test("admin autentica, guarda token e protege chamadas administrativas", () => {
   const main = read("apps/admin/js/main.js");
 
   assert.match(html, /<script type="module" src="\.\/js\/main\.js\?v=\d{8}-[a-z]+"><\/script>/);
-  assert.match(html, /\.\/js\/main\.js\?v=20260703-invites/);
-  assert.match(main, /\?v=20260703-invites/g);
+  assert.match(html, /\.\/js\/main\.js\?v=20260704-access/);
+  assert.match(main, /\?v=20260704-access/g);
   assert.doesNotMatch(html, /20260629-recorrencia/);
   assert.doesNotMatch(main, /20260630-recorrencia-filtros|20260630-apiadmin|20260630-recshow|20260630-recfix/);
   assert.doesNotMatch(main, /import "\.\.\/script\.js"/);
   assert.match(main, /adminModules/);
   assert.doesNotMatch(main, /recurrenceUiRoot,\s*\n/);
-  assert.match(main, /import \{ recurrenceStatusRoot \} from "\.\/modules\/recurrence-status\.js\?v=20260703-invites"/);
+  assert.match(main, /import \{ recurrenceStatusRoot \} from "\.\/modules\/recurrence-status\.js\?v=20260704-access"/);
   assert.match(html, /id="generateTechnicianInviteButton"/);
   assert.match(script, /\/admin\/convites-tecnico/);
   assert.match(main, /const adminSources = \[\s*recurrenceStatusRoot,\s*apiRoot/);
@@ -211,6 +211,28 @@ test("admin compila o bundle concatenado antes do deploy", async () => {
     });
 
   assert.doesNotThrow(() => Function(adminSources.join("\n")));
+});
+
+test("admin organiza acessos, convites e exclusao definitiva", () => {
+  const html = read("apps/admin/index.html");
+  const script = readAdminJs();
+  const styles = readAdminCss();
+
+  assert.match(html, /id="openTecnicoFormButton"[^>]*>Cadastrar acesso/);
+  assert.match(html, /id="openTechnicianInviteButton"[^>]*>Gerar convite/);
+  assert.match(html, /id="tecnicoFormPanel"/);
+  assert.match(html, /id="technicianInvitePanel"/);
+  assert.match(html, /id="technicianInviteEmailForm"/);
+  assert.match(html, /Aguardando configura[cç][aã]o Meta/);
+  assert.match(html, /WhatsApp[\s\S]*disabled/);
+  assert.match(script, /function openAccessPanel/);
+  assert.match(script, /function sendTechnicianInviteEmail/);
+  assert.match(script, /const cadastroStatus = item\.primeiro_acesso_pendente/);
+  assert.match(script, /Esta exclusao e definitiva\. Para recuperar o acesso sera necessario criar outro usuario\./);
+  assert.match(styles, /\.access-toolbar/);
+  assert.match(styles, /\.access-panel/);
+  assert.match(styles, /\.invite-result/);
+  assert.match(styles, /\.invite-channels|\.invite-whatsapp-unavailable/);
 });
 
 test("admin possui views funcionais para agenda clientes e relatorios", () => {
@@ -663,7 +685,7 @@ test("admin gerencia tecnicos equipes e responsaveis flexiveis por OS", () => {
   assert.match(html, /id="tecnicoForm"/);
   assert.match(html, /name="senha"/);
   assert.match(html, /Login\s*<input name="login"[^>]+required \/>/);
-  assert.match(html, /Email\s*<input name="email" type="text" required \/>/);
+  assert.match(html, /E-mail\s*<input name="email" type="email" required \/>/);
   assert.match(script, /login: String\(data\.get\("login"\)/);
   assert.match(html, /id="equipesView"/);
   assert.match(html, /id="equipeForm"/);

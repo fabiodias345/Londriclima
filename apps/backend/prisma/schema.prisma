@@ -192,7 +192,7 @@ model Usuario {
 model ConviteTecnico {
   id              String    @id @default(uuid()) @db.Uuid
   empresaId       String    @map("empresa_id") @db.Uuid
-  criadoPorId     String    @map("criado_por_id") @db.Uuid
+  criadoPorId     String?   @map("criado_por_id") @db.Uuid
   codigoHash      String    @unique @map("codigo_hash")
   codigoSufixo    String    @map("codigo_sufixo") @db.Char(4)
   expiraEm        DateTime  @map("expira_em")
@@ -202,8 +202,8 @@ model ConviteTecnico {
   criadoEm        DateTime  @default(now()) @map("criado_em")
 
   empresa       Empresa  @relation(fields: [empresaId], references: [id])
-  criadoPor     Usuario  @relation("ConviteTecnicoCriador", fields: [criadoPorId], references: [id])
-  usuarioCriado Usuario? @relation("ConviteTecnicoUsuario", fields: [usuarioCriadoId], references: [id])
+  criadoPor     Usuario? @relation("ConviteTecnicoCriador", fields: [criadoPorId], references: [id], onDelete: SetNull)
+  usuarioCriado Usuario? @relation("ConviteTecnicoUsuario", fields: [usuarioCriadoId], references: [id], onDelete: SetNull)
 
   @@index([empresaId, criadoEm])
   @@index([expiraEm])
@@ -224,7 +224,7 @@ model FuncionarioDocumento {
   criadoEm        DateTime @default(now()) @map("criado_em")
 
   empresa Empresa @relation(fields: [empresaId], references: [id])
-  usuario Usuario @relation(fields: [usuarioId], references: [id])
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@unique([usuarioId, tipo, versao])
   @@index([empresaId])
@@ -242,7 +242,7 @@ model Equipe {
   atualizadoEm DateTime @updatedAt @map("atualizado_em")
 
   empresa           Empresa                   @relation(fields: [empresaId], references: [id])
-  tecnico           Usuario?                  @relation("EquipeTecnico", fields: [tecnicoId], references: [id])
+  tecnico           Usuario?                  @relation("EquipeTecnico", fields: [tecnicoId], references: [id], onDelete: SetNull)
   auxiliares        EquipeAuxiliar[]
   membros           EquipeMembro[]
   clientes          ClienteEquipe[]
@@ -265,7 +265,7 @@ model EquipeMembro {
   atualizadoEm DateTime           @updatedAt @map("atualizado_em")
 
   equipe  Equipe  @relation(fields: [equipeId], references: [id])
-  usuario Usuario @relation(fields: [usuarioId], references: [id])
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@unique([equipeId, usuarioId])
   @@index([empresaId])
@@ -306,7 +306,7 @@ model Cliente {
 
   empresa               Empresa                @relation(fields: [empresaId], references: [id])
   engenheiroResponsavel EngenheiroResponsavel? @relation(fields: [engenheiroResponsavelId], references: [id])
-  tecnicoResponsavel    Usuario?               @relation("ClienteTecnicoResponsavel", fields: [tecnicoResponsavelId], references: [id])
+  tecnicoResponsavel    Usuario?               @relation("ClienteTecnicoResponsavel", fields: [tecnicoResponsavelId], references: [id], onDelete: SetNull)
   equipes               ClienteEquipe[]
   enderecos             ClienteEndereco[]
   equipamentos          Equipamento[]
@@ -364,7 +364,7 @@ model PmocRelatorio {
   empresaId               String              @map("empresa_id") @db.Uuid
   clienteId               String              @map("cliente_id") @db.Uuid
   engenheiroResponsavelId String              @map("engenheiro_responsavel_id") @db.Uuid
-  criadoPorUsuarioId      String              @map("criado_por_usuario_id") @db.Uuid
+  criadoPorUsuarioId      String?             @map("criado_por_usuario_id") @db.Uuid
   status                  PmocRelatorioStatus @default(gerado)
   tokenAssinatura         String              @unique @map("token_assinatura")
   pdfHash                 String              @map("pdf_hash")
@@ -384,7 +384,7 @@ model PmocRelatorio {
   empresa               Empresa               @relation(fields: [empresaId], references: [id])
   cliente               Cliente               @relation(fields: [clienteId], references: [id])
   engenheiroResponsavel EngenheiroResponsavel @relation(fields: [engenheiroResponsavelId], references: [id])
-  criadoPorUsuario      Usuario               @relation("PmocRelatorioCriador", fields: [criadoPorUsuarioId], references: [id])
+  criadoPorUsuario      Usuario?              @relation("PmocRelatorioCriador", fields: [criadoPorUsuarioId], references: [id], onDelete: SetNull)
 
   @@index([empresaId, clienteId])
   @@index([empresaId, status])
@@ -479,7 +479,7 @@ model OrdemServico {
   endereco                 ClienteEndereco?                @relation(fields: [enderecoId], references: [id])
   equipamento              Equipamento?                    @relation(fields: [equipamentoId], references: [id])
   equipe                   Equipe?                         @relation(fields: [equipeId], references: [id])
-  tecnico                  Usuario?                        @relation("OrdemTecnico", fields: [tecnicoId], references: [id])
+  tecnico                  Usuario?                        @relation("OrdemTecnico", fields: [tecnicoId], references: [id], onDelete: SetNull)
   responsaveis             OrdemServicoResponsavel[]
   eventos                  OrdemServicoEvento[]
   evidencias               OrdemServicoEvidencia[]
@@ -513,7 +513,7 @@ model OrdemServicoSeguranca {
   criadoEm       DateTime @default(now()) @map("criado_em")
 
   ordemServico OrdemServico @relation(fields: [ordemServicoId], references: [id])
-  usuario      Usuario?     @relation(fields: [usuarioId], references: [id])
+  usuario      Usuario?     @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
 
   @@index([empresaId])
   @@index([ordemServicoId])
@@ -545,7 +545,7 @@ model PlanoRecorrencia {
   cliente     Cliente                   @relation(fields: [clienteId], references: [id])
   equipamento Equipamento?              @relation(fields: [equipamentoId], references: [id])
   equipe      Equipe?                   @relation(fields: [equipeId], references: [id])
-  tecnico     Usuario?                  @relation("PlanoRecorrenciaTecnico", fields: [tecnicoId], references: [id])
+  tecnico     Usuario?                  @relation("PlanoRecorrenciaTecnico", fields: [tecnicoId], references: [id], onDelete: SetNull)
   ultimoOs    OrdemServico?             @relation("PlanoRecorrenciaUltimaOs", fields: [ultimoOsId], references: [id])
   geracoes    PlanoRecorrenciaGeracao[]
 
@@ -584,7 +584,7 @@ model OrdemServicoResponsavel {
   criadoEm       DateTime                    @default(now()) @map("criado_em")
 
   ordemServico OrdemServico @relation(fields: [ordemServicoId], references: [id])
-  usuario      Usuario?     @relation(fields: [usuarioId], references: [id])
+  usuario      Usuario?     @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
   equipe       Equipe?      @relation(fields: [equipeId], references: [id])
 
   @@unique([ordemServicoId, usuarioId])
@@ -609,7 +609,7 @@ model OrdemServicoEvento {
   criadoEm       DateTime               @default(now()) @map("criado_em")
 
   ordemServico OrdemServico @relation(fields: [ordemServicoId], references: [id])
-  usuario      Usuario?     @relation(fields: [usuarioId], references: [id])
+  usuario      Usuario?     @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
 
   @@index([empresaId])
   @@index([ordemServicoId])
@@ -782,7 +782,7 @@ model VeiculoAbastecimento {
 
   empresa Empresa  @relation(fields: [empresaId], references: [id])
   veiculo Veiculo  @relation(fields: [veiculoId], references: [id])
-  usuario Usuario? @relation(fields: [usuarioId], references: [id])
+  usuario Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
 
   @@index([empresaId, abastecidoEm])
   @@index([veiculoId, abastecidoEm])

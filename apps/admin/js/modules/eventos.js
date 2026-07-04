@@ -660,7 +660,9 @@ function renderOptions(items) {
 }
 
 async function deleteTecnico(tecnicoId) {
-  tecnicoFormStatus.textContent = "Removendo acesso...";
+  const confirmed = window.confirm("Esta exclusao e definitiva. Para recuperar o acesso sera necessario criar outro usuario.");
+  if (!confirmed) return;
+  tecnicosStatus.textContent = "Removendo acesso...";
 
   try {
     const response = await fetch(\`\${apiBaseUrl}/admin/tecnicos/\${tecnicoId}\`, {
@@ -674,7 +676,7 @@ async function deleteTecnico(tecnicoId) {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
-      tecnicoFormStatus.textContent = error.message || "Nao foi possivel apagar o acesso.";
+      tecnicosStatus.textContent = error.message || "Nao foi possivel apagar o acesso.";
       return;
     }
 
@@ -682,10 +684,10 @@ async function deleteTecnico(tecnicoId) {
       resetTecnicoForm();
     }
 
-    tecnicoFormStatus.textContent = "Acesso removido.";
+    tecnicosStatus.textContent = "Acesso excluido definitivamente.";
     await loadTecnicos();
   } catch {
-    tecnicoFormStatus.textContent = "API indisponivel.";
+    tecnicosStatus.textContent = "API indisponivel.";
   }
 }
 

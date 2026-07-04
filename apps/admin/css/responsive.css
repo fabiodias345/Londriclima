@@ -43,6 +43,18 @@
     grid-template-columns: 1fr;
   }
 
+  .access-toolbar,
+  .access-panel-heading,
+  .invite-whatsapp-unavailable {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .invite-result,
+  .invite-email-form {
+    grid-template-columns: 1fr;
+  }
+
   #relatoriosSummary {
     grid-template-columns: 1fr;
   }

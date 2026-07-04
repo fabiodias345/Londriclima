@@ -861,61 +861,55 @@
         </section>
 
         <section class="worklist hidden" id="tecnicosView">
-          <div class="worklist-header">
-            <h2>Acessos</h2>
-            <p id="tecnicosStatus" role="status">Carregando...</p>
-          </div>
-          <div class="client-form">
-            <div class="form-actions">
-              <button id="generateTechnicianInviteButton" type="button">Gerar convite</button>
+          <div class="worklist-header access-toolbar">
+            <div><h2>Acessos</h2><p id="tecnicosStatus" role="status">Carregando...</p></div>
+            <div class="access-toolbar-actions">
+              <button class="secondary-button" id="openTecnicoFormButton" type="button">Cadastrar acesso</button>
+              <button id="openTechnicianInviteButton" type="button">Gerar convite</button>
             </div>
+          </div>
+          <div class="data-list access-list" id="tecnicosList"></div>
+
+          <section class="access-panel hidden" id="technicianInvitePanel" aria-labelledby="technicianInviteTitle">
+            <div class="access-panel-heading">
+              <div><span class="kicker">Autocadastro</span><h3 id="technicianInviteTitle">Convite para novo técnico</h3><p>Gere o código e entregue na hora ou encaminhe por e-mail.</p></div>
+              <button class="secondary-button compact-button" id="closeTechnicianInviteButton" type="button">Fechar</button>
+            </div>
+            <button id="generateTechnicianInviteButton" type="button">Gerar novo convite</button>
             <p class="status" id="technicianInviteStatus" role="status"></p>
-            <div class="data-row hidden" id="generatedTechnicianInvite">
-              <div>
-                <strong id="generatedTechnicianInviteCode"></strong>
-                <span id="generatedTechnicianInviteExpiry"></span>
+            <div class="invite-result hidden" id="generatedTechnicianInvite">
+              <div class="invite-code-block"><span class="invite-label">Código do convite</span><strong id="generatedTechnicianInviteCode"></strong><span id="generatedTechnicianInviteExpiry"></span></div>
+              <button class="secondary-button compact-button" id="copyTechnicianInviteButton" type="button">Copiar código</button>
+              <form class="invite-email-form" id="technicianInviteEmailForm">
+                <label>Encaminhar por e-mail<input id="technicianInviteEmail" name="email" type="email" placeholder="tecnico@empresa.com" required /></label>
+                <button type="submit">Enviar convite</button>
+              </form>
+              <div class="invite-whatsapp-unavailable" aria-disabled="true">
+                <div><strong>WhatsApp</strong><span>Aguardando configuração Meta</span></div>
+                <button class="secondary-button compact-button" type="button" disabled>Indisponível</button>
               </div>
-              <button class="secondary-button compact-button" id="copyTechnicianInviteButton" type="button">Copiar codigo</button>
             </div>
+            <h4 class="invite-history-title">Histórico de convites</h4>
             <div class="data-list" id="technicianInvitesList"></div>
-          </div>
-          <form class="client-form" id="tecnicoForm">
-            <input name="id" type="hidden" />
-            <label>
-              Nome
-              <input name="nome" type="text" required />
-            </label>
-            <label>
-              Login
-              <input name="login" type="text" maxlength="30" pattern="[A-Za-z0-9._-]+" required />
-            </label>
-            <label>
-              Email
-              <input name="email" type="text" required />
-            </label>
-            <label>
-              Telefone
-              <input name="telefone" type="tel" inputmode="tel" />
-            </label>
-            <label>
-              Funcao
-              <select name="role">
-                <option value="admin">Admin</option>
-                <option value="tecnico">Técnico</option>
-                <option value="auxiliar">Auxiliar</option>
-              </select>
-            </label>
-            <label>
-              Senha
-              <input name="senha" type="password" minlength="6" autocomplete="new-password" />
-            </label>
-            <div class="form-actions">
-              <button type="submit">Salvar acesso</button>
-              <button class="secondary-button" id="resetTecnicoFormButton" type="button">Novo</button>
+          </section>
+
+          <section class="access-panel hidden" id="tecnicoFormPanel" aria-labelledby="tecnicoFormTitle">
+            <div class="access-panel-heading">
+              <div><span class="kicker">Cadastro manual</span><h3 id="tecnicoFormTitle">Dados do acesso</h3></div>
+              <button class="secondary-button compact-button" id="closeTecnicoFormButton" type="button">Fechar</button>
             </div>
-            <p class="status" id="tecnicoFormStatus" role="status"></p>
-          </form>
-          <div class="data-list" id="tecnicosList"></div>
+            <form class="client-form access-form" id="tecnicoForm">
+              <input name="id" type="hidden" />
+              <label>Nome<input name="nome" type="text" required /></label>
+              <label>Login<input name="login" type="text" maxlength="30" pattern="[A-Za-z0-9._-]+" required /></label>
+              <label>E-mail<input name="email" type="email" required /></label>
+              <label>Telefone<input name="telefone" type="tel" inputmode="tel" /></label>
+              <label>Função<select name="role"><option value="admin">Admin</option><option value="tecnico">Técnico</option><option value="auxiliar">Auxiliar</option></select></label>
+              <label>Senha<input name="senha" type="password" minlength="6" autocomplete="new-password" /></label>
+              <div class="form-actions"><button type="submit">Salvar acesso</button><button class="secondary-button" id="resetTecnicoFormButton" type="button">Limpar</button></div>
+              <p class="status" id="tecnicoFormStatus" role="status"></p>
+            </form>
+          </section>
         </section>
 
         <section class="worklist hidden" id="equipesView">
@@ -1143,7 +1137,7 @@
     <script
       src="./vendor/leaflet/leaflet.js"
     ></script>
-    <script type="module" src="./js/main.js?v=20260703-invites"></script>
+    <script type="module" src="./js/main.js?v=20260704-access"></script>
   </body>
 </html>
 

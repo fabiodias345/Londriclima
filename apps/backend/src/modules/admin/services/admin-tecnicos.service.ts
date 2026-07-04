@@ -89,6 +89,10 @@ export class AdminTecnicosService {
   }
 
   async apagarTecnico(tecnicoId: string, usuario: AuthenticatedUser) {
+    if (tecnicoId === usuario.id) {
+      throw new BadRequestException("Nao e possivel apagar o proprio acesso.");
+    }
+
     const acesso = await this.garantirAcessoDaEmpresa(tecnicoId, usuario);
     if (acesso.role === UsuarioRole.admin) {
       const totalAdminsAtivos = await this.prisma.usuario.count({
@@ -104,17 +108,15 @@ export class AdminTecnicosService {
       }
     }
 
-    const tecnico = await this.prisma.usuario.update({
-      where: {
-        id: tecnicoId
-      },
-      data: {
-        ativo: false
-      },
-      select: {
-        id: true
-      }
-    });
+    const tecnico = await this.prisma.$transaction((tx) => tx.usuario.delete({
+      where: { id: tecnicoId },
+      select: { id: true }
+    }));
+
+    await this.storage?.apagarCadastro({
+      empresaId: usuario.empresa_id,
+      usuarioId: tecnicoId
+    }).catch(() => undefined);
 
     return {
       id: tecnico.id,

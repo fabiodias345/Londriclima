@@ -17,6 +17,7 @@ import { SalvarEquipeDto } from "./dto/salvar-equipe.dto";
 import { SalvarOsAgendaDto } from "./dto/salvar-os-agenda.dto";
 import { SalvarPlanoRecorrenciaDto } from "./dto/salvar-plano-recorrencia.dto";
 import { SalvarTecnicoDto } from "./dto/salvar-tecnico.dto";
+import { EncaminharConviteTecnicoDto } from "./dto/encaminhar-convite-tecnico.dto";
 import { SalvarVeiculoDto } from "./dto/salvar-veiculo.dto";
 import { AdminAgendaService } from "./services/admin-agenda.service";
 import { AdminClientesService } from "./services/admin-clientes.service";
@@ -307,6 +308,14 @@ export class AdminService {
 
   async cancelarConviteTecnico(conviteId: string, usuario: AuthenticatedUser) {
     return this.convitesTecnicoService.cancelar(conviteId, usuario);
+  }
+
+  async encaminharConviteTecnicoEmail(
+    conviteId: string,
+    dto: EncaminharConviteTecnicoDto,
+    usuario: AuthenticatedUser
+  ) {
+    return this.convitesTecnicoService.encaminharEmail(conviteId, dto, usuario);
   }
 
   async criarTecnico(dto: SalvarTecnicoDto, usuario: AuthenticatedUser) {

@@ -111,6 +111,129 @@
   gap: 10px;
 }
 
+.access-toolbar {
+  align-items: center;
+}
+
+.access-toolbar h2,
+.access-panel h3,
+.access-panel h4 {
+  margin: 0;
+}
+
+.access-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.access-list:empty {
+  min-height: 84px;
+}
+
+.access-panel {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  border-top: 1px solid var(--line);
+  background: linear-gradient(135deg, rgba(0, 140, 149, 0.06), rgba(238, 243, 241, 0.8));
+}
+
+.access-panel.hidden {
+  display: none;
+}
+
+.access-panel-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.access-panel-heading p {
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+
+.access-panel > #generateTechnicianInviteButton {
+  justify-self: start;
+}
+
+.access-form {
+  margin: 0 -22px -22px;
+  border-top: 1px solid var(--line);
+  border-bottom: 0;
+}
+
+.invite-result {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) auto minmax(300px, 1.2fr);
+  gap: 16px;
+  align-items: end;
+  padding: 18px;
+  border: 1px solid rgba(0, 140, 149, 0.24);
+  border-radius: var(--radius);
+  background: var(--white);
+  box-shadow: 0 10px 28px rgba(7, 45, 53, 0.08);
+}
+
+.invite-result.hidden {
+  display: none;
+}
+
+.invite-code-block,
+.invite-whatsapp-unavailable div {
+  display: grid;
+  gap: 5px;
+}
+
+.invite-code-block strong {
+  color: var(--navy);
+  font-family: "Archivo", sans-serif;
+  font-size: 27px;
+  letter-spacing: 0.08em;
+}
+
+.invite-label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.invite-email-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.invite-email-form label {
+  display: grid;
+  gap: 7px;
+  font-weight: 800;
+}
+
+.invite-email-form input {
+  min-width: 0;
+}
+
+.invite-whatsapp-unavailable {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.invite-history-title {
+  font-family: "Archivo", sans-serif;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;

@@ -369,6 +369,14 @@ tecnicosList?.addEventListener("click", (event) => {
 
 generateTechnicianInviteButton?.addEventListener("click", () => void generateTechnicianInvite());
 copyTechnicianInviteButton?.addEventListener("click", () => void copyTechnicianInvite());
+openTecnicoFormButton?.addEventListener("click", () => {
+  resetTecnicoForm();
+  openAccessPanel("form");
+});
+closeTecnicoFormButton?.addEventListener("click", () => closeAccessPanels());
+openTechnicianInviteButton?.addEventListener("click", () => openAccessPanel("invite"));
+closeTechnicianInviteButton?.addEventListener("click", () => closeAccessPanels());
+technicianInviteEmailForm?.addEventListener("submit", (event) => void sendTechnicianInviteEmail(event));
 technicianInvitesList?.addEventListener("click", (event) => {
   const target = event.target;
   if (target instanceof HTMLButtonElement && target.dataset.action === "cancelar-convite-tecnico" && target.dataset.id) {

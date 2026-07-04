@@ -46,12 +46,20 @@ function renderTecnicos(items) {
   for (const item of items) {
     const row = document.createElement("article");
     row.className = "data-row";
+    const documento = item.documentos?.[0];
+    const cadastroStatus = item.primeiro_acesso_pendente
+      ? "Cadastro inicial pendente"
+      : "Cadastro concluido" + (item.primeiro_acesso_em ? " em " + new Date(item.primeiro_acesso_em).toLocaleDateString("pt-BR") : "");
+    const documentoBotao = documento
+      ? '<button class="secondary-button compact-button" type="button" data-action="baixar-documento-funcionario" data-id="' + escapeHtml(item.id) + '" data-documento-id="' + escapeHtml(documento.id) + '">Termo assinado</button>'
+      : "";
     row.innerHTML = \`
       <div>
         <strong>\${escapeHtml(item.nome)}</strong>
         <span>\${escapeHtml(formatAccessRole(item.role))}</span>
       </div>
       <div>
+        <span>Login: \${escapeHtml(item.login || "pendente")}</span>
         <span>\${escapeHtml(item.email)}</span>
         <span>\${formatPhone(item.telefone)}</span>
         <span>\${escapeHtml(cadastroStatus)}</span>
@@ -126,9 +134,10 @@ async function generateTechnicianInvite() {
       return;
     }
     generatedTechnicianInviteCode.textContent = result.codigo;
+    generatedTechnicianInviteId = result.id;
     generatedTechnicianInviteExpiry.textContent = "Valido ate " + new Date(result.expira_em).toLocaleString("pt-BR");
     generatedTechnicianInvite.classList.remove("hidden");
-    technicianInviteStatus.textContent = "Convite gerado. Envie o codigo ao tecnico.";
+    technicianInviteStatus.textContent = "Convite gerado. Copie o codigo ou encaminhe por email.";
     await loadTechnicianInvites();
   } catch {
     technicianInviteStatus.textContent = "API indisponivel.";
@@ -150,6 +159,36 @@ async function copyTechnicianInvite() {
   if (!codigo) return;
   await navigator.clipboard.writeText(codigo);
   technicianInviteStatus.textContent = "Codigo copiado.";
+}
+
+async function sendTechnicianInviteEmail(event) {
+  event.preventDefault();
+  if (!generatedTechnicianInviteId || !generatedTechnicianInviteCode.textContent) {
+    technicianInviteStatus.textContent = "Gere um convite antes de enviar.";
+    return;
+  }
+  const button = technicianInviteEmailForm.querySelector("button[type='submit']");
+  const email = String(new FormData(technicianInviteEmailForm).get("email") || "").trim();
+  button.disabled = true;
+  button.textContent = "Enviando...";
+  technicianInviteStatus.textContent = "Enviando convite por email...";
+  try {
+    const response = await fetch(apiBaseUrl + "/admin/convites-tecnico/" + generatedTechnicianInviteId + "/email", {
+      method: "POST",
+      headers: { ...authHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ email, codigo: generatedTechnicianInviteCode.textContent })
+    });
+    if (await handleUnauthorized(response)) return;
+    const result = await response.json().catch(() => ({}));
+    technicianInviteStatus.textContent = response.ok
+      ? "Convite enviado para " + email + "."
+      : (result.message || "Nao foi possivel enviar o email. O codigo continua disponivel.");
+  } catch {
+    technicianInviteStatus.textContent = "API indisponivel. O codigo continua disponivel para copia.";
+  } finally {
+    button.disabled = false;
+    button.textContent = "Enviar convite";
+  }
 }
 
 function renderEquipes(items) {

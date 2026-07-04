@@ -250,6 +250,7 @@ function fillTecnicoForm(tecnicoId) {
   tecnicoForm.elements.role.value = tecnico.role || "tecnico";
   tecnicoForm.elements.senha.value = "";
   tecnicoFormStatus.textContent = "Editando acesso selecionado.";
+  openAccessPanel("form");
 }
 
 function resetTecnicoForm() {
@@ -257,6 +258,16 @@ function resetTecnicoForm() {
   tecnicoForm.elements.id.value = "";
   tecnicoForm.elements.role.value = "tecnico";
   tecnicoFormStatus.textContent = "";
+}
+
+function openAccessPanel(panel) {
+  tecnicoFormPanel.classList.toggle("hidden", panel !== "form");
+  technicianInvitePanel.classList.toggle("hidden", panel !== "invite");
+}
+
+function closeAccessPanels() {
+  tecnicoFormPanel.classList.add("hidden");
+  technicianInvitePanel.classList.add("hidden");
 }
 
 function fillEquipeForm(equipeId) {

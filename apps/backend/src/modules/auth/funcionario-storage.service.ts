@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { basename, extname, join, resolve, sep } from "node:path";
 
 export type CadastroFuncionarioArquivo = {
@@ -57,6 +57,16 @@ export class FuncionarioStorageService {
       throw new BadRequestException("Documento invalido.");
     }
     return readFile(caminho);
+  }
+
+  async apagarCadastro(input: { empresaId: string; usuarioId: string }) {
+    const storageRoot = this.resolveStorageRoot();
+    const funcionariosRoot = resolve(storageRoot, "funcionarios");
+    const caminho = resolve(funcionariosRoot, input.empresaId, input.usuarioId);
+    if (!caminho.startsWith(`${funcionariosRoot}${sep}`)) {
+      throw new BadRequestException("Caminho de funcionario invalido.");
+    }
+    await rm(caminho, { recursive: true, force: true });
   }
 
   private validarFoto(arquivo?: CadastroFuncionarioArquivo) {
