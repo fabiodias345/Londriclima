@@ -15,7 +15,7 @@ const whatsappNumber = "5543999990000";
 
 const testimonials = [
   {
-    text: "A AIRMOVEBR organizou nossa manutenção preventiva e nos entregou relatórios claros para auditoria.",
+    text: "A Clima do Brasil organizou nossa manutenção preventiva e nos entregou relatórios claros para auditoria.",
     author: "Gestor administrativo",
     role: "Cliente corporativo"
   },
@@ -123,7 +123,7 @@ function buildLocalFromAddress(payload) {
 
 function buildWhatsAppUrl(payload) {
   const lines = [
-    "Olá, quero atendimento imediato pela AIRMOVEBR.",
+    "Olá, quero atendimento imediato pela Clima do Brasil.",
     `Nome: ${payload.nome}`,
     `Telefone: ${payload.telefone}`,
     `Serviço: ${payload.servico}`,

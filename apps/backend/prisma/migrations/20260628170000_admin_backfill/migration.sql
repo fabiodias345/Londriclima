@@ -39,7 +39,7 @@ INSERT INTO "usuarios" (
 SELECT
   gen_random_uuid(),
   e."empresa_id",
-  'Administrador AIRMOVEBR',
+  'Administrador Clima do Brasil',
   CASE
     WHEN e.ordem = 1 AND NOT EXISTS (SELECT 1 FROM "usuarios" u WHERE u."login" = 'admin') THEN 'admin'
     ELSE 'admin-' || substr(replace(e."empresa_id"::text, '-', ''), 1, 8)

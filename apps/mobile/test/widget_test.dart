@@ -36,7 +36,7 @@ void main() {
   ) async {
     await tester.pumpWidget(const AirmovebrApp(demoMode: true));
 
-    expect(find.text('Acesso AIRMOVEBR'), findsOneWidget);
+    expect(find.text('Acesso Clima do Brasil'), findsOneWidget);
     expect(find.byKey(const Key('loginUserField')), findsOneWidget);
     expect(find.byKey(const Key('loginPasswordField')), findsOneWidget);
 
@@ -1486,7 +1486,7 @@ void main() {
 
     await tester.enterText(
       find.byKey(const Key('responsibleNameField')),
-      'Teste AIRMOVEBR',
+      'Teste Clima do Brasil',
     );
     await _signPad(tester, const Key('signaturePad'));
 
@@ -1506,7 +1506,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repository.finishedOrderId, 'OS-API');
-    expect(repository.finishInput?.responsibleName, 'Teste AIRMOVEBR');
+    expect(repository.finishInput?.responsibleName, 'Teste Clima do Brasil');
     expect(
       repository.finishInput?.signatureBase64,
       startsWith('data:image/png;base64,'),

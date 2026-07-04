@@ -17,7 +17,7 @@ class AirmovebrApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'AIRMOVEBR',
+      title: 'Clima do Brasil',
       theme: buildAirmovebrTheme(),
       home: LoginScreen(
         loginGateway: HybridLoginGateway(

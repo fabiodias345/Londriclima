@@ -112,12 +112,12 @@ export class AdminConvitesTecnicoService {
     const email = dto.email.trim().toLowerCase();
     try {
       await this.emailSender.enviar({
-        from: this.config?.get<string>("SMTP_FROM", "AIRMOVEBR <noreply@airmovebr.com.br>")
-          ?? "AIRMOVEBR <noreply@airmovebr.com.br>",
+        from: this.config?.get<string>("SMTP_FROM", "Clima do Brasil <noreply@climadobrasilengenharia.com.br>")
+          ?? "Clima do Brasil <noreply@climadobrasilengenharia.com.br>",
         to: email,
-        subject: "Convite para acesso AIRMOVEBR",
+        subject: "Convite para acesso Clima do Brasil",
         text: [
-          "Voce recebeu um convite para acessar o aplicativo AIRMOVEBR.",
+          "Voce recebeu um convite para acessar o aplicativo Clima do Brasil.",
           `Funcao liberada: ${convite.role === "auxiliar" ? "Auxiliar" : "Tecnico"}`,
           "",
           `Codigo: ${dto.codigo.trim().toUpperCase()}`,

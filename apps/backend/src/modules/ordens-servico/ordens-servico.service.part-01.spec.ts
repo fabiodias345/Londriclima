@@ -1,4 +1,4 @@
-﻿import { BadRequestException,ConflictException,NotFoundException,UnprocessableEntityException } from "@nestjs/common";
+import { BadRequestException,ConflictException,NotFoundException,UnprocessableEntityException } from "@nestjs/common";
 import {
 AutomacaoTipo,
 ChecklistTipo,

@@ -1,4 +1,4 @@
-﻿import { test } from "node:test";
+import { test } from "node:test";
 import * as assert from "node:assert/strict";
 import { UnauthorizedException } from "@nestjs/common";
 import { UsuarioRole } from "@prisma/client";
@@ -7,7 +7,7 @@ import { AuthService } from "./auth.service";
 const usuarioAtivo = {
   id: "usuario-1",
   empresaId: "empresa-1",
-  nome: "Tecnico AIRMOVEBR",
+  nome: "Tecnico Clima do Brasil",
   login: "tecnico",
   email: "tecnico@airmovebr.local",
   senhaHash: "hash-seguro",
@@ -101,7 +101,7 @@ test("login retorna tokens e atualiza ultimo login para usuario ativo de empresa
   assert.deepEqual(resposta.usuario, {
     id: "usuario-1",
     empresa_id: "empresa-1",
-    nome: "Tecnico AIRMOVEBR",
+    nome: "Tecnico Clima do Brasil",
     email: "tecnico@airmovebr.local",
     role: UsuarioRole.tecnico
   });

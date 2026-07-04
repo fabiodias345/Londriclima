@@ -262,7 +262,7 @@ export class OrdensServicoRelatorioCamaraFriaRenderer {
       y -= 14;
     }
     comandos.push("0.55 0.60 0.66 rg\n42 34 528 1 re f");
-    comandos.push(this.texto("Documento gerado pela plataforma AIRMOVEBR.", 42, 20, 7.5, "F1", "0.38 0.42 0.48"));
+    comandos.push(this.texto("Documento gerado pela plataforma Clima do Brasil.", 42, 20, 7.5, "F1", "0.38 0.42 0.48"));
     return comandos.join("\n");
   }
 

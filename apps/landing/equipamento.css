@@ -104,6 +104,14 @@ label {
   font-weight: 800;
 }
 
+.brand-logo {
+  width: 58px;
+  height: 44px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: var(--white);
+}
+
 .brand strong,
 h1,
 h2,

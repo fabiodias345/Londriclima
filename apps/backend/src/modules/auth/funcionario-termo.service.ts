@@ -8,14 +8,14 @@ export const TERMO_RESPONSABILIDADE_VERSAO = "2026-07-04";
 export class FuncionarioTermoService {
   gerar(input: { nome: string; cpf: string; aceitoEm: Date; foto: Buffer; assinatura: Buffer }) {
     const page: PdfPage = [];
-    this.text(page, "AIRMOVEBR - TERMO DE RESPONSABILIDADE DE USO DO APLICATIVO", 36, 790, 14, true);
+    this.text(page, "CLIMA DO BRASIL - TERMO DE RESPONSABILIDADE DE USO DO APLICATIVO", 36, 790, 14, true);
     this.text(page, `Versão: ${TERMO_RESPONSABILIDADE_VERSAO}`, 36, 765, 9);
     this.text(page, `Funcionário: ${input.nome}`, 36, 735, 11, true);
     this.text(page, `CPF: ${this.formatarCpf(input.cpf)}`, 36, 715, 10);
     this.text(page, `Aceite: ${this.formatarData(input.aceitoEm)}`, 36, 695, 10);
     this.text(page, "DECLARAÇÃO", 36, 655, 11, true);
     const paragrafos = [
-      "Declaro que recebi acesso pessoal ao aplicativo AIRMOVEBR e me responsabilizo pelo uso correto da conta.",
+      "Declaro que recebi acesso pessoal ao aplicativo Clima do Brasil e me responsabilizo pelo uso correto da conta.",
       "Comprometo-me a executar e registrar integralmente os checklists apresentados pelo sistema em cada atendimento.",
       "Comprometo-me a utilizar os equipamentos de proteção individual (EPIs) descritos no sistema e exigidos para cada atividade.",
       "Reconheço que minha identificação, foto e assinatura poderão constar nos relatórios dos serviços executados por mim.",
@@ -35,7 +35,7 @@ export class FuncionarioTermoService {
       { buffer: input.foto, x: 55, y: 85, width: 150, height: 175 },
       { buffer: input.assinatura, x: 310, y: 130, width: 220, height: 95 }
     ];
-    this.text(page, "Documento aceito eletronicamente no primeiro acesso ao aplicativo AIRMOVEBR.", 36, 45, 8);
+    this.text(page, "Documento aceito eletronicamente no primeiro acesso ao aplicativo Clima do Brasil.", 36, 45, 8);
 
     const pdf = criarPdfBuffer([page]);
     return { pdf, sha256: createHash("sha256").update(pdf).digest("hex") };

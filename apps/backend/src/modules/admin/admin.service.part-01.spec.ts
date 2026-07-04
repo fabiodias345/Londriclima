@@ -1,4 +1,4 @@
-﻿import {
+import {
 OrdemServicoStatus,
 UsuarioRole
 } from "@prisma/client";

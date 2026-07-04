@@ -1,4 +1,4 @@
-﻿import type { INestApplication } from "@nestjs/common";
+import type { INestApplication } from "@nestjs/common";
 import { ValidationPipe } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import { EvidenciaTipo,OrdemServicoEventoAcao,OrdemServicoStatus,PmocRelatorioStatus,Prisma,UsuarioRole } from "@prisma/client";
@@ -99,7 +99,7 @@ function criarPrismaMock() {
         return {
           id: usuarioId,
           empresaId,
-          nome: "Tecnico AIRMOVEBR",
+          nome: "Tecnico Clima do Brasil",
           email: "tecnico@airmovebr.local",
           senhaHash,
           role: UsuarioRole.admin
@@ -226,7 +226,7 @@ function criarPrismaMock() {
             placa: "ABC1D23"
           },
           usuario: {
-            nome: "Tecnico AIRMOVEBR"
+            nome: "Tecnico Clima do Brasil"
           }
         }
       ],
@@ -288,7 +288,7 @@ function criarPrismaMock() {
                     agendadaPara: new Date("2026-06-10T12:00:00.000Z"),
                     concluidaEm: new Date("2026-06-10T15:00:00.000Z"),
                     valorCobrado: new Prisma.Decimal(250),
-                    tecnico: { id: usuarioId, nome: "Tecnico AIRMOVEBR", email: "tecnico@airmovebr.local" },
+                    tecnico: { id: usuarioId, nome: "Tecnico Clima do Brasil", email: "tecnico@airmovebr.local" },
                     equipe: { id: "equipe-1", nome: "Equipe 1" },
                     eventos: [
                       {

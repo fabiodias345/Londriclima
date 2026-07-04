@@ -29,6 +29,14 @@
   font-weight: 800;
 }
 
+.brand-logo {
+  width: 54px;
+  height: 44px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #fff;
+}
+
 .brand strong,
 h1,
 h2,
@@ -876,6 +884,14 @@ form button,
   height: 42px;
   border-radius: 12px;
   background: linear-gradient(135deg, #2563eb, #f59e0b);
+}
+
+.brand-logo {
+  width: 58px;
+  height: 46px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #fff;
 }
 
 .brand strong {

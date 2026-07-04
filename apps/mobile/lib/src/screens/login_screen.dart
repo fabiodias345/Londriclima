@@ -189,10 +189,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Image.asset('assets/airmovebr-logo.png', height: 128),
+                    Image.asset('assets/clima-do-brasil-logo.jpeg', height: 128),
                     const SizedBox(height: 32),
                     Text(
-                      'Acesso AIRMOVEBR',
+                      'Acesso Clima do Brasil',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(

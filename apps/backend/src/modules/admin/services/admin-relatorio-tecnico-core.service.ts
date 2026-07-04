@@ -1996,8 +1996,8 @@ export class AdminRelatorioTecnicoCoreService {
 
   private montarCapaRelatorioAvulso(previa: PreviaRelatorioAvulsoCliente) {
     return [
-      "AIRMOVEBR - RELATÓRIO TÉCNICO AVULSO",
-      "Documento não PMOC emitido automaticamente pela plataforma AIRMOVEBR",
+      "Clima do Brasil - RELATÓRIO TÉCNICO AVULSO",
+      "Documento não PMOC emitido automaticamente pela plataforma Clima do Brasil",
       "",
       `Data: ${this.formatarDataPmoc(new Date().toISOString())}`,
       "",
@@ -2008,9 +2008,9 @@ export class AdminRelatorioTecnicoCoreService {
       "",
       ...montarCartaoRelatorioTecnico("DADOS DA EMPRESA", [
         ["Campo", "Informação"],
-        ["Razão Social", "AIRMOVEBR"],
+        ["Razão Social", "Clima do Brasil"],
         ["Base operacional", "Londrina, PR"],
-        ["Domínio", "airmovebr.com.br"]
+        ["Domínio", "climadobrasilengenharia.com.br"]
       ]),
       "",
       ...montarCartaoRelatorioTecnico("DADOS DO CLIENTE", [
@@ -2214,7 +2214,7 @@ export class AdminRelatorioTecnicoCoreService {
       "0.21 0.53 0.73 rg",
       "42 772 528 4 re f"
     ];
-    const titulo = linhas[0] ?? "AIRMOVEBR - RELATÓRIO DE MANUTENÇÃO";
+    const titulo = linhas[0] ?? "Clima do Brasil - RELATÓRIO DE MANUTENÇÃO";
     const subtitulo = linhas[1] ?? "";
     comandos.push(this.comandoTextoPdf(titulo, 54, 804, 15, "F2", "1 1 1"));
     comandos.push(this.comandoTextoPdf(subtitulo, 54, 787, 9, "F1", "0.88 0.93 0.98"));
@@ -2275,7 +2275,7 @@ export class AdminRelatorioTecnicoCoreService {
     }
 
     comandos.push("0.55 0.60 0.66 rg\n42 34 528 1 re f");
-    comandos.push(this.comandoTextoPdf("Documento gerado automaticamente pela plataforma AIRMOVEBR.", 42, 20, 7.5, "F1", "0.38 0.42 0.48"));
+    comandos.push(this.comandoTextoPdf("Documento gerado automaticamente pela plataforma Clima do Brasil.", 42, 20, 7.5, "F1", "0.38 0.42 0.48"));
 
     return comandos.join("\n");
   }
