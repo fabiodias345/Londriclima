@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Substituir o cadastro manual inicial do tecnico por um convite de uso unico. O administrador gera o convite em **Acessos** e o proprio tecnico conclui todo o cadastro no aplicativo.
+Adicionar um convite de uso unico como alternativa ao cadastro manual. Em **Acessos**, o administrador podera escolher entre cadastrar o tecnico diretamente ou gerar um convite para que o proprio tecnico conclua o cadastro no aplicativo.
 
 ## Fluxo administrativo
 
@@ -11,7 +11,8 @@ Substituir o cadastro manual inicial do tecnico por um convite de uso unico. O a
 - exibir o codigo completo somente na resposta de criacao, com acao para copia;
 - listar convites com data de criacao, validade e estado: pendente, utilizado, vencido ou cancelado;
 - permitir cancelar um convite pendente;
-- manter o cadastro e a edicao manual de acessos existentes para administracao, sem exigir esse caminho para novos tecnicos.
+- manter o cadastro e a edicao manual de acessos, inclusive a criacao de tecnico com senha inicial e primeiro acesso pendente;
+- oferecer o convite como opcao adicional, sem alterar o funcionamento do cadastro manual.
 
 ## Fluxo no aplicativo
 
@@ -44,7 +45,7 @@ Substituir o cadastro manual inicial do tecnico por um convite de uso unico. O a
 
 ## Compatibilidade
 
-- preservar usuarios existentes e o fluxo atual de primeiro acesso pendente;
+- preservar usuarios existentes, o cadastro manual e o fluxo atual de primeiro acesso pendente;
 - novos tecnicos poderao ser criados pelo convite sem cadastro administrativo previo;
 - relatorios, PMOC e documentos continuarao usando o perfil, a foto e a assinatura armazenados.
 
