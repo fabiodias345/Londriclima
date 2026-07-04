@@ -37,12 +37,17 @@ Somente estado atual e proximos passos. Historico concluido fica no Git e nos te
   - aprovar ou rejeitar pre-chamado com confirmacao;
   - reenviar assinatura PMOC com confirmacao;
   - atualizacao automatica da lista depois da acao.
+- Fase 4 do app admin implementada:
+  - busca e filtros locais nos modulos;
+  - layout compacto para celular pequeno;
+  - abertura autenticada de PDF PMOC e relatorio avulso;
+  - detalhes da frota somente para consulta.
 
 ## Validacao feita
 
 ```powershell
 cd apps\admin_mobile
-flutter analyze --no-pub
+dart analyze lib test
 ```
 
 Resultado:
@@ -62,12 +67,6 @@ Resultado: comando travou sem saida ate o timeout local.
 
 ## Proximo foco - App Admin Mobile
 
-### Fase 4 - acabamento
-
-- Busca e filtros.
-- Melhor layout para celular pequeno.
-- Abrir PDF/relatorio.
-- Definir acao de frota adequada para o mobile.
 - Notificacoes depois da definicao Meta/telefone.
 - Build APK admin somente no final.
 

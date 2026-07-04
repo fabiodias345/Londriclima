@@ -16,6 +16,13 @@ class AdminSession {
   final String email;
 }
 
+class AdminDownloadedFile {
+  const AdminDownloadedFile({required this.bytes, required this.filename});
+
+  final List<int> bytes;
+  final String filename;
+}
+
 enum AdminLoginFailure {
   invalidCredentials,
   firstAccessRequired,
@@ -39,7 +46,10 @@ class AdminApiClient {
   final Uri baseUrl;
   final Duration timeout;
 
-  Future<Map<String, dynamic>> getJson(String path, AdminSession session) async {
+  Future<Map<String, dynamic>> getJson(
+    String path,
+    AdminSession session,
+  ) async {
     return _sendJson('GET', path, session);
   }
 
@@ -59,6 +69,48 @@ class AdminApiClient {
     return _sendJson('PATCH', path, session, payload);
   }
 
+  Future<AdminDownloadedFile> downloadBytes(
+    String path,
+    AdminSession session,
+  ) async {
+    final client = HttpClient()..connectionTimeout = timeout;
+
+    try {
+      final request = await client
+          .getUrl(baseUrl.resolve('/api/v1$path'))
+          .timeout(timeout);
+      request.headers.set(
+        HttpHeaders.authorizationHeader,
+        'Bearer ${session.accessToken}',
+      );
+      final response = await request.close().timeout(timeout);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw const AdminRequestException(AdminRequestFailure.unexpected);
+      }
+
+      final bytes = await response
+          .fold<List<int>>(<int>[], (buffer, chunk) => buffer..addAll(chunk))
+          .timeout(timeout);
+      final disposition = response.headers.value('content-disposition') ?? '';
+      final filename =
+          RegExp(
+            r'filename="?([^";]+)',
+            caseSensitive: false,
+          ).firstMatch(disposition)?.group(1) ??
+          'relatorio.pdf';
+
+      return AdminDownloadedFile(bytes: bytes, filename: filename);
+    } on AdminRequestException {
+      rethrow;
+    } on SocketException {
+      throw const AdminRequestException(AdminRequestFailure.network);
+    } on TimeoutException {
+      throw const AdminRequestException(AdminRequestFailure.network);
+    } finally {
+      client.close(force: true);
+    }
+  }
+
   Future<Map<String, dynamic>> _sendJson(
     String method,
     String path,
@@ -68,15 +120,23 @@ class AdminApiClient {
     final client = HttpClient()..connectionTimeout = timeout;
 
     try {
-      final request = await client.openUrl(method, baseUrl.resolve('/api/v1$path')).timeout(timeout);
-      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer ${session.accessToken}');
+      final request = await client
+          .openUrl(method, baseUrl.resolve('/api/v1$path'))
+          .timeout(timeout);
+      request.headers.set(
+        HttpHeaders.authorizationHeader,
+        'Bearer ${session.accessToken}',
+      );
       if (payload != null) {
         request.headers.contentType = ContentType.json;
         request.write(jsonEncode(payload));
       }
 
       final response = await request.close().timeout(timeout);
-      final body = await response.transform(utf8.decoder).join().timeout(timeout);
+      final body = await response
+          .transform(utf8.decoder)
+          .join()
+          .timeout(timeout);
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw const AdminRequestException(AdminRequestFailure.unexpected);
@@ -112,7 +172,10 @@ class AdminApiClient {
       request.write(jsonEncode({'login': login.trim(), 'senha': password}));
 
       final response = await request.close().timeout(timeout);
-      final body = await response.transform(utf8.decoder).join().timeout(timeout);
+      final body = await response
+          .transform(utf8.decoder)
+          .join()
+          .timeout(timeout);
 
       if (response.statusCode == 401) {
         throw const AdminLoginException(AdminLoginFailure.invalidCredentials);
@@ -158,10 +221,7 @@ class AdminApiClient {
   }
 }
 
-enum AdminRequestFailure {
-  network,
-  unexpected,
-}
+enum AdminRequestFailure { network, unexpected }
 
 class AdminRequestException implements Exception {
   const AdminRequestException(this.failure);
