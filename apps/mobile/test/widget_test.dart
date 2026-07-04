@@ -86,6 +86,72 @@ void main() {
     expect(find.byKey(const Key('firstAccessSignaturePad')), findsOneWidget);
   });
 
+  testWidgets('primeiro cadastro abre sem excecao', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: LoginScreen(loginGateway: _GatewayConviteValido()),
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('firstRegistrationButton')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('technicianInviteCodeField')),
+      'ABCD-EFGH',
+    );
+    await tester.tap(find.byKey(const Key('validateTechnicianInviteButton')));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.byKey(const Key('firstAccessNameField')), findsOneWidget);
+    expect(find.byKey(const Key('firstAccessLoginField')), findsOneWidget);
+  });
+
+  testWidgets('primeiro acesso formata CPF e telefone', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: FirstAccessScreen(
+          loginGateway: _GatewayComFalha(),
+          onboardingToken: 'token-onboarding',
+          technicianName: 'Joao Tecnico',
+        ),
+      ),
+    );
+
+    await tester.enterText(find.byKey(const Key('firstAccessCpfField')), '73070459900');
+    await tester.enterText(find.byKey(const Key('firstAccessPhoneField')), '43984451266');
+
+    final cpfField = tester.widget<TextField>(find.byKey(const Key('firstAccessCpfField')));
+    final phoneField = tester.widget<TextField>(find.byKey(const Key('firstAccessPhoneField')));
+    expect(cpfField.controller?.text, '730.704.599-00');
+    expect(phoneField.controller?.text, '(43) 98445-1266');
+  });
+
+  testWidgets('primeiro acesso informa CPF e telefone invalidos separadamente', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: FirstAccessScreen(
+          loginGateway: _GatewayComFalha(),
+          onboardingToken: 'token-onboarding',
+          technicianName: 'Joao Tecnico',
+        ),
+      ),
+    );
+
+    await tester.enterText(find.byKey(const Key('firstAccessCpfField')), '7307045990');
+    await tester.enterText(find.byKey(const Key('firstAccessPhoneField')), '43984451266');
+    await tester.ensureVisible(find.byKey(const Key('firstAccessSubmitButton')));
+    await tester.tap(find.byKey(const Key('firstAccessSubmitButton')));
+    await tester.pump();
+    expect(find.text('Informe um CPF com 11 dígitos.'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('firstAccessCpfField')), '73070459900');
+    await tester.enterText(find.byKey(const Key('firstAccessPhoneField')), '439844512');
+    await tester.tap(find.byKey(const Key('firstAccessSubmitButton')));
+    await tester.pump();
+    expect(find.text('Informe um telefone com DDD.'), findsOneWidget);
+  });
+
   testWidgets('filtro pendentes mostra somente OS pendente', (tester) async {
     await tester.pumpWidget(const AirmovebrApp(demoMode: true));
 
@@ -2036,6 +2102,13 @@ class _GatewayComFalha implements MobileLoginGateway {
   Future<LoginSession?> registerWithTechnicianInvite(TechnicianInviteRegistration registration) async {
     throw const SocketException('API indisponivel');
   }
+}
+
+class _GatewayConviteValido extends _GatewayComFalha {
+  const _GatewayConviteValido();
+
+  @override
+  Future<bool> validateTechnicianInvite(String code) async => true;
 }
 
 class _GatewayDeTeste implements MobileLoginGateway {

@@ -1,7 +1,7 @@
 import 'dart:ui' as ui;
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../auth/mobile_login_gateway.dart';
 import '../models/work_order.dart';
@@ -85,8 +85,18 @@ class _FirstAccessScreenState extends State<FirstAccessScreen> {
     final login = _loginController.text.trim().toLowerCase();
     final email = _emailController.text.trim().toLowerCase();
 
-    if (name.length < 3 || cpf.length != 11 || phone.length < 10) {
-      setState(() => _errorMessage = 'Preencha nome, CPF e telefone corretamente.');
+    if (name.length < 3) {
+      setState(() => _errorMessage = 'Informe o nome completo.');
+      return;
+    }
+
+    if (cpf.length != 11) {
+      setState(() => _errorMessage = 'Informe um CPF com 11 dígitos.');
+      return;
+    }
+
+    if (phone.length < 10 || phone.length > 11) {
+      setState(() => _errorMessage = 'Informe um telefone com DDD.');
       return;
     }
 
@@ -113,14 +123,14 @@ class _FirstAccessScreenState extends State<FirstAccessScreen> {
 
     if (password.length < 6) {
       setState(() {
-        _errorMessage = 'A senha precisa ter no minimo 6 caracteres.';
+        _errorMessage = 'A senha precisa ter no mínimo 6 caracteres.';
       });
       return;
     }
 
     if (password != confirm) {
       setState(() {
-        _errorMessage = 'As senhas nao conferem.';
+        _errorMessage = 'As senhas não conferem.';
       });
       return;
     }
@@ -176,7 +186,7 @@ class _FirstAccessScreenState extends State<FirstAccessScreen> {
     if (session == null) {
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Nao foi possivel concluir o primeiro acesso.';
+        _errorMessage = 'Não foi possível concluir o primeiro acesso.';
       });
       return;
     }
@@ -232,7 +242,7 @@ class _FirstAccessScreenState extends State<FirstAccessScreen> {
                     Image.asset('assets/airmovebr-logo.png', height: 128),
                     const SizedBox(height: 32),
                     Text(
-                      widget.inviteCode == null ? 'Primeiro acesso' : 'Cadastro de tecnico',
+                      widget.inviteCode == null ? 'Primeiro acesso' : 'Cadastro de técnico',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w900,
@@ -289,8 +299,13 @@ class _FirstAccessScreenState extends State<FirstAccessScreen> {
                       key: const Key('firstAccessCpfField'),
                       controller: _cpfController,
                       keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        const _DigitsMaskFormatter(maxDigits: 11, mask: _cpfMask),
+                      ],
                       decoration: const InputDecoration(
                         labelText: 'CPF',
+                        hintText: '000.000.000-00',
                         prefixIcon: Icon(Icons.badge_outlined),
                       ),
                     ),
@@ -299,8 +314,13 @@ class _FirstAccessScreenState extends State<FirstAccessScreen> {
                       key: const Key('firstAccessPhoneField'),
                       controller: _phoneController,
                       keyboardType: TextInputType.phone,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        const _DigitsMaskFormatter(maxDigits: 11, mask: _phoneMask),
+                      ],
                       decoration: const InputDecoration(
                         labelText: 'Telefone',
+                        hintText: '(00) 00000-0000',
                         prefixIcon: Icon(Icons.phone_outlined),
                       ),
                     ),
@@ -309,7 +329,7 @@ class _FirstAccessScreenState extends State<FirstAccessScreen> {
                       key: const Key('firstAccessPhotoButton'),
                       onPressed: _isLoading ? null : _takePhoto,
                       icon: Icon(_photo == null ? Icons.photo_camera_outlined : Icons.check_circle_outline),
-                      label: Text(_photo == null ? 'Tirar foto do funcionario' : 'Foto registrada - tirar novamente'),
+                      label: Text(_photo == null ? 'Tirar foto do funcionário' : 'Foto registrada - tirar novamente'),
                     ),
                     if (_photo != null) ...[
                       const SizedBox(height: 12),
@@ -361,7 +381,7 @@ class _FirstAccessScreenState extends State<FirstAccessScreen> {
                             ),
                             const SizedBox(height: 8),
                             const Text(
-                              'Declaro que o acesso ao aplicativo e pessoal. Comprometo-me a executar os checklists, registrar os atendimentos corretamente, utilizar os EPIs descritos no sistema, nao compartilhar minha senha e proteger os dados dos clientes. Autorizo o uso do meu nome, foto e assinatura nos relatorios dos servicos executados por mim.',
+                              'Declaro que o acesso ao aplicativo é pessoal. Comprometo-me a executar os checklists, registrar os atendimentos corretamente, utilizar os EPIs descritos no sistema, não compartilhar minha senha e proteger os dados dos clientes. Autorizo o uso do meu nome, foto e assinatura nos relatórios dos serviços executados por mim.',
                             ),
                             CheckboxListTile(
                               key: const Key('firstAccessTermCheckbox'),
@@ -430,6 +450,47 @@ class _FirstAccessScreenState extends State<FirstAccessScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+String _cpfMask(String digits) => _applyDigitsMask(digits, '###.###.###-##');
+
+String _phoneMask(String digits) => _applyDigitsMask(
+      digits,
+      digits.length <= 10 ? '(##) ####-####' : '(##) #####-####',
+    );
+
+String _applyDigitsMask(String digits, String pattern) {
+  final output = StringBuffer();
+  var digitIndex = 0;
+  for (var patternIndex = 0; patternIndex < pattern.length; patternIndex += 1) {
+    final character = pattern[patternIndex];
+    if (character == '#') {
+      if (digitIndex >= digits.length) break;
+      output.write(digits[digitIndex]);
+      digitIndex += 1;
+    } else if (digitIndex < digits.length) {
+      output.write(character);
+    }
+  }
+  return output.toString();
+}
+
+class _DigitsMaskFormatter extends TextInputFormatter {
+  const _DigitsMaskFormatter({required this.maxDigits, required this.mask});
+
+  final int maxDigits;
+  final String Function(String) mask;
+
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    final rawDigits = newValue.text.replaceAll(RegExp(r'\D'), '');
+    final digits = rawDigits.length > maxDigits ? rawDigits.substring(0, maxDigits) : rawDigits;
+    final formatted = mask(digits);
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }

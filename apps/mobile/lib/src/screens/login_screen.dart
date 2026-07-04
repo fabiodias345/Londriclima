@@ -35,29 +35,28 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
 
   Future<void> _startRegistration() async {
-    final controller = TextEditingController();
+    var inviteCode = '';
     final code = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Primeiro cadastro'),
         content: TextField(
           key: const Key('technicianInviteCodeField'),
-          controller: controller,
           autocorrect: false,
           textCapitalization: TextCapitalization.characters,
-          decoration: const InputDecoration(labelText: 'Codigo do convite'),
+          onChanged: (value) => inviteCode = value,
+          decoration: const InputDecoration(labelText: 'Código do convite'),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancelar')),
           FilledButton(
             key: const Key('validateTechnicianInviteButton'),
-            onPressed: () => Navigator.pop(dialogContext, controller.text.trim()),
+            onPressed: () => Navigator.pop(dialogContext, inviteCode.trim()),
             child: const Text('Continuar'),
           ),
         ],
       ),
     );
-    controller.dispose();
     if (code == null || code.isEmpty || !mounted) return;
 
     setState(() {
@@ -70,7 +69,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!valid) {
         setState(() {
           _isLoading = false;
-          _errorMessage = 'Convite invalido, vencido ou ja utilizado.';
+          _errorMessage = 'Convite inválido, vencido ou já utilizado.';
         });
         return;
       }
@@ -172,7 +171,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() {
       _isLoading = false;
-      _errorMessage = 'Login ou senha invalido.';
+      _errorMessage = 'Login ou senha inválidos.';
     });
   }
 
@@ -204,7 +203,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Entre para acessar a operacao.',
+                      'Entre para acessar a operação.',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: neuroMuted,
