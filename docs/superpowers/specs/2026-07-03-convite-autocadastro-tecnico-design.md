@@ -114,3 +114,30 @@ Corrigir a listagem dos acessos existentes, profissionalizar o gerenciamento de 
 - testar criacao do tecnico, armazenamento dos arquivos, PDF e autenticacao final;
 - testar o painel administrativo e o fluxo completo no aplicativo;
 - executar testes do backend, contratos do frontend, build do backend e analise Flutter.
+
+## Correcoes apos validacao no aparelho
+
+### Abertura do primeiro cadastro
+
+- remover o `TextEditingController` descartado antes do fim da animacao do dialogo do codigo;
+- manter o codigo digitado em estado local do dialogo, sem controlador compartilhado;
+- abrir o formulario de autocadastro sem tela vermelha ou excecao intermediaria;
+- adicionar teste de widget que abre o dialogo, informa o convite e chega ao formulario.
+
+### CPF e telefone
+
+- aceitar somente digitos nos campos de CPF e telefone;
+- limitar CPF a 11 digitos e telefone a 11 digitos;
+- exibir CPF no formato `000.000.000-00` e telefone no formato brasileiro durante a digitacao;
+- enviar ao backend somente os digitos, preservando os contratos atuais da API;
+- substituir a mensagem generica por mensagens separadas para nome, CPF e telefone;
+- nao aceitar CPF com 10, 12 ou mais digitos;
+- nao aceitar telefone sem DDD ou fora do intervalo de 10 a 11 digitos.
+
+### Portugues do termo
+
+- corrigir acentos e ortografia do termo exibido no aplicativo;
+- corrigir acentos e ortografia do PDF assinado;
+- preservar caracteres do conjunto WinAnsi ao montar o PDF, em vez de remover letras acentuadas;
+- atualizar a versao do termo para `2026-07-04`;
+- testar no PDF as palavras `proteção`, `identificação`, `não`, `relatórios` e `serviços`.
