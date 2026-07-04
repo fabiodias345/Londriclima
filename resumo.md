@@ -26,6 +26,17 @@ Somente estado atual e proximos passos. Historico concluido fica no Git e nos te
   - dashboard com botoes coloridos;
   - botoes para O.S., Agenda, Clientes, PMOC, Frota, Relatorios, Tecnicos e Pendencias;
   - telas-resumo preparadas para as proximas fases.
+- Fase 2 do app admin implementada:
+  - cliente HTTP autenticado para endpoints admin;
+  - botoes do dashboard abrem dados reais;
+  - O.S., Agenda, Clientes, PMOC, Frota, Relatorios, Tecnicos e Pendencias em modo somente leitura;
+  - estados de carregamento, vazio, erro e atualizacao manual.
+- Fase 3 do app admin implementada:
+  - criar nova O.S. com cliente, titulo, detalhes, tecnico e agendamento;
+  - reprogramar O.S. operacional;
+  - aprovar ou rejeitar pre-chamado com confirmacao;
+  - reenviar assinatura PMOC com confirmacao;
+  - atualizacao automatica da lista depois da acao.
 
 ## Validacao feita
 
@@ -40,34 +51,23 @@ Resultado:
 No issues found
 ```
 
+Tentativa adicional:
+
+```powershell
+cd apps\admin_mobile
+flutter test --no-pub
+```
+
+Resultado: comando travou sem saida ate o timeout local.
+
 ## Proximo foco - App Admin Mobile
-
-### Fase 2 - dados reais
-
-Conectar os botoes do dashboard aos endpoints existentes do admin:
-
-- O.S. abertas, em andamento e concluidas.
-- Agenda do dia.
-- Clientes.
-- PMOC pendente.
-- Frota.
-- Tecnicos.
-- Relatorios resumidos.
-- Pendencias urgentes.
-
-### Fase 3 - acoes rapidas
-
-- Criar nova O.S.
-- Reprogramar agenda.
-- Aprovar ou rejeitar solicitacao.
-- Reenviar PMOC.
-- Abrir PDF/relatorio.
-- Registrar acao de frota quando fizer sentido.
 
 ### Fase 4 - acabamento
 
 - Busca e filtros.
 - Melhor layout para celular pequeno.
+- Abrir PDF/relatorio.
+- Definir acao de frota adequada para o mobile.
 - Notificacoes depois da definicao Meta/telefone.
 - Build APK admin somente no final.
 

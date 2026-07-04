@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/admin_api_client.dart';
 import '../theme/admin_theme.dart';
+import 'admin_module.dart';
 import 'login_screen.dart';
 import 'module_screen.dart';
 
@@ -16,14 +17,14 @@ class DashboardScreen extends StatelessWidget {
   final AdminApiClient apiClient;
 
   static const _items = [
-    DashboardItem('O.S.', 'Abertas, andamento e concluidas', Icons.assignment_outlined, adminBlue),
-    DashboardItem('Agenda', 'Hoje, atrasos e proximas visitas', Icons.calendar_month_outlined, adminGreen),
-    DashboardItem('Clientes', 'Cadastro e maquinas por cliente', Icons.groups_outlined, adminCyan),
-    DashboardItem('PMOC', 'PDF, assinatura e pendencias', Icons.verified_user_outlined, adminPurple),
-    DashboardItem('Frota', 'Veiculos, consumo e abastecimento', Icons.local_shipping_outlined, adminOrange),
-    DashboardItem('Relatorios', 'Indicadores e envios', Icons.bar_chart_outlined, Color(0xFF5964D8)),
-    DashboardItem('Tecnicos', 'Equipe, acessos e convites', Icons.engineering_outlined, Color(0xFF0F766E)),
-    DashboardItem('Pendencias', 'Alertas que exigem acao', Icons.warning_amber_outlined, adminRed),
+    DashboardItem(AdminModuleKind.orders, 'O.S.', 'Abertas, andamento e concluidas', Icons.assignment_outlined, adminBlue),
+    DashboardItem(AdminModuleKind.schedule, 'Agenda', 'Hoje, atrasos e proximas visitas', Icons.calendar_month_outlined, adminGreen),
+    DashboardItem(AdminModuleKind.clients, 'Clientes', 'Cadastro e maquinas por cliente', Icons.groups_outlined, adminCyan),
+    DashboardItem(AdminModuleKind.pmoc, 'PMOC', 'PDF, assinatura e pendencias', Icons.verified_user_outlined, adminPurple),
+    DashboardItem(AdminModuleKind.fleet, 'Frota', 'Veiculos, consumo e abastecimento', Icons.local_shipping_outlined, adminOrange),
+    DashboardItem(AdminModuleKind.reports, 'Relatorios', 'Indicadores e envios', Icons.bar_chart_outlined, Color(0xFF5964D8)),
+    DashboardItem(AdminModuleKind.technicians, 'Tecnicos', 'Equipe, acessos e convites', Icons.engineering_outlined, Color(0xFF0F766E)),
+    DashboardItem(AdminModuleKind.pending, 'Pendencias', 'Alertas que exigem acao', Icons.warning_amber_outlined, adminRed),
   ];
 
   @override
@@ -80,7 +81,11 @@ class DashboardScreen extends StatelessWidget {
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => ModuleScreen(item: item),
+                        builder: (_) => ModuleScreen(
+                          item: item,
+                          session: session,
+                          apiClient: apiClient,
+                        ),
                       ),
                     );
                   },
@@ -92,15 +97,6 @@ class DashboardScreen extends StatelessWidget {
       ),
     );
   }
-}
-
-class DashboardItem {
-  const DashboardItem(this.title, this.subtitle, this.icon, this.color);
-
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final Color color;
 }
 
 class _Header extends StatelessWidget {

@@ -39,6 +39,68 @@ class AdminApiClient {
   final Uri baseUrl;
   final Duration timeout;
 
+  Future<Map<String, dynamic>> getJson(String path, AdminSession session) async {
+    return _sendJson('GET', path, session);
+  }
+
+  Future<Map<String, dynamic>> postJson(
+    String path,
+    AdminSession session, [
+    Map<String, dynamic>? payload,
+  ]) async {
+    return _sendJson('POST', path, session, payload);
+  }
+
+  Future<Map<String, dynamic>> patchJson(
+    String path,
+    AdminSession session,
+    Map<String, dynamic> payload,
+  ) async {
+    return _sendJson('PATCH', path, session, payload);
+  }
+
+  Future<Map<String, dynamic>> _sendJson(
+    String method,
+    String path,
+    AdminSession session, [
+    Map<String, dynamic>? payload,
+  ]) async {
+    final client = HttpClient()..connectionTimeout = timeout;
+
+    try {
+      final request = await client.openUrl(method, baseUrl.resolve('/api/v1$path')).timeout(timeout);
+      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer ${session.accessToken}');
+      if (payload != null) {
+        request.headers.contentType = ContentType.json;
+        request.write(jsonEncode(payload));
+      }
+
+      final response = await request.close().timeout(timeout);
+      final body = await response.transform(utf8.decoder).join().timeout(timeout);
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw const AdminRequestException(AdminRequestFailure.unexpected);
+      }
+
+      final decoded = jsonDecode(body);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+
+      throw const AdminRequestException(AdminRequestFailure.unexpected);
+    } on AdminRequestException {
+      rethrow;
+    } on SocketException {
+      throw const AdminRequestException(AdminRequestFailure.network);
+    } on TimeoutException {
+      throw const AdminRequestException(AdminRequestFailure.network);
+    } on FormatException {
+      throw const AdminRequestException(AdminRequestFailure.unexpected);
+    } finally {
+      client.close(force: true);
+    }
+  }
+
   Future<AdminSession> login(String login, String password) async {
     final client = HttpClient()..connectionTimeout = timeout;
 
@@ -94,4 +156,15 @@ class AdminApiClient {
       client.close(force: true);
     }
   }
+}
+
+enum AdminRequestFailure {
+  network,
+  unexpected,
+}
+
+class AdminRequestException implements Exception {
+  const AdminRequestException(this.failure);
+
+  final AdminRequestFailure failure;
 }
