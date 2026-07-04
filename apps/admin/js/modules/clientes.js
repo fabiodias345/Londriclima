@@ -374,7 +374,7 @@ function renderClientEquipments(items) {
       <div>
         <span>Categoria: \${escapeHtml(formatServiceCategoryLabel(getEquipmentCategory(item)))}</span>
         <span>PatrimÃ´nio: \${escapeHtml(item.patrimonio || "nÃ£o informado")}</span>
-        <span>CÃ³digo/QR: \${escapeHtml(item.codigo_barras || "nÃ£o informado")}</span>
+        <span>Código/QR: \${escapeHtml(item.codigo_barras || "não informado")}</span>
         <span>Gas: \${escapeHtml(item.gas_refrigerante || "pendente da primeira visita")}</span>
         <span>Serie: \${escapeHtml(item.numero_serie || "nao informada")}</span>
       </div>

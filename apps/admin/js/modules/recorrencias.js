@@ -390,11 +390,4 @@ function buildClientPmocPayload(client, engineerId) {
   });
 }
 
-function renderEngenheiros(items) {
-  engenheirosList.innerHTML = "";
-
-  if (!items.length) {
-    engenheirosList.innerHTML = '<article class="data-row"><strong>Nenhum engenheiro cadastrado.</strong><span>Cadastre o responsavel tecnico antes de vincular clientes PMOC.</span></article>';
-    return;
-  }
-`;
+`; 

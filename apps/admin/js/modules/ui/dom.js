@@ -277,7 +277,7 @@ function fillEquipeForm(equipeId) {
     return;
   }
 
-  equipeModalTitle.textContent = `Editar: ${equipe.nome}`;
+  equipeModalTitle.textContent = "Editar: " + equipe.nome;
   equipeForm.elements.id.value = equipe.id;
   equipeForm.elements.nome.value = equipe.nome || "";
   renderEquipeClientOptions((equipe.clientes || []).map((cliente) => cliente.id));
