@@ -1,40 +1,79 @@
-# Resumo AIRMOVEBR
+# Resumo Clima do Brasil
 
-Atualizado em: 02/07/2026
+Atualizado em: 04/07/2026
 
-Somente pendencias e proximos passos. Historico concluido fica no Git e nos testes.
+Somente estado atual e proximos passos. Historico concluido fica no Git e nos testes.
 
 ## Regras
 
 - Executar uma fase por vez e validar antes de continuar.
-- Arquivo novo ou editado: maximo de 500 linhas.
+- App tecnico e app admin devem ficar separados.
+- App admin aceita somente usuario com `role=admin`.
+- Tecnico e auxiliar nao acessam o app admin.
+- Nao gerar APK admin ainda; testar por `flutter run`.
+- APK admin so depois de definir telefone e API Meta.
 - Segredos e credenciais nunca entram no Git.
-- Backup na mesma VM serve apenas para restauracao rapida; copia externa e obrigatoria.
 
-## Proximo foco - camara fria e relatorios
+## Estado atual
 
-Executar e validar uma fase antes de iniciar a seguinte.
+- Rebrand visual para Clima do Brasil aplicado.
+- Admin web esta ok por enquanto.
+- APK tecnico esta ok por enquanto.
+- Novo app separado criado em `apps/admin_mobile`.
+- Fase 1 do app admin implementada:
+  - login pela mesma API do sistema;
+  - bloqueio local para `role != admin`;
+  - dashboard com botoes coloridos;
+  - botoes para O.S., Agenda, Clientes, PMOC, Frota, Relatorios, Tecnicos e Pendencias;
+  - telas-resumo preparadas para as proximas fases.
 
-6. **Fase 6 - assinatura do tecnico:** implementada localmente; falta gerar/instalar o APK e validar as duas assinaturas no aparelho.
-7. **Fase 7 - relatorio Camara Fria:** implementada e validada com PDF simulado; falta deploy e conferencia com uma O.S. real.
-8. **Fase 8 - componentes PDF:** implementada localmente; falta deploy junto da proxima publicacao.
-9. **Fase 9 - relatorios avulsos:** implementada localmente; falta deploy e conferencia com uma O.S. real.
-10. **Fase 10 - relatorios PMOC:** implementada localmente; falta deploy e conferencia com PDF real.
-11. **Fase 11 - validacao final:** validacao local concluida; falta deploy, APK no aparelho e conferencia com O.S./PDFs reais.
+## Validacao feita
 
-## Backup automatico - validacoes pendentes
+```powershell
+cd apps\admin_mobile
+flutter analyze --no-pub
+```
 
-Estado atual: backups locais e externo ativos a cada 6 horas; monitoramento horario, alerta por e-mail e restauracao mensal isolada tambem ativos.
+Resultado:
 
-### Fase B6 - restauracao e monitoramento
+```text
+No issues found
+```
 
-- Conferir a primeira execucao do snapshot semanal da Locaweb depois do proximo domingo.
-- Confirmar recebimento do e-mail real de teste do alerta.
+## Proximo foco - App Admin Mobile
 
-## Pendencias posteriores
+### Fase 2 - dados reais
 
-- Validar no APK os checklists mensal, trimestral, semestral e anual em campo.
-- Melhorar a finalizacao da O.S. apos retorno dos tecnicos.
-- Validar no painel edicao, cancelamento e exclusao de O.S. gerada errada.
-- Conferir o PDF PMOC real e adaptar relatorios aos novos codigos de checklist.
-- Gerar novo APK e publicar somente depois da validacao no aparelho.
+Conectar os botoes do dashboard aos endpoints existentes do admin:
+
+- O.S. abertas, em andamento e concluidas.
+- Agenda do dia.
+- Clientes.
+- PMOC pendente.
+- Frota.
+- Tecnicos.
+- Relatorios resumidos.
+- Pendencias urgentes.
+
+### Fase 3 - acoes rapidas
+
+- Criar nova O.S.
+- Reprogramar agenda.
+- Aprovar ou rejeitar solicitacao.
+- Reenviar PMOC.
+- Abrir PDF/relatorio.
+- Registrar acao de frota quando fizer sentido.
+
+### Fase 4 - acabamento
+
+- Busca e filtros.
+- Melhor layout para celular pequeno.
+- Notificacoes depois da definicao Meta/telefone.
+- Build APK admin somente no final.
+
+## Comando para testar agora
+
+```powershell
+cd apps\admin_mobile
+flutter run --dart-define=ADMIN_API_BASE_URL=https://api.airmovebr.com.br
+```
