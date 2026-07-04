@@ -55,16 +55,6 @@
     grid-template-columns: 1fr;
   }
 
-  .team-workspace,
-  .team-form {
-    grid-template-columns: 1fr;
-  }
-
-  .team-form {
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
-  }
-
   #relatoriosSummary {
     grid-template-columns: 1fr;
   }
@@ -123,6 +113,12 @@
 
   .os-detail-panel {
     position: static;
+  }
+
+  .team-card-grid,
+  .team-card-actions,
+  .team-modal-tabs {
+    grid-template-columns: 1fr;
   }
 
   .os-detail-sections,

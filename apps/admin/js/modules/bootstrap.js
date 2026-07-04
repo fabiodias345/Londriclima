@@ -400,8 +400,31 @@ equipesList?.addEventListener("click", (event) => {
   }
 });
 
-equipeClientSearchInput?.addEventListener("input", () => {
-  renderEquipeClientOptions();
+openEquipeModalButton?.addEventListener("click", () => {
+  resetEquipeForm();
+  openEquipeModal();
+});
+
+closeEquipeModalButton?.addEventListener("click", closeEquipeModal);
+equipeModal?.addEventListener("click", (event) => {
+  if (event.target === equipeModal) {
+    closeEquipeModal();
+  }
+});
+
+for (const button of equipeModal?.querySelectorAll("[data-equipe-tab]") || []) {
+  button.addEventListener("click", () => {
+    setEquipeTab(button.dataset.equipeTab || "details");
+  });
+}
+
+equipeMemberSearchInput?.addEventListener("input", () => {
+  renderEquipeMembersList();
+});
+
+resetEquipeFormButton?.addEventListener("click", () => {
+  resetEquipeForm();
+  closeEquipeModal();
 });
 
 clientForm?.elements.tipo?.addEventListener("change", updateClientDocumentCopy);

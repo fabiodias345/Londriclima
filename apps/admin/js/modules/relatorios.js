@@ -281,7 +281,8 @@ async function submitEquipe(event) {
     }
 
     resetEquipeForm();
-    equipeFormStatus.textContent = "Equipe salva.";
+    closeEquipeModal();
+    equipesStatus.textContent = "Equipe salva.";
     await loadEquipes();
   } catch {
     equipeFormStatus.textContent = "API indisponivel.";

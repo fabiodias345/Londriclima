@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Protótipo - Nova Layout Equipes</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header {
+      background: white;
+      padding: 24px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .header h1 {
+      font-size: 24px;
+      margin: 0;
+    }
+
+    .header p {
+      font-size: 14px;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .btn-nova {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .btn-nova:hover {
+      background: #0056b3;
+    }
+
+    /* Grid de Equipes */
+    .equipes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .equipe-card {
+      background: white;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 2px solid transparent;
+    }
+
+    .equipe-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      border-color: #007bff;
+    }
+
+    .equipe-card h3 {
+      font-size: 18px;
+      margin-bottom: 12px;
+      color: #222;
+    }
+
+    .card-meta {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 12px;
+      font-size: 13px;
+    }
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: #666;
+    }
+
+    .meta-badge {
+      background: #e9ecef;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .btn-sm {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      font-size: 13px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .btn-edit {
+      background: #007bff;
+      color: white;
+    }
+
+    .btn-delete {
+      background: #dc3545;
+      color: white;
+    }
+
+    .btn-sm:hover {
+      opacity: 0.9;
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 600px;
+      max-height: 85vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid #e9ecef;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h2 {
+      font-size: 20px;
+      margin: 0;
+    }
+
+    .btn-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #666;
+    }
+
+    .modal-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid #e9ecef;
+      background: #f9f9f9;
+    }
+
+    .tab-button {
+      flex: 1;
+      padding: 12px 16px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: #666;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab-button.active {
+      color: #007bff;
+      border-bottom-color: #007bff;
+    }
+
+    .tab-pane {
+      display: none;
+      padding: 20px;
+    }
+
+    .tab-pane.active {
+      display: block;
+    }
+
+    /* Tab Detalhes */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #333;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: inherit;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+    }
+
+    /* Tab Técnicos */
+    .tech-search {
+      margin-bottom: 16px;
+    }
+
+    .tech-search input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .tech-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .tech-item {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      background: #f9f9f9;
+      border-radius: 4px;
+      border: 1px solid #e9ecef;
+    }
+
+    .tech-item input[type="checkbox"] {
+      width: auto;
+      margin-right: 10px;
+      cursor: pointer;
+    }
+
+    .tech-item label {
+      flex: 1;
+      margin: 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+
+    .tech-role {
+      background: #e9ecef;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .tech-role.lider {
+      background: #ffc107;
+      color: #333;
+    }
+
+    .tech-warning {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      color: #856404;
+      padding: 10px;
+      border-radius: 4px;
+      font-size: 13px;
+      margin-top: 8px;
+      display: none;
+    }
+
+    .tech-warning.show {
+      display: block;
+    }
+
+    /* Modal Footer */
+    .modal-footer {
+      padding: 16px 20px;
+      border-top: 1px solid #e9ecef;
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .btn-primary {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .btn-secondary {
+      background: #e9ecef;
+      color: #333;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .btn-primary:hover {
+      background: #0056b3;
+    }
+
+    .btn-secondary:hover {
+      background: #dee2e6;
+    }
+
+    /* Status */
+    .status {
+      padding: 12px 16px;
+      background: #d4edda;
+      color: #155724;
+      border-radius: 4px;
+      font-size: 13px;
+      display: none;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #666;
+    }
+
+    .empty-state h3 {
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+
+    .empty-state p {
+      font-size: 13px;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div>
+        <h1>Equipes operacionais</h1>
+        <p>Monte equipes com técnicos, permitindo duplicatas com aviso</p>
+      </div>
+      <button class="btn-nova" onclick="openNewEquipeModal()">+ Nova Equipe</button>
+    </div>
+
+    <!-- Grid de Equipes -->
+    <div class="equipes-grid" id="equipesGrid">
+      <!-- Equipe Card 1 -->
+      <div class="equipe-card" onclick="openEquipeModal('eq1')">
+        <h3>Equipe Hospital Zona Sul</h3>
+        <div class="card-meta">
+          <div class="meta-item">
+            👥 <span class="meta-badge">5 técnicos</span>
+          </div>
+          <div class="meta-item">
+            🏢 <span class="meta-badge">2 clientes</span>
+          </div>
+        </div>
+        <div class="card-actions">
+          <button class="btn-sm btn-edit" onclick="event.stopPropagation(); openEquipeModal('eq1')">Editar</button>
+          <button class="btn-sm btn-delete" onclick="event.stopPropagation(); deleteEquipe('eq1')">Apagar</button>
+        </div>
+      </div>
+
+      <!-- Equipe Card 2 -->
+      <div class="equipe-card" onclick="openEquipeModal('eq2')">
+        <h3>Equipe Clínica Bela Vista</h3>
+        <div class="card-meta">
+          <div class="meta-item">
+            👥 <span class="meta-badge">3 técnicos</span>
+          </div>
+          <div class="meta-item">
+            🏢 <span class="meta-badge">1 cliente</span>
+          </div>
+        </div>
+        <div class="card-actions">
+          <button class="btn-sm btn-edit" onclick="event.stopPropagation(); openEquipeModal('eq2')">Editar</button>
+          <button class="btn-sm btn-delete" onclick="event.stopPropagation(); deleteEquipe('eq2')">Apagar</button>
+        </div>
+      </div>
+
+      <!-- Equipe Card 3 -->
+      <div class="equipe-card" onclick="openEquipeModal('eq3')">
+        <h3>Equipe Centro (Flexível)</h3>
+        <div class="card-meta">
+          <div class="meta-item">
+            👥 <span class="meta-badge">2 técnicos</span>
+          </div>
+          <div class="meta-item">
+            🏢 <span class="meta-badge">0 clientes</span>
+          </div>
+        </div>
+        <div class="card-actions">
+          <button class="btn-sm btn-edit" onclick="event.stopPropagation(); openEquipeModal('eq3')">Editar</button>
+          <button class="btn-sm btn-delete" onclick="event.stopPropagation(); deleteEquipe('eq3')">Apagar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="equipeModal">
+      <div class="modal-content">
+        <!-- Header -->
+        <div class="modal-header">
+          <h2 id="modalTitle">Nova Equipe</h2>
+          <button class="btn-close" onclick="closeEquipeModal()">✕</button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+          <button class="tab-button active" onclick="switchTab(event, 'detalhes')">Detalhes</button>
+          <button class="tab-button" onclick="switchTab(event, 'tecnicos')">Técnicos</button>
+        </div>
+
+        <!-- Body -->
+        <div class="modal-body">
+          <!-- Tab: Detalhes -->
+          <div class="tab-pane active" id="detalhes">
+            <div class="form-group">
+              <label>Nome da Equipe *</label>
+              <input type="text" placeholder="Equipe Hospital Zona Sul" id="equipeName">
+            </div>
+
+            <div class="form-group">
+              <label>Clientes Vinculados</label>
+              <select id="clientSelect" multiple style="height: 100px;">
+                <option value="c1">Hospital Zona Sul</option>
+                <option value="c2">Clínica Bela Vista</option>
+                <option value="c3">Consultório Central</option>
+                <option value="c4" selected>Farmácia Popular</option>
+              </select>
+              <small style="color: #666; font-size: 12px; margin-top: 4px; display: block;">
+                Deixe em branco para atendimento flexível
+              </small>
+            </div>
+
+            <div class="status" id="statusDetail">✓ Equipe salva com sucesso</div>
+          </div>
+
+          <!-- Tab: Técnicos -->
+          <div class="tab-pane" id="tecnicos">
+            <div class="tech-search">
+              <input type="text" placeholder="Buscar técnico..." id="techSearch" onkeyup="filterTecnicos()">
+            </div>
+
+            <div class="tech-list" id="techList">
+              <!-- Tech Item 1 - Checked -->
+              <div class="tech-item">
+                <input type="checkbox" id="tech1" checked onchange="checkTecnicoWarning('tech1', 'João Silva')">
+                <label for="tech1">
+                  João Silva
+                  <span class="tech-role lider">Líder</span>
+                </label>
+              </div>
+
+              <!-- Tech Item 2 - Checked -->
+              <div class="tech-item">
+                <input type="checkbox" id="tech2" checked onchange="checkTecnicoWarning('tech2', 'Maria Santos')">
+                <label for="tech2">
+                  Maria Santos
+                  <span class="tech-role">Técnico</span>
+                </label>
+              </div>
+
+              <!-- Tech Item 3 - Unchecked -->
+              <div class="tech-item">
+                <input type="checkbox" id="tech3" onchange="checkTecnicoWarning('tech3', 'Pedro Costa')">
+                <label for="tech3">
+                  Pedro Costa
+                  <span class="tech-role">Técnico</span>
+                </label>
+              </div>
+
+              <!-- Tech Item 4 - Unchecked (Auxiliar) -->
+              <div class="tech-item">
+                <input type="checkbox" id="tech4" onchange="checkTecnicoWarning('tech4', 'Ana Oliveira')">
+                <label for="tech4">
+                  Ana Oliveira
+                  <span class="tech-role">Auxiliar</span>
+                </label>
+              </div>
+
+              <!-- Tech Item 5 - Checked (Duplicado!) -->
+              <div class="tech-item">
+                <input type="checkbox" id="tech5" checked onchange="checkTecnicoWarning('tech5', 'Carlos Lima')">
+                <label for="tech5">
+                  Carlos Lima
+                  <span class="tech-role">Técnico</span>
+                </label>
+              </div>
+
+              <!-- Tech Item 6 - Unchecked -->
+              <div class="tech-item">
+                <input type="checkbox" id="tech6" onchange="checkTecnicoWarning('tech6', 'Marina Costa')">
+                <label for="tech6">
+                  Marina Costa
+                  <span class="tech-role">Técnico</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Warning quando duplicado -->
+            <div class="tech-warning" id="techWarning">
+              ⚠️ <strong>Carlos Lima</strong> já está em <strong>Equipe Hospital</strong>. Permita duplicação?
+            </div>
+
+            <div class="status" id="statusTech">✓ 5 técnicos selecionados</div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer">
+          <button class="btn-secondary" onclick="closeEquipeModal()">Cancelar</button>
+          <button class="btn-primary" onclick="saveEquipe()">Salvar Equipe</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function openNewEquipeModal() {
+      document.getElementById('modalTitle').textContent = 'Nova Equipe';
+      document.getElementById('equipeName').value = '';
+      document.getElementById('clientSelect').value = '';
+      document.querySelectorAll('#techList input[type="checkbox"]').forEach(cb => cb.checked = false);
+      document.getElementById('equipeModal').classList.add('active');
+    }
+
+    function openEquipeModal(equipId) {
+      document.getElementById('modalTitle').textContent = 'Editar: Equipe Hospital Zona Sul';
+      document.getElementById('equipeModal').classList.add('active');
+    }
+
+    function closeEquipeModal() {
+      document.getElementById('equipeModal').classList.remove('active');
+    }
+
+    function switchTab(e, tabName) {
+      // Remove active de todos os buttons
+      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+      // Remove active de todos os panes
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      // Add active ao clicado
+      e.target.classList.add('active');
+      document.getElementById(tabName).classList.add('active');
+    }
+
+    function filterTecnicos() {
+      const search = document.getElementById('techSearch').value.toLowerCase();
+      document.querySelectorAll('.tech-item').forEach(item => {
+        const text = item.textContent.toLowerCase();
+        item.style.display = text.includes(search) ? 'flex' : 'none';
+      });
+    }
+
+    function checkTecnicoWarning(techId, techName) {
+      const isChecked = document.getElementById(techId).checked;
+
+      // Simular aviso quando Carlos Lima é selecionado
+      if (techId === 'tech5' && isChecked) {
+        document.getElementById('techWarning').classList.add('show');
+      } else {
+        document.getElementById('techWarning').classList.remove('show');
+      }
+    }
+
+    function saveEquipe() {
+      const name = document.getElementById('equipeName').value;
+      const selected = document.querySelectorAll('#techList input[type="checkbox"]:checked').length;
+
+      if (!name && selected === 0) {
+        alert('Preencha pelo menos o nome da equipe');
+        return;
+      }
+
+      document.getElementById('statusDetail').textContent = '✓ Equipe salva com sucesso!';
+      document.getElementById('statusDetail').classList.add('show');
+      document.getElementById('statusTech').textContent = `✓ ${selected} técnicos selecionados`;
+      document.getElementById('statusTech').classList.add('show');
+
+      setTimeout(() => {
+        closeEquipeModal();
+      }, 1500);
+    }
+
+    function deleteEquipe(equipId) {
+      if (confirm('Apagar esta equipe? Checklists associadas serão perdidas.')) {
+        alert('Equipe apagada (demo)');
+      }
+    }
+
+    // Fechar modal ao clicar fora
+    document.getElementById('equipeModal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'equipeModal') {
+        closeEquipeModal();
+      }
+    });
+  </script>
+</body>
+</html>

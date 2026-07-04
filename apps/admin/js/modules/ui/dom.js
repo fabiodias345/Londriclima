@@ -277,6 +277,7 @@ function fillEquipeForm(equipeId) {
     return;
   }
 
+  equipeModalTitle.textContent = `Editar: ${equipe.nome}`;
   equipeForm.elements.id.value = equipe.id;
   equipeForm.elements.nome.value = equipe.nome || "";
   renderEquipeClientOptions((equipe.clientes || []).map((cliente) => cliente.id));
@@ -285,14 +286,36 @@ function fillEquipeForm(equipeId) {
     funcao: membro.funcao
   })));
   equipeFormStatus.textContent = "Editando equipe selecionada.";
+  setEquipeTab("details");
+  openEquipeModal();
 }
 
 function resetEquipeForm() {
   equipeForm.reset();
+  equipeModalTitle.textContent = "Nova Equipe";
   equipeForm.elements.id.value = "";
   renderEquipeClientOptions([]);
   renderEquipeMembersList([]);
   equipeFormStatus.textContent = "";
+  setEquipeTab("details");
+}
+
+function setEquipeTab(tab) {
+  for (const button of equipeModal?.querySelectorAll("[data-equipe-tab]") || []) {
+    button.classList.toggle("active", button.dataset.equipeTab === tab);
+  }
+
+  for (const panel of equipeModal?.querySelectorAll("[data-equipe-panel]") || []) {
+    panel.classList.toggle("hidden", panel.dataset.equipePanel !== tab);
+  }
+}
+
+function openEquipeModal() {
+  equipeModal?.classList.remove("hidden");
+}
+
+function closeEquipeModal() {
+  equipeModal?.classList.add("hidden");
 }
 
 function fillEngineerForm(engineerId) {

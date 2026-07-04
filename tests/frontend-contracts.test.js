@@ -449,18 +449,23 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(script, /clientesList\.classList\.remove\("hidden"\)/);
 });
 
-test("admin organiza equipes com clientes filtraveis e membros operacionais", () => {
+test("admin organiza equipes com cards e modal de edicao", () => {
   const html = read("apps/admin/index.html");
   const script = readAdminJs();
   const styles = readAdminCss();
 
-  assert.match(html, /id="equipeClientSearchInput"/);
+  assert.match(html, /id="openEquipeModalButton"/);
+  assert.match(html, /id="equipeModal"/);
+  assert.match(html, /data-equipe-tab="details"/);
+  assert.match(html, /data-equipe-tab="members"/);
+  assert.match(html, /id="equipeMemberSearchInput"/);
   assert.match(html, /id="equipeMembersList"/);
-  assert.match(script, /function renderEquipeClientOptions/);
+  assert.match(script, /function openEquipeModal/);
+  assert.match(script, /function setEquipeTab/);
   assert.match(script, /tecnico\.role === "tecnico" \|\| tecnico\.role === "auxiliar"/);
   assert.doesNotMatch(script, /<select name="membro_funcao_/);
-  assert.match(styles, /\.team-workspace/);
-  assert.match(styles, /\.team-client-list/);
+  assert.match(styles, /\.team-card-grid/);
+  assert.match(styles, /\.team-modal/);
   assert.match(styles, /\.team-role-badge/);
 });
 

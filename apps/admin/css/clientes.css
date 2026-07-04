@@ -435,3 +435,158 @@
   font-weight: 900;
 }
 
+.team-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.team-header-actions button,
+.team-card-actions button {
+  border: 0;
+  border-radius: 10px;
+  min-height: 44px;
+  padding: 0 18px;
+  font-weight: 900;
+}
+
+.team-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 360px));
+  gap: 18px;
+  padding: 0 0 6px;
+}
+
+.team-card,
+.team-empty-state {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--white);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.team-card strong,
+.team-modal h2 {
+  margin: 0;
+  font-family: "Archivo", sans-serif;
+  font-size: 22px;
+}
+
+.team-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.team-count-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #eef2f7;
+  color: #516173;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.team-card-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.team-modal {
+  width: min(760px, 100%);
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.team-modal-heading {
+  padding: 24px 24px 14px;
+}
+
+.team-modal-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.team-modal-tabs .subnav-button {
+  border-radius: 0;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+}
+
+.team-modal-tabs .subnav-button.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  background: transparent;
+}
+
+.team-modal-form {
+  display: grid;
+  gap: 18px;
+  padding: 20px 24px 24px;
+}
+
+.team-tab-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.team-field-help {
+  margin-top: -6px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.team-tab-panel select[multiple] {
+  min-height: 128px;
+  padding: 10px;
+}
+
+.team-member-list {
+  gap: 12px;
+  max-height: 430px;
+  overflow: auto;
+}
+
+.team-member-option {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.team-role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #e8edf3;
+  color: #1f2937;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.team-role-lider {
+  background: #facc15;
+  color: #111827;
+}
+
+.team-role-auxiliar {
+  background: #e5e7eb;
+  color: #374151;
+}
+

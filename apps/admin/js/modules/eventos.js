@@ -692,7 +692,7 @@ async function deleteTecnico(tecnicoId) {
 }
 
 async function deleteEquipe(equipeId) {
-  equipeFormStatus.textContent = "Removendo equipe...";
+  equipesStatus.textContent = "Removendo equipe...";
 
   try {
     const response = await fetch(\`\${apiBaseUrl}/admin/equipes/\${equipeId}\`, {
@@ -706,18 +706,19 @@ async function deleteEquipe(equipeId) {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
-      equipeFormStatus.textContent = error.message || "Nao foi possivel apagar a equipe.";
+      equipesStatus.textContent = error.message || "Nao foi possivel apagar a equipe.";
       return;
     }
 
     if (equipeForm.elements.id.value === equipeId) {
       resetEquipeForm();
+      closeEquipeModal();
     }
 
-    equipeFormStatus.textContent = "Equipe removida.";
+    equipesStatus.textContent = "Equipe removida.";
     await loadEquipes();
   } catch {
-    equipeFormStatus.textContent = "API indisponivel.";
+    equipesStatus.textContent = "API indisponivel.";
   }
 }
 
@@ -943,7 +944,6 @@ pmocConversionForm?.addEventListener("submit", activatePmocClient);
 resetClientFormButton?.addEventListener("click", resetClientForm);
 backToClientsButton?.addEventListener("click", resetClientForm);
 resetTecnicoFormButton?.addEventListener("click", resetTecnicoForm);
-resetEquipeFormButton?.addEventListener("click", resetEquipeForm);
 resetEngineerFormButton?.addEventListener("click", resetEngineerForm);
 resetVehicleFormButton?.addEventListener("click", resetVehicleForm);
 printReportsButton?.addEventListener("click", openReportsPrint);
