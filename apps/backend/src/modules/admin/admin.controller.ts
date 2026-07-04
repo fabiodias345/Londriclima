@@ -241,6 +241,24 @@ export class AdminController {
     return this.adminService.listarTecnicos(usuario);
   }
 
+  @Post("convites-tecnico")
+  gerarConviteTecnico(@CurrentUser() usuario: AuthenticatedUser) {
+    return this.adminService.gerarConviteTecnico(usuario);
+  }
+
+  @Get("convites-tecnico")
+  listarConvitesTecnico(@CurrentUser() usuario: AuthenticatedUser) {
+    return this.adminService.listarConvitesTecnico(usuario);
+  }
+
+  @Delete("convites-tecnico/:conviteId")
+  cancelarConviteTecnico(
+    @Param("conviteId", new ParseUUIDPipe()) conviteId: string,
+    @CurrentUser() usuario: AuthenticatedUser
+  ) {
+    return this.adminService.cancelarConviteTecnico(conviteId, usuario);
+  }
+
   @Get("tecnicos/:tecnicoId/documentos/:documentoId")
   @Header("Content-Type", "application/pdf")
   async obterDocumentoFuncionario(

@@ -20,11 +20,22 @@ class FirstAccessScreen extends StatefulWidget {
     this.locationService = const DeviceLocationService(),
     this.photoPicker = const DeviceChecklistPhotoPicker(),
     this.barcodeScanner = const DeviceBarcodeScannerService(),
-  });
+  }) : inviteCode = null;
+
+  const FirstAccessScreen.invite({
+    super.key,
+    required this.loginGateway,
+    required this.inviteCode,
+    this.locationService = const DeviceLocationService(),
+    this.photoPicker = const DeviceChecklistPhotoPicker(),
+    this.barcodeScanner = const DeviceBarcodeScannerService(),
+  })  : onboardingToken = null,
+        technicianName = '';
 
   final MobileLoginGateway loginGateway;
-  final String onboardingToken;
+  final String? onboardingToken;
   final String technicianName;
+  final String? inviteCode;
   final LocationService locationService;
   final ChecklistPhotoPicker photoPicker;
   final BarcodeScannerService barcodeScanner;
@@ -37,6 +48,8 @@ class _FirstAccessScreenState extends State<FirstAccessScreen> {
   late final TextEditingController _nameController;
   final _cpfController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _loginController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
   final List<Offset?> _signaturePoints = [];
@@ -56,6 +69,8 @@ class _FirstAccessScreenState extends State<FirstAccessScreen> {
     _nameController.dispose();
     _cpfController.dispose();
     _phoneController.dispose();
+    _loginController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     _confirmController.dispose();
     super.dispose();
@@ -67,9 +82,17 @@ class _FirstAccessScreenState extends State<FirstAccessScreen> {
     final phone = _digits(_phoneController.text);
     final password = _passwordController.text;
     final confirm = _confirmController.text;
+    final login = _loginController.text.trim().toLowerCase();
+    final email = _emailController.text.trim().toLowerCase();
 
     if (name.length < 3 || cpf.length != 11 || phone.length < 10) {
       setState(() => _errorMessage = 'Preencha nome, CPF e telefone corretamente.');
+      return;
+    }
+
+    if (widget.inviteCode != null &&
+        (!RegExp(r'^[a-zA-Z0-9._-]+$').hasMatch(login) || !email.contains('@'))) {
+      setState(() => _errorMessage = 'Preencha login e e-mail corretamente.');
       return;
     }
 
@@ -109,18 +132,34 @@ class _FirstAccessScreenState extends State<FirstAccessScreen> {
 
     final LoginSession? session;
     try {
-      session = await widget.loginGateway.completeFirstAccess(
-        FirstAccessRegistration(
-          onboardingToken: widget.onboardingToken,
-          password: password,
-          name: name,
-          cpf: cpf,
-          phone: phone,
-          photo: _photo!,
-          signaturePng: await _signaturePng(),
-          termAccepted: _termAccepted,
-        ),
-      );
+      final signature = await _signaturePng();
+      session = widget.inviteCode == null
+          ? await widget.loginGateway.completeFirstAccess(
+              FirstAccessRegistration(
+                onboardingToken: widget.onboardingToken!,
+                password: password,
+                name: name,
+                cpf: cpf,
+                phone: phone,
+                photo: _photo!,
+                signaturePng: signature,
+                termAccepted: _termAccepted,
+              ),
+            )
+          : await widget.loginGateway.registerWithTechnicianInvite(
+              TechnicianInviteRegistration(
+                code: widget.inviteCode!,
+                password: password,
+                name: name,
+                login: login,
+                email: email,
+                cpf: cpf,
+                phone: phone,
+                photo: _photo!,
+                signaturePng: signature,
+                termAccepted: _termAccepted,
+              ),
+            );
     } on Object {
       if (!mounted) return;
       setState(() {
@@ -193,7 +232,7 @@ class _FirstAccessScreenState extends State<FirstAccessScreen> {
                     Image.asset('assets/airmovebr-logo.png', height: 128),
                     const SizedBox(height: 32),
                     Text(
-                      'Primeiro acesso',
+                      widget.inviteCode == null ? 'Primeiro acesso' : 'Cadastro de tecnico',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w900,
@@ -222,6 +261,29 @@ class _FirstAccessScreenState extends State<FirstAccessScreen> {
                         prefixIcon: Icon(Icons.person_outline),
                       ),
                     ),
+                    if (widget.inviteCode != null) ...[
+                      const SizedBox(height: 16),
+                      TextField(
+                        key: const Key('firstAccessLoginField'),
+                        controller: _loginController,
+                        autocorrect: false,
+                        decoration: const InputDecoration(
+                          labelText: 'Login',
+                          prefixIcon: Icon(Icons.account_circle_outlined),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        key: const Key('firstAccessEmailField'),
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        autocorrect: false,
+                        decoration: const InputDecoration(
+                          labelText: 'E-mail',
+                          prefixIcon: Icon(Icons.email_outlined),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 16),
                     TextField(
                       key: const Key('firstAccessCpfField'),

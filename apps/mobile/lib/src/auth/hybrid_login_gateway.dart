@@ -37,4 +37,20 @@ class HybridLoginGateway implements MobileLoginGateway {
 
     return ApiLoginGateway(baseUrl: baseUrl).completeFirstAccess(registration);
   }
+
+  @override
+  Future<bool> validateTechnicianInvite(String code) async {
+    if (demoMode) return _fakeLoginGateway.validateTechnicianInvite(code);
+    final baseUrl = apiBaseUrl;
+    if (baseUrl == null) throw StateError('MOBILE_API_BASE_URL nao configurada.');
+    return ApiLoginGateway(baseUrl: baseUrl).validateTechnicianInvite(code);
+  }
+
+  @override
+  Future<LoginSession?> registerWithTechnicianInvite(TechnicianInviteRegistration registration) async {
+    if (demoMode) return _fakeLoginGateway.registerWithTechnicianInvite(registration);
+    final baseUrl = apiBaseUrl;
+    if (baseUrl == null) throw StateError('MOBILE_API_BASE_URL nao configurada.');
+    return ApiLoginGateway(baseUrl: baseUrl).registerWithTechnicianInvite(registration);
+  }
 }

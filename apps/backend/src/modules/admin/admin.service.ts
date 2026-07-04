@@ -30,6 +30,7 @@ import { AdminPreChamadosService } from "./services/admin-pre-chamados.service";
 import { AdminRecorrenciaService } from "./services/admin-recorrencia.service";
 import { AdminRelatoriosService } from "./services/admin-relatorios.service";
 import { AdminTecnicosService } from "./services/admin-tecnicos.service";
+import { AdminConvitesTecnicoService } from "./services/admin-convites-tecnico.service";
 
 @Injectable()
 export class AdminService {
@@ -39,6 +40,7 @@ export class AdminService {
   private readonly clientesService: AdminClientesService;
   private readonly equipamentosService: AdminEquipamentosService;
   private readonly tecnicosService: AdminTecnicosService;
+  private readonly convitesTecnicoService: AdminConvitesTecnicoService;
   private readonly equipesService: AdminEquipesService;
   private readonly engenheirosService: AdminEngenheirosService;
   private readonly preChamadosService: AdminPreChamadosService;
@@ -60,7 +62,8 @@ export class AdminService {
     preChamadosService?: AdminPreChamadosService,
     relatoriosService?: AdminRelatoriosService,
     pmocService?: AdminPmocService,
-    pmocPdfService?: AdminPmocPdfService
+    pmocPdfService?: AdminPmocPdfService,
+    convitesTecnicoService?: AdminConvitesTecnicoService
   ) {
     this.agendaService = agendaService ?? new AdminAgendaService(prisma);
     this.recorrenciaService = recorrenciaService ?? new AdminRecorrenciaService(prisma);
@@ -74,6 +77,7 @@ export class AdminService {
     this.relatoriosService = relatoriosService ?? new AdminRelatoriosService(prisma, this.frotaService);
     this.pmocService = pmocService ?? new AdminPmocService(prisma, config);
     this.pmocPdfService = pmocPdfService ?? new AdminPmocPdfService(prisma, config);
+    this.convitesTecnicoService = convitesTecnicoService ?? new AdminConvitesTecnicoService(prisma);
   }
 
   async listarPreChamados(usuario: AuthenticatedUser) {
@@ -291,6 +295,18 @@ export class AdminService {
 
   async listarTecnicos(usuario: AuthenticatedUser) {
     return this.tecnicosService.listarTecnicos(usuario);
+  }
+
+  async gerarConviteTecnico(usuario: AuthenticatedUser) {
+    return this.convitesTecnicoService.gerar(usuario);
+  }
+
+  async listarConvitesTecnico(usuario: AuthenticatedUser) {
+    return this.convitesTecnicoService.listar(usuario);
+  }
+
+  async cancelarConviteTecnico(conviteId: string, usuario: AuthenticatedUser) {
+    return this.convitesTecnicoService.cancelar(conviteId, usuario);
   }
 
   async criarTecnico(dto: SalvarTecnicoDto, usuario: AuthenticatedUser) {

@@ -8,10 +8,11 @@ import { PasswordHashService } from "./password-hash.service";
 import { TokenService } from "./token.service";
 import { FuncionarioStorageService } from "./funcionario-storage.service";
 import { FuncionarioTermoService } from "./funcionario-termo.service";
+import { PublicRateLimitService } from "./public-rate-limit.service";
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService, AdminRoleGuard, JwtAuthGuard, MobileRoleGuard, PasswordHashService, TokenService, FuncionarioStorageService, FuncionarioTermoService],
+  providers: [AuthService, AdminRoleGuard, JwtAuthGuard, MobileRoleGuard, PasswordHashService, TokenService, FuncionarioStorageService, FuncionarioTermoService, PublicRateLimitService],
   exports: [AdminRoleGuard, JwtAuthGuard, MobileRoleGuard, PasswordHashService, TokenService, FuncionarioStorageService]
 })
 export class AuthModule {}

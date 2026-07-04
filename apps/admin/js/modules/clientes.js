@@ -85,6 +85,73 @@ async function downloadFuncionarioDocumento(tecnicoId, documentoId) {
   tecnicosStatus.textContent = "Documento baixado.";
 }
 
+function renderTechnicianInvites(items) {
+  technicianInvitesList.innerHTML = "";
+  if (!items.length) {
+    technicianInvitesList.innerHTML = '<article class="data-row"><span>Nenhum convite gerado.</span></article>';
+    return;
+  }
+  for (const item of items) {
+    const row = document.createElement("article");
+    row.className = "data-row";
+    const labels = { pendente: "Pendente", utilizado: "Utilizado", vencido: "Vencido", cancelado: "Cancelado" };
+    const tecnico = item.tecnico
+      ? '<span>Cadastro: ' + escapeHtml(item.tecnico.nome) + ' (' + escapeHtml(item.tecnico.login || "") + ')</span>'
+      : "";
+    const cancelar = item.estado === "pendente"
+      ? '<button class="danger-button compact-button" type="button" data-action="cancelar-convite-tecnico" data-id="' + escapeHtml(item.id) + '">Cancelar</button>'
+      : "";
+    row.innerHTML = '<div><strong>Convite final ' + escapeHtml(item.codigo_sufixo) + '</strong>'
+      + '<span>' + escapeHtml(labels[item.estado] || item.estado) + ' - vence em ' + new Date(item.expira_em).toLocaleString("pt-BR") + '</span>'
+      + tecnico + '</div><div class="data-row-actions">' + cancelar + '</div>';
+    technicianInvitesList.appendChild(row);
+  }
+}
+
+async function loadTechnicianInvites() {
+  const result = await fetchAdminJson("/admin/convites-tecnico", technicianInviteStatus);
+  latestTechnicianInvites = result?.items || [];
+  renderTechnicianInvites(latestTechnicianInvites);
+}
+
+async function generateTechnicianInvite() {
+  generateTechnicianInviteButton.disabled = true;
+  technicianInviteStatus.textContent = "Gerando convite...";
+  try {
+    const response = await fetch(apiBaseUrl + "/admin/convites-tecnico", { method: "POST", headers: authHeaders() });
+    if (await handleUnauthorized(response)) return;
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      technicianInviteStatus.textContent = result.message || "Nao foi possivel gerar o convite.";
+      return;
+    }
+    generatedTechnicianInviteCode.textContent = result.codigo;
+    generatedTechnicianInviteExpiry.textContent = "Valido ate " + new Date(result.expira_em).toLocaleString("pt-BR");
+    generatedTechnicianInvite.classList.remove("hidden");
+    technicianInviteStatus.textContent = "Convite gerado. Envie o codigo ao tecnico.";
+    await loadTechnicianInvites();
+  } catch {
+    technicianInviteStatus.textContent = "API indisponivel.";
+  } finally {
+    generateTechnicianInviteButton.disabled = false;
+  }
+}
+
+async function cancelTechnicianInvite(inviteId) {
+  const response = await fetch(apiBaseUrl + "/admin/convites-tecnico/" + inviteId, { method: "DELETE", headers: authHeaders() });
+  if (await handleUnauthorized(response)) return;
+  const result = await response.json().catch(() => ({}));
+  technicianInviteStatus.textContent = response.ok ? "Convite cancelado." : (result.message || "Nao foi possivel cancelar.");
+  await loadTechnicianInvites();
+}
+
+async function copyTechnicianInvite() {
+  const codigo = generatedTechnicianInviteCode.textContent || "";
+  if (!codigo) return;
+  await navigator.clipboard.writeText(codigo);
+  technicianInviteStatus.textContent = "Codigo copiado.";
+}
+
 function renderEquipes(items) {
   equipesList.innerHTML = "";
 

@@ -29,4 +29,16 @@ class FakeLoginGateway implements MobileLoginGateway {
       technicianName: registration.name,
     );
   }
+
+  @override
+  Future<bool> validateTechnicianInvite(String code) async => code.trim().isNotEmpty;
+
+  @override
+  Future<LoginSession?> registerWithTechnicianInvite(TechnicianInviteRegistration registration) async {
+    return LoginSession(
+      repository: FakeWorkOrderRepository(),
+      fleetRepository: FakeFleetRepository(),
+      technicianName: registration.name,
+    );
+  }
 }

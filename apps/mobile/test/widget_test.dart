@@ -2028,6 +2028,14 @@ class _GatewayComFalha implements MobileLoginGateway {
   Future<LoginSession?> completeFirstAccess(FirstAccessRegistration registration) async {
     throw const SocketException('API indisponivel');
   }
+
+  @override
+  Future<bool> validateTechnicianInvite(String code) async => throw const SocketException('API indisponivel');
+
+  @override
+  Future<LoginSession?> registerWithTechnicianInvite(TechnicianInviteRegistration registration) async {
+    throw const SocketException('API indisponivel');
+  }
 }
 
 class _GatewayDeTeste implements MobileLoginGateway {
@@ -2051,6 +2059,18 @@ class _GatewayDeTeste implements MobileLoginGateway {
       repository: repository,
       fleetRepository: fleetRepository ?? FakeFleetRepository(),
       technicianName: 'Joao Tecnico',
+    );
+  }
+
+  @override
+  Future<bool> validateTechnicianInvite(String code) async => true;
+
+  @override
+  Future<LoginSession?> registerWithTechnicianInvite(TechnicianInviteRegistration registration) async {
+    return LoginSession(
+      repository: repository,
+      fleetRepository: fleetRepository ?? FakeFleetRepository(),
+      technicianName: registration.name,
     );
   }
 }

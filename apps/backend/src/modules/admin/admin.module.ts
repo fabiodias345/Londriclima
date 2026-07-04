@@ -16,6 +16,7 @@ import { AdminRecorrenciaService } from "./services/admin-recorrencia.service";
 import { AdminRelatorioTecnicoCoreService } from "./services/admin-relatorio-tecnico-core.service";
 import { AdminRelatoriosService } from "./services/admin-relatorios.service";
 import { AdminTecnicosService } from "./services/admin-tecnicos.service";
+import { AdminConvitesTecnicoService } from "./services/admin-convites-tecnico.service";
 
 @Module({
   imports: [AuthModule],
@@ -29,6 +30,7 @@ import { AdminTecnicosService } from "./services/admin-tecnicos.service";
     AdminClientesService,
     AdminEquipamentosService,
     AdminTecnicosService,
+    AdminConvitesTecnicoService,
     AdminEquipesService,
     AdminEngenheirosService,
     AdminPreChamadosService,

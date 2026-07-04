@@ -367,6 +367,15 @@ tecnicosList?.addEventListener("click", (event) => {
   }
 });
 
+generateTechnicianInviteButton?.addEventListener("click", () => void generateTechnicianInvite());
+copyTechnicianInviteButton?.addEventListener("click", () => void copyTechnicianInvite());
+technicianInvitesList?.addEventListener("click", (event) => {
+  const target = event.target;
+  if (target instanceof HTMLButtonElement && target.dataset.action === "cancelar-convite-tecnico" && target.dataset.id) {
+    void cancelTechnicianInvite(target.dataset.id);
+  }
+});
+
 equipesList?.addEventListener("click", (event) => {
   const target = event.target;
 

@@ -34,6 +34,67 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _errorMessage;
   bool _isLoading = false;
 
+  Future<void> _startRegistration() async {
+    final controller = TextEditingController();
+    final code = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Primeiro cadastro'),
+        content: TextField(
+          key: const Key('technicianInviteCodeField'),
+          controller: controller,
+          autocorrect: false,
+          textCapitalization: TextCapitalization.characters,
+          decoration: const InputDecoration(labelText: 'Codigo do convite'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancelar')),
+          FilledButton(
+            key: const Key('validateTechnicianInviteButton'),
+            onPressed: () => Navigator.pop(dialogContext, controller.text.trim()),
+            child: const Text('Continuar'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (code == null || code.isEmpty || !mounted) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      final valid = await widget.loginGateway.validateTechnicianInvite(code);
+      if (!mounted) return;
+      if (!valid) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Convite invalido, vencido ou ja utilizado.';
+        });
+        return;
+      }
+      setState(() => _isLoading = false);
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => FirstAccessScreen.invite(
+            loginGateway: widget.loginGateway,
+            inviteCode: code,
+            locationService: widget.locationService,
+            photoPicker: widget.photoPicker,
+            barcodeScanner: widget.barcodeScanner,
+          ),
+        ),
+      );
+    } on Object {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Falha ao validar o convite.';
+      });
+    }
+  }
+
   @override
   void dispose() {
     _userController.dispose();
@@ -195,6 +256,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           fontWeight: FontWeight.w900,
                         ),
                       ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextButton(
+                      key: const Key('firstRegistrationButton'),
+                      onPressed: _isLoading ? null : _startRegistration,
+                      child: const Text('Primeiro cadastro'),
                     ),
                   ],
                 ),
