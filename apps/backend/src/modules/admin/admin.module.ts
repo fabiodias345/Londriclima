@@ -15,6 +15,9 @@ import { AdminPreChamadosService } from "./services/admin-pre-chamados.service";
 import { AdminRecorrenciaSchedulerService } from "./services/admin-recorrencia-scheduler.service";
 import { AdminRecorrenciaService } from "./services/admin-recorrencia.service";
 import { AdminRelatorioTecnicoCoreService } from "./services/admin-relatorio-tecnico-core.service";
+import { AdminPmocCoreService } from "./services/admin-pmoc-core.service";
+import { AdminRelatorioResumoCoreService } from "./services/admin-relatorio-resumo-core.service";
+import { AdminRelatorioTecnicoMapper } from "./services/admin-relatorio-tecnico-mapper";
 import { AdminRelatoriosService } from "./services/admin-relatorios.service";
 import { AdminTecnicosService } from "./services/admin-tecnicos.service";
 import { AdminConvitesTecnicoService } from "./services/admin-convites-tecnico.service";
@@ -35,6 +38,9 @@ import { AdminConvitesTecnicoService } from "./services/admin-convites-tecnico.s
     AdminEquipesService,
     AdminEngenheirosService,
     AdminPreChamadosService,
+    AdminRelatorioTecnicoMapper,
+    AdminPmocCoreService,
+    AdminRelatorioResumoCoreService,
     AdminRelatorioTecnicoCoreService,
     AdminRelatoriosService,
     AdminPmocService,
