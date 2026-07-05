@@ -22,7 +22,12 @@ class FakeLoginGateway implements MobileLoginGateway {
   }
 
   @override
-  Future<LoginSession?> completeFirstAccess(FirstAccessRegistration registration) async {
+  Future<LoginSession?> refresh(String refreshToken) async => null;
+
+  @override
+  Future<LoginSession?> completeFirstAccess(
+    FirstAccessRegistration registration,
+  ) async {
     return LoginSession(
       repository: FakeWorkOrderRepository(),
       fleetRepository: FakeFleetRepository(),
@@ -31,10 +36,13 @@ class FakeLoginGateway implements MobileLoginGateway {
   }
 
   @override
-  Future<bool> validateTechnicianInvite(String code) async => code.trim().isNotEmpty;
+  Future<bool> validateTechnicianInvite(String code) async =>
+      code.trim().isNotEmpty;
 
   @override
-  Future<LoginSession?> registerWithTechnicianInvite(TechnicianInviteRegistration registration) async {
+  Future<LoginSession?> registerWithTechnicianInvite(
+    TechnicianInviteRegistration registration,
+  ) async {
     return LoginSession(
       repository: FakeWorkOrderRepository(),
       fleetRepository: FakeFleetRepository(),

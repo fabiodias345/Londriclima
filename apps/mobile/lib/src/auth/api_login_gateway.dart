@@ -68,6 +68,7 @@ class ApiLoginGateway implements MobileLoginGateway {
             (decoded['usuario'] as Map<String, dynamic>?)?['nome']
                 ?.toString() ??
             '',
+        refreshToken: decoded['refresh_token']?.toString(),
       );
     } finally {
       client.close(force: true);
@@ -110,6 +111,7 @@ class ApiLoginGateway implements MobileLoginGateway {
             (decoded['usuario'] as Map<String, dynamic>?)?['nome']
                 ?.toString() ??
             '',
+        refreshToken: decoded['refresh_token']?.toString(),
       );
     } finally {
       client.close(force: true);
@@ -151,6 +153,46 @@ class ApiLoginGateway implements MobileLoginGateway {
         repository: OfflineWorkOrderRepository(remote: ApiWorkOrderRepository(baseUrl: baseUrl, token: token)),
         fleetRepository: ApiFleetRepository(baseUrl: baseUrl, token: token),
         technicianName: (decoded['usuario'] as Map<String, dynamic>?)?['nome']?.toString() ?? '',
+        refreshToken: decoded['refresh_token']?.toString(),
+      );
+    } finally {
+      client.close(force: true);
+    }
+  }
+
+  @override
+  Future<LoginSession?> refresh(String refreshToken) async {
+    final client = HttpClient()..connectionTimeout = timeout;
+
+    try {
+      final request = await client
+          .postUrl(baseUrl.resolve('/api/v1/auth/refresh'))
+          .timeout(timeout);
+      request.headers.contentType = ContentType.json;
+      request.write(jsonEncode({'refresh_token': refreshToken}));
+
+      final response = await request.close().timeout(timeout);
+      final body = await response.transform(utf8.decoder).join().timeout(timeout);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return null;
+      }
+
+      final decoded = jsonDecode(body) as Map<String, dynamic>;
+      final token = decoded['access_token']?.toString();
+      if (token == null || token.isEmpty) {
+        return null;
+      }
+
+      return LoginSession(
+        repository: OfflineWorkOrderRepository(
+          remote: ApiWorkOrderRepository(baseUrl: baseUrl, token: token),
+        ),
+        fleetRepository: ApiFleetRepository(baseUrl: baseUrl, token: token),
+        technicianName:
+            (decoded['usuario'] as Map<String, dynamic>?)?['nome']
+                ?.toString() ??
+            '',
+        refreshToken: decoded['refresh_token']?.toString(),
       );
     } finally {
       client.close(force: true);

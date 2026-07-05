@@ -25,7 +25,23 @@ class HybridLoginGateway implements MobileLoginGateway {
   }
 
   @override
-  Future<LoginSession?> completeFirstAccess(FirstAccessRegistration registration) async {
+  Future<LoginSession?> refresh(String refreshToken) async {
+    if (demoMode) {
+      return _fakeLoginGateway.refresh(refreshToken);
+    }
+
+    final baseUrl = apiBaseUrl;
+    if (baseUrl == null) {
+      throw StateError('MOBILE_API_BASE_URL nao configurada.');
+    }
+
+    return ApiLoginGateway(baseUrl: baseUrl).refresh(refreshToken);
+  }
+
+  @override
+  Future<LoginSession?> completeFirstAccess(
+    FirstAccessRegistration registration,
+  ) async {
     if (demoMode) {
       return _fakeLoginGateway.completeFirstAccess(registration);
     }
@@ -40,17 +56,29 @@ class HybridLoginGateway implements MobileLoginGateway {
 
   @override
   Future<bool> validateTechnicianInvite(String code) async {
-    if (demoMode) return _fakeLoginGateway.validateTechnicianInvite(code);
+    if (demoMode) {
+      return _fakeLoginGateway.validateTechnicianInvite(code);
+    }
     final baseUrl = apiBaseUrl;
-    if (baseUrl == null) throw StateError('MOBILE_API_BASE_URL nao configurada.');
+    if (baseUrl == null) {
+      throw StateError('MOBILE_API_BASE_URL nao configurada.');
+    }
     return ApiLoginGateway(baseUrl: baseUrl).validateTechnicianInvite(code);
   }
 
   @override
-  Future<LoginSession?> registerWithTechnicianInvite(TechnicianInviteRegistration registration) async {
-    if (demoMode) return _fakeLoginGateway.registerWithTechnicianInvite(registration);
+  Future<LoginSession?> registerWithTechnicianInvite(
+    TechnicianInviteRegistration registration,
+  ) async {
+    if (demoMode) {
+      return _fakeLoginGateway.registerWithTechnicianInvite(registration);
+    }
     final baseUrl = apiBaseUrl;
-    if (baseUrl == null) throw StateError('MOBILE_API_BASE_URL nao configurada.');
-    return ApiLoginGateway(baseUrl: baseUrl).registerWithTechnicianInvite(registration);
+    if (baseUrl == null) {
+      throw StateError('MOBILE_API_BASE_URL nao configurada.');
+    }
+    return ApiLoginGateway(
+      baseUrl: baseUrl,
+    ).registerWithTechnicianInvite(registration);
   }
 }

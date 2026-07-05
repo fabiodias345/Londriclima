@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../auth/onboarding_required_exception.dart';
 import '../auth/mobile_login_gateway.dart';
+import '../auth/biometric_auth_service.dart';
+import '../auth/refresh_token_store.dart';
 import '../models/work_order.dart';
 import '../services/barcode_scanner_service.dart';
 import '../services/checklist_photo_picker.dart';
@@ -17,12 +19,16 @@ class LoginScreen extends StatefulWidget {
     this.locationService = const DeviceLocationService(),
     this.photoPicker = const DeviceChecklistPhotoPicker(),
     this.barcodeScanner = const DeviceBarcodeScannerService(),
+    this.biometricAuth = const DeviceBiometricAuthService(),
+    this.refreshTokenStore = const SecureRefreshTokenStore(),
   });
 
   final MobileLoginGateway loginGateway;
   final LocationService locationService;
   final ChecklistPhotoPicker photoPicker;
   final BarcodeScannerService barcodeScanner;
+  final BiometricAuthService biometricAuth;
+  final RefreshTokenStore refreshTokenStore;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -33,6 +39,30 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   String? _errorMessage;
   bool _isLoading = false;
+  bool _biometricLoginAvailable = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBiometricLogin();
+  }
+
+  Future<void> _loadBiometricLogin() async {
+    try {
+      final token = await widget.refreshTokenStore.read();
+      final available =
+          token != null &&
+          token.isNotEmpty &&
+          await widget.biometricAuth.isAvailable();
+      if (mounted) {
+        setState(() => _biometricLoginAvailable = available);
+      }
+    } on Object {
+      if (mounted) {
+        setState(() => _biometricLoginAvailable = false);
+      }
+    }
+  }
 
   Future<void> _startRegistration() async {
     var inviteCode = '';
@@ -48,7 +78,10 @@ class _LoginScreenState extends State<LoginScreen> {
           decoration: const InputDecoration(labelText: 'Código do convite'),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancelar'),
+          ),
           FilledButton(
             key: const Key('validateTechnicianInviteButton'),
             onPressed: () => Navigator.pop(dialogContext, inviteCode.trim()),
@@ -154,18 +187,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (session != null) {
       final loginSession = session;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(
-          builder: (_) => DashboardScreen(
-            repository: loginSession.repository,
-            fleetRepository: loginSession.fleetRepository,
-            locationService: widget.locationService,
-            photoPicker: widget.photoPicker,
-            barcodeScanner: widget.barcodeScanner,
-            technicianName: loginSession.technicianName,
-          ),
-        ),
-      );
+      await _offerBiometricActivation(loginSession);
+      if (!mounted) return;
+      _openDashboard(loginSession);
       return;
     }
 
@@ -173,6 +197,130 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = false;
       _errorMessage = 'Login ou senha inválidos.';
     });
+  }
+
+  Future<void> _offerBiometricActivation(LoginSession session) async {
+    final refreshToken = session.refreshToken;
+    if (_biometricLoginAvailable ||
+        refreshToken == null ||
+        refreshToken.isEmpty ||
+        !await widget.biometricAuth.isAvailable() ||
+        !mounted) {
+      return;
+    }
+
+    final activate = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Ativar acesso por digital?'),
+        content: const Text(
+          'Nos próximos acessos, use a digital deste aparelho sem digitar sua senha.',
+        ),
+        actions: [
+          TextButton(
+            key: const Key('declineBiometricButton'),
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Agora não'),
+          ),
+          FilledButton(
+            key: const Key('enableBiometricButton'),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Ativar'),
+          ),
+        ],
+      ),
+    );
+
+    if (activate != true) return;
+    try {
+      await widget.refreshTokenStore.write(refreshToken);
+      if (mounted) {
+        setState(() => _biometricLoginAvailable = true);
+      }
+    } on Object {
+      if (mounted) {
+        setState(() => _biometricLoginAvailable = false);
+      }
+    }
+  }
+
+  Future<void> _loginWithBiometrics() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    if (!await widget.biometricAuth.authenticate()) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+
+    try {
+      final refreshToken = await widget.refreshTokenStore.read();
+      if (refreshToken == null || refreshToken.isEmpty) {
+        if (!mounted) return;
+        setState(() {
+          _isLoading = false;
+          _biometricLoginAvailable = false;
+          _errorMessage =
+              'Acesso biométrico indisponível. Entre com login e senha.';
+        });
+        return;
+      }
+
+      final session = await widget.loginGateway.refresh(refreshToken);
+      if (!mounted) return;
+      if (session == null) {
+        try {
+          await widget.refreshTokenStore.clear();
+        } on Object {
+          if (mounted) {
+            setState(() => _biometricLoginAvailable = false);
+          }
+        }
+        if (!mounted) return;
+        setState(() {
+          _isLoading = false;
+          _biometricLoginAvailable = false;
+          _errorMessage = 'Sessão expirada. Entre novamente com login e senha.';
+        });
+        return;
+      }
+
+      final rotatedToken = session.refreshToken;
+      if (rotatedToken != null && rotatedToken.isNotEmpty) {
+        try {
+          await widget.refreshTokenStore.write(rotatedToken);
+        } on Object {
+          if (mounted) {
+            setState(() => _biometricLoginAvailable = false);
+          }
+        }
+      }
+      if (!mounted) return;
+      _openDashboard(session);
+    } on Object {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Falha ao conectar na API.';
+      });
+    }
+  }
+
+  void _openDashboard(LoginSession session) {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => DashboardScreen(
+          repository: session.repository,
+          fleetRepository: session.fleetRepository,
+          locationService: widget.locationService,
+          photoPicker: widget.photoPicker,
+          barcodeScanner: widget.barcodeScanner,
+          technicianName: session.technicianName,
+        ),
+      ),
+    );
   }
 
   @override
@@ -189,7 +337,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Image.asset('assets/clima-do-brasil-logo.jpeg', height: 128),
+                    Image.asset(
+                      'assets/clima-do-brasil-logo.jpeg',
+                      height: 128,
+                    ),
                     const SizedBox(height: 32),
                     Text(
                       'Acesso Clima do Brasil',
@@ -256,6 +407,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
+                    if (_biometricLoginAvailable) ...[
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        key: const Key('biometricLoginButton'),
+                        onPressed: _isLoading ? null : _loginWithBiometrics,
+                        icon: const Icon(Icons.fingerprint),
+                        label: const Text('Entrar com digital'),
+                      ),
+                    ],
                     const SizedBox(height: 12),
                     TextButton(
                       key: const Key('firstRegistrationButton'),

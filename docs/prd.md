@@ -64,6 +64,7 @@ Ja implementado:
 16. Scanner QR/codigo de barras.
 17. Registro de abastecimento.
 18. UX de campo com contraste melhor, pendencias em azul claro, grupos de checklist, progresso e botao fixo.
+19. Login biometrico opcional no Android com refresh token em armazenamento seguro.
 
 ### App admin Android
 
@@ -209,6 +210,7 @@ Fora do MVP:
 ## Criterios de aceite mobile
 
 - Tecnico loga com conta real.
+- Tecnico pode ativar login biometrico apos autenticacao valida, sem armazenamento da senha.
 - Tecnico ve somente O.S. vinculadas a ele/equipe.
 - Uma O.S. com varias maquinas mostra todas as maquinas.
 - Iniciar atendimento grava GPS e muda status no backend.

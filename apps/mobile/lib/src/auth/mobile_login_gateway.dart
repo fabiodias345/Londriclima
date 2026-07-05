@@ -55,19 +55,27 @@ class LoginSession {
     required this.repository,
     required this.fleetRepository,
     this.technicianName = '',
+    this.refreshToken,
   });
 
   final WorkOrderRepository repository;
   final FleetRepository fleetRepository;
   final String technicianName;
+  final String? refreshToken;
 }
 
 abstract class MobileLoginGateway {
   Future<LoginSession?> login(String user, String password);
 
-  Future<LoginSession?> completeFirstAccess(FirstAccessRegistration registration);
+  Future<LoginSession?> refresh(String refreshToken);
+
+  Future<LoginSession?> completeFirstAccess(
+    FirstAccessRegistration registration,
+  );
 
   Future<bool> validateTechnicianInvite(String code);
 
-  Future<LoginSession?> registerWithTechnicianInvite(TechnicianInviteRegistration registration);
+  Future<LoginSession?> registerWithTechnicianInvite(
+    TechnicianInviteRegistration registration,
+  );
 }

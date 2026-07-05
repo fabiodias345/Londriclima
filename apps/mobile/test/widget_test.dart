@@ -2091,6 +2091,11 @@ class _GatewayComFalha implements MobileLoginGateway {
   }
 
   @override
+  Future<LoginSession?> refresh(String refreshToken) async {
+    throw const SocketException('API indisponivel');
+  }
+
+  @override
   Future<LoginSession?> completeFirstAccess(FirstAccessRegistration registration) async {
     throw const SocketException('API indisponivel');
   }
@@ -2125,6 +2130,9 @@ class _GatewayDeTeste implements MobileLoginGateway {
       technicianName: 'Joao Tecnico',
     );
   }
+
+  @override
+  Future<LoginSession?> refresh(String refreshToken) async => null;
 
   @override
   Future<LoginSession?> completeFirstAccess(FirstAccessRegistration registration) async {
