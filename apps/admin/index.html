@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>AIRMOVEBR Admin</title>
+    <title>Clima do Brasil Admin</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -19,8 +19,8 @@
   <body>
     <aside class="sidebar">
       <a class="brand" href="#">
-        <span>AM</span>
-        <strong>AIRMOVEBR</strong>
+        <img class="brand-logo" src="./assets/clima-do-brasil-logo.jpeg" alt="" />
+        <strong>Clima do Brasil</strong>
       </a>
       <nav class="side-nav" aria-label="Menu administrativo">
         <section class="nav-group" aria-label="Operação">
@@ -861,75 +861,70 @@
         </section>
 
         <section class="worklist hidden" id="tecnicosView">
-          <div class="worklist-header">
-            <h2>Acessos</h2>
-            <p id="tecnicosStatus" role="status">Carregando...</p>
-          </div>
-          <form class="client-form" id="tecnicoForm">
-            <input name="id" type="hidden" />
-            <label>
-              Nome
-              <input name="nome" type="text" required />
-            </label>
-            <label>
-              Login
-              <input name="login" type="text" maxlength="30" pattern="[A-Za-z0-9._-]+" required />
-            </label>
-            <label>
-              Email
-              <input name="email" type="text" required />
-            </label>
-            <label>
-              Telefone
-              <input name="telefone" type="tel" inputmode="tel" />
-            </label>
-            <label>
-              Funcao
-              <select name="role">
-                <option value="admin">Admin</option>
-                <option value="tecnico">Técnico</option>
-                <option value="auxiliar">Auxiliar</option>
-              </select>
-            </label>
-            <label>
-              Senha
-              <input name="senha" type="password" minlength="6" autocomplete="new-password" />
-            </label>
-            <div class="form-actions">
-              <button type="submit">Salvar acesso</button>
-              <button class="secondary-button" id="resetTecnicoFormButton" type="button">Novo</button>
+          <div class="worklist-header access-toolbar">
+            <div><h2>Acessos</h2><p id="tecnicosStatus" role="status">Carregando...</p></div>
+            <div class="access-toolbar-actions">
+              <button class="secondary-button" id="openTecnicoFormButton" type="button">Cadastrar acesso</button>
+              <button id="openTechnicianInviteButton" type="button">Gerar convite</button>
             </div>
-            <p class="status" id="tecnicoFormStatus" role="status"></p>
-          </form>
-          <div class="data-list" id="tecnicosList"></div>
+          </div>
+          <div class="data-list access-list" id="tecnicosList"></div>
+
+          <section class="access-panel hidden" id="technicianInvitePanel" aria-labelledby="technicianInviteTitle">
+            <div class="access-panel-heading">
+              <div><span class="kicker">Autocadastro</span><h3 id="technicianInviteTitle">Convite para novo técnico</h3><p>Gere o código e entregue na hora ou encaminhe por e-mail.</p></div>
+              <button class="secondary-button compact-button" id="closeTechnicianInviteButton" type="button">Fechar</button>
+            </div>
+            <label>Função do convite<select id="technicianInviteRole" name="role"><option value="tecnico">Técnico</option><option value="auxiliar">Auxiliar</option></select></label>
+            <button id="generateTechnicianInviteButton" type="button">Gerar novo convite</button>
+            <p class="status" id="technicianInviteStatus" role="status"></p>
+            <div class="invite-result hidden" id="generatedTechnicianInvite">
+              <div class="invite-code-block"><span class="invite-label">Código do convite</span><strong id="generatedTechnicianInviteCode"></strong><span id="generatedTechnicianInviteExpiry"></span></div>
+              <button class="secondary-button compact-button" id="copyTechnicianInviteButton" type="button">Copiar código</button>
+              <form class="invite-email-form" id="technicianInviteEmailForm">
+                <label>Encaminhar por e-mail<input id="technicianInviteEmail" name="email" type="email" placeholder="tecnico@empresa.com" required /></label>
+                <button type="submit">Enviar convite</button>
+              </form>
+              <div class="invite-whatsapp-unavailable" aria-disabled="true">
+                <div><strong>WhatsApp</strong><span>Aguardando configuração Meta</span></div>
+                <button class="secondary-button compact-button" type="button" disabled>Indisponível</button>
+              </div>
+            </div>
+            <h4 class="invite-history-title">Histórico de convites</h4>
+            <div class="data-list" id="technicianInvitesList"></div>
+          </section>
+
+          <section class="access-panel hidden" id="tecnicoFormPanel" aria-labelledby="tecnicoFormTitle">
+            <div class="access-panel-heading">
+              <div><span class="kicker">Cadastro manual</span><h3 id="tecnicoFormTitle">Dados do acesso</h3></div>
+              <button class="secondary-button compact-button" id="closeTecnicoFormButton" type="button">Fechar</button>
+            </div>
+            <form class="client-form access-form" id="tecnicoForm">
+              <input name="id" type="hidden" />
+              <label>Nome<input name="nome" type="text" required /></label>
+              <label>Login<input name="login" type="text" maxlength="30" pattern="[A-Za-z0-9._-]+" required /></label>
+              <label>E-mail<input name="email" type="email" required /></label>
+              <label>Telefone<input name="telefone" type="tel" inputmode="tel" /></label>
+              <label>Função<select name="role"><option value="admin">Admin</option><option value="tecnico">Técnico</option><option value="auxiliar">Auxiliar</option></select></label>
+              <label>Senha<input name="senha" type="password" minlength="6" autocomplete="new-password" /></label>
+              <div class="form-actions"><button type="submit">Salvar acesso</button><button class="secondary-button" id="resetTecnicoFormButton" type="button">Limpar</button></div>
+              <p class="status" id="tecnicoFormStatus" role="status"></p>
+            </form>
+          </section>
         </section>
 
         <section class="worklist hidden" id="equipesView">
           <div class="worklist-header">
-            <h2>Equipes por cliente</h2>
-            <p id="equipesStatus" role="status">Carregando...</p>
-          </div>
-          <form class="client-form" id="equipeForm">
-            <input name="id" type="hidden" />
-            <label>
-              Nome da equipe
-              <input name="nome" type="text" placeholder="Equipe 01 HU" required />
-            </label>
-            <label>
-              Clientes vinculados
-              <select name="cliente_ids" id="equipeClientsSelect" multiple size="4"></select>
-            </label>
-            <fieldset class="form-fieldset">
-              <legend>Membros</legend>
-              <div class="checkbox-list" id="equipeMembersList"></div>
-            </fieldset>
-            <div class="form-actions">
-              <button type="submit">Salvar equipe</button>
-              <button class="secondary-button" id="resetEquipeFormButton" type="button">Nova</button>
+            <div>
+              <h2>Equipes operacionais</h2>
+              <p>Monte equipes com técnicos, permitindo duplicatas com aviso</p>
             </div>
-            <p class="status" id="equipeFormStatus" role="status"></p>
-          </form>
-          <div class="data-list" id="equipesList"></div>
+            <div class="team-header-actions">
+              <p id="equipesStatus" role="status">Carregando...</p>
+              <button id="openEquipeModalButton" type="button">+ Nova Equipe</button>
+            </div>
+          </div>
+          <div class="team-card-grid" id="equipesList"></div>
         </section>
 
         <section class="worklist pmoc-workspace hidden" id="pmocView">
@@ -1126,10 +1121,49 @@
       </section>
     </div>
 
+    <div class="modal-backdrop hidden" id="equipeModal" role="dialog" aria-modal="true" aria-labelledby="equipeModalTitle">
+      <section class="confirm-modal team-modal">
+        <div class="modal-heading team-modal-heading">
+          <h2 id="equipeModalTitle">Nova Equipe</h2>
+          <button class="secondary-button compact-button" id="closeEquipeModalButton" type="button" aria-label="Fechar">✕</button>
+        </div>
+        <div class="team-modal-tabs" role="tablist" aria-label="Edição de equipe">
+          <button class="subnav-button active" type="button" data-equipe-tab="details">Detalhes</button>
+          <button class="subnav-button" type="button" data-equipe-tab="members">Técnicos</button>
+        </div>
+        <form class="team-modal-form" id="equipeForm">
+          <input name="id" type="hidden" />
+          <section class="team-tab-panel" data-equipe-panel="details">
+            <label>
+              Nome da Equipe *
+              <input name="nome" type="text" placeholder="Equipe Hospital Zona Sul" required />
+            </label>
+            <label>
+              Clientes Vinculados
+              <select name="cliente_ids" id="equipeClientsSelect" multiple size="5"></select>
+            </label>
+            <p class="team-field-help">Deixe em branco para atendimento flexível</p>
+          </section>
+          <section class="team-tab-panel hidden" data-equipe-panel="members">
+            <label>
+              Buscar técnico...
+              <input id="equipeMemberSearchInput" type="search" placeholder="Buscar técnico..." />
+            </label>
+            <div class="checkbox-list team-member-list" id="equipeMembersList"></div>
+          </section>
+          <p class="status" id="equipeFormStatus" role="status"></p>
+          <div class="modal-actions">
+            <button class="secondary-button" id="resetEquipeFormButton" type="button">Cancelar</button>
+            <button type="submit">Salvar Equipe</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
     <script
       src="./vendor/leaflet/leaflet.js"
     ></script>
-    <script type="module" src="./js/main.js?v=20260630-runtimefix"></script>
+    <script type="module" src="./js/main.js?v=20260704-access"></script>
   </body>
 </html>
 

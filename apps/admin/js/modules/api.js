@@ -160,12 +160,32 @@ const tecnicosList = document.querySelector("#tecnicosList");
 const tecnicoForm = document.querySelector("#tecnicoForm");
 const tecnicoFormStatus = document.querySelector("#tecnicoFormStatus");
 const resetTecnicoFormButton = document.querySelector("#resetTecnicoFormButton");
+const openTecnicoFormButton = document.querySelector("#openTecnicoFormButton");
+const closeTecnicoFormButton = document.querySelector("#closeTecnicoFormButton");
+const tecnicoFormPanel = document.querySelector("#tecnicoFormPanel");
+const openTechnicianInviteButton = document.querySelector("#openTechnicianInviteButton");
+const closeTechnicianInviteButton = document.querySelector("#closeTechnicianInviteButton");
+const technicianInvitePanel = document.querySelector("#technicianInvitePanel");
+const technicianInviteRole = document.querySelector("#technicianInviteRole");
+const generateTechnicianInviteButton = document.querySelector("#generateTechnicianInviteButton");
+const technicianInviteStatus = document.querySelector("#technicianInviteStatus");
+const generatedTechnicianInvite = document.querySelector("#generatedTechnicianInvite");
+const generatedTechnicianInviteCode = document.querySelector("#generatedTechnicianInviteCode");
+const generatedTechnicianInviteExpiry = document.querySelector("#generatedTechnicianInviteExpiry");
+const copyTechnicianInviteButton = document.querySelector("#copyTechnicianInviteButton");
+const technicianInvitesList = document.querySelector("#technicianInvitesList");
+const technicianInviteEmailForm = document.querySelector("#technicianInviteEmailForm");
 const equipesStatus = document.querySelector("#equipesStatus");
 const equipesList = document.querySelector("#equipesList");
+const openEquipeModalButton = document.querySelector("#openEquipeModalButton");
+const equipeModal = document.querySelector("#equipeModal");
+const closeEquipeModalButton = document.querySelector("#closeEquipeModalButton");
+const equipeModalTitle = document.querySelector("#equipeModalTitle");
 const equipeForm = document.querySelector("#equipeForm");
 const equipeFormStatus = document.querySelector("#equipeFormStatus");
 const resetEquipeFormButton = document.querySelector("#resetEquipeFormButton");
 const equipeClientsSelect = document.querySelector("#equipeClientsSelect");
+const equipeMemberSearchInput = document.querySelector("#equipeMemberSearchInput");
 const equipeMembersList = document.querySelector("#equipeMembersList");
 const deleteClientModal = document.querySelector("#deleteClientModal");
 const deleteClientMessage = document.querySelector("#deleteClientMessage");
@@ -237,6 +257,8 @@ let latestVehicleRecords = [];
 let latestClients = [];
 let latestEngineers = [];
 let latestTecnicos = [];
+let latestTechnicianInvites = [];
+let generatedTechnicianInviteId = "";
 let latestEquipes = [];
 let latestAgendaItems = [];
 let latestAgendaEquipments = [];
@@ -447,7 +469,7 @@ async function loadOsWorkbench() {
     loadAgendaForOsWorkbench()
   ]);
 
-  setOsTab(activeOsTab);
+  setOsTab(activeOsTab, { preserveDetail: true });
 }
 
 async function backgroundFetchAdminJson(path) {

@@ -36,6 +36,7 @@ export type RelatorioCamaraFriaInput = {
   nomeResponsavelAssinatura: string;
   assinaturaTecnicoUrl: string;
   nomeTecnicoAssinatura: string;
+  fotoTecnicoUrl?: string;
   storageRoot: string;
   totalMaquinas: number;
   equipamento: Omit<EquipamentoRelatorio, "id"> | null;
@@ -170,8 +171,10 @@ export class OrdensServicoRelatorioCamaraFriaRenderer {
 
   private montarPaginaAssinaturas(input: RelatorioCamaraFriaInput): Pagina {
     const assinaturas: ImagemPagina[] = [];
+    const foto = input.fotoTecnicoUrl ? this.carregarArquivo(input.storageRoot, input.fotoTecnicoUrl) : null;
     const tecnico = this.carregarArquivo(input.storageRoot, input.assinaturaTecnicoUrl);
     const responsavel = this.carregarArquivo(input.storageRoot, input.assinaturaUrl);
+    if (foto) assinaturas.push({ label: "Foto do técnico", buffer: foto });
     if (tecnico) assinaturas.push({ label: "Assinatura do técnico", buffer: tecnico });
     if (responsavel) assinaturas.push({ label: "Assinatura do responsável", buffer: responsavel });
     return {
@@ -259,7 +262,7 @@ export class OrdensServicoRelatorioCamaraFriaRenderer {
       y -= 14;
     }
     comandos.push("0.55 0.60 0.66 rg\n42 34 528 1 re f");
-    comandos.push(this.texto("Documento gerado pela plataforma AIRMOVEBR.", 42, 20, 7.5, "F1", "0.38 0.42 0.48"));
+    comandos.push(this.texto("Documento gerado pela plataforma Clima do Brasil.", 42, 20, 7.5, "F1", "0.38 0.42 0.48"));
     return comandos.join("\n");
   }
 

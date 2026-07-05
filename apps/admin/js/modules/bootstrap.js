@@ -361,6 +361,27 @@ tecnicosList?.addEventListener("click", (event) => {
   if (target.dataset.action === "apagar-tecnico" && target.dataset.id) {
     void deleteTecnico(target.dataset.id);
   }
+
+  if (target.dataset.action === "baixar-documento-funcionario" && target.dataset.id && target.dataset.documentoId) {
+    void downloadFuncionarioDocumento(target.dataset.id, target.dataset.documentoId);
+  }
+});
+
+generateTechnicianInviteButton?.addEventListener("click", () => void generateTechnicianInvite());
+copyTechnicianInviteButton?.addEventListener("click", () => void copyTechnicianInvite());
+openTecnicoFormButton?.addEventListener("click", () => {
+  resetTecnicoForm();
+  openAccessPanel("form");
+});
+closeTecnicoFormButton?.addEventListener("click", () => closeAccessPanels());
+openTechnicianInviteButton?.addEventListener("click", () => openAccessPanel("invite"));
+closeTechnicianInviteButton?.addEventListener("click", () => closeAccessPanels());
+technicianInviteEmailForm?.addEventListener("submit", (event) => void sendTechnicianInviteEmail(event));
+technicianInvitesList?.addEventListener("click", (event) => {
+  const target = event.target;
+  if (target instanceof HTMLButtonElement && target.dataset.action === "cancelar-convite-tecnico" && target.dataset.id) {
+    void cancelTechnicianInvite(target.dataset.id);
+  }
 });
 
 equipesList?.addEventListener("click", (event) => {
@@ -377,6 +398,33 @@ equipesList?.addEventListener("click", (event) => {
   if (target.dataset.action === "apagar-equipe" && target.dataset.id) {
     void deleteEquipe(target.dataset.id);
   }
+});
+
+openEquipeModalButton?.addEventListener("click", () => {
+  resetEquipeForm();
+  openEquipeModal();
+});
+
+closeEquipeModalButton?.addEventListener("click", closeEquipeModal);
+equipeModal?.addEventListener("click", (event) => {
+  if (event.target === equipeModal) {
+    closeEquipeModal();
+  }
+});
+
+for (const button of equipeModal?.querySelectorAll("[data-equipe-tab]") || []) {
+  button.addEventListener("click", () => {
+    setEquipeTab(button.dataset.equipeTab || "details");
+  });
+}
+
+equipeMemberSearchInput?.addEventListener("input", () => {
+  renderEquipeMembersList();
+});
+
+resetEquipeFormButton?.addEventListener("click", () => {
+  resetEquipeForm();
+  closeEquipeModal();
 });
 
 clientForm?.elements.tipo?.addEventListener("change", updateClientDocumentCopy);

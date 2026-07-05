@@ -1,4 +1,4 @@
-﻿import {
+import {
 UsuarioRole
 } from "@prisma/client";
 import * as assert from "node:assert/strict";

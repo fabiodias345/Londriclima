@@ -48,6 +48,13 @@ test("camara fria agenda relatorio proprio mesmo para cliente com PMOC", async (
     checklistRespostas: []
   };
   const tx = {
+    usuario: {
+      findFirst: async () => ({
+        nome: "Joao Tecnico",
+        fotoPerfilStorageUrl: "/storage/funcionarios/tecnico-1/foto.jpg",
+        assinaturaStorageUrl: "/storage/funcionarios/tecnico-1/assinatura.png"
+      })
+    },
     ordemServico: { findUnique: async () => ordem, update: async () => undefined },
     ordemServicoAssinatura: { create: async () => undefined },
     ordemServicoEvento: { create: async () => undefined },

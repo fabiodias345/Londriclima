@@ -1,15 +1,16 @@
-# Memoria AIRMOVEBR
+# Memoria Clima do Brasil / AIRMOVEBR
 
-Atualizado em: 03/07/2026
+Atualizado em: 04/07/2026
 
 ## Contexto
 
-- Cliente piloto: AIRMOVEBR, Londrina/PR.
+- Marca atual: Clima do Brasil.
+- Cliente piloto e infraestrutura legada: AIRMOVEBR, Londrina/PR.
 - Dominio: `airmovebr.com.br`.
 - Repositorio: `https://github.com/fabiodias345/Londriclima.git`.
-- Workspace local: `C:\develop\LondriClima`.
+- Workspace local atual: `C:\develop\LondriClima`.
 - Produto: plataforma operacional para climatizacao, O.S., PMOC, frota e relatorios.
-- Prioridade atual: app tecnico e painel funcionando para operacao real antes de evoluir SaaS.
+- Prioridade atual: validar os apps tecnico e admin na operacao real antes de evoluir SaaS.
 
 ## Stack
 
@@ -17,6 +18,7 @@ Atualizado em: 03/07/2026
 - Admin: HTML, CSS, JavaScript, Leaflet.
 - Landing: HTML, CSS, JavaScript.
 - Mobile: Flutter Android.
+- Apps Flutter separados: tecnico em `apps/mobile` e admin em `apps/admin_mobile`.
 - Infra: Docker Compose local/producao em VM Locaweb.
 - Testes: Flutter test/analyze, node:test, Nest Testing e contratos frontend.
 
@@ -28,7 +30,7 @@ site -> pre-chamado -> admin -> O.S. -> app tecnico -> checklist/fotos/GPS/assin
 
 ## Decisoes ativas
 
-- Marca visivel: AIRMOVEBR.
+- Marca visivel: Clima do Brasil.
 - O app tecnico nao escolhe periodicidade; a O.S. traz `checklist_tipo`.
 - O backend monta o checklist flat e o app apenas renderiza/salva.
 - Uma O.S. pode atender varias maquinas do mesmo cliente/local.
@@ -81,6 +83,23 @@ site -> pre-chamado -> admin -> O.S. -> app tecnico -> checklist/fotos/GPS/assin
 - Recorrencia em producao ja gera O.S. automaticamente pelo scheduler do backend quando `proxima_execucao` vence; em 30/06/2026 gerou O.S. para Luri/Paulo e avancou o plano para 30/07/2026.
 - Menu `Dashboard` do admin foi removido; a tela de O.S. virou a visao operacional principal.
 
+## App admin mobile
+
+- Aplicativo separado do app tecnico.
+- Somente usuario com `role=admin` pode acessar.
+- Fases 1 a 4 concluidas:
+  - login e dashboard;
+  - consultas reais dos modulos administrativos;
+  - criar/reprogramar O.S. e tratar pre-chamados;
+  - reenvio de assinatura PMOC;
+  - busca, filtros e layout compacto;
+  - abertura autenticada de PDFs;
+  - frota somente para consulta.
+- Validacao estatica atual: `dart analyze lib test` sem problemas.
+- `flutter test --no-pub` ainda trava sem saida neste ambiente.
+- Notificacoes dependem da definicao Meta/telefone.
+- APK admin fica para o final.
+
 ## PMOC e relatorios
 
 - PMOC atual existe no backend com previa, PDF, assinatura do engenheiro e envio final.
@@ -116,11 +135,18 @@ site -> pre-chamado -> admin -> O.S. -> app tecnico -> checklist/fotos/GPS/assin
 
 ## Pendencias futuras
 
-1. Gerar/instalar APK novo e validar no aparelho real.
-2. Conferir O.S. real e PDFs reais em producao.
-3. Validar no painel edicao, cancelamento e exclusao de O.S. gerada errada.
-4. Conferir a primeira execucao do snapshot semanal da Locaweb.
-5. Confirmar recebimento real do alerta de backup por e-mail.
+1. Validar checklist do app tecnico no celular real.
+2. Ajustar regra final de fotos por periodicidade.
+3. Melhorar finalizacao da O.S. no app tecnico.
+4. Definir Meta/telefone para notificacoes do app admin.
+5. Testar o app admin completo no aparelho real.
+6. Gerar APK tecnico/admin quando aprovados.
+7. Refazer PDF avulso visual com fotos e assinatura reais.
+8. Depois aplicar o padrao visual ao PMOC.
+9. Conferir O.S. real e PDFs reais em producao.
+10. Validar no painel edicao, cancelamento e exclusao de O.S. gerada errada.
+11. Conferir a primeira execucao do snapshot semanal da Locaweb.
+12. Confirmar recebimento real do alerta de backup por e-mail.
 
 ## Comandos uteis
 
@@ -131,6 +157,12 @@ flutter run --dart-define=MOBILE_API_BASE_URL=https://api.airmovebr.com.br
 flutter test
 flutter analyze
 flutter build apk --debug --dart-define=MOBILE_API_BASE_URL=https://api.airmovebr.com.br
+```
+
+```text
+cd C:\develop\LondriClima\apps\admin_mobile
+flutter run --dart-define=ADMIN_API_BASE_URL=https://api.airmovebr.com.br
+dart analyze lib test
 ```
 
 ```text

@@ -4,7 +4,7 @@ import * as assert from "node:assert/strict";
 import { test } from "node:test";
 import { FinalizarOsDto } from "./finalizar-os.dto";
 
-test("finalizacao exige nome e assinatura do tecnico", async () => {
+test("finalizacao usa identidade do tecnico autenticado", async () => {
   const dto = Object.assign(new FinalizarOsDto(), {
     assinatura_cliente_base64: "assinatura-cliente",
     nome_responsavel_assinatura: "Maria Souza",
@@ -15,6 +15,6 @@ test("finalizacao exige nome e assinatura do tecnico", async () => {
 
   const camposInvalidos = (await validate(dto)).map((erro) => erro.property);
 
-  assert.ok(camposInvalidos.includes("assinatura_tecnico_base64"));
-  assert.ok(camposInvalidos.includes("nome_tecnico_assinatura"));
+  assert.ok(!camposInvalidos.includes("assinatura_tecnico_base64"));
+  assert.ok(!camposInvalidos.includes("nome_tecnico_assinatura"));
 });

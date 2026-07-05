@@ -26,13 +26,13 @@ async function main() {
       cnpj: "00000000000000"
     },
     update: {
-      nome: "AIRMOVEBR",
+      nome: "Clima do Brasil",
       telefone: null,
       email: null,
       ativa: true
     },
     create: {
-      nome: "AIRMOVEBR",
+      nome: "Clima do Brasil",
       cnpj: "00000000000000",
       ativa: true
     }
@@ -52,7 +52,7 @@ async function main() {
 
   const adminData = {
     empresaId: empresa.id,
-    nome: "Administrador AIRMOVEBR",
+    nome: "Administrador Clima do Brasil",
     login: "admin",
     email: "admin@airmovebr.local",
     senhaHash,
@@ -64,7 +64,7 @@ async function main() {
     await prisma.usuario.update({
       where: { id: adminExistente.id },
       data: {
-        nome: "Administrador AIRMOVEBR",
+        nome: "Administrador Clima do Brasil",
         login: "admin",
         email: "admin@airmovebr.local",
         senhaHash,

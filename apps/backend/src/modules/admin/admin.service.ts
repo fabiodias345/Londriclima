@@ -17,6 +17,8 @@ import { SalvarEquipeDto } from "./dto/salvar-equipe.dto";
 import { SalvarOsAgendaDto } from "./dto/salvar-os-agenda.dto";
 import { SalvarPlanoRecorrenciaDto } from "./dto/salvar-plano-recorrencia.dto";
 import { SalvarTecnicoDto } from "./dto/salvar-tecnico.dto";
+import { EncaminharConviteTecnicoDto } from "./dto/encaminhar-convite-tecnico.dto";
+import { GerarConviteTecnicoDto } from "./dto/gerar-convite-tecnico.dto";
 import { SalvarVeiculoDto } from "./dto/salvar-veiculo.dto";
 import { AdminAgendaService } from "./services/admin-agenda.service";
 import { AdminClientesService } from "./services/admin-clientes.service";
@@ -30,6 +32,7 @@ import { AdminPreChamadosService } from "./services/admin-pre-chamados.service";
 import { AdminRecorrenciaService } from "./services/admin-recorrencia.service";
 import { AdminRelatoriosService } from "./services/admin-relatorios.service";
 import { AdminTecnicosService } from "./services/admin-tecnicos.service";
+import { AdminConvitesTecnicoService } from "./services/admin-convites-tecnico.service";
 
 @Injectable()
 export class AdminService {
@@ -39,6 +42,7 @@ export class AdminService {
   private readonly clientesService: AdminClientesService;
   private readonly equipamentosService: AdminEquipamentosService;
   private readonly tecnicosService: AdminTecnicosService;
+  private readonly convitesTecnicoService: AdminConvitesTecnicoService;
   private readonly equipesService: AdminEquipesService;
   private readonly engenheirosService: AdminEngenheirosService;
   private readonly preChamadosService: AdminPreChamadosService;
@@ -60,7 +64,8 @@ export class AdminService {
     preChamadosService?: AdminPreChamadosService,
     relatoriosService?: AdminRelatoriosService,
     pmocService?: AdminPmocService,
-    pmocPdfService?: AdminPmocPdfService
+    pmocPdfService?: AdminPmocPdfService,
+    convitesTecnicoService?: AdminConvitesTecnicoService
   ) {
     this.agendaService = agendaService ?? new AdminAgendaService(prisma);
     this.recorrenciaService = recorrenciaService ?? new AdminRecorrenciaService(prisma);
@@ -74,10 +79,15 @@ export class AdminService {
     this.relatoriosService = relatoriosService ?? new AdminRelatoriosService(prisma, this.frotaService);
     this.pmocService = pmocService ?? new AdminPmocService(prisma, config);
     this.pmocPdfService = pmocPdfService ?? new AdminPmocPdfService(prisma, config);
+    this.convitesTecnicoService = convitesTecnicoService ?? new AdminConvitesTecnicoService(prisma);
   }
 
   async listarPreChamados(usuario: AuthenticatedUser) {
     return this.preChamadosService.listarPreChamados(usuario);
+  }
+
+  async obterDocumentoFuncionario(tecnicoId: string, documentoId: string, usuario: AuthenticatedUser) {
+    return this.tecnicosService.obterDocumentoFuncionario(tecnicoId, documentoId, usuario);
   }
 
   async listarOpcoesDespacho(usuario: AuthenticatedUser) {
@@ -121,6 +131,7 @@ export class AdminService {
         where: {
           empresaId: usuario.empresa_id,
           ativo: true,
+          primeiroAcessoPendente: false,
           role: {
             in: [UsuarioRole.admin, UsuarioRole.tecnico, UsuarioRole.auxiliar]
           }
@@ -286,6 +297,26 @@ export class AdminService {
 
   async listarTecnicos(usuario: AuthenticatedUser) {
     return this.tecnicosService.listarTecnicos(usuario);
+  }
+
+  async gerarConviteTecnico(dto: GerarConviteTecnicoDto, usuario: AuthenticatedUser) {
+    return this.convitesTecnicoService.gerar(dto, usuario);
+  }
+
+  async listarConvitesTecnico(usuario: AuthenticatedUser) {
+    return this.convitesTecnicoService.listar(usuario);
+  }
+
+  async cancelarConviteTecnico(conviteId: string, usuario: AuthenticatedUser) {
+    return this.convitesTecnicoService.cancelar(conviteId, usuario);
+  }
+
+  async encaminharConviteTecnicoEmail(
+    conviteId: string,
+    dto: EncaminharConviteTecnicoDto,
+    usuario: AuthenticatedUser
+  ) {
+    return this.convitesTecnicoService.encaminharEmail(conviteId, dto, usuario);
   }
 
   async criarTecnico(dto: SalvarTecnicoDto, usuario: AuthenticatedUser) {

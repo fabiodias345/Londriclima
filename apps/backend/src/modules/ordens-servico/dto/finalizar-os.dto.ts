@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsDateString, IsNotEmpty, IsNumber, IsString, Max, Min } from "class-validator";
+import { IsDateString, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
 
 export class FinalizarOsDto {
   @IsString()
@@ -10,12 +10,12 @@ export class FinalizarOsDto {
   @IsNotEmpty()
   nome_responsavel_assinatura: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   assinatura_tecnico_base64?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   nome_tecnico_assinatura?: string;
 
   @Type(() => Number)

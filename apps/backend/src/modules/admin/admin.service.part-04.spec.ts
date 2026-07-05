@@ -1,4 +1,4 @@
-﻿import { ConflictException,NotFoundException } from "@nestjs/common";
+import { ConflictException,NotFoundException } from "@nestjs/common";
 import {
 OrdemServicoEventoAcao,
 OrdemServicoStatus,

@@ -14,10 +14,39 @@ class FakeLoginGateway implements MobileLoginGateway {
       return LoginSession(
         repository: FakeWorkOrderRepository(),
         fleetRepository: FakeFleetRepository(),
-        technicianName: 'Tecnico AIRMOVEBR',
+        technicianName: 'Tecnico Clima do Brasil',
       );
     }
 
     return null;
+  }
+
+  @override
+  Future<LoginSession?> refresh(String refreshToken) async => null;
+
+  @override
+  Future<LoginSession?> completeFirstAccess(
+    FirstAccessRegistration registration,
+  ) async {
+    return LoginSession(
+      repository: FakeWorkOrderRepository(),
+      fleetRepository: FakeFleetRepository(),
+      technicianName: registration.name,
+    );
+  }
+
+  @override
+  Future<bool> validateTechnicianInvite(String code) async =>
+      code.trim().isNotEmpty;
+
+  @override
+  Future<LoginSession?> registerWithTechnicianInvite(
+    TechnicianInviteRegistration registration,
+  ) async {
+    return LoginSession(
+      repository: FakeWorkOrderRepository(),
+      fleetRepository: FakeFleetRepository(),
+      technicianName: registration.name,
+    );
   }
 }

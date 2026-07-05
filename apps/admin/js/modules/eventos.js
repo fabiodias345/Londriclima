@@ -71,9 +71,14 @@ function setFleetTab(tab) {
   }
 }
 
-function setOsTab(tab) {
+function setOsTab(tab, options = {}) {
   activeOsTab = tab;
-  closeOsDetail();
+  const shouldPreserveDetail = Boolean(options.preserveDetail && selectedOsDetailId);
+
+  if (!shouldPreserveDetail) {
+    closeOsDetail();
+  }
+
   updateOsSummaryCards();
   updateOsTabCounts();
 
@@ -87,6 +92,10 @@ function setOsTab(tab) {
   }
 
   renderOsAgendaItems(filterOsAgendaItems(latestAgendaItems));
+
+  if (shouldPreserveDetail) {
+    openOsDetail(selectedOsDetailId);
+  }
 }
 
 function updateOsSummaryCards() {
@@ -660,7 +669,9 @@ function renderOptions(items) {
 }
 
 async function deleteTecnico(tecnicoId) {
-  tecnicoFormStatus.textContent = "Removendo acesso...";
+  const confirmed = window.confirm("Esta exclusao e definitiva. Para recuperar o acesso sera necessario criar outro usuario.");
+  if (!confirmed) return;
+  tecnicosStatus.textContent = "Removendo acesso...";
 
   try {
     const response = await fetch(\`\${apiBaseUrl}/admin/tecnicos/\${tecnicoId}\`, {
@@ -674,7 +685,7 @@ async function deleteTecnico(tecnicoId) {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
-      tecnicoFormStatus.textContent = error.message || "Nao foi possivel apagar o acesso.";
+      tecnicosStatus.textContent = error.message || "Nao foi possivel apagar o acesso.";
       return;
     }
 
@@ -682,15 +693,15 @@ async function deleteTecnico(tecnicoId) {
       resetTecnicoForm();
     }
 
-    tecnicoFormStatus.textContent = "Acesso removido.";
+    tecnicosStatus.textContent = "Acesso excluido definitivamente.";
     await loadTecnicos();
   } catch {
-    tecnicoFormStatus.textContent = "API indisponivel.";
+    tecnicosStatus.textContent = "API indisponivel.";
   }
 }
 
 async function deleteEquipe(equipeId) {
-  equipeFormStatus.textContent = "Removendo equipe...";
+  equipesStatus.textContent = "Removendo equipe...";
 
   try {
     const response = await fetch(\`\${apiBaseUrl}/admin/equipes/\${equipeId}\`, {
@@ -704,18 +715,19 @@ async function deleteEquipe(equipeId) {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
-      equipeFormStatus.textContent = error.message || "Nao foi possivel apagar a equipe.";
+      equipesStatus.textContent = error.message || "Nao foi possivel apagar a equipe.";
       return;
     }
 
     if (equipeForm.elements.id.value === equipeId) {
       resetEquipeForm();
+      closeEquipeModal();
     }
 
-    equipeFormStatus.textContent = "Equipe removida.";
+    equipesStatus.textContent = "Equipe removida.";
     await loadEquipes();
   } catch {
-    equipeFormStatus.textContent = "API indisponivel.";
+    equipesStatus.textContent = "API indisponivel.";
   }
 }
 
@@ -941,7 +953,6 @@ pmocConversionForm?.addEventListener("submit", activatePmocClient);
 resetClientFormButton?.addEventListener("click", resetClientForm);
 backToClientsButton?.addEventListener("click", resetClientForm);
 resetTecnicoFormButton?.addEventListener("click", resetTecnicoForm);
-resetEquipeFormButton?.addEventListener("click", resetEquipeForm);
 resetEngineerFormButton?.addEventListener("click", resetEngineerForm);
 resetVehicleFormButton?.addEventListener("click", resetVehicleForm);
 printReportsButton?.addEventListener("click", openReportsPrint);

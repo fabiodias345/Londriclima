@@ -1,4 +1,4 @@
-﻿import { BadRequestException,ConflictException,NotFoundException,UnprocessableEntityException } from "@nestjs/common";
+import { BadRequestException,ConflictException,NotFoundException,UnprocessableEntityException } from "@nestjs/common";
 import {
 AutomacaoTipo,
 ChecklistTipo,
@@ -30,7 +30,21 @@ const assinaturaPngTeste = Buffer.concat([
 ]).toString("base64");
 
 function criarService(prisma: unknown, options: { onSalvarAssinatura?: () => void } = {}) {
-  const service = new OrdensServicoService(prisma as never);
+  const prismaMock = prisma as { $transaction?: (callback: (tx: Record<string, unknown>) => unknown) => unknown };
+  const transactionOriginal = prismaMock.$transaction?.bind(prismaMock);
+  if (transactionOriginal) {
+    prismaMock.$transaction = (callback) => transactionOriginal((tx) => callback({
+      ...tx,
+      usuario: tx.usuario ?? {
+        findFirst: async () => ({
+          nome: "Joao Tecnico",
+          fotoPerfilStorageUrl: "/storage/funcionarios/usuario-1/foto.jpg",
+          assinaturaStorageUrl: "/storage/funcionarios/usuario-1/assinatura.png"
+        })
+      }
+    }));
+  }
+  const service = new OrdensServicoService(prismaMock as never);
   (service as unknown as { salvarAssinatura: () => Promise<string> }).salvarAssinatura = async () => {
     options.onSalvarAssinatura?.();
     return "/storage/os/os-1/assinatura.png";
@@ -629,7 +643,7 @@ test("finalizarOs conclui a OS, registra assinatura, evento e automacoes", async
   );
   assert.equal(
     (chamadas.assinaturaData as { assinaturaTecnicoStorageUrl: string }).assinaturaTecnicoStorageUrl,
-    "/storage/os/os-1/assinatura.png"
+    "/storage/funcionarios/usuario-1/assinatura.png"
   );
   assert.equal((chamadas.eventoData as { acao: OrdemServicoEventoAcao }).acao, OrdemServicoEventoAcao.finalizar);
   assert.deepEqual(chamadas.updateData, {

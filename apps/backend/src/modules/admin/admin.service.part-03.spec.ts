@@ -1,4 +1,4 @@
-﻿import { BadRequestException } from "@nestjs/common";
+import { BadRequestException } from "@nestjs/common";
 import { NotFoundException } from "@nestjs/common";
 import {
 ChecklistTipo,
@@ -207,7 +207,7 @@ test("reprogramarOrdemAgenda atualiza horario e responsaveis de OS operacional",
   });
 });
 
-test("reprogramarOrdemAgenda instalaçao usa checklist mensal neutro", async () => {
+test("reprogramarOrdemAgenda instala�ao usa checklist mensal neutro", async () => {
   const chamadas = {
     updateData: undefined as unknown
   };

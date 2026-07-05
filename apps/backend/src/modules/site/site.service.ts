@@ -131,7 +131,7 @@ export class SiteService {
     return {
       pre_chamado_id: resultado.id,
       status: resultado.status,
-      mensagem: "Pre-chamado registrado. A equipe AIRMOVEBR acompanhara pelo painel de atendimento.",
+      mensagem: "Pre-chamado registrado. A equipe Clima do Brasil acompanhara pelo painel de atendimento.",
       criado_em: resultado.criadaEm.toISOString()
     };
   }

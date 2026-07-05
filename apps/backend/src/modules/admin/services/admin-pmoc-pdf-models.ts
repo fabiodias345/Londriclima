@@ -13,7 +13,16 @@ export type OrdemPmoc = {
   problema_relatado?: string | null;
   agendada_para?: string | null;
   concluida_em?: string | null;
-  tecnico?: { nome?: string | null } | null;
+  tecnico?: {
+    nome?: string | null;
+    foto_perfil_storage_url?: string | null;
+    assinatura_storage_url?: string | null;
+  } | null;
+  tecnico_executor?: {
+    nome?: string | null;
+    foto_perfil_storage_url?: string | null;
+    assinatura_storage_url?: string | null;
+  } | null;
   equipe?: { nome?: string | null } | null;
   checklist_tipo?: "mensal" | "trimestral" | "semestral" | "anual" | null;
   eventos?: Array<{ latitude?: number | null; longitude?: number | null; registrado_em?: string | null }>;
@@ -71,7 +80,7 @@ export const PAGE = { width: 612, height: 842, margin: 36 };
 
 export const CONTRATADA_PMOC = {
   razaoSocial: "M. Lima Manutenções Prediais e Industriais LTDA",
-  nomeFantasia: "AIRMOVEBR",
+  nomeFantasia: "Clima do Brasil",
   cnpj: "04.959.153/0001-11",
   endereco: "Avenida Paissandu, 526 - Maringá/PR - CEP 87050-130",
   telefone: "(43) 99100-0035",

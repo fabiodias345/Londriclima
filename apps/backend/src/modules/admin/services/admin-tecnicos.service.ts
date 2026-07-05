@@ -3,6 +3,7 @@ import { Prisma, UsuarioRole } from "@prisma/client";
 import { PrismaService } from "../../../database/prisma.service";
 import { AuthenticatedUser } from "../../auth/auth-user";
 import { PasswordHashService } from "../../auth/password-hash.service";
+import { FuncionarioStorageService } from "../../auth/funcionario-storage.service";
 import { SalvarTecnicoDto } from "../dto/salvar-tecnico.dto";
 
 @Injectable()
@@ -10,7 +11,7 @@ export class AdminTecnicosService {
   private readonly passwordHash = new PasswordHashService();
   private readonly rolesAcesso = [UsuarioRole.admin, UsuarioRole.tecnico, UsuarioRole.auxiliar];
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly storage?: FuncionarioStorageService) {}
 
   async listarTecnicos(usuario: AuthenticatedUser) {
     const tecnicos = await this.prisma.usuario.findMany({
@@ -50,7 +51,8 @@ export class AdminTecnicosService {
         telefone: this.digitosOuNulo(dto.telefone),
         senhaHash: await this.passwordHash.hash(dto.senha),
         role: this.normalizarRoleTecnico(dto.role),
-        ativo: true
+        ativo: true,
+        primeiroAcessoPendente: true
       },
       select: this.tecnicoSelect()
     });
@@ -87,6 +89,10 @@ export class AdminTecnicosService {
   }
 
   async apagarTecnico(tecnicoId: string, usuario: AuthenticatedUser) {
+    if (tecnicoId === usuario.id) {
+      throw new BadRequestException("Nao e possivel apagar o proprio acesso.");
+    }
+
     const acesso = await this.garantirAcessoDaEmpresa(tecnicoId, usuario);
     if (acesso.role === UsuarioRole.admin) {
       const totalAdminsAtivos = await this.prisma.usuario.count({
@@ -102,17 +108,15 @@ export class AdminTecnicosService {
       }
     }
 
-    const tecnico = await this.prisma.usuario.update({
-      where: {
-        id: tecnicoId
-      },
-      data: {
-        ativo: false
-      },
-      select: {
-        id: true
-      }
-    });
+    const tecnico = await this.prisma.$transaction((tx) => tx.usuario.delete({
+      where: { id: tecnicoId },
+      select: { id: true }
+    }));
+
+    await this.storage?.apagarCadastro({
+      empresaId: usuario.empresa_id,
+      usuarioId: tecnicoId
+    }).catch(() => undefined);
 
     return {
       id: tecnico.id,
@@ -156,8 +160,23 @@ export class AdminTecnicosService {
       login: true,
       email: true,
       telefone: true,
+      cpf: true,
       role: true,
       ativo: true,
+      primeiroAcessoPendente: true,
+      primeiroAcessoEm: true,
+      fotoPerfilStorageUrl: true,
+      assinaturaStorageUrl: true,
+      documentosFuncionario: {
+        orderBy: { aceitoEm: "desc" as const },
+        select: {
+          id: true,
+          tipo: true,
+          versao: true,
+          sha256: true,
+          aceitoEm: true
+        }
+      },
       criadoEm: true,
       atualizadoEm: true
     } satisfies Prisma.UsuarioSelect;
@@ -169,8 +188,14 @@ export class AdminTecnicosService {
     login: string | null;
     email: string;
     telefone: string | null;
+    cpf: string | null;
     role: UsuarioRole;
     ativo: boolean;
+    primeiroAcessoPendente: boolean;
+    primeiroAcessoEm: Date | null;
+    fotoPerfilStorageUrl: string | null;
+    assinaturaStorageUrl: string | null;
+    documentosFuncionario?: Array<{ id: string; tipo: string; versao: string; sha256: string; aceitoEm: Date }>;
     criadoEm: Date;
     atualizadoEm: Date;
   }) {
@@ -180,10 +205,46 @@ export class AdminTecnicosService {
       login: tecnico.login,
       email: tecnico.email,
       telefone: tecnico.telefone,
+      cpf: tecnico.cpf,
       role: tecnico.role,
       ativo: tecnico.ativo,
+      primeiro_acesso_pendente: tecnico.primeiroAcessoPendente,
+      primeiro_acesso_em: tecnico.primeiroAcessoEm?.toISOString() ?? null,
+      foto_perfil_storage_url: tecnico.fotoPerfilStorageUrl,
+      assinatura_storage_url: tecnico.assinaturaStorageUrl,
+      documentos: (tecnico.documentosFuncionario ?? []).map((documento) => ({
+        id: documento.id,
+        tipo: documento.tipo,
+        versao: documento.versao,
+        sha256: documento.sha256,
+        aceito_em: documento.aceitoEm.toISOString()
+      })),
       criado_em: tecnico.criadoEm.toISOString(),
       atualizado_em: tecnico.atualizadoEm.toISOString()
+    };
+  }
+
+  async obterDocumentoFuncionario(
+    tecnicoId: string,
+    documentoId: string,
+    usuario: AuthenticatedUser
+  ) {
+    const documento = await this.prisma.funcionarioDocumento.findFirst({
+      where: {
+        id: documentoId,
+        usuarioId: tecnicoId,
+        empresaId: usuario.empresa_id
+      },
+      select: {
+        storageUrl: true,
+        versao: true
+      }
+    });
+    if (!documento) throw new NotFoundException("Documento do funcionario nao encontrado.");
+    if (!this.storage) throw new NotFoundException("Storage de documentos indisponivel.");
+    return {
+      filename: `termo-responsabilidade-${documento.versao}.pdf`,
+      buffer: await this.storage.carregarDocumento(documento.storageUrl)
     };
   }
 

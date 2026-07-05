@@ -13,6 +13,8 @@ import { SalvarEquipeDto } from "./dto/salvar-equipe.dto";
 import { SalvarOsAgendaDto } from "./dto/salvar-os-agenda.dto";
 import { SalvarPlanoRecorrenciaDto } from "./dto/salvar-plano-recorrencia.dto";
 import { SalvarTecnicoDto } from "./dto/salvar-tecnico.dto";
+import { EncaminharConviteTecnicoDto } from "./dto/encaminhar-convite-tecnico.dto";
+import { GerarConviteTecnicoDto } from "./dto/gerar-convite-tecnico.dto";
 import { SalvarVeiculoDto } from "./dto/salvar-veiculo.dto";
 import { AdminService } from "./admin.service";
 
@@ -239,6 +241,46 @@ export class AdminController {
   @Get("tecnicos")
   listarTecnicos(@CurrentUser() usuario: AuthenticatedUser) {
     return this.adminService.listarTecnicos(usuario);
+  }
+
+  @Post("convites-tecnico")
+  gerarConviteTecnico(@Body() dto: GerarConviteTecnicoDto, @CurrentUser() usuario: AuthenticatedUser) {
+    return this.adminService.gerarConviteTecnico(dto, usuario);
+  }
+
+  @Get("convites-tecnico")
+  listarConvitesTecnico(@CurrentUser() usuario: AuthenticatedUser) {
+    return this.adminService.listarConvitesTecnico(usuario);
+  }
+
+  @Delete("convites-tecnico/:conviteId")
+  cancelarConviteTecnico(
+    @Param("conviteId", new ParseUUIDPipe()) conviteId: string,
+    @CurrentUser() usuario: AuthenticatedUser
+  ) {
+    return this.adminService.cancelarConviteTecnico(conviteId, usuario);
+  }
+
+  @Post("convites-tecnico/:conviteId/email")
+  encaminharConviteTecnicoEmail(
+    @Param("conviteId", new ParseUUIDPipe()) conviteId: string,
+    @Body() dto: EncaminharConviteTecnicoDto,
+    @CurrentUser() usuario: AuthenticatedUser
+  ) {
+    return this.adminService.encaminharConviteTecnicoEmail(conviteId, dto, usuario);
+  }
+
+  @Get("tecnicos/:tecnicoId/documentos/:documentoId")
+  @Header("Content-Type", "application/pdf")
+  async obterDocumentoFuncionario(
+    @Param("tecnicoId", new ParseUUIDPipe()) tecnicoId: string,
+    @Param("documentoId", new ParseUUIDPipe()) documentoId: string,
+    @CurrentUser() usuario: AuthenticatedUser,
+    @Res({ passthrough: true }) response: HeaderResponse
+  ) {
+    const documento = await this.adminService.obterDocumentoFuncionario(tecnicoId, documentoId, usuario);
+    response.setHeader("Content-Disposition", `attachment; filename="${documento.filename}"`);
+    return new StreamableFile(documento.buffer);
   }
 
   @Post("tecnicos")

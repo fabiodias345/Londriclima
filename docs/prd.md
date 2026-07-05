@@ -1,12 +1,12 @@
-# PRD - AIRMOVEBR Digital
+# PRD - Clima do Brasil Digital
 
 Versao: 1.7.0
-Atualizado em: 03/07/2026
+Atualizado em: 04/07/2026
 Cliente piloto: AIRMOVEBR - Londrina/PR
 
 ## Visao
 
-Plataforma de Field Service Management para manutencao, instalacao, frota, relatorios e PMOC de ar-condicionado.
+Plataforma Clima do Brasil para manutencao, instalacao, frota, relatorios e PMOC de ar-condicionado. Os dominios e parte da infraestrutura ainda usam o nome AIRMOVEBR.
 
 Fluxo principal:
 
@@ -65,8 +65,32 @@ Ja implementado:
 16. Scanner QR/codigo de barras.
 17. Registro de abastecimento.
 18. UX de campo com contraste melhor, pendencias em azul claro, grupos de checklist, progresso e botao fixo.
+19. Login biometrico opcional no Android com refresh token em armazenamento seguro.
 
-Pendente:
+### App admin Android
+
+Estado atual: fases 1 a 4 implementadas e codigo alinhado no GitHub e na VM de producao.
+
+Ja implementado:
+
+1. Login real pela API com acesso exclusivo para `role=admin`.
+2. Dashboard separado do app tecnico.
+3. Consulta real de O.S., agenda, clientes, PMOC, frota, relatorios, tecnicos e pendencias.
+4. Criacao e reprogramacao de O.S.
+5. Aprovacao e rejeicao de pre-chamado.
+6. Reenvio de assinatura PMOC.
+7. Busca e filtros locais.
+8. Layout compacto para celular pequeno.
+9. Abertura autenticada de PDF PMOC e relatorio avulso.
+10. Consulta de detalhes da frota sem edicao.
+
+Pendente no app admin:
+
+1. Definir telefone e integracao Meta para notificacoes.
+2. Validar o fluxo completo no aparelho real.
+3. Gerar e distribuir o APK admin somente no final.
+
+Pendente no app tecnico:
 
 1. Validar no aparelho real sob sol.
 2. Ajustar regra final de fotos por periodicidade.
@@ -81,7 +105,7 @@ Pendente:
 | Banco | PostgreSQL, Prisma |
 | Admin | HTML, CSS, JavaScript, Leaflet |
 | Landing | HTML, CSS, JavaScript |
-| Mobile | Flutter Android |
+| Mobile | Flutter Android, com apps tecnico e admin separados |
 | Auth | JWT |
 | Infra | Docker local e VM Locaweb Cloud |
 | Testes | Node test, Nest Testing, ESLint, Flutter test |
@@ -187,6 +211,7 @@ Fora do MVP:
 ## Criterios de aceite mobile
 
 - Tecnico loga com conta real.
+- Tecnico pode ativar login biometrico apos autenticacao valida, sem armazenamento da senha.
 - Tecnico ve somente O.S. vinculadas a ele/equipe.
 - Uma O.S. com varias maquinas mostra todas as maquinas.
 - Iniciar atendimento grava GPS e muda status no backend.
@@ -218,7 +243,7 @@ flutter build apk --debug
 
 ## Decisoes operacionais
 
-- Commit, push e deploy sao manuais pelo usuario.
+- Commit, push e deploy so podem ser executados quando solicitados explicitamente.
 - Segredos nao devem ir para Git.
 - Arquivos proprios devem ficar preferencialmente abaixo de 500 linhas.
 - A maquina local e o ambiente principal para testar o APK nesta etapa.

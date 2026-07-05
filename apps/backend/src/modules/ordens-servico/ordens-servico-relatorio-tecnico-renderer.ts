@@ -20,6 +20,7 @@ type RelatorioTecnicoInput = {
   nomeResponsavelAssinatura: string;
   assinaturaTecnicoUrl?: string;
   nomeTecnicoAssinatura?: string;
+  fotoTecnicoUrl?: string;
   storageRoot: string;
   totalMaquinas: number;
   equipamento: {
@@ -62,6 +63,7 @@ export class OrdensServicoRelatorioTecnicoRenderer {
         checklistTipo: input.checklistTipo ?? ChecklistTipo.mensal,
         assinaturaTecnicoUrl: input.assinaturaTecnicoUrl ?? input.assinaturaUrl,
         nomeTecnicoAssinatura: input.nomeTecnicoAssinatura ?? "não informado",
+        fotoTecnicoUrl: input.fotoTecnicoUrl,
         equipamento: input.equipamento ? {
           ...input.equipamento,
           codigoQr: input.equipamento.codigoBarras
@@ -75,20 +77,24 @@ export class OrdensServicoRelatorioTecnicoRenderer {
       ...input.evidencias.map((evidencia) => this.carregarArquivoStorage(input.storageRoot, evidencia.storageUrl)),
       this.carregarArquivoStorage(input.storageRoot, input.assinaturaUrl)
     ].filter(Boolean) as Buffer[];
+    const identidadeTecnico = [
+      input.fotoTecnicoUrl ? this.carregarArquivoStorage(input.storageRoot, input.fotoTecnicoUrl) : null,
+      input.assinaturaTecnicoUrl ? this.carregarArquivoStorage(input.storageRoot, input.assinaturaTecnicoUrl) : null
+    ].filter(Boolean) as Buffer[];
 
     return this.criarPdfVisual(
       [{
         linhas: [
-          "AIRMOVEBR - RELATORIO DE MANUTENCAO",
-          "Documento emitido automaticamente pela plataforma AIRMOVEBR",
+          "Clima do Brasil - RELATORIO DE MANUTENCAO",
+          "Documento emitido automaticamente pela plataforma Clima do Brasil",
           "",
           this.formatarLinhaCampo("Data", this.formatarData(input.finalizadoEm)),
           "",
           "DADOS DA EMPRESA",
           this.formatarLinhaCampo("Campo", "Informacao"),
-          this.formatarLinhaCampo("Razao Social", "AIRMOVEBR"),
+          this.formatarLinhaCampo("Razao Social", "Clima do Brasil"),
           this.formatarLinhaCampo("Base operacional", "Londrina, PR"),
-          this.formatarLinhaCampo("Dominio", "airmovebr.com.br"),
+          this.formatarLinhaCampo("Dominio", "climadobrasilengenharia.com.br"),
           "",
           "DADOS DO CLIENTE",
           this.formatarLinhaCampo("Campo", "Informacao"),
@@ -135,6 +141,18 @@ export class OrdensServicoRelatorioTecnicoRenderer {
           "Declaro para os devidos fins que o servico descrito neste relatorio foi executado integralmente."
         ],
         imagens
+      }, {
+        linhas: [
+          "IDENTIFICACAO DO TECNICO",
+          "Validacao automatica pelo acesso autenticado no aplicativo",
+          "",
+          this.formatarLinhaCampo("Tecnico", input.nomeTecnicoAssinatura || "nao informado"),
+          this.formatarLinhaCampo("Foto", input.fotoTecnicoUrl ? "Cadastro conferido" : "nao informada"),
+          this.formatarLinhaCampo("Assinatura", input.assinaturaTecnicoUrl ? "Cadastro conferido" : "nao informada"),
+          "",
+          "A identidade acima pertence ao usuario autenticado que concluiu esta ordem de servico."
+        ],
+        imagens: identidadeTecnico
       }
       ],
     );
@@ -256,7 +274,7 @@ export class OrdensServicoRelatorioTecnicoRenderer {
       "0.21 0.53 0.73 rg",
       "42 772 528 4 re f"
     ];
-    const titulo = linhas[0] ?? "AIRMOVEBR - RELATORIO DE MANUTENCAO";
+    const titulo = linhas[0] ?? "Clima do Brasil - RELATORIO DE MANUTENCAO";
     const subtitulo = linhas[1] ?? "";
     comandos.push(this.comandoTextoPdf(titulo, 54, 804, 15, "F2", "1 1 1"));
     comandos.push(this.comandoTextoPdf(subtitulo, 54, 787, 9, "F1", "0.88 0.93 0.98"));
@@ -316,7 +334,7 @@ export class OrdensServicoRelatorioTecnicoRenderer {
     }
 
     comandos.push("0.55 0.60 0.66 rg\n42 34 528 1 re f");
-    comandos.push(this.comandoTextoPdf("Documento gerado automaticamente pela plataforma AIRMOVEBR.", 42, 20, 7.5, "F1", "0.38 0.42 0.48"));
+    comandos.push(this.comandoTextoPdf("Documento gerado automaticamente pela plataforma Clima do Brasil.", 42, 20, 7.5, "F1", "0.38 0.42 0.48"));
     return comandos.join("\n");
   }
 

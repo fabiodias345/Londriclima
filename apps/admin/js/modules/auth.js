@@ -268,6 +268,7 @@ async function loadTecnicos(renderList = true) {
   if (renderList) {
     tecnicosStatus.textContent = result.total === 1 ? "1 acesso" : \`\${result.total} acessos\`;
     renderTecnicos(latestTecnicos);
+    await loadTechnicianInvites();
   }
 
   renderEquipeMembersList();

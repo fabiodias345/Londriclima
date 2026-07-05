@@ -2,7 +2,7 @@
   "name": "@londriclima/backend",
   "version": "0.1.0",
   "private": true,
-  "description": "API REST e automacoes da plataforma AIRMOVEBR Digital.",
+  "description": "API REST e automacoes da plataforma Clima do Brasil Digital.",
   "scripts": {
     "build": "nest build",
     "start": "node dist/src/main.js",
