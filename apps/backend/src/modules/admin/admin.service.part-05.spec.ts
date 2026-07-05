@@ -639,7 +639,10 @@ test("gerarPdfRelatorioAvulsoCliente pagina todos os responsaveis com foto e ass
 
   mkdirSync(baseDir, { recursive: true });
   arquivos.forEach((arquivo, index) => {
-    writeFileSync(resolve(baseDir, arquivo), Buffer.from([0xff, 0xd8, 0xff, 0xd9, index]));
+    const buffer = arquivo === "ana-foto.jpg"
+      ? criarJpegTesteComOrientacaoExif(6)
+      : Buffer.from([0xff, 0xd8, 0xff, 0xd9, index]);
+    writeFileSync(resolve(baseDir, arquivo), buffer);
   });
 
   equipamento.ordensServico[0].tecnico = null as never;
@@ -697,6 +700,7 @@ test("gerarPdfRelatorioAvulsoCliente pagina todos os responsaveis com foto e ass
     assert.match(pdf, /Bruno Tecnico/);
     assert.match(pdf, /Carla Tecnica/);
     assert.match(pdf, /RESPONS\\301VEIS PELA EXECU\\307\\303O - CONTINUA\\307\\303O/);
+    assert.match(pdf, /0 -100 130 0 42 200 cm/);
     assert.equal((pdf.match(/\/Subtype \/Image/g) ?? []).length, 6);
   } finally {
     rmSync(baseDir, { recursive: true, force: true });
@@ -925,6 +929,33 @@ function criarEquipamentoPmocTeste(
       }
     ]
   };
+}
+
+function criarJpegTesteComOrientacaoExif(orientacao: number) {
+  const exif = Buffer.from([
+    0xff, 0xe1, 0x00, 0x22,
+    0x45, 0x78, 0x69, 0x66, 0x00, 0x00,
+    0x49, 0x49, 0x2a, 0x00,
+    0x08, 0x00, 0x00, 0x00,
+    0x01, 0x00,
+    0x12, 0x01,
+    0x03, 0x00,
+    0x01, 0x00, 0x00, 0x00,
+    orientacao, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00
+  ]);
+  const sof0 = Buffer.from([
+    0xff, 0xc0, 0x00, 0x11,
+    0x08,
+    0x00, 0x64,
+    0x00, 0xc8,
+    0x03,
+    0x01, 0x11, 0x00,
+    0x02, 0x11, 0x00,
+    0x03, 0x11, 0x00
+  ]);
+
+  return Buffer.concat([Buffer.from([0xff, 0xd8]), exif, sof0, Buffer.from([0xff, 0xd9])]);
 }
 
 test("solicitarAssinaturaPmocEngenheiro cria relatorio com token e hash do PDF", async () => {

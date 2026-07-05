@@ -836,20 +836,21 @@ export class AdminRelatorioResumoCoreService {
     const pageObjectIds: number[] = [];
 
     for (const pagina of paginas) {
-      const imageObjectIds: number[] = [];
+      const imagensPdf: Array<{ id: number; orientacao: number }> = [];
 
       for (const imagem of (pagina.imagens ?? []).slice(0, 4)) {
+        const imagemPdf = this.normalizarImagemPdf(imagem);
         const imageObjectId = objetos.length + 1;
-        imageObjectIds.push(imageObjectId);
-        objetos.push(this.criarObjetoImagemPdf(imagem));
+        imagensPdf.push({ id: imageObjectId, orientacao: imagemPdf.orientacao });
+        objetos.push(this.criarObjetoImagemPdfNormalizada(imagemPdf));
       }
 
-      const xObjects = imageObjectIds.map((id, index) => `/Im${index + 1} ${id} 0 R`).join(" ");
+      const xObjects = imagensPdf.map((imagem, index) => `/Im${index + 1} ${imagem.id} 0 R`).join(" ");
       const recursosImagem = xObjects ? `/XObject << ${xObjects} >>` : "";
-      const texto = this.montarConteudoTextoRelatorioAvulso(pagina.linhas, Boolean(imageObjectIds.length));
-      const comandosImagem = imageObjectIds
-        .map((_, index) => {
-          const qtdImagens = imageObjectIds.length;
+      const texto = this.montarConteudoTextoRelatorioAvulso(pagina.linhas, Boolean(imagensPdf.length));
+      const comandosImagem = imagensPdf
+        .map((imagem, index) => {
+          const qtdImagens = imagensPdf.length;
           let width = 140;
           let height = 120;
           let x = 42;
@@ -881,7 +882,7 @@ export class AdminRelatorioResumoCoreService {
             "0.80 0.84 0.90 RG",
             "1.5 w",
             `${x} ${y} ${width} ${height} re S`,
-            `${width} 0 0 ${height} ${x} ${y} cm`,
+            this.comandoTransformacaoImagemPdf(x, y, width, height, imagem.orientacao),
             `/Im${index + 1} Do`,
             "Q"
           ].join("\n");
@@ -1173,8 +1174,10 @@ export class AdminRelatorioResumoCoreService {
   }
 
   private criarObjetoImagemPdf(buffer: Buffer) {
-    const imagem = this.normalizarImagemPdf(buffer);
+    return this.criarObjetoImagemPdfNormalizada(this.normalizarImagemPdf(buffer));
+  }
 
+  private criarObjetoImagemPdfNormalizada(imagem: { dados: Buffer; width: number; height: number; filtro: string }) {
     return `<< /Type /XObject /Subtype /Image /Width ${imagem.width} /Height ${imagem.height} /ColorSpace /DeviceRGB /BitsPerComponent 8${imagem.filtro} /Length ${imagem.dados.length} >>\nstream\n${imagem.dados.toString("latin1")}\nendstream`;
   }
 
@@ -1183,6 +1186,7 @@ export class AdminRelatorioResumoCoreService {
       return {
         dados: buffer,
         ...this.obterDimensoesJpeg(buffer),
+        orientacao: this.obterOrientacaoExifJpeg(buffer),
         filtro: " /Filter /DCTDecode"
       };
     }
@@ -1194,6 +1198,7 @@ export class AdminRelatorioResumoCoreService {
           dados: deflateSync(png.rgb),
           width: png.width,
           height: png.height,
+          orientacao: 1,
           filtro: " /Filter /FlateDecode"
         };
       }
@@ -1203,8 +1208,25 @@ export class AdminRelatorioResumoCoreService {
       dados: Buffer.from([255, 255, 255]),
       width: 1,
       height: 1,
+      orientacao: 1,
       filtro: ""
     };
+  }
+
+  private comandoTransformacaoImagemPdf(x: number, y: number, width: number, height: number, orientacao: number) {
+    if (orientacao === 3) {
+      return `${-width} 0 0 ${-height} ${x + width} ${y + height} cm`;
+    }
+
+    if (orientacao === 6) {
+      return `0 ${-height} ${width} 0 ${x} ${y + height} cm`;
+    }
+
+    if (orientacao === 8) {
+      return `0 ${height} ${-width} 0 ${x + width} ${y} cm`;
+    }
+
+    return `${width} 0 0 ${height} ${x} ${y} cm`;
   }
 
   private ehJpeg(buffer: Buffer) {
@@ -1329,6 +1351,64 @@ export class AdminRelatorioResumoCoreService {
     }
 
     return { width: 1, height: 1 };
+  }
+
+  private obterOrientacaoExifJpeg(buffer: Buffer) {
+    for (let offset = 2; offset < buffer.length - 12;) {
+      if (buffer[offset] !== 0xff) {
+        offset += 1;
+        continue;
+      }
+
+      const marker = buffer[offset + 1];
+      const length = buffer.readUInt16BE(offset + 2);
+      const start = offset + 4;
+      const end = start + length - 2;
+
+      if (marker === 0xe1 && end <= buffer.length && buffer.subarray(start, start + 6).toString("ascii") === "Exif\0\0") {
+        return this.lerOrientacaoExif(buffer.subarray(start + 6, end));
+      }
+
+      offset += 2 + length;
+    }
+
+    return 1;
+  }
+
+  private lerOrientacaoExif(tiff: Buffer) {
+    if (tiff.length < 14) {
+      return 1;
+    }
+
+    const littleEndian = tiff.subarray(0, 2).toString("ascii") === "II";
+    const bigEndian = tiff.subarray(0, 2).toString("ascii") === "MM";
+
+    if (!littleEndian && !bigEndian) {
+      return 1;
+    }
+
+    const readUInt16 = (offset: number) => littleEndian ? tiff.readUInt16LE(offset) : tiff.readUInt16BE(offset);
+    const readUInt32 = (offset: number) => littleEndian ? tiff.readUInt32LE(offset) : tiff.readUInt32BE(offset);
+    const ifdOffset = readUInt32(4);
+
+    if (ifdOffset + 2 > tiff.length) {
+      return 1;
+    }
+
+    const total = readUInt16(ifdOffset);
+
+    for (let index = 0; index < total; index += 1) {
+      const entryOffset = ifdOffset + 2 + index * 12;
+      if (entryOffset + 12 > tiff.length) break;
+
+      const tag = readUInt16(entryOffset);
+      if (tag === 0x0112) {
+        const valor = readUInt16(entryOffset + 8);
+        return [1, 3, 6, 8].includes(valor) ? valor : 1;
+      }
+    }
+
+    return 1;
   }
 
   private formatarResponsavelRelatorioAvulso(
