@@ -1,15 +1,16 @@
-# Memoria AIRMOVEBR
+# Memoria Clima do Brasil / AIRMOVEBR
 
-Atualizado em: 29/06/2026
+Atualizado em: 04/07/2026
 
 ## Contexto
 
-- Cliente piloto: AIRMOVEBR, Londrina/PR.
+- Marca atual: Clima do Brasil.
+- Cliente piloto e infraestrutura legada: AIRMOVEBR, Londrina/PR.
 - Dominio: `airmovebr.com.br`.
 - Repositorio: `https://github.com/fabiodias345/Londriclima.git`.
-- Workspace local: `C:\develop\LondriClima`.
+- Workspace local atual: `E:\develop\Londriclima`.
 - Produto: plataforma operacional para climatizacao, O.S., PMOC, frota e relatorios.
-- Prioridade atual: app tecnico e painel funcionando para operacao real antes de evoluir SaaS.
+- Prioridade atual: validar os apps tecnico e admin na operacao real antes de evoluir SaaS.
 
 ## Stack
 
@@ -17,6 +18,7 @@ Atualizado em: 29/06/2026
 - Admin: HTML, CSS, JavaScript, Leaflet.
 - Landing: HTML, CSS, JavaScript.
 - Mobile: Flutter Android.
+- Apps Flutter separados: tecnico em `apps/mobile` e admin em `apps/admin_mobile`.
 - Infra: Docker Compose local/producao em VM Locaweb.
 - Testes: Flutter test/analyze, node:test, Nest Testing e contratos frontend.
 
@@ -28,7 +30,7 @@ site -> pre-chamado -> admin -> O.S. -> app tecnico -> checklist/fotos/GPS/assin
 
 ## Decisoes ativas
 
-- Marca visivel: AIRMOVEBR.
+- Marca visivel: Clima do Brasil.
 - O app tecnico nao escolhe periodicidade; a O.S. traz `checklist_tipo`.
 - O backend monta o checklist flat e o app apenas renderiza/salva.
 - Uma O.S. pode atender varias maquinas do mesmo cliente/local.
@@ -80,6 +82,23 @@ site -> pre-chamado -> admin -> O.S. -> app tecnico -> checklist/fotos/GPS/assin
 - O painel deve ser usado para gerar O.S. real e validar o app no campo.
 - Recorrencia em producao ja gera O.S. automaticamente pelo scheduler do backend quando `proxima_execucao` vence; em 30/06/2026 gerou O.S. para Luri/Paulo e avancou o plano para 30/07/2026.
 
+## App admin mobile
+
+- Aplicativo separado do app tecnico.
+- Somente usuario com `role=admin` pode acessar.
+- Fases 1 a 4 concluidas:
+  - login e dashboard;
+  - consultas reais dos modulos administrativos;
+  - criar/reprogramar O.S. e tratar pre-chamados;
+  - reenvio de assinatura PMOC;
+  - busca, filtros e layout compacto;
+  - abertura autenticada de PDFs;
+  - frota somente para consulta.
+- Validacao estatica atual: `dart analyze lib test` sem problemas.
+- `flutter test --no-pub` ainda trava sem saida neste ambiente.
+- Notificacoes dependem da definicao Meta/telefone.
+- APK admin fica para o final.
+
 ## PMOC e relatorios
 
 - PMOC atual existe no backend com previa, PDF, assinatura do engenheiro e envio final.
@@ -112,23 +131,29 @@ site -> pre-chamado -> admin -> O.S. -> app tecnico -> checklist/fotos/GPS/assin
 
 ## Pendencias futuras
 
-1. Validar checklist novo no celular real.
+1. Validar checklist do app tecnico no celular real.
 2. Ajustar regra final de fotos por periodicidade.
-3. Melhorar finalizacao da O.S. no app.
-4. Validar editar/apagar planos preventivos e O.S. geradas errado.
-5. Gerar APK novo.
-6. Publicar app/backend/admin quando aprovado.
+3. Melhorar finalizacao da O.S. no app tecnico.
+4. Definir Meta/telefone para notificacoes do app admin.
+5. Testar o app admin completo no aparelho real.
+6. Gerar APK tecnico/admin quando aprovados.
 7. Refazer PDF avulso visual com fotos e assinatura reais.
-8. Depois aplicar padrao visual ao PMOC.
+8. Depois aplicar o padrao visual ao PMOC.
 
 ## Comandos uteis
 
 ```text
-cd C:\develop\LondriClima\apps\mobile
-flutter run --dart-define=MOBILE_API_BASE_URL=http://10.91.93.11:3000
+cd E:\develop\Londriclima\apps\mobile
+flutter run --dart-define=MOBILE_API_BASE_URL=https://api.airmovebr.com.br
 flutter test
 flutter analyze
 flutter build apk --debug
+```
+
+```text
+cd E:\develop\Londriclima\apps\admin_mobile
+flutter run --dart-define=ADMIN_API_BASE_URL=https://api.airmovebr.com.br
+dart analyze lib test
 ```
 
 ```text

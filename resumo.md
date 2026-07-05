@@ -17,6 +17,8 @@ Somente estado atual e proximos passos. Historico concluido fica no Git e nos te
 ## Estado atual
 
 - Rebrand visual para Clima do Brasil aplicado.
+- Git `dev`, `main`, GitHub e repo da VM alinhados.
+- Backend de producao saudavel.
 - Admin web esta ok por enquanto.
 - APK tecnico esta ok por enquanto.
 - Novo app separado criado em `apps/admin_mobile`.
@@ -42,6 +44,7 @@ Somente estado atual e proximos passos. Historico concluido fica no Git e nos te
   - layout compacto para celular pequeno;
   - abertura autenticada de PDF PMOC e relatorio avulso;
   - detalhes da frota somente para consulta.
+- Codigo das fases 1 a 4 esta no GitHub e na VM; APK admin ainda nao foi gerado.
 
 ## Validacao feita
 
