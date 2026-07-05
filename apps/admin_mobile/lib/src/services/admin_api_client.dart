@@ -219,6 +219,54 @@ class AdminApiClient {
       client.close(force: true);
     }
   }
+
+  Future<AdminSession?> refresh(String refreshToken) async {
+    final client = HttpClient()..connectionTimeout = timeout;
+
+    try {
+      final request = await client
+          .postUrl(baseUrl.resolve('/api/v1/auth/refresh'))
+          .timeout(timeout);
+      request.headers.contentType = ContentType.json;
+      request.write(jsonEncode({'refresh_token': refreshToken}));
+
+      final response = await request.close().timeout(timeout);
+      final body = await response
+          .transform(utf8.decoder)
+          .join()
+          .timeout(timeout);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return null;
+      }
+
+      final decoded = jsonDecode(body) as Map<String, dynamic>;
+      final usuario = decoded['usuario'] as Map<String, dynamic>?;
+      if (usuario?['role']?.toString() != 'admin') {
+        return null;
+      }
+
+      final accessToken = decoded['access_token']?.toString() ?? '';
+      final nextRefreshToken = decoded['refresh_token']?.toString() ?? '';
+      if (accessToken.isEmpty || nextRefreshToken.isEmpty) {
+        return null;
+      }
+
+      return AdminSession(
+        accessToken: accessToken,
+        refreshToken: nextRefreshToken,
+        userName: usuario?['nome']?.toString() ?? 'Administrador',
+        email: usuario?['email']?.toString() ?? '',
+      );
+    } on SocketException {
+      return null;
+    } on TimeoutException {
+      return null;
+    } on FormatException {
+      return null;
+    } finally {
+      client.close(force: true);
+    }
+  }
 }
 
 enum AdminRequestFailure { network, unexpected }

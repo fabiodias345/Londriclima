@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
 
 import '../services/admin_api_client.dart';
+import '../services/admin_biometric_auth_service.dart';
+import '../services/admin_refresh_token_store.dart';
 import '../theme/admin_theme.dart';
 import 'dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key, required this.apiClient});
+  const LoginScreen({
+    super.key,
+    required this.apiClient,
+    this.biometricAuth = const DeviceAdminBiometricAuthService(),
+    this.refreshTokenStore = const SecureAdminRefreshTokenStore(),
+  });
 
   final AdminApiClient apiClient;
+  final AdminBiometricAuthService biometricAuth;
+  final AdminRefreshTokenStore refreshTokenStore;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -17,7 +26,17 @@ class _LoginScreenState extends State<LoginScreen> {
   final _loginController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _loading = false;
+  bool _biometricAvailable = false;
+  bool _hasRefreshToken = false;
   String? _error;
+
+  bool get _canUseBiometric => _biometricAvailable && _hasRefreshToken;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBiometricState();
+  }
 
   @override
   void dispose() {
@@ -38,15 +57,9 @@ class _LoginScreenState extends State<LoginScreen> {
         _loginController.text,
         _passwordController.text,
       );
+      await widget.refreshTokenStore.write(session.refreshToken);
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => DashboardScreen(
-            session: session,
-            apiClient: widget.apiClient,
-          ),
-        ),
-      );
+      _openDashboard(session);
     } on AdminLoginException catch (error) {
       setState(() {
         _error = switch (error.failure) {
@@ -64,6 +77,69 @@ class _LoginScreenState extends State<LoginScreen> {
         setState(() => _loading = false);
       }
     }
+  }
+
+  Future<void> _loadBiometricState() async {
+    final available = await widget.biometricAuth.isAvailable();
+    final token = await widget.refreshTokenStore.read();
+    if (!mounted) return;
+    setState(() {
+      _biometricAvailable = available;
+      _hasRefreshToken = token != null && token.isNotEmpty;
+    });
+  }
+
+  Future<void> _submitBiometric() async {
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final authenticated = await widget.biometricAuth.authenticate();
+      if (!authenticated) return;
+
+      final refreshToken = await widget.refreshTokenStore.read();
+      if (refreshToken == null || refreshToken.isEmpty) {
+        await _clearBiometricLogin();
+        return;
+      }
+
+      final session = await widget.apiClient.refresh(refreshToken);
+      if (session == null) {
+        await _clearBiometricLogin();
+        return;
+      }
+
+      await widget.refreshTokenStore.write(session.refreshToken);
+      if (!mounted) return;
+      _openDashboard(session);
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  Future<void> _clearBiometricLogin() async {
+    await widget.refreshTokenStore.clear();
+    if (!mounted) return;
+    setState(() {
+      _hasRefreshToken = false;
+      _error = 'Sessao expirada. Entre com login e senha.';
+    });
+  }
+
+  void _openDashboard(AdminSession session) {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => DashboardScreen(
+          session: session,
+          apiClient: widget.apiClient,
+        ),
+      ),
+    );
   }
 
   @override
@@ -183,6 +259,26 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
+            if (_canUseBiometric) ...[
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: _loading ? null : _submitBiometric,
+                icon: const Icon(Icons.fingerprint),
+                label: const Text('Entrar com digital'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: adminInk,
+                  side: const BorderSide(color: adminOrange),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  textStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 18),
             const Text(
               'Tecnico e auxiliar nao acessam este app.',

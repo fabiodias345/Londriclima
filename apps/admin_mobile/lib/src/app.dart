@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'services/admin_api_client.dart';
+import 'services/admin_biometric_auth_service.dart';
+import 'services/admin_refresh_token_store.dart';
 import 'theme/admin_theme.dart';
 import 'screens/login_screen.dart';
 
@@ -10,9 +12,16 @@ const _apiBaseUrl = String.fromEnvironment(
 );
 
 class ClimaAdminApp extends StatelessWidget {
-  const ClimaAdminApp({super.key, this.apiClient});
+  const ClimaAdminApp({
+    super.key,
+    this.apiClient,
+    this.biometricAuth = const DeviceAdminBiometricAuthService(),
+    this.refreshTokenStore = const SecureAdminRefreshTokenStore(),
+  });
 
   final AdminApiClient? apiClient;
+  final AdminBiometricAuthService biometricAuth;
+  final AdminRefreshTokenStore refreshTokenStore;
 
   @override
   Widget build(BuildContext context) {
@@ -22,6 +31,8 @@ class ClimaAdminApp extends StatelessWidget {
       theme: buildAdminTheme(),
       home: LoginScreen(
         apiClient: apiClient ?? AdminApiClient(baseUrl: Uri.parse(_apiBaseUrl)),
+        biometricAuth: biometricAuth,
+        refreshTokenStore: refreshTokenStore,
       ),
     );
   }
