@@ -625,6 +625,84 @@ test("gerarPdfRelatorioAvulsoCliente nao duplica a mesma foto", async () => {
   }
 });
 
+test("gerarPdfRelatorioAvulsoCliente pagina todos os responsaveis com foto e assinatura", async () => {
+  const equipamento = criarEquipamentoPmocTeste("equipamento-1", "Sala", "AV-001", "SN-AV-1", "2026-06-11T12:00:00.000Z");
+  const baseDir = resolve(process.cwd(), "..", "..", "storage", "funcionarios", "relatorio-avulso-multi");
+  const arquivos = [
+    "ana-foto.jpg",
+    "ana-assinatura.jpg",
+    "bruno-foto.jpg",
+    "bruno-assinatura.jpg",
+    "carla-foto.jpg",
+    "carla-assinatura.jpg"
+  ];
+
+  mkdirSync(baseDir, { recursive: true });
+  arquivos.forEach((arquivo, index) => {
+    writeFileSync(resolve(baseDir, arquivo), Buffer.from([0xff, 0xd8, 0xff, 0xd9, index]));
+  });
+
+  equipamento.ordensServico[0].tecnico = null as never;
+  equipamento.ordensServico[0].equipe = {
+    id: "equipe-1",
+    nome: "Equipe multi",
+    membros: [
+      {
+        usuario: {
+          nome: "Ana Tecnica",
+          fotoPerfilStorageUrl: "/storage/funcionarios/relatorio-avulso-multi/ana-foto.jpg",
+          assinaturaStorageUrl: "/storage/funcionarios/relatorio-avulso-multi/ana-assinatura.jpg"
+        }
+      },
+      {
+        usuario: {
+          nome: "Bruno Tecnico",
+          fotoPerfilStorageUrl: "/storage/funcionarios/relatorio-avulso-multi/bruno-foto.jpg",
+          assinaturaStorageUrl: "/storage/funcionarios/relatorio-avulso-multi/bruno-assinatura.jpg"
+        }
+      },
+      {
+        usuario: {
+          nome: "Carla Tecnica",
+          fotoPerfilStorageUrl: "/storage/funcionarios/relatorio-avulso-multi/carla-foto.jpg",
+          assinaturaStorageUrl: "/storage/funcionarios/relatorio-avulso-multi/carla-assinatura.jpg"
+        }
+      }
+    ]
+  } as never;
+
+  const prisma = {
+    cliente: {
+      findFirst: async () => ({
+        id: "cliente-1",
+        nome: "Cliente Avulso",
+        tipo: "pf",
+        documento: "12345678900",
+        telefone: "43988887777",
+        email: "cliente@example.com",
+        pmocAtivo: false,
+        atualizadoEm: new Date("2026-06-12T10:00:00.000Z"),
+        enderecos: [{ cidade: "Londrina", uf: "PR", bairro: "Centro" }],
+        equipamentos: [equipamento]
+      })
+    }
+  };
+  const service = criarService(prisma);
+
+  try {
+    const resposta = await service.gerarPdfRelatorioAvulsoCliente("cliente-1", usuario);
+    const pdf = resposta.buffer.toString("latin1");
+
+    assert.match(pdf, /Ana Tecnica/);
+    assert.match(pdf, /Bruno Tecnico/);
+    assert.match(pdf, /Carla Tecnica/);
+    assert.match(pdf, /RESPONS\\301VEIS PELA EXECU\\307\\303O - CONTINUA\\307\\303O/);
+    assert.equal((pdf.match(/\/Subtype \/Image/g) ?? []).length, 6);
+  } finally {
+    rmSync(baseDir, { recursive: true, force: true });
+  }
+});
+
 test("gerarPdfRelatorioAvulsoCliente mostra apenas a manutencao mais recente da mesma maquina", async () => {
   const fotoAntesPath = resolve(process.cwd(), "..", "..", "storage", "os", "os-equipamento-1-corretiva", "evidencias", "antes.jpg");
   const fotoDepoisPath = resolve(process.cwd(), "..", "..", "storage", "os", "os-equipamento-1-corretiva", "evidencias", "depois.jpg");

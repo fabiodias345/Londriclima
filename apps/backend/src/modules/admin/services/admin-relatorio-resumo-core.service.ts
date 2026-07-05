@@ -798,21 +798,26 @@ export class AdminRelatorioResumoCoreService {
         imagens: this.carregarImagensRelatorioAvulso(ordem)
       });
 
-      const executor = ordem?.tecnico_executor ?? ordem?.tecnico;
-      if (executor) {
-        paginas.push({
-          linhas: [
-            ...cabecalho,
-            ...montarCartaoRelatorioTecnico("IDENTIFICACAO DO TECNICO", [
-              ["Campo", "Informacao"],
-              ["Tecnico", executor.nome || "nao informado"],
-              ["Foto", executor.foto_perfil_storage_url ? "Cadastro conferido" : "nao informada"],
-              ["Assinatura", executor.assinatura_storage_url ? "Cadastro conferido" : "nao informada"]
-            ]),
-            "",
-            "Identidade vinculada ao usuario autenticado responsavel pela execucao."
-          ],
-          imagens: this.carregarIdentidadeTecnicoRelatorio(executor)
+      const executores = this.obterExecutoresOrdem(ordem);
+      if (executores.length > 0) {
+        this.dividirExecutoresRelatorio(executores).forEach((grupo, index) => {
+          const tecnicosInfo = grupo.map((executor) => [
+            "Identificação",
+            executor.nome || "não informado"
+          ]) as Array<[string, string]>;
+
+          paginas.push({
+            linhas: [
+              ...cabecalho,
+              ...montarCartaoRelatorioTecnico(
+                index === 0 ? "RESPONSÁVEIS PELA EXECUÇÃO" : "RESPONSÁVEIS PELA EXECUÇÃO - CONTINUAÇÃO",
+                tecnicosInfo
+              ),
+              "",
+              "Identidade vinculada aos usuários autenticados responsáveis pela execução do serviço."
+            ],
+            imagens: this.carregarIdentidadeTecnicosRelatorio(grupo)
+          });
         });
       }
 
@@ -833,7 +838,7 @@ export class AdminRelatorioResumoCoreService {
     for (const pagina of paginas) {
       const imageObjectIds: number[] = [];
 
-      for (const imagem of (pagina.imagens ?? []).slice(0, 3)) {
+      for (const imagem of (pagina.imagens ?? []).slice(0, 4)) {
         const imageObjectId = objetos.length + 1;
         imageObjectIds.push(imageObjectId);
         objetos.push(this.criarObjetoImagemPdf(imagem));
@@ -844,15 +849,37 @@ export class AdminRelatorioResumoCoreService {
       const texto = this.montarConteudoTextoRelatorioAvulso(pagina.linhas, Boolean(imageObjectIds.length));
       const comandosImagem = imageObjectIds
         .map((_, index) => {
-          const tresImagens = imageObjectIds.length <= 3;
-          const width = tresImagens ? 160 : 220;
-          const height = tresImagens ? 100 : 110;
-          const x = tresImagens ? 42 + index * 176 : 42 + (index % 2) * 260;
-          const y = tresImagens ? 75 : 75 + Math.floor(index / 2) * 125;
+          const qtdImagens = imageObjectIds.length;
+          let width = 140;
+          let height = 120;
+          let x = 42;
+          let y = 100;
+
+          if (qtdImagens === 1) {
+            width = 200;
+            height = 150;
+            x = 206;
+          } else if (qtdImagens === 2) {
+            width = 160;
+            height = 130;
+            x = 42 + (index % 2) * 200;
+            y = 100 + Math.floor(index / 2) * 150;
+          } else if (qtdImagens === 3) {
+            width = 140;
+            height = 110;
+            x = 42 + (index % 3) * 170;
+            y = 100 + Math.floor(index / 3) * 130;
+          } else {
+            width = 130;
+            height = 100;
+            x = 42 + (index % 2) * 200;
+            y = 100 + Math.floor(index / 2) * 130;
+          }
+
           return [
             "q",
             "0.80 0.84 0.90 RG",
-            "1 w",
+            "1.5 w",
             `${x} ${y} ${width} ${height} re S`,
             `${width} 0 0 ${height} ${x} ${y} cm`,
             `/Im${index + 1} Do`,
@@ -915,7 +942,7 @@ export class AdminRelatorioResumoCoreService {
     comandos.push(this.comandoTextoPdf(subtitulo, 54, 787, 9, "F1", "0.88 0.93 0.98"));
 
     let y = 748;
-    const limiteInferior = reservarEspacoImagens ? 250 : 58;
+    const limiteInferior = reservarEspacoImagens ? 200 : 58;
 
     for (const linhaOriginal of linhas.slice(2)) {
       const linha = this.normalizarTextoPdf(linhaOriginal).trimEnd();
@@ -1021,16 +1048,102 @@ export class AdminRelatorioResumoCoreService {
     return carregarFotosRelatorioTecnico(ordem, (storageUrl) => this.carregarArquivoStorage(storageUrl));
   }
 
-  private carregarIdentidadeTecnicoRelatorio(tecnico: {
-    foto_perfil_storage_url?: string | null;
-    assinatura_storage_url?: string | null;
-  }) {
-    const imagens: Buffer[] = [];
-    for (const url of [tecnico.foto_perfil_storage_url, tecnico.assinatura_storage_url]) {
-      if (!url) continue;
-      const buffer = this.carregarArquivoStorage(url);
-      if (buffer) imagens.push(buffer);
+  private obterExecutoresOrdem(
+    ordem: PreviaRelatorioAvulsoCliente["maquinas"][number]["os_concluidas"][number] | null
+  ) {
+    const executores: Array<{
+      nome?: string | null;
+      foto_perfil_storage_url?: string | null;
+      assinatura_storage_url?: string | null;
+    }> = [];
+
+    if (!ordem) {
+      return executores;
     }
+
+    if (ordem.tecnico_executor) {
+      executores.push({
+        nome: ordem.tecnico_executor.nome,
+        foto_perfil_storage_url: ordem.tecnico_executor.foto_perfil_storage_url,
+        assinatura_storage_url: ordem.tecnico_executor.assinatura_storage_url
+      });
+    } else if (ordem.tecnico) {
+      executores.push({
+        nome: ordem.tecnico.nome,
+        foto_perfil_storage_url: ordem.tecnico.foto_perfil_storage_url,
+        assinatura_storage_url: ordem.tecnico.assinatura_storage_url
+      });
+    }
+
+    const membrosEquipe = (ordem.equipe?.membros ?? [])
+      .map((membro) => ({
+        nome: membro.usuario?.nome,
+        foto_perfil_storage_url: membro.usuario?.fotoPerfilStorageUrl,
+        assinatura_storage_url: membro.usuario?.assinaturaStorageUrl
+      }))
+      .filter((membro) => membro.nome);
+
+    executores.push(...membrosEquipe);
+
+    return executores.filter((executor, index, lista) => {
+      const nome = this.normalizarNomeExecutorRelatorio(executor.nome);
+      const urls = [executor.foto_perfil_storage_url, executor.assinatura_storage_url].filter(Boolean);
+
+      return index === lista.findIndex((comparado) => {
+        const mesmoNome = nome && nome === this.normalizarNomeExecutorRelatorio(comparado.nome);
+        const urlsComparado = [comparado.foto_perfil_storage_url, comparado.assinatura_storage_url].filter(Boolean);
+        const mesmaIdentidadeVisual = urls.some((url) => urlsComparado.includes(url));
+
+        return Boolean(mesmoNome || mesmaIdentidadeVisual);
+      });
+    });
+  }
+
+  private dividirExecutoresRelatorio(
+    executores: Array<{
+      nome?: string | null;
+      foto_perfil_storage_url?: string | null;
+      assinatura_storage_url?: string | null;
+    }>
+  ) {
+    const grupos: typeof executores[] = [];
+
+    for (let index = 0; index < executores.length; index += 2) {
+      grupos.push(executores.slice(index, index + 2));
+    }
+
+    return grupos;
+  }
+
+  private normalizarNomeExecutorRelatorio(nome?: string | null) {
+    return this.normalizarComparacaoPdf(nome || "")
+      .replace(/\([^)]*\)/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  }
+
+  private carregarIdentidadeTecnicosRelatorio(
+    tecnicos: Array<{
+      nome?: string | null;
+      foto_perfil_storage_url?: string | null;
+      assinatura_storage_url?: string | null;
+    }>
+  ) {
+    const imagens: Buffer[] = [];
+    const urlsProcessadas = new Set<string>();
+
+    for (const tecnico of tecnicos) {
+      for (const url of [tecnico.foto_perfil_storage_url, tecnico.assinatura_storage_url]) {
+        if (!url || urlsProcessadas.has(url)) continue;
+        const buffer = this.carregarArquivoStorage(url);
+        if (buffer) {
+          imagens.push(buffer);
+          urlsProcessadas.add(url);
+        }
+      }
+    }
+
     return imagens;
   }
 

@@ -40,7 +40,9 @@ export class AdminRelatorioTecnicoMapper {
             select: {
               usuario: {
                 select: {
-                  nome: true
+                  nome: true,
+                  fotoPerfilStorageUrl: true,
+                  assinaturaStorageUrl: true
                 }
               }
             }
@@ -253,7 +255,7 @@ export class AdminRelatorioTecnicoMapper {
     concluidaEm: Date | null;
     valorCobrado: Prisma.Decimal | null;
     tecnico: { id: string; nome: string; email: string; fotoPerfilStorageUrl: string | null; assinaturaStorageUrl: string | null } | null;
-    equipe: { id: string; nome: string; membros?: Array<{ usuario: { nome: string } }> } | null;
+    equipe: { id: string; nome: string; membros?: Array<{ usuario: { nome: string; fotoPerfilStorageUrl?: string | null; assinaturaStorageUrl?: string | null } }> } | null;
     eventos: Array<{
       id: string;
       acao: OrdemServicoEventoAcao;
