@@ -20,7 +20,7 @@ export class AdminPmocCoreService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config?: ConfigService,
-    private readonly mapper = new AdminRelatorioTecnicoMapper()
+    private readonly mapper: AdminRelatorioTecnicoMapper = new AdminRelatorioTecnicoMapper()
   ) { }
 
   async obterPreviaPmocCliente(clienteId: string, usuario: AuthenticatedUser) {

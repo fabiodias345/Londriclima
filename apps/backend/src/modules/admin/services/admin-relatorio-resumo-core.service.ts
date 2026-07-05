@@ -33,7 +33,7 @@ export class AdminRelatorioResumoCoreService {
   constructor(
     private readonly prisma: PrismaService,
     frotaService?: AdminFrotaService,
-    private readonly mapper = new AdminRelatorioTecnicoMapper()
+    private readonly mapper: AdminRelatorioTecnicoMapper = new AdminRelatorioTecnicoMapper()
   ) {
     this.frotaService = frotaService ?? new AdminFrotaService(prisma);
   }
