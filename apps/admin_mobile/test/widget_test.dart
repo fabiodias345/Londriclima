@@ -72,8 +72,8 @@ void main() {
     );
 
     expect(find.text('Clima Admin'), findsOneWidget);
-    expect(find.text('Entrar como admin'), findsOneWidget);
-    expect(find.text('Tecnico e auxiliar nao acessam este app.'), findsOneWidget);
+    expect(find.text('Entrar'), findsOneWidget);
+    expect(find.text('Use seu login do painel web.'), findsOneWidget);
   });
 
   testWidgets('bloqueia usuario que nao e admin', (tester) async {
@@ -87,7 +87,7 @@ void main() {
 
     await tester.enterText(find.byType(TextField).first, 'tecnico');
     await tester.enterText(find.byType(TextField).last, '123456');
-    await tester.tap(find.text('Entrar como admin'));
+    await tester.tap(find.text('Entrar'));
     await tester.pumpAndSettle();
 
     expect(find.text('Acesso restrito a administradores.'), findsOneWidget);
@@ -109,7 +109,7 @@ void main() {
 
     await tester.enterText(find.byType(TextField).first, 'admin');
     await tester.enterText(find.byType(TextField).last, '123456');
-    await tester.tap(find.text('Entrar como admin'));
+    await tester.tap(find.text('Entrar'));
     await tester.pumpAndSettle();
 
     expect(find.text('Admin Geral'), findsOneWidget);

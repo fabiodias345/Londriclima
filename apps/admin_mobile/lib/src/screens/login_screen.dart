@@ -194,7 +194,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Use o mesmo usuario admin do painel web.',
+              'Use seu login do painel web.',
               style: TextStyle(color: adminSlate, fontSize: 16),
             ),
             const SizedBox(height: 28),
@@ -245,7 +245,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.login),
-              label: Text(_loading ? 'Entrando...' : 'Entrar como admin'),
+              label: Text(_loading ? 'Entrando...' : 'Entrar'),
               style: FilledButton.styleFrom(
                 backgroundColor: adminOrange,
                 foregroundColor: adminInk,
@@ -279,12 +279,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ],
-            const SizedBox(height: 18),
-            const Text(
-              'Tecnico e auxiliar nao acessam este app.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: adminSlate, fontWeight: FontWeight.w600),
-            ),
           ],
         ),
       ),
