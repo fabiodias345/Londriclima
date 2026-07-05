@@ -1,6 +1,6 @@
 # Memoria AIRMOVEBR
 
-Atualizado em: 29/06/2026
+Atualizado em: 03/07/2026
 
 ## Contexto
 
@@ -40,7 +40,7 @@ site -> pre-chamado -> admin -> O.S. -> app tecnico -> checklist/fotos/GPS/assin
 ## Estado atual do app tecnico
 
 - Login real via API.
-- Dashboard de O.S.
+- Lista operacional de O.S.
 - Filtros e detalhe.
 - Inicio de atendimento com GPS.
 - Selecao/cadastro de maquina.
@@ -79,13 +79,17 @@ site -> pre-chamado -> admin -> O.S. -> app tecnico -> checklist/fotos/GPS/assin
 - Planos preventivos precisam manter editar e apagar.
 - O painel deve ser usado para gerar O.S. real e validar o app no campo.
 - Recorrencia em producao ja gera O.S. automaticamente pelo scheduler do backend quando `proxima_execucao` vence; em 30/06/2026 gerou O.S. para Luri/Paulo e avancou o plano para 30/07/2026.
+- Menu `Dashboard` do admin foi removido; a tela de O.S. virou a visao operacional principal.
 
 ## PMOC e relatorios
 
 - PMOC atual existe no backend com previa, PDF, assinatura do engenheiro e envio final.
-- PDF profissional por maquina ainda e evolucao futura.
-- Relatorio avulso/corretivo deve ser a primeira base visual nova antes de aplicar ao PMOC.
+- Componentes PDF reutilizaveis foram extraidos para cabecalho, cartoes, checklist, fotos e assinaturas.
+- Relatorio avulso/corretivo usa o novo padrao visual e separa dados nao-PMOC de PMOC.
+- PDF PMOC recebeu o padrao visual preservando ART, engenheiro, periodicidade e dados obrigatorios.
+- PDF avulso preserva acentos, cedilha e textos em portugues com WinAnsiEncoding.
 - Relatorio nao-PMOC nao deve puxar dados de PMOC nem engenheiro.
+- Relatorio Camara Fria foi implementado e validado com PDF simulado.
 
 ## Infra
 
@@ -112,23 +116,21 @@ site -> pre-chamado -> admin -> O.S. -> app tecnico -> checklist/fotos/GPS/assin
 
 ## Pendencias futuras
 
-1. Validar checklist novo no celular real.
-2. Ajustar regra final de fotos por periodicidade.
-3. Melhorar finalizacao da O.S. no app.
-4. Validar editar/apagar planos preventivos e O.S. geradas errado.
-5. Gerar APK novo.
-6. Publicar app/backend/admin quando aprovado.
-7. Refazer PDF avulso visual com fotos e assinatura reais.
-8. Depois aplicar padrao visual ao PMOC.
+1. Gerar/instalar APK novo e validar no aparelho real.
+2. Conferir O.S. real e PDFs reais em producao.
+3. Validar no painel edicao, cancelamento e exclusao de O.S. gerada errada.
+4. Conferir a primeira execucao do snapshot semanal da Locaweb.
+5. Confirmar recebimento real do alerta de backup por e-mail.
 
 ## Comandos uteis
 
 ```text
 cd C:\develop\LondriClima\apps\mobile
 flutter run --dart-define=MOBILE_API_BASE_URL=http://10.91.93.11:3000
+flutter run --dart-define=MOBILE_API_BASE_URL=https://api.airmovebr.com.br
 flutter test
 flutter analyze
-flutter build apk --debug
+flutter build apk --debug --dart-define=MOBILE_API_BASE_URL=https://api.airmovebr.com.br
 ```
 
 ```text

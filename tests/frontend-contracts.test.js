@@ -318,10 +318,14 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(script, /\/admin\/agenda\/ordens/);
   assert.match(script, /\/admin\/agenda\/ordens\/\$\{agendaEditingOsId\}/);
   assert.match(script, /const AUTO_REFRESH_INTERVAL_MS = 10000/);
-  assert.match(script, /const AUTO_REFRESH_VIEWS = new Set\(\["preChamados", "agenda"\]\)/);
+  assert.match(script, /const AUTO_REFRESH_VIEWS = new Set\(\["preChamados"\]\)/);
   assert.match(script, /document\.hidden/);
   assert.match(script, /window\.setInterval\(autoRefreshActiveView, AUTO_REFRESH_INTERVAL_MS\)/);
   assert.match(script, /document\.addEventListener\("visibilitychange", syncAutoRefresh\)/);
+  assert.match(script, /async function refreshOsCounters/);
+  assert.match(script, /await refreshOsCounters\(\)/);
+  const autoRefreshBody = script.match(/async function autoRefreshActiveView\(\) \{[\s\S]*?\n\}/)?.[0] || "";
+  assert.doesNotMatch(autoRefreshBody, /loadActiveView\(\)/);
   assert.match(script, /async function loadRecorrencias/);
   assert.match(recorrenciasModule, /view:\s*"recorrencias"/);
   assert.match(script, /async function submitRecurrence/);
@@ -481,6 +485,8 @@ test("admin alimenta abas de O.S. com dados reais da agenda", () => {
 
   assert.match(script, /async function loadOsWorkbench/);
   assert.match(script, /fetchAdminJson\("\/admin\/agenda", listStatus\)/);
+  assert.match(script, /backgroundFetchAdminJson\("\/admin\/agenda"\)/);
+  assert.match(script, /updateOsSummaryCards\(\);\s*updateOsTabCounts\(\);/);
   assert.match(script, /function filterOsAgendaItems/);
   assert.match(script, /function renderOsAgendaItems/);
   assert.match(script, /const OS_STATUS_TABS = /);

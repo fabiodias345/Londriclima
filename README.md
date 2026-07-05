@@ -63,7 +63,7 @@ Londriclima/
 +-- tests/                # Testes de contrato do frontend
 +-- checklist.md          # Checklists PMOC para o futuro app tecnico
 +-- package.json          # Scripts do monorepo
-+-- resumo.md             # Estado operacional recente do projeto
++-- docs/resumo.md        # Estado operacional recente do projeto
 ```
 
 ## Requisitos

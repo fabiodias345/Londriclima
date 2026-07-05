@@ -1,7 +1,7 @@
 # PRD - AIRMOVEBR Digital
 
-Versao: 1.6.0
-Atualizado em: 25/06/2026
+Versao: 1.7.0
+Atualizado em: 03/07/2026
 Cliente piloto: AIRMOVEBR - Londrina/PR
 
 ## Visao
@@ -26,11 +26,12 @@ O produto deve resolver primeiro a operacao real da AIRMOVEBR e depois evoluir p
 
 ### Painel admin
 
-- Gerenciar clientes, equipamentos, agenda, O.S., recorrencias, frota, relatorios e PMOC.
+- Gerenciar clientes, equipamentos, agenda, O.S., recorrencias, frota, relatorios avulsos e PMOC.
 - Operar em `https://admin.airmovebr.com.br/`.
 - Criar O.S. preventiva/corretiva.
 - Enviar O.S. para campo.
 - Corrigir erro operacional com editar/cancelar/apagar conforme regra aprovada.
+- Usar O.S. como visao operacional principal; nao manter menu Dashboard separado.
 
 ### Backend
 
@@ -47,7 +48,7 @@ Estado atual: fluxo operacional em evolucao visual e funcional.
 Ja implementado:
 
 1. Login fake local e login real por API.
-2. Dashboard de O.S.
+2. Lista operacional de O.S.
 3. Filtros por status/data.
 4. Detalhe da O.S.
 5. Listagem de varias maquinas no mesmo atendimento.
@@ -69,9 +70,8 @@ Pendente:
 
 1. Validar no aparelho real sob sol.
 2. Ajustar regra final de fotos por periodicidade.
-3. Melhorar finalizacao da O.S. no app.
-4. Gerar APK novo aprovado.
-5. Publicar em producao.
+3. Gerar APK novo aprovado.
+4. Publicar em producao.
 
 ## Stack ativa
 
@@ -153,9 +153,10 @@ Estado:
 
 - Previa PMOC no backend.
 - PDF PMOC atual no backend.
+- PDF PMOC com novo visual tecnico sem remover ART, engenheiro, periodicidade ou dados obrigatorios.
 - Fluxo de assinatura do engenheiro.
 - Envio final ao cliente com PDF assinado.
-- Novo PDF profissional por maquina ainda pendente.
+- Relatorio avulso/corretivo com novo padrao visual, fotos, assinatura e separacao de dados nao-PMOC.
 
 ## Escopo MVP
 
@@ -169,7 +170,7 @@ Dentro do MVP:
 - GPS por eventos.
 - Fotos e checklist.
 - Assinatura do responsavel.
-- PDF/relatorio.
+- PDF PMOC e relatorios tecnicos avulsos.
 - PMOC basico.
 - Frota basica com veiculos e abastecimentos.
 

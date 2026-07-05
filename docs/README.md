@@ -19,7 +19,7 @@ Indice dos documentos principais do projeto.
 | [Deploy Git](./deploy_git.md) | Rotina de commit/push feita manualmente pelo usuario. |
 | [Deploy SSH](./deploy_ssh.md) | Rotina de atualizacao da VM. |
 | [Implantacao producao](./implantacao-producao.md) | Dados da VM, dominio e validacoes de producao. |
-| [Resumo raiz](../resumo.md) | Resumo mais recente do estado do projeto. |
+| [Resumo](./resumo.md) | Resumo mais recente do estado do projeto. |
 | [README raiz](../README.md) | Como subir e validar o projeto. |
 | [Mobile README](../apps/mobile/README.md) | Como testar e buildar o APK. |
 

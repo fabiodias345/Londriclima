@@ -224,7 +224,7 @@ const fleetReportExportButton = document.querySelector("#fleetReportExportButton
 
 let activeView = "preChamados";
 const AUTO_REFRESH_INTERVAL_MS = 10000;
-const AUTO_REFRESH_VIEWS = new Set(["preChamados", "agenda"]);
+const AUTO_REFRESH_VIEWS = new Set(["preChamados"]);
 let autoRefreshTimer = 0;
 let autoRefreshRunning = false;
 let activeConfigView = "empresa";
@@ -403,7 +403,7 @@ async function autoRefreshActiveView() {
 
   autoRefreshRunning = true;
   try {
-    await loadActiveView();
+    await refreshOsCounters();
   } finally {
     autoRefreshRunning = false;
   }
@@ -448,6 +448,42 @@ async function loadOsWorkbench() {
   ]);
 
   setOsTab(activeOsTab);
+}
+
+async function backgroundFetchAdminJson(path) {
+  let response;
+
+  try {
+    response = await fetch(\`\${apiBaseUrl}\${path}\`, {
+      headers: authHeaders()
+    });
+  } catch {
+    return null;
+  }
+
+  if (!response.ok) {
+    return null;
+  }
+
+  return response.json();
+}
+
+async function refreshOsCounters() {
+  const [preChamadosResult, agendaResult] = await Promise.all([
+    backgroundFetchAdminJson("/admin/pre-chamados"),
+    backgroundFetchAdminJson("/admin/agenda")
+  ]);
+
+  if (preChamadosResult) {
+    latestPreChamados = preChamadosResult.items || [];
+  }
+
+  if (agendaResult) {
+    latestAgendaItems = agendaResult.items || [];
+  }
+
+  updateOsSummaryCards();
+  updateOsTabCounts();
 }
 
 function setActiveView(view) {
