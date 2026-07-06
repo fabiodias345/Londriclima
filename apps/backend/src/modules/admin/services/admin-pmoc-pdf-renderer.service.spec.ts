@@ -71,6 +71,13 @@ test("PMOC PDF mostra checklist APK em tabela numerada com fotos e temperatura f
       .toString("latin1");
 
     assert.match(pdf, /CHECKLIST APK/);
+    assert.match(pdf, /Manutenç/);
+    assert.match(pdf, /Operação/);
+    assert.match(pdf, /Identificaç/i);
+    assert.match(pdf, /Informação/);
+    assert.match(pdf, /TÉCNICO RESPONSÁVEL PELA EXECUÇÃO/);
+    assert.match(pdf, /Foto do técnico/);
+    assert.doesNotMatch(pdf, /Nao informado|nao informado|tecnico|usuario|EXECUCAO/);
     assert.match(pdf, /Item de Verifica/);
     assert.match(pdf, /Resultado/);
     assert.match(pdf, /Teste do controle remoto\/comandos/);

@@ -30,7 +30,7 @@ export function adicionarChecklistApkPdf(page: PdfPage, ordem: OrdemPmoc | null,
   drawRow(18, ["#", "Item de Verificação", "Resultado"], true);
 
   if (!linhas.length) {
-    drawRow(24, ["-", "Checklist nao informado no app", "Nao informado"]);
+    drawRow(24, ["-", "Checklist não informado no app", "Não informado"]);
     return;
   }
 
@@ -88,7 +88,7 @@ function tipoChecklistPmoc(ordem: OrdemPmoc) {
 function adicionarImagemChecklist(page: PdfPage, storageUrl: string, x: number, y: number, draw: PdfDraw) {
   const imagem = carregarArquivoStorage(storageUrl);
   if (!imagem) {
-    draw.text(page, "Foto nao encontrada", x, y + 17, 6.8, false, 30, "0.65 0.11 0.11");
+    draw.text(page, "Foto não encontrada", x, y + 17, 6.8, false, 30, "0.65 0.11 0.11");
     return;
   }
   draw.rect(page, x, y, 70, 44);
