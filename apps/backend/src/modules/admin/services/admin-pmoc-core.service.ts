@@ -13,6 +13,9 @@ import { AuthenticatedUser } from "../../auth/auth-user";
 import { AdminPmocPdfRendererService } from "./admin-pmoc-pdf-renderer.service";
 import { AdminRelatorioTecnicoMapper } from "./admin-relatorio-tecnico-mapper";
 
+type OrdemRelatorioTecnicoFonte = Parameters<AdminRelatorioTecnicoMapper["mapearOrdemRelatorioTecnico"]>[0];
+type EquipamentoRelatorioTecnicoFonte = Parameters<AdminRelatorioTecnicoMapper["mapearMaquinaRelatorioTecnico"]>[0];
+
 @Injectable()
 export class AdminPmocCoreService {
   private readonly pmocPdfRenderer = new AdminPmocPdfRendererService();
@@ -112,7 +115,8 @@ export class AdminPmocCoreService {
       throw new BadRequestException("Cliente nao possui PMOC ativo.");
     }
 
-    const maquinas = cliente.equipamentos.map((equipamento) => this.mapper.mapearMaquinaRelatorioTecnico(equipamento));
+    const equipamentos = await this.anexarOrdensMultiMaquina(cliente.id, usuario.empresa_id, cliente.equipamentos);
+    const maquinas = equipamentos.map((equipamento) => this.mapper.mapearMaquinaRelatorioTecnico(equipamento));
     const pendencias = this.obterPendenciasPreviaPmoc(cliente, maquinas);
     const anoPmoc = this.obterAnoPmoc(maquinas);
     const relatoriosPmoc = await this.prisma.pmocRelatorio.findMany({
@@ -277,6 +281,72 @@ export class AdminPmocCoreService {
       email: engenheiro.email,
       telefone: engenheiro.telefone,
       atualizado_em: engenheiro.atualizadoEm.toISOString()
+    };
+  }
+
+  private async anexarOrdensMultiMaquina(
+    clienteId: string,
+    empresaId: string,
+    equipamentos: EquipamentoRelatorioTecnicoFonte[]
+  ) {
+    const equipamentoIds = equipamentos.map((equipamento) => equipamento.id);
+    if (!equipamentoIds.length || !this.prisma.ordemServico?.findMany) {
+      return equipamentos;
+    }
+
+    const ordens = await this.prisma.ordemServico.findMany({
+      where: {
+        empresaId,
+        clienteId,
+        equipamentoId: null,
+        status: OrdemServicoStatus.concluida,
+        checklistRespostas: {
+          some: {
+            equipamentoId: {
+              in: equipamentoIds
+            }
+          }
+        }
+      },
+      orderBy: {
+        concluidaEm: "desc"
+      },
+      select: this.mapper.ordemRelatorioTecnicoSelect()
+    }) as OrdemRelatorioTecnicoFonte[];
+
+    if (!ordens.length) {
+      return equipamentos;
+    }
+
+    const ordensPorEquipamento = new Map<string, OrdemRelatorioTecnicoFonte[]>();
+    for (const ordem of ordens) {
+      const idsDaOrdem = new Set(
+        (ordem.checklistRespostas ?? [])
+          .map((resposta) => resposta.equipamentoId)
+          .filter((id): id is string => typeof id === "string" && equipamentoIds.includes(id))
+      );
+      for (const id of idsDaOrdem) {
+        const atuais = ordensPorEquipamento.get(id) ?? [];
+        atuais.push(this.filtrarOrdemParaEquipamento(ordem, id));
+        ordensPorEquipamento.set(id, atuais);
+      }
+    }
+
+    return equipamentos.map((equipamento) => ({
+      ...equipamento,
+      ordensServico: [
+        ...equipamento.ordensServico,
+        ...(ordensPorEquipamento.get(equipamento.id) ?? [])
+      ].sort((a, b) => (b.concluidaEm?.getTime() ?? 0) - (a.concluidaEm?.getTime() ?? 0))
+    }));
+  }
+
+  private filtrarOrdemParaEquipamento(ordem: OrdemRelatorioTecnicoFonte, equipamentoId: string): OrdemRelatorioTecnicoFonte {
+    return {
+      ...ordem,
+      checklistRespostas: (ordem.checklistRespostas ?? []).filter(
+        (resposta) => !resposta.equipamentoId || resposta.equipamentoId === equipamentoId
+      )
     };
   }
 

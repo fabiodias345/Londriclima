@@ -169,6 +169,69 @@ test("gerarPdfPmocCliente retorna PDF com nome de arquivo e conteudo oficial", a
   assert.doesNotMatch(pdf, /assinatura digitalizada reutilizavel/);
 });
 
+test("obterPreviaPmocCliente considera OS multi-maquina pelo checklist da maquina", async () => {
+  const equipamento = criarEquipamentoPmocTeste(
+    "equipamento-1",
+    "Sala",
+    "PMOC-001",
+    "SN-1",
+    "2026-07-06T20:02:20.000Z"
+  );
+  equipamento.ordensServico = [];
+  const ordemCompartilhada = criarEquipamentoPmocTeste(
+    "equipamento-1",
+    "Sala",
+    "PMOC-001",
+    "SN-1",
+    "2026-07-06T20:02:20.000Z"
+  ).ordensServico[0];
+  ordemCompartilhada.id = "os-multi-1";
+  ordemCompartilhada.checklistRespostas = ordemCompartilhada.checklistRespostas.map((resposta) => ({
+    ...resposta,
+    equipamentoId: "equipamento-1"
+  }));
+  const prisma = {
+    cliente: {
+      findFirst: async () => ({
+        id: "cliente-1",
+        nome: "Paulinho HU",
+        tipo: "pf",
+        documento: "12345678900",
+        telefone: "43988887777",
+        email: "paulinho@example.com",
+        pmocAtivo: true,
+        pmocArtNumero: null,
+        atualizadoEm: new Date("2026-07-06T20:10:00.000Z"),
+        engenheiroResponsavel: {
+          id: "engenheiro-1",
+          nome: "Fabio Dias",
+          cpf: "45678912345",
+          crea: "CREA-PR 654321",
+          email: "fabio@example.com",
+          telefone: "43999991111",
+          atualizadoEm: new Date("2026-06-12T10:00:00.000Z")
+        },
+        enderecos: [{ cidade: "Londrina", uf: "PR", bairro: "Centro" }],
+        equipamentos: [equipamento]
+      })
+    },
+    ordemServico: {
+      findMany: async () => [ordemCompartilhada]
+    },
+    pmocRelatorio: {
+      findMany: async () => []
+    }
+  };
+  const service = criarService(prisma);
+
+  const resposta = await service.obterPreviaPmocCliente("cliente-1", usuario);
+
+  assert.equal(resposta.total_os_concluidas, 1);
+  assert.equal(resposta.pronto_para_pdf, true);
+  assert.equal(resposta.maquinas[0].os_concluidas[0].id, "os-multi-1");
+  assert.deepEqual(resposta.pendencias, []);
+});
+
 test("obterPreviaRelatorioAvulsoCliente retorna cliente sem PMOC com OS concluidas", async () => {
   const prisma = {
     cliente: {
