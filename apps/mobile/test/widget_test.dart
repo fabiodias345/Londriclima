@@ -89,6 +89,22 @@ void main() {
     expect(find.byKey(const Key('firstAccessSignaturePad')), findsOneWidget);
   });
 
+  testWidgets('primeiro acesso assina em modal fixo', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: FirstAccessScreen(
+          loginGateway: const _GatewayComFalha(),
+          onboardingToken: 'token-onboarding',
+          technicianName: 'Joao Tecnico',
+        ),
+      ),
+    );
+
+    await _signPad(tester, const Key('firstAccessSignaturePad'));
+
+    expect(find.text('Refazer assinatura'), findsOneWidget);
+  });
+
   testWidgets('primeiro cadastro abre sem excecao', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(

@@ -9,6 +9,7 @@ import '../services/barcode_scanner_service.dart';
 import '../services/checklist_photo_picker.dart';
 import '../services/location_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/signature_pad.dart';
 import 'dashboard_screen.dart';
 
 class FirstAccessScreen extends StatefulWidget {
@@ -29,8 +30,8 @@ class FirstAccessScreen extends StatefulWidget {
     this.locationService = const DeviceLocationService(),
     this.photoPicker = const DeviceChecklistPhotoPicker(),
     this.barcodeScanner = const DeviceBarcodeScannerService(),
-  })  : onboardingToken = null,
-        technicianName = '';
+  }) : onboardingToken = null,
+       technicianName = '';
 
   final MobileLoginGateway loginGateway;
   final String? onboardingToken;
@@ -101,7 +102,8 @@ class _FirstAccessScreenState extends State<FirstAccessScreen> {
     }
 
     if (widget.inviteCode != null &&
-        (!RegExp(r'^[a-zA-Z0-9._-]+$').hasMatch(login) || !email.contains('@'))) {
+        (!RegExp(r'^[a-zA-Z0-9._-]+$').hasMatch(login) ||
+            !email.contains('@'))) {
       setState(() => _errorMessage = 'Preencha login e e-mail corretamente.');
       return;
     }
@@ -117,7 +119,9 @@ class _FirstAccessScreenState extends State<FirstAccessScreen> {
     }
 
     if (!_termAccepted) {
-      setState(() => _errorMessage = 'Leia e aceite o termo de responsabilidade.');
+      setState(
+        () => _errorMessage = 'Leia e aceite o termo de responsabilidade.',
+      );
       return;
     }
 
@@ -217,8 +221,11 @@ class _FirstAccessScreenState extends State<FirstAccessScreen> {
     const size = Size(640, 220);
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder)..drawColor(Colors.white, BlendMode.src);
-    _FirstAccessSignaturePainter(_signaturePoints).paint(canvas, size);
-    final image = await recorder.endRecording().toImage(size.width.toInt(), size.height.toInt());
+    SignaturePainter(_signaturePoints).paint(canvas, size);
+    final image = await recorder.endRecording().toImage(
+      size.width.toInt(),
+      size.height.toInt(),
+    );
     final data = await image.toByteData(format: ui.ImageByteFormat.png);
     return data!.buffer.asUint8List();
   }
@@ -239,16 +246,22 @@ class _FirstAccessScreenState extends State<FirstAccessScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Image.asset('assets/clima-do-brasil-logo.jpeg', height: 128),
+                    Image.asset(
+                      'assets/clima-do-brasil-logo.jpeg',
+                      height: 128,
+                    ),
                     const SizedBox(height: 32),
                     Text(
-                      widget.inviteCode == null ? 'Primeiro acesso' : 'Cadastro de técnico',
+                      widget.inviteCode == null
+                          ? 'Primeiro acesso'
+                          : 'Cadastro de técnico',
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w900,
-                        color: neuroText,
-                        fontSize: 26,
-                      ),
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
+                            fontWeight: FontWeight.w900,
+                            color: neuroText,
+                            fontSize: 26,
+                          ),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -301,7 +314,10 @@ class _FirstAccessScreenState extends State<FirstAccessScreen> {
                       keyboardType: TextInputType.number,
                       inputFormatters: [
                         FilteringTextInputFormatter.digitsOnly,
-                        const _DigitsMaskFormatter(maxDigits: 11, mask: _cpfMask),
+                        const _DigitsMaskFormatter(
+                          maxDigits: 11,
+                          mask: _cpfMask,
+                        ),
                       ],
                       decoration: const InputDecoration(
                         labelText: 'CPF',
@@ -316,7 +332,10 @@ class _FirstAccessScreenState extends State<FirstAccessScreen> {
                       keyboardType: TextInputType.phone,
                       inputFormatters: [
                         FilteringTextInputFormatter.digitsOnly,
-                        const _DigitsMaskFormatter(maxDigits: 11, mask: _phoneMask),
+                        const _DigitsMaskFormatter(
+                          maxDigits: 11,
+                          mask: _phoneMask,
+                        ),
                       ],
                       decoration: const InputDecoration(
                         labelText: 'Telefone',
@@ -328,8 +347,16 @@ class _FirstAccessScreenState extends State<FirstAccessScreen> {
                     OutlinedButton.icon(
                       key: const Key('firstAccessPhotoButton'),
                       onPressed: _isLoading ? null : _takePhoto,
-                      icon: Icon(_photo == null ? Icons.photo_camera_outlined : Icons.check_circle_outline),
-                      label: Text(_photo == null ? 'Tirar foto do funcionário' : 'Foto registrada - tirar novamente'),
+                      icon: Icon(
+                        _photo == null
+                            ? Icons.photo_camera_outlined
+                            : Icons.check_circle_outline,
+                      ),
+                      label: Text(
+                        _photo == null
+                            ? 'Tirar foto do funcionário'
+                            : 'Foto registrada - tirar novamente',
+                      ),
                     ),
                     if (_photo != null) ...[
                       const SizedBox(height: 12),
@@ -346,10 +373,13 @@ class _FirstAccessScreenState extends State<FirstAccessScreen> {
                     const SizedBox(height: 24),
                     Text(
                       'Assinatura',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                     const SizedBox(height: 8),
-                    _FirstAccessSignaturePad(
+                    SignaturePadField(
+                      signatureKey: const Key('firstAccessSignaturePad'),
                       points: _signaturePoints,
                       enabled: !_isLoading,
                       onChanged: (points) => setState(() {
@@ -391,7 +421,9 @@ class _FirstAccessScreenState extends State<FirstAccessScreen> {
                               title: const Text('Li e aceito este termo.'),
                               onChanged: _isLoading
                                   ? null
-                                  : (value) => setState(() => _termAccepted = value ?? false),
+                                  : (value) => setState(
+                                      () => _termAccepted = value ?? false,
+                                    ),
                             ),
                           ],
                         ),
@@ -457,9 +489,9 @@ class _FirstAccessScreenState extends State<FirstAccessScreen> {
 String _cpfMask(String digits) => _applyDigitsMask(digits, '###.###.###-##');
 
 String _phoneMask(String digits) => _applyDigitsMask(
-      digits,
-      digits.length <= 10 ? '(##) ####-####' : '(##) #####-####',
-    );
+  digits,
+  digits.length <= 10 ? '(##) ####-####' : '(##) #####-####',
+);
 
 String _applyDigitsMask(String digits, String pattern) {
   final output = StringBuffer();
@@ -484,98 +516,18 @@ class _DigitsMaskFormatter extends TextInputFormatter {
   final String Function(String) mask;
 
   @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     final rawDigits = newValue.text.replaceAll(RegExp(r'\D'), '');
-    final digits = rawDigits.length > maxDigits ? rawDigits.substring(0, maxDigits) : rawDigits;
+    final digits = rawDigits.length > maxDigits
+        ? rawDigits.substring(0, maxDigits)
+        : rawDigits;
     final formatted = mask(digits);
     return TextEditingValue(
       text: formatted,
       selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
-}
-
-class _FirstAccessSignaturePad extends StatefulWidget {
-  const _FirstAccessSignaturePad({
-    required this.points,
-    required this.enabled,
-    required this.onChanged,
-  });
-
-  final List<Offset?> points;
-  final bool enabled;
-  final ValueChanged<List<Offset?>> onChanged;
-
-  @override
-  State<_FirstAccessSignaturePad> createState() => _FirstAccessSignaturePadState();
-}
-
-class _FirstAccessSignaturePadState extends State<_FirstAccessSignaturePad> {
-  late List<Offset?> _points;
-
-  @override
-  void initState() {
-    super.initState();
-    _points = List<Offset?>.of(widget.points);
-  }
-
-  @override
-  void didUpdateWidget(covariant _FirstAccessSignaturePad oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.points.isEmpty && _points.isNotEmpty) _points = [];
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      key: const Key('firstAccessSignaturePad'),
-      behavior: HitTestBehavior.opaque,
-      onPanStart: widget.enabled ? (details) => _add(details.localPosition) : null,
-      onPanUpdate: widget.enabled ? (details) => _add(details.localPosition) : null,
-      onPanEnd: widget.enabled
-          ? (_) {
-              _points.add(null);
-              widget.onChanged(List<Offset?>.of(_points));
-            }
-          : null,
-      child: CustomPaint(
-        foregroundPainter: _FirstAccessSignaturePainter(_points),
-        child: Container(
-          height: 180,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: const Color(0xFFD8DEE8)),
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _add(Offset point) {
-    setState(() => _points.add(point));
-    widget.onChanged(List<Offset?>.of(_points));
-  }
-}
-
-class _FirstAccessSignaturePainter extends CustomPainter {
-  const _FirstAccessSignaturePainter(this.points);
-
-  final List<Offset?> points;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = neuroText
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round;
-    for (var index = 0; index < points.length - 1; index += 1) {
-      final current = points[index];
-      final next = points[index + 1];
-      if (current != null && next != null) canvas.drawLine(current, next, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _FirstAccessSignaturePainter oldDelegate) => oldDelegate.points != points;
 }
