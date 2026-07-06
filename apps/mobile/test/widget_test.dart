@@ -6,6 +6,7 @@ import 'package:airmovebr_mobile/src/auth/hybrid_login_gateway.dart';
 import 'package:airmovebr_mobile/src/auth/mobile_login_gateway.dart';
 import 'package:airmovebr_mobile/src/models/work_order.dart';
 import 'package:airmovebr_mobile/src/services/location_service.dart';
+import 'package:airmovebr_mobile/src/widgets/signature_pad.dart';
 import 'package:airmovebr_mobile/src/services/barcode_scanner_service.dart';
 import 'package:airmovebr_mobile/src/repositories/work_order_repository.dart';
 import 'package:airmovebr_mobile/src/repositories/fleet_repository.dart';
@@ -1143,14 +1144,7 @@ void main() {
         find.byKey(const Key('responsibleNameField')),
         'Cliente Teste',
       );
-      await tester.ensureVisible(find.byKey(const Key('signaturePad')));
-      final signatureCenter = tester.getCenter(
-        find.byKey(const Key('signaturePad')),
-      );
-      final gesture = await tester.startGesture(signatureCenter);
-      await gesture.moveBy(const Offset(80, 30));
-      await gesture.up();
-      await tester.pumpAndSettle();
+      await _signPad(tester, const Key('signaturePad'));
       final finishButton = tester.widget<FilledButton>(
         find.byKey(const Key('finishWorkOrderButton')),
       );
@@ -1242,14 +1236,7 @@ void main() {
       find.byKey(const Key('responsibleNameField')),
       'Cliente Teste',
     );
-    await tester.ensureVisible(find.byKey(const Key('signaturePad')));
-    final signatureCenter = tester.getCenter(
-      find.byKey(const Key('signaturePad')),
-    );
-    final gesture = await tester.startGesture(signatureCenter);
-    await gesture.moveBy(const Offset(80, 30));
-    await gesture.up();
-    await tester.pumpAndSettle();
+    await _signPad(tester, const Key('signaturePad'));
     await tester.ensureVisible(find.byKey(const Key('finishWorkOrderButton')));
     final finishButton = tester.widget<FilledButton>(
       find.byKey(const Key('finishWorkOrderButton')),
@@ -1285,6 +1272,51 @@ void main() {
     expect(find.byKey(const Key('myMaintenanceButton')), findsOneWidget);
     expect(find.text('Ordens de servico'), findsOneWidget);
     expect(find.text('OS finalizada.'), findsOneWidget);
+  });
+
+  testWidgets('assinatura abre fora do scroll e confirma pontos', (
+    tester,
+  ) async {
+    final capturedPoints = <Offset?>[];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (context, setState) {
+              return SignaturePadField(
+                signatureKey: const Key('signaturePad'),
+                points: capturedPoints,
+                enabled: true,
+                onChanged: (points) {
+                  setState(() {
+                    capturedPoints
+                      ..clear()
+                      ..addAll(points);
+                  });
+                },
+              );
+            },
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('signaturePad')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('signaturePadCanvas')), findsOneWidget);
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byKey(const Key('signaturePadCanvas'))),
+    );
+    await gesture.moveBy(const Offset(80, 30));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('confirmSignatureButton')));
+    await tester.pumpAndSettle();
+
+    expect(capturedPoints.whereType<Offset>(), isNotEmpty);
+    expect(find.text('Refazer assinatura'), findsOneWidget);
   });
 
   testWidgets('finalizacao offline entra na fila mesmo com checklist pendente', (
@@ -1336,14 +1368,7 @@ void main() {
       find.byKey(const Key('responsibleNameField')),
       'Cliente Teste',
     );
-    await tester.ensureVisible(find.byKey(const Key('signaturePad')));
-    final signatureCenter = tester.getCenter(
-      find.byKey(const Key('signaturePad')),
-    );
-    final gesture = await tester.startGesture(signatureCenter);
-    await gesture.moveBy(const Offset(80, 30));
-    await gesture.up();
-    await tester.pumpAndSettle();
+    await _signPad(tester, const Key('signaturePad'));
     await tester.ensureVisible(find.byKey(const Key('finishWorkOrderButton')));
     final finishButton = tester.widget<FilledButton>(
       find.byKey(const Key('finishWorkOrderButton')),
@@ -1442,14 +1467,7 @@ void main() {
       find.byKey(const Key('responsibleNameField')),
       'Cliente Teste',
     );
-    await tester.ensureVisible(find.byKey(const Key('signaturePad')));
-    final signatureCenter = tester.getCenter(
-      find.byKey(const Key('signaturePad')),
-    );
-    final gesture = await tester.startGesture(signatureCenter);
-    await gesture.moveBy(const Offset(80, 30));
-    await gesture.up();
-    await tester.pumpAndSettle();
+    await _signPad(tester, const Key('signaturePad'));
     await tester.ensureVisible(find.byKey(const Key('finishWorkOrderButton')));
     final finishButton = tester.widget<FilledButton>(
       find.byKey(const Key('finishWorkOrderButton')),
@@ -2108,9 +2126,15 @@ Future<void> _confirmSafetyAndStart(WidgetTester tester) async {
 
 Future<void> _signPad(WidgetTester tester, Key key) async {
   await tester.ensureVisible(find.byKey(key));
-  final gesture = await tester.startGesture(tester.getCenter(find.byKey(key)));
+  await tester.tap(find.byKey(key));
+  await tester.pumpAndSettle();
+  final gesture = await tester.startGesture(
+    tester.getCenter(find.byKey(const Key('signaturePadCanvas'))),
+  );
   await gesture.moveBy(const Offset(80, 30));
   await gesture.up();
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('confirmSignatureButton')));
   await tester.pumpAndSettle();
 }
 

@@ -13,6 +13,7 @@ import 'safety_check_dialog.dart';
 import '../theme/app_theme.dart';
 import '../widgets/annual_checklist_stage_selector.dart';
 import '../widgets/detail_section.dart';
+import '../widgets/signature_pad.dart';
 import '../widgets/work_order_detail_summary.dart';
 
 const _machineFieldLabels = {
@@ -1008,7 +1009,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
       final recorder = ui.PictureRecorder();
       final canvas = Canvas(recorder);
       canvas.drawColor(Colors.white, BlendMode.src);
-      _SignaturePainter(points).paint(canvas, size);
+      SignaturePainter(points).paint(canvas, size);
       final image = await recorder
           .endRecording()
           .toImage(size.width.toInt(), size.height.toInt())
@@ -1200,7 +1201,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
         style: TextStyle(fontWeight: FontWeight.w800),
       ),
       const SizedBox(height: 8),
-      _SignaturePad(
+      SignaturePadField(
         signatureKey: const Key('signaturePad'),
         points: _signaturePoints,
         enabled: _initialEvidenceSaved,
@@ -1596,115 +1597,6 @@ class _StepTab extends StatelessWidget {
         onSelected: (_) => onTap(),
       ),
     );
-  }
-}
-
-class _SignaturePad extends StatefulWidget {
-  const _SignaturePad({
-    required this.signatureKey,
-    required this.points,
-    required this.enabled,
-    required this.onChanged,
-  });
-
-  final Key signatureKey;
-  final List<Offset?> points;
-  final bool enabled;
-  final ValueChanged<List<Offset?>> onChanged;
-
-  @override
-  State<_SignaturePad> createState() => _SignaturePadState();
-}
-
-class _SignaturePadState extends State<_SignaturePad> {
-  late List<Offset?> _points;
-
-  @override
-  void initState() {
-    super.initState();
-    _points = List<Offset?>.of(widget.points);
-  }
-
-  @override
-  void didUpdateWidget(covariant _SignaturePad oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.points.isEmpty && _points.isNotEmpty) {
-      _points = [];
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      key: widget.signatureKey,
-      behavior: HitTestBehavior.opaque,
-      onPanStart: widget.enabled
-          ? (details) => _addPoint(details.localPosition)
-          : null,
-      onPanUpdate: widget.enabled
-          ? (details) => _addPoint(details.localPosition)
-          : null,
-      onPanEnd: widget.enabled
-          ? (_) {
-              _points.add(null);
-              widget.onChanged(List<Offset?>.of(_points));
-            }
-          : null,
-      onTapDown: widget.enabled
-          ? (details) => _addPoint(details.localPosition)
-          : null,
-      child: CustomPaint(
-        foregroundPainter: _SignaturePainter(_points),
-        child: Container(
-          height: 180,
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: const Color(0xFFD8DEE8)),
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _addPoint(Offset point) {
-    setState(() {
-      _points.add(point);
-    });
-    widget.onChanged(List<Offset?>.of(_points));
-  }
-}
-
-class _SignaturePainter extends CustomPainter {
-  const _SignaturePainter(this.points);
-
-  final List<Offset?> points;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = airmovebrText
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round;
-
-    for (var index = 0; index < points.length - 1; index += 1) {
-      final current = points[index];
-      final next = points[index + 1];
-      if (current != null && next != null) {
-        canvas.drawLine(current, next, paint);
-      } else if (current != null) {
-        canvas.drawCircle(current, 2, paint);
-      }
-    }
-    if (points.length == 1 && points.first != null) {
-      canvas.drawCircle(points.first!, 2, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _SignaturePainter oldDelegate) {
-    return oldDelegate.points != points;
   }
 }
 
