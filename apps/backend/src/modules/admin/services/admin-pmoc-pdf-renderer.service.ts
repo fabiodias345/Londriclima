@@ -1,5 +1,5 @@
 import { ATIVIDADES_MANUTENCAO, CONTRATADA_PMOC, ENGENHEIRO_PADRAO_PMOC, EnderecoPmoc, MaquinaPmoc, OrdemPmoc, PeriodicidadePmoc, PreviaPmoc } from "./admin-pmoc-pdf-models";
-import { criarPdfBuffer, PdfPage } from "./admin-pmoc-pdf-writer";
+import { carregarArquivoStorage, criarPdfBuffer, PdfPage } from "./admin-pmoc-pdf-writer";
 import { adicionarChecklistApkPdf } from "./admin-pmoc-pdf-renderer-checklist";
 import { criarPaginasTecnicosPmoc } from "./admin-pmoc-pdf-renderer-tecnicos";
 export class AdminPmocPdfRendererService {
@@ -205,6 +205,8 @@ export class AdminPmocPdfRendererService {
   private criarDeclaracaoFinal(previa: PreviaPmoc): PdfPage {
     const page: PdfPage = [];
     const engenheiro = previa.engenheiro_responsavel || ENGENHEIRO_PADRAO_PMOC;
+    const assinaturaCliente = this.obterAssinaturaCliente(previa);
+    const nomeAssinante = assinaturaCliente?.nome_responsavel || previa.cliente.nome;
     const dataFormatada = new Intl.DateTimeFormat("pt-BR", { year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
     this.cabecalho(page, previa, "DECLARAÇÃO TÉCNICA E ASSINATURAS");
     this.sectionTitle(page, "REFERÊNCIA NORMATIVA", 730);
@@ -239,11 +241,33 @@ export class AdminPmocPdfRendererService {
     this.text(page, engenheiro.nome || ENGENHEIRO_PADRAO_PMOC.nome, 105, 185, 10, true);
     this.text(page, `Responsável Técnico - Engenheiro Mecânico`, 105, 170, 8, false);
     this.text(page, `CREA-PR ${engenheiro.crea || ENGENHEIRO_PADRAO_PMOC.crea}`, 105, 157, 8, false);
+    this.adicionarAssinaturaCliente(page, assinaturaCliente?.storage_url, 395, 213);
     this.line(page, 350, 205, 570, 205);
-    this.text(page, previa.cliente.nome, 365, 185, 10, true);
+    this.text(page, nomeAssinante, 365, 185, 10, true);
     this.text(page, "Contratante / Responsável", 385, 170, 8, false);
+    this.text(page, `Assinatura do cliente - ${nomeAssinante}`, 365, 157, 7, false);
     this.footer(page, 5 + Math.max(previa.maquinas.length * 2, 1));
     return page;
+  }
+
+  private obterAssinaturaCliente(previa: PreviaPmoc) {
+    for (const maquina of previa.maquinas) {
+      for (const ordem of maquina.os_concluidas) {
+        if (ordem.assinatura?.storage_url) {
+          return ordem.assinatura;
+        }
+      }
+    }
+    return null;
+  }
+
+  private adicionarAssinaturaCliente(page: PdfPage, storageUrl: string | null | undefined, x: number, y: number) {
+    const imagem = storageUrl ? carregarArquivoStorage(storageUrl) : null;
+    if (!imagem) return;
+
+    this.rect(page, x - 2, y - 2, 132, 46);
+    page.imagens = page.imagens ?? [];
+    page.imagens.push({ buffer: imagem, x, y, width: 128, height: 42 });
   }
 
   private criarPaginasTecnicos(previa: PreviaPmoc): PdfPage[] {

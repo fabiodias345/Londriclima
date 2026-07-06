@@ -29,7 +29,7 @@ export type OrdemPmoc = {
   evidencias?: Array<{ tipo?: string | null; storage_url?: string | null }>;
   checklist?: { procedimentos?: string[]; servico_realizado?: string | null } | null;
   checklist_respostas?: Array<{ codigo?: string | null; tipo?: string | null; valor?: string | null; observacao?: string | null }>;
-  assinatura?: { nome_responsavel?: string | null } | null;
+  assinatura?: { nome_responsavel?: string | null; storage_url?: string | null } | null;
   observacoes?: Array<{ texto?: string | null }>;
 };
 
