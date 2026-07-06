@@ -88,6 +88,28 @@ export class AdminTecnicosService {
     return this.mapearTecnico(tecnico);
   }
 
+  async atualizarFotoTecnico(
+    tecnicoId: string,
+    foto: Parameters<FuncionarioStorageService["salvarFoto"]>[0]["foto"],
+    usuario: AuthenticatedUser
+  ) {
+    await this.garantirAcessoDaEmpresa(tecnicoId, usuario);
+    if (!this.storage) throw new BadRequestException("Storage de funcionarios indisponivel.");
+
+    const fotoPerfilStorageUrl = await this.storage.salvarFoto({
+      empresaId: usuario.empresa_id,
+      usuarioId: tecnicoId,
+      foto
+    });
+    const tecnico = await this.prisma.usuario.update({
+      where: { id: tecnicoId },
+      data: { fotoPerfilStorageUrl },
+      select: this.tecnicoSelect()
+    });
+
+    return this.mapearTecnico(tecnico);
+  }
+
   async apagarTecnico(tecnicoId: string, usuario: AuthenticatedUser) {
     if (tecnicoId === usuario.id) {
       throw new BadRequestException("Nao e possivel apagar o proprio acesso.");

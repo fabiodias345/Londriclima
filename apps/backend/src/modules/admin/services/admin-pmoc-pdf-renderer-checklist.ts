@@ -112,9 +112,14 @@ function desenharTemperatura(page: PdfPage, valor: string, x: number, y: number,
 function urlsEvidenciasApp(ordem: OrdemPmoc | null) {
   const urls: string[] = [];
   const vistos = new Set<string>();
+  const fotosChecklist = new Set(
+    (ordem?.checklist_respostas ?? [])
+      .filter((resposta) => resposta.tipo === "foto" && resposta.valor)
+      .map((resposta) => resposta.valor as string)
+  );
   for (const evidencia of ordem?.evidencias ?? []) {
     const storageUrl = evidencia.storage_url;
-    if (storageUrl && !vistos.has(storageUrl)) {
+    if (storageUrl && !fotosChecklist.has(storageUrl) && !vistos.has(storageUrl)) {
       vistos.add(storageUrl);
       urls.push(storageUrl);
     }

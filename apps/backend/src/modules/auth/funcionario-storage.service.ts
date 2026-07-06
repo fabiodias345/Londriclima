@@ -39,6 +39,17 @@ export class FuncionarioStorageService {
     };
   }
 
+  async salvarFoto(input: { empresaId: string; usuarioId: string; foto: CadastroFuncionarioArquivo }) {
+    const foto = this.validarFoto(input.foto);
+    const relativeDir = join("funcionarios", input.empresaId, input.usuarioId, "perfil");
+    const relativePath = join(relativeDir, `foto.${foto.extensao}`);
+    const storageRoot = this.resolveStorageRoot();
+
+    await mkdir(join(storageRoot, relativeDir), { recursive: true });
+    await writeFile(join(storageRoot, relativePath), foto.arquivo.buffer);
+    return this.storageUrl(relativePath);
+  }
+
   async salvarDocumentoPdf(input: { empresaId: string; usuarioId: string; nomeArquivo: string; pdf: Buffer }) {
     const nomeSeguro = input.nomeArquivo.replace(/[^a-zA-Z0-9._-]/g, "_");
     const relativeDir = join("funcionarios", input.empresaId, input.usuarioId, "documentos");

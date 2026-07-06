@@ -1,5 +1,7 @@
-import { Body, Controller, Delete, Get, Header, Param, ParseUUIDPipe, Patch, Post, Res, StreamableFile, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Header, Param, ParseUUIDPipe, Patch, Post, Res, StreamableFile, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
 import { AuthenticatedUser } from "../auth/auth-user";
+import { CadastroFuncionarioArquivo } from "../auth/funcionario-storage.service";
 import { AdminRoleGuard } from "../auth/admin-role.guard";
 import { CurrentUser } from "../auth/current-user.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
@@ -17,15 +19,21 @@ import { EncaminharConviteTecnicoDto } from "./dto/encaminhar-convite-tecnico.dt
 import { GerarConviteTecnicoDto } from "./dto/gerar-convite-tecnico.dto";
 import { SalvarVeiculoDto } from "./dto/salvar-veiculo.dto";
 import { AdminService } from "./admin.service";
+import { AdminTecnicosService } from "./services/admin-tecnicos.service";
 
 type HeaderResponse = {
   setHeader(name: string, value: string): void;
 };
 
+const LIMITE_FOTO_TECNICO = 3 * 1024 * 1024;
+
 @Controller("admin")
 @UseGuards(JwtAuthGuard, AdminRoleGuard)
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly adminTecnicosService: AdminTecnicosService
+  ) {}
 
   @Get("pre-chamados")
   listarPreChamados(@CurrentUser() usuario: AuthenticatedUser) {
@@ -295,6 +303,16 @@ export class AdminController {
     @CurrentUser() usuario: AuthenticatedUser
   ) {
     return this.adminService.atualizarTecnico(tecnicoId, dto, usuario);
+  }
+
+  @Patch("tecnicos/:tecnicoId/foto")
+  @UseInterceptors(FileInterceptor("foto", { limits: { fileSize: LIMITE_FOTO_TECNICO } }))
+  atualizarFotoTecnico(
+    @Param("tecnicoId", new ParseUUIDPipe()) tecnicoId: string,
+    @UploadedFile() foto: CadastroFuncionarioArquivo,
+    @CurrentUser() usuario: AuthenticatedUser
+  ) {
+    return this.adminTecnicosService.atualizarFotoTecnico(tecnicoId, foto, usuario);
   }
 
   @Delete("tecnicos/:tecnicoId")

@@ -8,7 +8,7 @@ test("PMOC PDF mostra checklist APK em tabela numerada com fotos e temperatura f
   const renderer = new AdminPmocPdfRendererService();
   const storageDir = resolve(process.cwd(), "..", "..", "storage", "os", "os-pmoc-renderer-test");
   const foto = Buffer.from([0xff, 0xd8, 0xff, 0xc0, 0x00, 0x0b, 0x08, 0x00, 0x01, 0x00, 0x01, 0x03, 0x01, 0x11, 0x00, 0xff, 0xd9]);
-  for (const arquivo of ["evidencias/antes.jpg", "evidencias/depois.jpg", "checklist/bolsao.jpg", "checklist/insuflamento.jpg"]) {
+  for (const arquivo of ["evidencias/depois.jpg", "checklist/bolsao.jpg", "checklist/insuflamento.jpg"]) {
     const caminho = resolve(storageDir, arquivo);
     mkdirSync(dirname(caminho), { recursive: true });
     writeFileSync(caminho, foto);
@@ -50,7 +50,7 @@ test("PMOC PDF mostra checklist APK em tabela numerada com fotos e temperatura f
                 tecnico: { nome: "Joao Tecnico" },
                 eventos: [],
                 evidencias: [
-                  { tipo: "antes", storage_url: "/storage/os/os-pmoc-renderer-test/evidencias/antes.jpg" },
+                  { tipo: "antes", storage_url: "/storage/os/os-pmoc-renderer-test/checklist/bolsao.jpg" },
                   { tipo: "depois", storage_url: "/storage/os/os-pmoc-renderer-test/evidencias/depois.jpg" }
                 ],
                 checklist: { servico_realizado: "Checklist da maquina", procedimentos: [] },
@@ -79,9 +79,8 @@ test("PMOC PDF mostra checklist APK em tabela numerada com fotos e temperatura f
     assert.match(pdf, /Temperatura de insuflamento/);
     assert.match(pdf, /12/);
     assert.match(pdf, /C/);
-    assert.match(pdf, /antes\.jpg/);
     assert.match(pdf, /depois\.jpg/);
-    assert.equal((pdf.match(/\/Subtype \/Image/g) ?? []).length, 4);
+    assert.equal((pdf.match(/\/Subtype \/Image/g) ?? []).length, 3);
     assert.doesNotMatch(pdf, /Checklist APK 7/);
     assert.doesNotMatch(pdf, /SEM_FOTO_BOLSAO/);
     assert.match(pdf, /QUINA N:001 - P/);

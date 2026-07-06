@@ -11,6 +11,7 @@ import { relatoriosModule, relatoriosRoot } from "./modules/relatorios.js?v=2026
 import { domModule, domRoot } from "./modules/ui/dom.js?v=20260704-access";
 import { eventosModule, eventsRoot } from "./modules/eventos.js?v=20260704-access";
 import { bootstrapModule, bootstrapRoot } from "./modules/bootstrap.js?v=20260704-access";
+import { tecnicoFotoModule, tecnicoFotoRoot } from "./modules/tecnico-foto.js?v=20260706-tecnico-foto";
 
 export const adminModules = {
   api: apiModule,
@@ -24,7 +25,8 @@ export const adminModules = {
   relatorios: relatoriosModule,
   dom: domModule,
   eventos: eventosModule,
-  bootstrap: bootstrapModule
+  bootstrap: bootstrapModule,
+  tecnicoFoto: tecnicoFotoModule
 };
 
 const adminSources = [
@@ -38,6 +40,7 @@ const adminSources = [
   pmocRoot,
   relatoriosRoot,
   domRoot,
+  tecnicoFotoRoot,
   eventsRoot,
   bootstrapRoot
 ];

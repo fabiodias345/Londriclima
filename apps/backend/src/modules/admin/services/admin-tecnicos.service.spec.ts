@@ -55,3 +55,52 @@ test("apagarTecnico recusa excluir o unico admin ativo", async () => {
     BadRequestException
   );
 });
+
+test("atualizarFotoTecnico substitui somente a foto do acesso da empresa", async () => {
+  let cadastroSalvo: unknown;
+  let atualizacao: unknown;
+  const agora = new Date("2026-07-06T12:00:00.000Z");
+  const prisma = {
+    usuario: {
+      findFirst: async () => ({ id: "tecnico-1", role: UsuarioRole.tecnico }),
+      update: async (input: unknown) => {
+        atualizacao = input;
+        return {
+          id: "tecnico-1",
+          nome: "Joao Tecnico",
+          login: "joao",
+          email: "joao@example.com",
+          telefone: null,
+          cpf: null,
+          role: UsuarioRole.tecnico,
+          ativo: true,
+          primeiroAcessoPendente: false,
+          primeiroAcessoEm: agora,
+          fotoPerfilStorageUrl: "/storage/funcionarios/empresa-1/tecnico-1/perfil/foto.jpg",
+          assinaturaStorageUrl: "/storage/funcionarios/empresa-1/tecnico-1/perfil/assinatura.png",
+          documentosFuncionario: [],
+          criadoEm: agora,
+          atualizadoEm: agora
+        };
+      }
+    }
+  };
+  const foto = { originalname: "perfil.jpg", mimetype: "image/jpeg", size: 3, buffer: Buffer.from([1, 2, 3]) };
+  const storage = {
+    salvarFoto: async (input: unknown) => {
+      cadastroSalvo = input;
+      return "/storage/funcionarios/empresa-1/tecnico-1/perfil/foto.jpg";
+    }
+  };
+
+  const resposta = await (new AdminTecnicosService(prisma as never, storage as never) as any)
+    .atualizarFotoTecnico("tecnico-1", foto, admin);
+
+  assert.deepEqual(cadastroSalvo, { empresaId: "empresa-1", usuarioId: "tecnico-1", foto });
+  assert.deepEqual((atualizacao as { where: unknown }).where, { id: "tecnico-1" });
+  assert.deepEqual((atualizacao as { data: unknown }).data, {
+    fotoPerfilStorageUrl: "/storage/funcionarios/empresa-1/tecnico-1/perfil/foto.jpg"
+  });
+  assert.equal(resposta.foto_perfil_storage_url, "/storage/funcionarios/empresa-1/tecnico-1/perfil/foto.jpg");
+  assert.equal(resposta.assinatura_storage_url, "/storage/funcionarios/empresa-1/tecnico-1/perfil/assinatura.png");
+});

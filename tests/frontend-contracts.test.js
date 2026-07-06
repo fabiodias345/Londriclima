@@ -37,6 +37,17 @@ function assertFileExists(relativePath) {
   assert.doesNotThrow(() => read(relativePath), `${relativePath} deve existir`);
 }
 
+test("painel permite substituir a foto do tecnico editado", () => {
+  const main = read("apps/admin/js/main.js");
+  const tecnicoFoto = readAdminJs();
+
+  assert.match(main, /modules\/tecnico-foto\.js/);
+  assert.match(tecnicoFoto, /type = "file"/);
+  assert.match(tecnicoFoto, /accept = "image\/jpeg,image\/png,image\/webp"/);
+  assert.match(tecnicoFoto, /\/admin\/tecnicos\/\$\{tecnicoId\}\/foto/);
+  assert.match(tecnicoFoto, /canvas\.toBlob/);
+});
+
 test("landing envia pre-chamado publico para a API com JSON", () => {
   const script = read("apps/landing/script.js");
 
