@@ -8,7 +8,15 @@ test("PMOC PDF mostra checklist APK em tabela numerada com fotos e temperatura f
   const renderer = new AdminPmocPdfRendererService();
   const storageDir = resolve(process.cwd(), "..", "..", "storage", "os", "os-pmoc-renderer-test");
   const foto = Buffer.from([0xff, 0xd8, 0xff, 0xc0, 0x00, 0x0b, 0x08, 0x00, 0x01, 0x00, 0x01, 0x03, 0x01, 0x11, 0x00, 0xff, 0xd9]);
-  for (const arquivo of ["evidencias/depois.jpg", "checklist/bolsao.jpg", "checklist/insuflamento.jpg"]) {
+  for (const arquivo of [
+    "evidencias/depois.jpg",
+    "checklist/bolsao.jpg",
+    "checklist/insuflamento.jpg",
+    "tecnicos/joao/foto.jpg",
+    "tecnicos/joao/assinatura.jpg",
+    "tecnicos/maria/foto.jpg",
+    "tecnicos/maria/assinatura.jpg"
+  ]) {
     const caminho = resolve(storageDir, arquivo);
     mkdirSync(dirname(caminho), { recursive: true });
     writeFileSync(caminho, foto);
@@ -47,7 +55,11 @@ test("PMOC PDF mostra checklist APK em tabela numerada com fotos e temperatura f
                 checklist_tipo: "semestral",
                 agendada_para: "2026-06-12T09:00:00.000Z",
                 concluida_em: "2026-06-12T10:00:00.000Z",
-                tecnico: { nome: "Joao Tecnico" },
+                tecnico: {
+                  nome: "João Técnico",
+                  foto_perfil_storage_url: "/storage/os/os-pmoc-renderer-test/tecnicos/joao/foto.jpg",
+                  assinatura_storage_url: "/storage/os/os-pmoc-renderer-test/tecnicos/joao/assinatura.jpg"
+                },
                 eventos: [],
                 evidencias: [
                   { tipo: "antes", storage_url: "/storage/os/os-pmoc-renderer-test/checklist/bolsao.jpg" },
@@ -63,6 +75,21 @@ test("PMOC PDF mostra checklist APK em tabela numerada com fotos e temperatura f
                   { codigo: "SEM_MOTORES", tipo: "select_obs", valor: "Normal", observacao: null },
                   { codigo: "SEM_TEMP_INSUFLAMENTO", tipo: "numerico", valor: "12", observacao: null }
                 ]
+              } as never,
+              {
+                titulo: "PMOC mensal",
+                checklist_tipo: "mensal",
+                agendada_para: "2026-06-13T09:00:00.000Z",
+                concluida_em: "2026-06-13T10:00:00.000Z",
+                tecnico: {
+                  nome: "Maria Técnica",
+                  foto_perfil_storage_url: "/storage/os/os-pmoc-renderer-test/tecnicos/maria/foto.jpg",
+                  assinatura_storage_url: "/storage/os/os-pmoc-renderer-test/tecnicos/maria/assinatura.jpg"
+                },
+                eventos: [],
+                evidencias: [],
+                checklist: { servico_realizado: "Checklist da maquina", procedimentos: [] },
+                checklist_respostas: []
               } as never
             ]
           }
@@ -75,8 +102,13 @@ test("PMOC PDF mostra checklist APK em tabela numerada com fotos e temperatura f
     assert.match(pdf, /Operação/);
     assert.match(pdf, /Identificaç/i);
     assert.match(pdf, /Informação/);
-    assert.match(pdf, /TÉCNICO RESPONSÁVEL PELA EXECUÇÃO/);
+    assert.equal((pdf.match(/IDENTIFICAÇÃO DO TÉCNICO EXECUTOR/g) ?? []).length, 1);
+    assert.match(pdf, /Nome do técnico/);
+    assert.match(pdf, /Assinatura/);
     assert.match(pdf, /Foto do técnico/);
+    assert.match(pdf, /João Técnico/);
+    assert.match(pdf, /Maria Técnica/);
+    assert.doesNotMatch(pdf, /170 0 0 240|210 0 0 100/);
     assert.doesNotMatch(pdf, /Nao informado|nao informado|tecnico|usuario|EXECUCAO/);
     assert.match(pdf, /Item de Verifica/);
     assert.match(pdf, /Resultado/);
@@ -88,7 +120,7 @@ test("PMOC PDF mostra checklist APK em tabela numerada com fotos e temperatura f
     assert.match(pdf, /C/);
     assert.doesNotMatch(pdf, /FOTOS/);
     assert.doesNotMatch(pdf, /depois\.jpg/);
-    assert.equal((pdf.match(/\/Subtype \/Image/g) ?? []).length, 2);
+    assert.equal((pdf.match(/\/Subtype \/Image/g) ?? []).length, 6);
     assert.doesNotMatch(pdf, /Checklist APK 7/);
     assert.doesNotMatch(pdf, /SEM_FOTO_BOLSAO/);
     assert.match(pdf, /QUINA N:001 - P/);

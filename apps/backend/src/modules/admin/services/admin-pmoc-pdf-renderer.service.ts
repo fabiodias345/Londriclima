@@ -1,6 +1,7 @@
 import { ATIVIDADES_MANUTENCAO, CONTRATADA_PMOC, ENGENHEIRO_PADRAO_PMOC, EnderecoPmoc, MaquinaPmoc, OrdemPmoc, PeriodicidadePmoc, PreviaPmoc } from "./admin-pmoc-pdf-models";
-import { carregarArquivoStorage, criarPdfBuffer, PdfPage } from "./admin-pmoc-pdf-writer";
+import { criarPdfBuffer, PdfPage } from "./admin-pmoc-pdf-writer";
 import { adicionarChecklistApkPdf } from "./admin-pmoc-pdf-renderer-checklist";
+import { criarPaginasTecnicosPmoc } from "./admin-pmoc-pdf-renderer-tecnicos";
 export class AdminPmocPdfRendererService {
   gerar(previa: PreviaPmoc) {
     const pages: PdfPage[] = [];
@@ -246,33 +247,13 @@ export class AdminPmocPdfRendererService {
   }
 
   private criarPaginasTecnicos(previa: PreviaPmoc): PdfPage[] {
-    const tecnicos = new Map<string, NonNullable<OrdemPmoc["tecnico"]>>();
-    for (const maquina of previa.maquinas) {
-      for (const ordem of maquina.os_concluidas) {
-        const tecnico = ordem.tecnico_executor ?? ordem.tecnico;
-        if (tecnico?.nome) tecnicos.set(tecnico.nome, tecnico);
-      }
-    }
-
-    return [...tecnicos.values()].map((tecnico, index) => {
-      const page: PdfPage = [];
-      this.cabecalho(page, previa, "IDENTIFICAÇÃO DO TÉCNICO EXECUTOR");
-      this.sectionTitle(page, "TÉCNICO RESPONSÁVEL PELA EXECUÇÃO", 725);
-      this.keyValueTable(page, 36, 700, [
-        ["Nome", tecnico.nome || "Não informado"],
-        ["Foto", tecnico.foto_perfil_storage_url ? "Cadastro conferido" : "Não informada"],
-        ["Assinatura", tecnico.assinatura_storage_url ? "Cadastro conferido" : "Não informada"]
-      ]);
-      this.text(page, "Foto do técnico", 70, 540, 9, true);
-      this.text(page, "Assinatura cadastrada", 330, 540, 9, true);
-      const foto = tecnico.foto_perfil_storage_url ? carregarArquivoStorage(tecnico.foto_perfil_storage_url) : null;
-      const assinatura = tecnico.assinatura_storage_url ? carregarArquivoStorage(tecnico.assinatura_storage_url) : null;
-      page.imagens = [];
-      if (foto) page.imagens.push({ buffer: foto, x: 70, y: 270, width: 170, height: 240 });
-      if (assinatura) page.imagens.push({ buffer: assinatura, x: 330, y: 350, width: 210, height: 100 });
-      this.text(page, "Identidade obtida do cadastro do usuário autenticado no aplicativo.", 70, 235, 8);
-      this.footer(page, 5 + Math.max(previa.maquinas.length * 2, 1) + index);
-      return page;
+    return criarPaginasTecnicosPmoc(previa, 5 + Math.max(previa.maquinas.length * 2, 1), {
+      cabecalho: this.cabecalho.bind(this),
+      sectionTitle: this.sectionTitle.bind(this),
+      text: this.text.bind(this),
+      line: this.line.bind(this),
+      rect: this.rect.bind(this),
+      footer: this.footer.bind(this)
     });
   }
 
@@ -482,22 +463,10 @@ export class AdminPmocPdfRendererService {
     return new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" }).format(data);
   }
 
-  private formatarEvidencias(ordem: OrdemPmoc | null) {
-    if (!ordem?.evidencias?.length) return "Nenhuma evidência registrada.";
-    const antes = ordem.evidencias.find((evidencia) => evidencia.tipo === "antes");
-    const depois = ordem.evidencias.find((evidencia) => evidencia.tipo === "depois");
-    return [`Antes - ${this.obterNomeArquivo(antes?.storage_url)}`, `Depois - ${this.obterNomeArquivo(depois?.storage_url)}`].join(" | ");
-  }
-
   private formatarGps(ordem: OrdemPmoc | null) {
     const evento = ordem?.eventos?.find((item) => item.latitude !== null && item.longitude !== null);
     if (!evento || evento.latitude === null || evento.longitude === null) return "Não informado";
     return `${Number(evento.latitude).toFixed(6)}, ${Number(evento.longitude).toFixed(6)}`;
-  }
-
-  private obterNomeArquivo(storageUrl?: string | null) {
-    if (!storageUrl) return "Pendente";
-    return storageUrl.split(/[\\/]/).filter(Boolean).at(-1) || storageUrl;
   }
 
   private normalizarTextoPdf(valor: string) {
