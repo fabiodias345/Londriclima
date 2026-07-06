@@ -24,7 +24,8 @@ import { AdminRelatorioTecnicoMapper } from "./admin-relatorio-tecnico-mapper";
 
 type PreviaPmocCliente = Awaited<ReturnType<AdminPmocCoreService["obterPreviaPmocCliente"]>>;
 type PreviaRelatorioAvulsoCliente = Awaited<ReturnType<AdminRelatorioResumoCoreService["obterPreviaRelatorioAvulsoCliente"]>>;
-type PaginaPdfTexto = { linhas: string[]; imagens?: Buffer[] };
+type ImagemPaginaPdfTexto = Buffer | { buffer: Buffer; rotulo?: string };
+type PaginaPdfTexto = { linhas: string[]; imagens?: ImagemPaginaPdfTexto[] };
 
 @Injectable()
 export class AdminRelatorioResumoCoreService {
@@ -798,6 +799,24 @@ export class AdminRelatorioResumoCoreService {
         imagens: this.carregarImagensRelatorioAvulso(ordem)
       });
 
+      const assinaturaCliente = this.carregarAssinaturaClienteRelatorio(ordem);
+      if (assinaturaCliente) {
+        paginas.push({
+          linhas: [
+            ...cabecalho,
+            ...montarCartaoRelatorioTecnico("ASSINATURA DO CLIENTE", [
+              ["Campo", "Informação"],
+              ["Responsável", ordem?.assinatura?.nome_responsavel || "não informado"],
+              ["Assinado em", this.formatarDataPmoc(ordem?.assinatura?.assinado_em ?? null)]
+            ])
+          ],
+          imagens: [{
+            buffer: assinaturaCliente,
+            rotulo: `Assinatura do cliente - ${ordem?.assinatura?.nome_responsavel || "responsável"}`
+          }]
+        });
+      }
+
       const executores = this.obterExecutoresOrdem(ordem);
       if (executores.length > 0) {
         this.dividirExecutoresRelatorio(executores).forEach((grupo, index) => {
@@ -836,12 +855,13 @@ export class AdminRelatorioResumoCoreService {
     const pageObjectIds: number[] = [];
 
     for (const pagina of paginas) {
-      const imagensPdf: Array<{ id: number; orientacao: number }> = [];
+      const imagensPagina = this.normalizarImagensPaginaPdf(pagina.imagens ?? []).slice(0, 4);
+      const imagensPdf: Array<{ id: number; orientacao: number; rotulo?: string }> = [];
 
-      for (const imagem of (pagina.imagens ?? []).slice(0, 4)) {
-        const imagemPdf = this.normalizarImagemPdf(imagem);
+      for (const imagem of imagensPagina) {
+        const imagemPdf = this.normalizarImagemPdf(imagem.buffer);
         const imageObjectId = objetos.length + 1;
-        imagensPdf.push({ id: imageObjectId, orientacao: imagemPdf.orientacao });
+        imagensPdf.push({ id: imageObjectId, orientacao: imagemPdf.orientacao, rotulo: imagem.rotulo });
         objetos.push(this.criarObjetoImagemPdfNormalizada(imagemPdf));
       }
 
@@ -851,31 +871,7 @@ export class AdminRelatorioResumoCoreService {
       const comandosImagem = imagensPdf
         .map((imagem, index) => {
           const qtdImagens = imagensPdf.length;
-          let width = 140;
-          let height = 120;
-          let x = 42;
-          let y = 100;
-
-          if (qtdImagens === 1) {
-            width = 200;
-            height = 150;
-            x = 206;
-          } else if (qtdImagens === 2) {
-            width = 160;
-            height = 130;
-            x = 42 + (index % 2) * 200;
-            y = 100 + Math.floor(index / 2) * 150;
-          } else if (qtdImagens === 3) {
-            width = 140;
-            height = 110;
-            x = 42 + (index % 3) * 170;
-            y = 100 + Math.floor(index / 3) * 130;
-          } else {
-            width = 130;
-            height = 100;
-            x = 42 + (index % 2) * 200;
-            y = 100 + Math.floor(index / 2) * 130;
-          }
+          const { x, y, width, height } = this.obterPosicaoImagemRelatorioAvulso(qtdImagens, index);
 
           return [
             "q",
@@ -884,7 +880,8 @@ export class AdminRelatorioResumoCoreService {
             `${x} ${y} ${width} ${height} re S`,
             this.comandoTransformacaoImagemPdf(x, y, width, height, imagem.orientacao),
             `/Im${index + 1} Do`,
-            "Q"
+            "Q",
+            imagem.rotulo ? this.comandoTextoPdf(imagem.rotulo, x, y - 12, 7.5, "F1", "0.12 0.16 0.22") : ""
           ].join("\n");
         })
         .join("\n");
@@ -1049,6 +1046,13 @@ export class AdminRelatorioResumoCoreService {
     return carregarFotosRelatorioTecnico(ordem, (storageUrl) => this.carregarArquivoStorage(storageUrl));
   }
 
+  private carregarAssinaturaClienteRelatorio(
+    ordem: PreviaRelatorioAvulsoCliente["maquinas"][number]["os_concluidas"][number] | null
+  ) {
+    const storageUrl = ordem?.assinatura?.storage_url;
+    return storageUrl ? this.carregarArquivoStorage(storageUrl) : null;
+  }
+
   private obterExecutoresOrdem(
     ordem: PreviaRelatorioAvulsoCliente["maquinas"][number]["os_concluidas"][number] | null
   ) {
@@ -1131,21 +1135,44 @@ export class AdminRelatorioResumoCoreService {
       assinatura_storage_url?: string | null;
     }>
   ) {
-    const imagens: Buffer[] = [];
+    const imagens: Array<{ buffer: Buffer; rotulo: string }> = [];
     const urlsProcessadas = new Set<string>();
 
     for (const tecnico of tecnicos) {
-      for (const url of [tecnico.foto_perfil_storage_url, tecnico.assinatura_storage_url]) {
-        if (!url || urlsProcessadas.has(url)) continue;
-        const buffer = this.carregarArquivoStorage(url);
+      for (const item of [
+        { url: tecnico.foto_perfil_storage_url, rotulo: `Foto do técnico - ${tecnico.nome || "não informado"}` },
+        { url: tecnico.assinatura_storage_url, rotulo: `Assinatura do técnico - ${tecnico.nome || "não informado"}` }
+      ]) {
+        if (!item.url || urlsProcessadas.has(item.url)) continue;
+        const buffer = this.carregarArquivoStorage(item.url);
         if (buffer) {
-          imagens.push(buffer);
-          urlsProcessadas.add(url);
+          imagens.push({ buffer, rotulo: item.rotulo });
+          urlsProcessadas.add(item.url);
         }
       }
     }
 
     return imagens;
+  }
+
+  private normalizarImagensPaginaPdf(imagens: ImagemPaginaPdfTexto[]) {
+    return imagens.map((imagem) => Buffer.isBuffer(imagem) ? { buffer: imagem } : imagem);
+  }
+
+  private obterPosicaoImagemRelatorioAvulso(qtdImagens: number, index: number) {
+    if (qtdImagens === 1) {
+      return { width: 200, height: 150, x: 206, y: 100 };
+    }
+
+    if (qtdImagens === 2) {
+      return { width: 160, height: 130, x: 42 + (index % 2) * 200, y: 100 + Math.floor(index / 2) * 150 };
+    }
+
+    if (qtdImagens === 3) {
+      return { width: 140, height: 110, x: 42 + (index % 3) * 170, y: 100 + Math.floor(index / 3) * 130 };
+    }
+
+    return { width: 130, height: 100, x: 42 + (index % 2) * 200, y: 100 + Math.floor(index / 2) * 130 };
   }
 
   private carregarArquivoStorage(storageUrl: string) {
