@@ -79,8 +79,9 @@ test("PMOC PDF mostra checklist APK em tabela numerada com fotos e temperatura f
     assert.match(pdf, /Temperatura de insuflamento/);
     assert.match(pdf, /12/);
     assert.match(pdf, /C/);
-    assert.match(pdf, /depois\.jpg/);
-    assert.equal((pdf.match(/\/Subtype \/Image/g) ?? []).length, 3);
+    assert.doesNotMatch(pdf, /FOTOS/);
+    assert.doesNotMatch(pdf, /depois\.jpg/);
+    assert.equal((pdf.match(/\/Subtype \/Image/g) ?? []).length, 2);
     assert.doesNotMatch(pdf, /Checklist APK 7/);
     assert.doesNotMatch(pdf, /SEM_FOTO_BOLSAO/);
     assert.match(pdf, /QUINA N:001 - P/);

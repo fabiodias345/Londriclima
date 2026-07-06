@@ -1,6 +1,6 @@
 import { ATIVIDADES_MANUTENCAO, CONTRATADA_PMOC, ENGENHEIRO_PADRAO_PMOC, EnderecoPmoc, MaquinaPmoc, OrdemPmoc, PeriodicidadePmoc, PreviaPmoc } from "./admin-pmoc-pdf-models";
 import { carregarArquivoStorage, criarPdfBuffer, PdfPage } from "./admin-pmoc-pdf-writer";
-import { adicionarChecklistApkPdf, adicionarFotosAppPdf } from "./admin-pmoc-pdf-renderer-checklist";
+import { adicionarChecklistApkPdf } from "./admin-pmoc-pdf-renderer-checklist";
 export class AdminPmocPdfRendererService {
   gerar(previa: PreviaPmoc) {
     const pages: PdfPage[] = [];
@@ -192,8 +192,6 @@ export class AdminPmocPdfRendererService {
     );
     this.sectionTitle(execucaoPage, "CHECKLIST APK", 570);
     adicionarChecklistApkPdf(execucaoPage, primeiraOs, 36, 545, this.pdfDraw());
-    this.sectionTitle(execucaoPage, "FOTOS", 210);
-    adicionarFotosAppPdf(execucaoPage, primeiraOs, 36, 55, this.pdfDraw());
     this.compat(page, [
       `Área climatizada m2 ${this.formatarNumero(maquina.area_climatizada_m2)}`,
       `Ocupantes fixos ${this.formatarNumero(maquina.ocupantes_fixo)}`,
