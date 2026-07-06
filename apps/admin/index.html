@@ -902,7 +902,7 @@
             <form class="client-form access-form" id="tecnicoForm">
               <input name="id" type="hidden" />
               <label>Nome<input name="nome" type="text" required /></label>
-              <label>Login<input name="login" type="text" maxlength="30" pattern="[A-Za-z0-9._-]+" required /></label>
+              <label>Login<input name="login" type="text" maxlength="30" pattern="[A-Za-z0-9._\\-]+" required /></label>
               <label>E-mail<input name="email" type="email" required /></label>
               <label>Telefone<input name="telefone" type="tel" inputmode="tel" /></label>
               <label>Função<select name="role"><option value="admin">Admin</option><option value="tecnico">Técnico</option><option value="auxiliar">Auxiliar</option></select></label>

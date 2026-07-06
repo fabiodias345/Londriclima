@@ -40,14 +40,16 @@ export class AdminTecnicosService {
     }
 
     const login = this.normalizarLogin(dto.login);
+    const email = this.normalizarEmail(dto.email);
     await this.garantirLoginDisponivel(login);
+    await this.garantirEmailDisponivel(email, usuario.empresa_id);
 
     const tecnico = await this.prisma.usuario.create({
       data: {
         empresaId: usuario.empresa_id,
         nome: dto.nome.trim(),
         login,
-        email: dto.email.trim().toLowerCase(),
+        email,
         telefone: this.digitosOuNulo(dto.telefone),
         senhaHash: await this.passwordHash.hash(dto.senha),
         role: this.normalizarRoleTecnico(dto.role),
@@ -63,12 +65,14 @@ export class AdminTecnicosService {
   async atualizarTecnico(tecnicoId: string, dto: SalvarTecnicoDto, usuario: AuthenticatedUser) {
     await this.garantirAcessoDaEmpresa(tecnicoId, usuario);
     const login = this.normalizarLogin(dto.login);
+    const email = this.normalizarEmail(dto.email);
     await this.garantirLoginDisponivel(login, tecnicoId);
+    await this.garantirEmailDisponivel(email, usuario.empresa_id, tecnicoId);
 
     const data: Prisma.UsuarioUpdateInput = {
       nome: dto.nome.trim(),
       login,
-      email: dto.email.trim().toLowerCase(),
+      email,
       telefone: this.digitosOuNulo(dto.telefone),
       role: this.normalizarRoleTecnico(dto.role)
     };
@@ -279,6 +283,10 @@ export class AdminTecnicosService {
     return valor.trim().toLowerCase();
   }
 
+  private normalizarEmail(valor: string) {
+    return valor.trim().toLowerCase();
+  }
+
   private async garantirLoginDisponivel(login: string, tecnicoId?: string) {
     const existente = await this.prisma.usuario.findFirst({
       where: {
@@ -290,6 +298,21 @@ export class AdminTecnicosService {
 
     if (existente) {
       throw new ConflictException("Login ja cadastrado.");
+    }
+  }
+
+  private async garantirEmailDisponivel(email: string, empresaId: string, tecnicoId?: string) {
+    const existente = await this.prisma.usuario.findFirst({
+      where: {
+        empresaId,
+        email,
+        ...(tecnicoId ? { NOT: { id: tecnicoId } } : {})
+      },
+      select: { id: true }
+    });
+
+    if (existente) {
+      throw new ConflictException("E-mail ja cadastrado.");
     }
   }
 }

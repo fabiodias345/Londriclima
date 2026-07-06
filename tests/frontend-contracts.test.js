@@ -723,6 +723,7 @@ test("admin gerencia tecnicos equipes e responsaveis flexiveis por OS", () => {
   assert.match(html, /id="tecnicoForm"/);
   assert.match(html, /name="senha"/);
   assert.match(html, /Login\s*<input name="login"[^>]+required \/>/);
+  assert.match(html, /pattern="\[A-Za-z0-9\._\\\\-\]\+"/);
   assert.match(html, /E-mail\s*<input name="email" type="email" required \/>/);
   assert.match(script, /login: String\(data\.get\("login"\)/);
   assert.match(html, /id="equipesView"/);

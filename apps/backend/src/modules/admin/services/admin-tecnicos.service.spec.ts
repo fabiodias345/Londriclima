@@ -1,4 +1,4 @@
-import { BadRequestException } from "@nestjs/common";
+﻿import { BadRequestException, ConflictException } from "@nestjs/common";
 import { UsuarioRole } from "@prisma/client";
 import * as assert from "node:assert/strict";
 import { test } from "node:test";
@@ -103,4 +103,24 @@ test("atualizarFotoTecnico substitui somente a foto do acesso da empresa", async
   });
   assert.equal(resposta.foto_perfil_storage_url, "/storage/funcionarios/empresa-1/tecnico-1/perfil/foto.jpg");
   assert.equal(resposta.assinatura_storage_url, "/storage/funcionarios/empresa-1/tecnico-1/perfil/assinatura.png");
+});
+
+test("criarTecnico recusa email ja cadastrado na empresa", async () => {
+  const prisma = {
+    usuario: {
+      findFirst: async (input: { where: { login?: string; email?: string } }) => input.where.email ? { id: "tecnico-1" } : null
+    }
+  };
+
+  await assert.rejects(
+    () => new AdminTecnicosService(prisma as never).criarTecnico({
+      nome: "Monica Trivezan",
+      login: "monica",
+      email: "fabiodias@uel.br",
+      telefone: "43984451266",
+      role: "auxiliar",
+      senha: "123456"
+    }, admin),
+    (error: unknown) => error instanceof ConflictException && error.message === "E-mail ja cadastrado."
+  );
 });
