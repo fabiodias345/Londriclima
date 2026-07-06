@@ -167,11 +167,12 @@ function hasCompletedPmocMaintenance(machines) {
 }
 
 async function openPmocReportPreview() {
-  if (!selectedPmocDossierClientId || !hasCompletedPmocMaintenance(selectedPmocDossierMachines)) {
+  if (!selectedPmocDossierClientId) {
     pmocDossierMeta.textContent = "Selecione um dossie com pelo menos uma OS concluida.";
     return;
   }
 
+  const pdfWindow = window.open("", "_blank", "noopener");
   pmocGenerateReportButton.disabled = true;
   pmocGenerateReportButton.textContent = "Gerando PDF...";
   pmocDossierMeta.textContent = "Buscando previa oficial do PMOC...";
@@ -182,6 +183,7 @@ async function openPmocReportPreview() {
   pmocGenerateReportButton.textContent = "Gerar PDF PMOC";
 
   if (!preview) {
+    pdfWindow?.close();
     return;
   }
 
@@ -201,22 +203,29 @@ async function openPmocReportPreview() {
       headers: authHeaders()
     });
   } catch {
+    pdfWindow?.close();
     pmocDossierMeta.textContent = "API indisponivel ao gerar PDF.";
     return;
   }
 
   if (await handleUnauthorized(response)) {
+    pdfWindow?.close();
     return;
   }
 
   if (!response.ok) {
+    pdfWindow?.close();
     pmocDossierMeta.textContent = "Nao foi possivel gerar o PDF PMOC.";
     return;
   }
 
   const blob = await response.blob();
   const url = URL.createObjectURL(blob);
-  window.open(url, "_blank", "noopener");
+  if (pdfWindow) {
+    pdfWindow.location.href = url;
+  } else {
+    window.location.href = url;
+  }
   pmocDossierMeta.textContent = \`\${preview.total_maquinas || 0} maquinas - PDF oficial gerado no servidor\`;
 }
 

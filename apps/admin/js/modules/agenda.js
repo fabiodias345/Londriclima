@@ -445,6 +445,7 @@ async function openPmocDossier(clientId) {
     renderPmocMonths(preview.pmoc_meses || []);
     renderPmocDossierAlerts(client, machines, preview);
     pmocDossierMeta.textContent = \`\${preview.total_maquinas || machines.length} maquinas - \${preview.total_os_concluidas || 0} OS concluidas - \${client.engenheiro_responsavel?.nome || "sem engenheiro"}\`;
+    pmocGenerateReportButton.disabled = !preview.total_os_concluidas;
     pmocRequestSignatureButton.disabled = !canRequestSignature;
     pmocRequestSignatureButton.textContent = isTestClient
       ? "Solicitar assinatura"
