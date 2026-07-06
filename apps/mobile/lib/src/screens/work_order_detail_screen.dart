@@ -13,6 +13,7 @@ import 'safety_check_dialog.dart';
 import '../theme/app_theme.dart';
 import '../widgets/annual_checklist_stage_selector.dart';
 import '../widgets/detail_section.dart';
+import '../widgets/work_order_detail_summary.dart';
 
 const _machineFieldLabels = {
   'codigo_qr': 'QR / codigo da maquina',
@@ -157,7 +158,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
           controller: _scrollController,
           padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
           children: [
-            _Header(order: _order),
+            WorkOrderHeaderCard(order: _order),
             const SizedBox(height: 14),
             if (_order.isAtClient) ...[
               _StepTabs(
@@ -262,29 +263,13 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
               DetailSection(
                 title: 'Selecionar maquina',
                 children: [
-                  TextField(
-                    key: const Key('machineSearchField'),
-                    decoration: const InputDecoration(
-                      labelText: 'Buscar por TAG, local ou modelo',
-                      prefixIcon: Icon(Icons.search_rounded),
-                    ),
-                    onChanged: (value) {
+                  MachineSearchScanRow(
+                    onSearchChanged: (value) {
                       setState(() {
                         _machineFilter = value;
                       });
                     },
-                  ),
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    key: const Key('scanEquipmentButton'),
-                    onPressed: _scanEquipmentCode,
-                    icon: const Icon(Icons.qr_code_scanner_outlined),
-                    label: const Text('Ler QR / codigo de barras'),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(48),
-                      alignment: Alignment.centerLeft,
-                      foregroundColor: airmovebrPrimary,
-                    ),
+                    onScan: _scanEquipmentCode,
                   ),
                   const SizedBox(height: 12),
                   ..._machineSelectionWidgets(),
@@ -2597,78 +2582,6 @@ class _SelectableEquipmentItem extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _Header extends StatelessWidget {
-  const _Header({required this.order});
-
-  final WorkOrder order;
-
-  @override
-  Widget build(BuildContext context) {
-    final statusColor = switch (order.status) {
-      WorkOrderStatus.done || WorkOrderStatus.synced => airmovebrSuccess,
-      WorkOrderStatus.waitingSync => airmovebrWarning,
-      WorkOrderStatus.inProgress => airmovebrAccent,
-      WorkOrderStatus.pending => Colors.white70,
-    };
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: airmovebrPrimary,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x33073A55),
-            blurRadius: 20,
-            offset: Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            order.id,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            order.clientName,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _StatusPill(
-                label: order.status.label,
-                color: statusColor,
-                backgroundColor: Colors.white,
-              ),
-              _StatusPill(
-                label: order.serviceLabel,
-                color: airmovebrPrimary,
-                backgroundColor: const Color(0xFFEAF4FF),
-              ),
-              _StatusPill(
-                label: order.equipmentCountLabel,
-                color: airmovebrPrimary,
-                backgroundColor: const Color(0xFFEAF4FF),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }

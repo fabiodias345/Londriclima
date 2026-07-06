@@ -68,7 +68,9 @@ void main() {
     expect(find.byKey(const Key('syncNowButton')), findsOneWidget);
   });
 
-  testWidgets('primeiro acesso exige dados, foto e assinatura do tecnico', (tester) async {
+  testWidgets('primeiro acesso exige dados, foto e assinatura do tecnico', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: FirstAccessScreen(
@@ -118,39 +120,66 @@ void main() {
       ),
     );
 
-    await tester.enterText(find.byKey(const Key('firstAccessCpfField')), '73070459900');
-    await tester.enterText(find.byKey(const Key('firstAccessPhoneField')), '43984451266');
+    await tester.enterText(
+      find.byKey(const Key('firstAccessCpfField')),
+      '73070459900',
+    );
+    await tester.enterText(
+      find.byKey(const Key('firstAccessPhoneField')),
+      '43984451266',
+    );
 
-    final cpfField = tester.widget<TextField>(find.byKey(const Key('firstAccessCpfField')));
-    final phoneField = tester.widget<TextField>(find.byKey(const Key('firstAccessPhoneField')));
+    final cpfField = tester.widget<TextField>(
+      find.byKey(const Key('firstAccessCpfField')),
+    );
+    final phoneField = tester.widget<TextField>(
+      find.byKey(const Key('firstAccessPhoneField')),
+    );
     expect(cpfField.controller?.text, '730.704.599-00');
     expect(phoneField.controller?.text, '(43) 98445-1266');
   });
 
-  testWidgets('primeiro acesso informa CPF e telefone invalidos separadamente', (tester) async {
-    await tester.pumpWidget(
-      const MaterialApp(
-        home: FirstAccessScreen(
-          loginGateway: _GatewayComFalha(),
-          onboardingToken: 'token-onboarding',
-          technicianName: 'Joao Tecnico',
+  testWidgets(
+    'primeiro acesso informa CPF e telefone invalidos separadamente',
+    (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: FirstAccessScreen(
+            loginGateway: _GatewayComFalha(),
+            onboardingToken: 'token-onboarding',
+            technicianName: 'Joao Tecnico',
+          ),
         ),
-      ),
-    );
+      );
 
-    await tester.enterText(find.byKey(const Key('firstAccessCpfField')), '7307045990');
-    await tester.enterText(find.byKey(const Key('firstAccessPhoneField')), '43984451266');
-    await tester.ensureVisible(find.byKey(const Key('firstAccessSubmitButton')));
-    await tester.tap(find.byKey(const Key('firstAccessSubmitButton')));
-    await tester.pump();
-    expect(find.text('Informe um CPF com 11 dígitos.'), findsOneWidget);
+      await tester.enterText(
+        find.byKey(const Key('firstAccessCpfField')),
+        '7307045990',
+      );
+      await tester.enterText(
+        find.byKey(const Key('firstAccessPhoneField')),
+        '43984451266',
+      );
+      await tester.ensureVisible(
+        find.byKey(const Key('firstAccessSubmitButton')),
+      );
+      await tester.tap(find.byKey(const Key('firstAccessSubmitButton')));
+      await tester.pump();
+      expect(find.text('Informe um CPF com 11 dígitos.'), findsOneWidget);
 
-    await tester.enterText(find.byKey(const Key('firstAccessCpfField')), '73070459900');
-    await tester.enterText(find.byKey(const Key('firstAccessPhoneField')), '439844512');
-    await tester.tap(find.byKey(const Key('firstAccessSubmitButton')));
-    await tester.pump();
-    expect(find.text('Informe um telefone com DDD.'), findsOneWidget);
-  });
+      await tester.enterText(
+        find.byKey(const Key('firstAccessCpfField')),
+        '73070459900',
+      );
+      await tester.enterText(
+        find.byKey(const Key('firstAccessPhoneField')),
+        '439844512',
+      );
+      await tester.tap(find.byKey(const Key('firstAccessSubmitButton')));
+      await tester.pump();
+      expect(find.text('Informe um telefone com DDD.'), findsOneWidget);
+    },
+  );
 
   testWidgets('filtro pendentes mostra somente OS pendente', (tester) async {
     await tester.pumpWidget(const AirmovebrApp(demoMode: true));
@@ -189,7 +218,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Detalhes da OS'), findsOneWidget);
-    expect(find.text('OS-1042'), findsOneWidget);
+    expect(find.text('OS-1042'), findsNothing);
+    expect(find.byKey(const Key('workOrderHeaderCard')), findsOneWidget);
     expect(find.text('Equipamentos deste atendimento'), findsOneWidget);
     expect(find.text('Evaporadora sala 101'), findsOneWidget);
     expect(find.text('Evaporadora sala 102'), findsOneWidget);
@@ -371,6 +401,8 @@ void main() {
 
     expect(find.text('Selecionar maquina'), findsOneWidget);
     expect(find.byKey(const Key('machineSearchField')), findsOneWidget);
+    expect(find.byKey(const Key('scanEquipmentInlineButton')), findsOneWidget);
+    expect(find.text('Ler QR / codigo de barras'), findsNothing);
     expect(find.byKey(const Key('selectEquipment_EQ-101')), findsOneWidget);
     expect(find.byKey(const Key('selectEquipment_EQ-102')), findsOneWidget);
 
@@ -2096,15 +2128,20 @@ class _GatewayComFalha implements MobileLoginGateway {
   }
 
   @override
-  Future<LoginSession?> completeFirstAccess(FirstAccessRegistration registration) async {
+  Future<LoginSession?> completeFirstAccess(
+    FirstAccessRegistration registration,
+  ) async {
     throw const SocketException('API indisponivel');
   }
 
   @override
-  Future<bool> validateTechnicianInvite(String code) async => throw const SocketException('API indisponivel');
+  Future<bool> validateTechnicianInvite(String code) async =>
+      throw const SocketException('API indisponivel');
 
   @override
-  Future<LoginSession?> registerWithTechnicianInvite(TechnicianInviteRegistration registration) async {
+  Future<LoginSession?> registerWithTechnicianInvite(
+    TechnicianInviteRegistration registration,
+  ) async {
     throw const SocketException('API indisponivel');
   }
 }
@@ -2135,7 +2172,9 @@ class _GatewayDeTeste implements MobileLoginGateway {
   Future<LoginSession?> refresh(String refreshToken) async => null;
 
   @override
-  Future<LoginSession?> completeFirstAccess(FirstAccessRegistration registration) async {
+  Future<LoginSession?> completeFirstAccess(
+    FirstAccessRegistration registration,
+  ) async {
     return LoginSession(
       repository: repository,
       fleetRepository: fleetRepository ?? FakeFleetRepository(),
@@ -2147,7 +2186,9 @@ class _GatewayDeTeste implements MobileLoginGateway {
   Future<bool> validateTechnicianInvite(String code) async => true;
 
   @override
-  Future<LoginSession?> registerWithTechnicianInvite(TechnicianInviteRegistration registration) async {
+  Future<LoginSession?> registerWithTechnicianInvite(
+    TechnicianInviteRegistration registration,
+  ) async {
     return LoginSession(
       repository: repository,
       fleetRepository: fleetRepository ?? FakeFleetRepository(),
