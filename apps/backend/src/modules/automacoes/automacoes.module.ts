@@ -5,6 +5,6 @@ import { WhatsAppCloudService } from "./whatsapp-cloud.service";
 
 @Module({
   providers: [AutomacoesService, SmtpEmailService, WhatsAppCloudService],
-  exports: [SmtpEmailService]
+  exports: [SmtpEmailService, WhatsAppCloudService]
 })
 export class AutomacoesModule {}

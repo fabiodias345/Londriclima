@@ -12,6 +12,7 @@ import { domModule, domRoot } from "./modules/ui/dom.js?v=20260704-access";
 import { eventosModule, eventsRoot } from "./modules/eventos.js?v=20260704-access";
 import { bootstrapModule, bootstrapRoot } from "./modules/bootstrap.js?v=20260704-access";
 import { tecnicoFotoModule, tecnicoFotoRoot } from "./modules/tecnico-foto.js?v=20260706-tecnico-foto";
+import { whatsappModule, whatsappRoot } from "./modules/whatsapp.js?v=20260713-whatsapp";
 
 export const adminModules = {
   api: apiModule,
@@ -26,7 +27,8 @@ export const adminModules = {
   dom: domModule,
   eventos: eventosModule,
   bootstrap: bootstrapModule,
-  tecnicoFoto: tecnicoFotoModule
+  tecnicoFoto: tecnicoFotoModule,
+  whatsapp: whatsappModule
 };
 
 const adminSources = [
@@ -41,6 +43,7 @@ const adminSources = [
   relatoriosRoot,
   domRoot,
   tecnicoFotoRoot,
+  whatsappRoot,
   eventsRoot,
   bootstrapRoot
 ];

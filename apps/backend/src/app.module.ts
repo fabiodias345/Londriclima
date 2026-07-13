@@ -9,6 +9,7 @@ import { HealthModule } from "./modules/health/health.module";
 import { MobileModule } from "./modules/mobile/mobile.module";
 import { OrdensServicoModule } from "./modules/ordens-servico/ordens-servico.module";
 import { SiteModule } from "./modules/site/site.module";
+import { WhatsAppModule } from "./modules/whatsapp/whatsapp.module";
 
 @Module({
   imports: [
@@ -24,7 +25,8 @@ import { SiteModule } from "./modules/site/site.module";
     HealthModule,
     MobileModule,
     OrdensServicoModule,
-    SiteModule
+    SiteModule,
+    WhatsAppModule
   ]
 })
 export class AppModule {}
