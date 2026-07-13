@@ -73,7 +73,7 @@ test("landing envia pre-chamado publico para a API com JSON", () => {
   assert.doesNotMatch(script, /buildWhatsAppMessage/);
 });
 
-test("landing mostra modal de sucesso sem telefone de WhatsApp", () => {
+test("landing mostra modal de sucesso com atendimento pelo WhatsApp", () => {
   const html = read("apps/landing/index.html");
   const script = read("apps/landing/script.js");
   const styles = read("apps/landing/css/style.css");
@@ -81,12 +81,13 @@ test("landing mostra modal de sucesso sem telefone de WhatsApp", () => {
   assert.match(html, /id="bookingSuccessModal"/);
   assert.match(html, /\.\/js\/main\.js\?v=/);
   assert.match(html, /Em breve, um de nossos especialistas entrará em contato/);
-  assert.match(html, /Recebemos seus dados e nossa equipe entrar/);
-  assert.doesNotMatch(html, /bookingSuccessWhatsApp|wa\.me|WhatsApp/);
+  assert.match(html, /Recebemos seus dados/);
+  assert.match(html, /id="bookingSuccessWhatsApp"/);
+  assert.match(html, /wa\.me\/554330673793/);
   assert.match(html, /data-booking-success-close/);
   assert.match(script, /function openBookingSuccessModal/);
   assert.match(script, /bookingSuccessModal\.classList\.add\("is-open"\)/);
-  assert.doesNotMatch(script, /bookingSuccessWhatsApp|buildWhatsAppUrl|wa\.me/);
+  assert.match(script, /bookingSuccessWhatsApp\.href = buildWhatsAppUrl/);
   assert.match(styles, /\.booking-modal\.is-open/);
 });
 
