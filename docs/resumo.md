@@ -92,6 +92,13 @@ Resultado: comando travou sem saida ate o timeout local.
 - Na proxima sessao, continuar por WhatsApp de producao: template aprovado, webhook e O.S. real.
 - Build APK admin somente no final.
 
+## Apos instalar a API Meta
+
+- Fazer uma limpeza geral do backend:
+  - alinhar a spec PMOC ao texto acentuado do PDF;
+  - limpar os 4 avisos de lint;
+  - isolar o scheduler de recorrencias nos testes para remover o ruido de bootstrap.
+
 ## Comando para testar agora
 
 ```powershell
