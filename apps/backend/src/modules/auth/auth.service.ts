@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from "@nestjs/common";
-import { Prisma, UsuarioRole } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import { PrismaService } from "../../database/prisma.service";
 import { FinalizarPrimeiroAcessoDto } from "./dto/finalizar-primeiro-acesso.dto";

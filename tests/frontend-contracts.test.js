@@ -179,6 +179,7 @@ test("admin compila o bundle concatenado antes do deploy", async () => {
     pmoc,
     relatorios,
     dom,
+    tecnicoFoto,
     eventos,
     bootstrap
   ] = await Promise.all([
@@ -192,6 +193,7 @@ test("admin compila o bundle concatenado antes do deploy", async () => {
     loadModule("apps/admin/js/modules/pmoc.js"),
     loadModule("apps/admin/js/modules/relatorios.js"),
     loadModule("apps/admin/js/modules/ui/dom.js"),
+    loadModule("apps/admin/js/modules/tecnico-foto.js"),
     loadModule("apps/admin/js/modules/eventos.js"),
     loadModule("apps/admin/js/modules/bootstrap.js")
   ]);
@@ -206,6 +208,7 @@ test("admin compila o bundle concatenado antes do deploy", async () => {
     pmocRoot: pmoc.pmocRoot,
     relatoriosRoot: relatorios.relatoriosRoot,
     domRoot: dom.domRoot,
+    tecnicoFotoRoot: tecnicoFoto.tecnicoFotoRoot,
     eventsRoot: eventos.eventsRoot,
     bootstrapRoot: bootstrap.bootstrapRoot
   };

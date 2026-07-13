@@ -5,7 +5,7 @@ export type CalendarioRecorrencia = Partial<Record<number, ChecklistTipo>>;
 
 const CHECKLISTS = new Set<string>(Object.values(ChecklistTipo));
 
-export function normalizarCalendarioRecorrencia(valor: unknown, frequencia: PlanoRecorrenciaFrequencia): CalendarioRecorrencia {
+export function normalizarCalendarioRecorrencia(valor: unknown, _frequencia: PlanoRecorrenciaFrequencia): CalendarioRecorrencia {
   if (!valor || typeof valor !== "object" || Array.isArray(valor)) {
     return {};
   }

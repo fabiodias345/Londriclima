@@ -14,7 +14,7 @@ import { SiteModule } from "./modules/site/site.module";
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: [".env", ".env.local"]
+      envFilePath: ["whats.env", "../../whats.env", ".env", ".env.local"]
     }),
     DatabaseModule,
     AdminModule,

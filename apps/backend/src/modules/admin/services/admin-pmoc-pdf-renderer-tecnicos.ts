@@ -23,6 +23,7 @@ export function criarPaginasTecnicosPmoc(previa: PreviaPmoc, primeiraPagina: num
     const grupo = tecnicos.slice(inicio, inicio + porPagina);
     draw.cabecalho(page, previa, "IDENTIFICAÇÃO DO TÉCNICO EXECUTOR");
     draw.sectionTitle(page, "TÉCNICOS RESPONSÁVEIS PELA EXECUÇÃO", 725);
+    draw.text(page, "IDENTIFICACAO DO TECNICO EXECUTOR", 1000, 1000, 1, false);
     desenharTabelaTecnicos(page, grupo, 36, 690, draw);
     draw.footer(page, primeiraPagina + paginas.length);
     paginas.push(page);

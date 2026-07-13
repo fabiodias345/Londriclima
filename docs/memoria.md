@@ -1,6 +1,6 @@
 # Memoria Clima do Brasil / AIRMOVEBR
 
-Atualizado em: 04/07/2026
+Atualizado em: 12/07/2026
 
 ## Contexto
 
@@ -100,6 +100,17 @@ site -> pre-chamado -> admin -> O.S. -> app tecnico -> checklist/fotos/GPS/assin
 - Notificacoes dependem da definicao Meta/telefone.
 - APK admin fica para o final.
 
+## WhatsApp Cloud API
+
+- Numero oficial configurado e validado: `+55 43 3067-3793`.
+- Segredos ficam fora do Git em `whats.env`.
+- Token permanente novo validado contra a Graph API.
+- Envio de texto livre funciona quando o contato abriu janela de atendimento.
+- Mensagens iniciadas pela empresa dependem de template aprovado pela Meta.
+- Template `boas_vindas_airmovebr` criado e pendente de aprovacao.
+- Backend tem integracao inicial para processar automacoes `enviar_whatsapp` na finalizacao de O.S.
+- Falta configurar webhook para receber status `sent`, `delivered`, `read` e `failed`.
+
 ## PMOC e relatorios
 
 - PMOC atual existe no backend com previa, PDF, assinatura do engenheiro e envio final.
@@ -138,7 +149,7 @@ site -> pre-chamado -> admin -> O.S. -> app tecnico -> checklist/fotos/GPS/assin
 1. Validar checklist do app tecnico no celular real.
 2. Ajustar regra final de fotos por periodicidade.
 3. Melhorar finalizacao da O.S. no app tecnico.
-4. Definir Meta/telefone para notificacoes do app admin.
+4. Finalizar WhatsApp com template aprovado, webhook e teste de O.S. real.
 5. Testar o app admin completo no aparelho real.
 6. Gerar APK tecnico/admin quando aprovados.
 7. Refazer PDF avulso visual com fotos e assinatura reais.

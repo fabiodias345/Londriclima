@@ -1,7 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import {
-  ChecklistTipo,
-  PlanoRecorrenciaFrequencia,
   Prisma,
   UsuarioRole
 } from "@prisma/client";

@@ -3,6 +3,7 @@ import * as assert from "node:assert/strict";
 import { test } from "node:test";
 import { AutomacoesService } from "./automacoes.service";
 import { EmailSender } from "./smtp-email.service";
+import { WhatsAppSender } from "./whatsapp-cloud.service";
 
 function criarConfig(valores: Record<string, string | number | boolean | undefined> = {}) {
   return {
@@ -114,5 +115,136 @@ test("processarPendentes nao conclui sem comprovante SMTP", async () => {
     },
     executarEm: new Date("2026-06-12T12:05:00.000Z"),
     erroUltimaTentativa: "Entrega SMTP sem comprovante."
+  });
+});
+
+test("processarPendentes envia WhatsApp de OS finalizada e marca automacao como concluida", async () => {
+  const agora = new Date("2026-06-12T12:00:00.000Z");
+  const chamadas = {
+    whatsapp: undefined as unknown,
+    updateFinal: undefined as unknown
+  };
+  const prisma = {
+    automacaoAgendada: {
+      findMany: async () => [
+        {
+          id: "automacao-whatsapp-1",
+          tipo: AutomacaoTipo.enviar_whatsapp,
+          payload: {
+            tipo: "os_finalizada",
+            os_id: "os-1",
+            cliente_id: "cliente-1",
+            cliente_nome: "Maria Souza",
+            cliente_telefone: "43999999999",
+            titulo: "Manutencao preventiva",
+            finalizado_em: "2026-06-12T12:00:00.000Z"
+          },
+          tentativas: 0
+        }
+      ],
+      updateMany: async () => ({ count: 1 }),
+      update: async ({ data }: { data: unknown }) => {
+        chamadas.updateFinal = data;
+      }
+    }
+  };
+  const emailSender: EmailSender = {
+    enviar: async () => undefined as never
+  };
+  const whatsAppSender: WhatsAppSender = {
+    enviar: async (message) => {
+      chamadas.whatsapp = message;
+      return {
+        messageId: "wamid.123",
+        recipient: "5543999999999"
+      };
+    }
+  };
+  const service = new AutomacoesService(prisma as never, emailSender, criarConfig() as never, whatsAppSender);
+
+  const resultado = await service.processarPendentes(agora);
+
+  assert.equal(resultado.processadas, 1);
+  assert.equal(resultado.concluidas, 1);
+  assert.equal(resultado.falhas, 0);
+  assert.deepEqual(chamadas.whatsapp, {
+    to: "43999999999",
+    text: [
+      "Ola, Maria Souza.",
+      "",
+      "Sua ordem de servico foi finalizada: Manutencao preventiva.",
+      "Finalizacao: 12/06/2026 09:00",
+      "",
+      "Clima do Brasil"
+    ].join("\n")
+  });
+  assert.deepEqual(chamadas.updateFinal, {
+    status: AutomacaoStatus.concluida,
+    erroUltimaTentativa: null,
+    payload: {
+      tipo: "os_finalizada",
+      os_id: "os-1",
+      cliente_id: "cliente-1",
+      cliente_nome: "Maria Souza",
+      cliente_telefone: "43999999999",
+      titulo: "Manutencao preventiva",
+      finalizado_em: "2026-06-12T12:00:00.000Z",
+      whatsapp_entrega: {
+        destinatario: "5543999999999",
+        mensagem_id: "wamid.123",
+        enviado_em: "2026-06-12T12:00:00.000Z"
+      }
+    }
+  });
+});
+
+test("processarPendentes nao conclui WhatsApp sem comprovante", async () => {
+  const chamadas = {
+    updateFinal: undefined as unknown
+  };
+  const prisma = {
+    automacaoAgendada: {
+      findMany: async () => [
+        {
+          id: "automacao-whatsapp-sem-comprovante-1",
+          tipo: AutomacaoTipo.enviar_whatsapp,
+          payload: {
+            tipo: "os_finalizada",
+            os_id: "os-1",
+            cliente_id: "cliente-1",
+            cliente_nome: "Maria Souza",
+            cliente_telefone: "43999999999",
+            titulo: "Manutencao preventiva",
+            finalizado_em: "2026-06-12T12:00:00.000Z"
+          },
+          tentativas: 0
+        }
+      ],
+      updateMany: async () => ({ count: 1 }),
+      update: async ({ data }: { data: unknown }) => {
+        chamadas.updateFinal = data;
+      }
+    }
+  };
+  const emailSender: EmailSender = {
+    enviar: async () => undefined as never
+  };
+  const whatsAppSender: WhatsAppSender = {
+    enviar: async () => undefined as never
+  };
+  const service = new AutomacoesService(prisma as never, emailSender, criarConfig() as never, whatsAppSender);
+
+  const resultado = await service.processarPendentes(new Date("2026-06-12T12:00:00.000Z"));
+
+  assert.equal(resultado.processadas, 1);
+  assert.equal(resultado.concluidas, 0);
+  assert.equal(resultado.falhas, 1);
+  assert.deepEqual(chamadas.updateFinal, {
+    status: AutomacaoStatus.pendente,
+    tentativas: {
+      increment: 1
+    },
+    executarEm: new Date("2026-06-12T12:05:00.000Z"),
+    erroUltimaTentativa: "Entrega WhatsApp sem comprovante."
   });
 });

@@ -892,6 +892,7 @@ export class OrdensServicoService {
               nome: true,
               documento: true,
               email: true,
+              telefone: true,
               pmocAtivo: true,
               enderecos: {
                 orderBy: {
@@ -1120,6 +1121,7 @@ export class OrdensServicoService {
         nome: string;
         documento?: string | null;
         email: string | null;
+        telefone: string | null;
         pmocAtivo: boolean;
         enderecos?: Array<{
           logradouro: string | null;
@@ -1173,7 +1175,20 @@ export class OrdensServicoService {
       executarEm:
         tipo === AutomacaoTipo.recorrencia_180_dias
           ? this.somarDias(finalizadoEm, 180)
-          : finalizadoEm
+          : finalizadoEm,
+      ...(tipo === AutomacaoTipo.enviar_whatsapp && ordemServico.cliente
+        ? {
+            payload: {
+              tipo: "os_finalizada",
+              os_id: osId,
+              cliente_id: ordemServico.cliente.id,
+              cliente_nome: ordemServico.cliente.nome,
+              cliente_telefone: ordemServico.cliente.telefone,
+              titulo: ordemServico.titulo || "Atendimento tecnico",
+              finalizado_em: finalizadoEm.toISOString()
+            } satisfies Prisma.JsonObject
+          }
+        : {})
     }));
 
     const cliente = ordemServico.cliente;

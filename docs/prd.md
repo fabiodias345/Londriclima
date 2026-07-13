@@ -1,7 +1,7 @@
 # PRD - Clima do Brasil Digital
 
-Versao: 1.7.0
-Atualizado em: 04/07/2026
+Versao: 1.7.1
+Atualizado em: 12/07/2026
 Cliente piloto: AIRMOVEBR - Londrina/PR
 
 ## Visao
@@ -86,7 +86,7 @@ Ja implementado:
 
 Pendente no app admin:
 
-1. Definir telefone e integracao Meta para notificacoes.
+1. Concluir notificacoes WhatsApp com template aprovado, webhook e validacao em O.S. real.
 2. Validar o fluxo completo no aparelho real.
 3. Gerar e distribuir o APK admin somente no final.
 
@@ -107,6 +107,7 @@ Pendente no app tecnico:
 | Landing | HTML, CSS, JavaScript |
 | Mobile | Flutter Android, com apps tecnico e admin separados |
 | Auth | JWT |
+| WhatsApp | Meta WhatsApp Cloud API |
 | Infra | Docker local e VM Locaweb Cloud |
 | Testes | Node test, Nest Testing, ESLint, Flutter test |
 
@@ -248,3 +249,6 @@ flutter build apk --debug
 - Arquivos proprios devem ficar preferencialmente abaixo de 500 linhas.
 - A maquina local e o ambiente principal para testar o APK nesta etapa.
 - Producao esta online, mas so deve receber mudancas depois do fluxo local ficar bom.
+- WhatsApp oficial usa o numero `+55 43 3067-3793`.
+- Texto livre via WhatsApp so deve ser usado dentro da janela de atendimento.
+- Mensagem iniciada pela empresa deve usar template aprovado pela Meta.

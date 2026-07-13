@@ -1,9 +1,11 @@
-import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
+import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit, Optional } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { AutomacaoStatus, AutomacaoTipo, Prisma } from "@prisma/client";
 import { PrismaService } from "../../database/prisma.service";
 import { validarPayloadAutomacaoEmail } from "./automacoes-email-payload";
+import { validarPayloadAutomacaoWhatsapp } from "./automacoes-whatsapp-payload";
 import { EmailDeliveryResult, EmailSender, SmtpEmailService } from "./smtp-email.service";
+import { WhatsAppDeliveryResult, WhatsAppSender, WhatsAppCloudService } from "./whatsapp-cloud.service";
 
 @Injectable()
 export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
@@ -15,7 +17,10 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
     private readonly prisma: PrismaService,
     @Inject(SmtpEmailService)
     private readonly emailSender: EmailSender,
-    private readonly config: ConfigService
+    private readonly config: ConfigService,
+    @Optional()
+    @Inject(WhatsAppCloudService)
+    private readonly whatsAppSender?: WhatsAppSender
   ) {}
 
   onModuleInit() {
@@ -51,7 +56,9 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
       const limite = Number(this.config.get<number | string>("AUTOMACOES_WORKER_BATCH_SIZE", 10));
       const automacoes = await this.prisma.automacaoAgendada.findMany({
         where: {
-          tipo: AutomacaoTipo.enviar_email,
+          tipo: {
+            in: [AutomacaoTipo.enviar_email, AutomacaoTipo.enviar_whatsapp]
+          },
           status: AutomacaoStatus.pendente,
           executarEm: {
             lte: agora
@@ -87,8 +94,7 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
         }
 
         try {
-          const entrega = await this.processarEmail(automacao.payload);
-          this.validarEntregaSmtp(entrega);
+          const entrega = await this.processarAutomacao(automacao.tipo, automacao.payload);
           await this.prisma.automacaoAgendada.update({
             where: {
               id: automacao.id
@@ -96,7 +102,7 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
             data: {
               status: AutomacaoStatus.concluida,
               erroUltimaTentativa: null,
-              payload: this.anexarEntregaSmtp(automacao.payload, entrega, agora) as Prisma.InputJsonValue
+              payload: this.anexarEntrega(automacao.payload, entrega, agora) as Prisma.InputJsonValue
             }
           });
           concluidas += 1;
@@ -126,9 +132,50 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
     return this.emailSender.enviar(email);
   }
 
+  private async processarWhatsapp(payload: Prisma.JsonValue) {
+    if (!this.whatsAppSender) {
+      throw new Error("WhatsApp sender nao configurado.");
+    }
+
+    const dados = validarPayloadAutomacaoWhatsapp(payload);
+    return this.whatsAppSender.enviar({
+      to: dados.cliente_telefone,
+      text: [
+        `Ola, ${dados.cliente_nome}.`,
+        "",
+        `Sua ordem de servico foi finalizada: ${dados.titulo}.`,
+        `Finalizacao: ${this.formatarDataEmail(dados.finalizado_em)}`,
+        "",
+        "Clima do Brasil"
+      ].join("\n")
+    });
+  }
+
+  private async processarAutomacao(tipo: AutomacaoTipo, payload: Prisma.JsonValue) {
+    if (tipo === AutomacaoTipo.enviar_email) {
+      const entrega = await this.processarEmail(payload);
+      this.validarEntregaSmtp(entrega);
+      return entrega;
+    }
+
+    if (tipo === AutomacaoTipo.enviar_whatsapp) {
+      const entrega = await this.processarWhatsapp(payload);
+      this.validarEntregaWhatsapp(entrega);
+      return entrega;
+    }
+
+    throw new Error(`Automacao ${tipo} nao suportada.`);
+  }
+
   private validarEntregaSmtp(entrega: EmailDeliveryResult | undefined) {
     if (!entrega?.recipient?.trim() || !entrega.response?.trim()) {
       throw new Error("Entrega SMTP sem comprovante.");
+    }
+  }
+
+  private validarEntregaWhatsapp(entrega: WhatsAppDeliveryResult | undefined) {
+    if (!entrega?.recipient?.trim() || !entrega.messageId?.trim()) {
+      throw new Error("Entrega WhatsApp sem comprovante.");
     }
   }
 
@@ -155,16 +202,31 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
     return Number(this.config.get<number | string>("AUTOMACOES_RETRY_DELAY_MS", 5 * 60 * 1000));
   }
 
-  private anexarEntregaSmtp(payload: Prisma.JsonValue, entrega: EmailDeliveryResult, enviadoEm: Date): Prisma.JsonValue {
+  private anexarEntrega(
+    payload: Prisma.JsonValue,
+    entrega: EmailDeliveryResult | WhatsAppDeliveryResult,
+    enviadoEm: Date
+  ): Prisma.JsonValue {
     if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
       return payload;
     }
 
+    if ("response" in entrega) {
+      return {
+        ...payload,
+        smtp_entrega: {
+          destinatario: entrega.recipient,
+          resposta: entrega.response,
+          enviado_em: enviadoEm.toISOString()
+        }
+      };
+    }
+
     return {
       ...payload,
-      smtp_entrega: {
+      whatsapp_entrega: {
         destinatario: entrega.recipient,
-        resposta: entrega.response,
+        mensagem_id: entrega.messageId,
         enviado_em: enviadoEm.toISOString()
       }
     };
@@ -404,6 +466,9 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
       return configurado === true || String(configurado).toLowerCase() === "true";
     }
 
-    return Boolean(this.config.get<string>("SMTP_HOST"));
+    return Boolean(
+      this.config.get<string>("SMTP_HOST") ||
+      (this.config.get<string>("LONDRI_WHATS_TOKEN") && this.config.get<string>("LONDRI_PHONE_ID"))
+    );
   }
 }
