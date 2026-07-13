@@ -1,7 +1,7 @@
 # PRD - Clima do Brasil Digital
 
-Versao: 1.7.1
-Atualizado em: 12/07/2026
+Versao: 1.7.2
+Atualizado em: 13/07/2026
 Cliente piloto: AIRMOVEBR - Londrina/PR
 
 ## Visao
@@ -86,7 +86,7 @@ Ja implementado:
 
 Pendente no app admin:
 
-1. Concluir notificacoes WhatsApp com template aprovado, webhook e validacao em O.S. real.
+1. Concluir notificacoes WhatsApp com templates aprovados, webhook e validacao em O.S. real.
 2. Validar o fluxo completo no aparelho real.
 3. Gerar e distribuir o APK admin somente no final.
 
@@ -252,3 +252,4 @@ flutter build apk --debug
 - WhatsApp oficial usa o numero `+55 43 3067-3793`.
 - Texto livre via WhatsApp so deve ser usado dentro da janela de atendimento.
 - Mensagem iniciada pela empresa deve usar template aprovado pela Meta.
+- A integracao inicial WhatsApp ja esta em producao; ainda falta status real por webhook e template para abertura de conversa.

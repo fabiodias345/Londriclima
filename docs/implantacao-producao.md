@@ -1,10 +1,10 @@
 # Implantacao em Producao
 
-Atualizado em: 11/06/2026
+Atualizado em: 13/07/2026
 
-## Decisao atual
+## Estado atual
 
-O sistema sera implantado em uma VM propria na Locaweb Cloud. A opcao Turbo Cloud/cPanel foi descartada para o sistema completo porque nao oferece a infraestrutura ideal para PostgreSQL, Docker, jobs e manutencao limpa.
+O sistema esta implantado em uma VM propria na Locaweb Cloud. A opcao Turbo Cloud/cPanel foi descartada para o sistema completo porque nao oferece a infraestrutura ideal para PostgreSQL, Docker, jobs e manutencao limpa.
 
 Servidor contratado:
 
@@ -22,6 +22,18 @@ Dominio aprovado para o sistema:
 
 ```text
 airmovebr.com.br
+```
+
+Estado operacional:
+
+```text
+Site:    https://airmovebr.com.br/
+Admin:   https://admin.airmovebr.com.br/
+API:     https://api.airmovebr.com.br/api/v1
+Health:  https://api.airmovebr.com.br/api/v1/health
+Branch:  main
+Deploy:  branch main
+Banco:   sem migrations pendentes no ultimo deploy
 ```
 
 ## Objetivo
@@ -70,7 +82,7 @@ Antes do deploy, confirmar ou configurar:
 - rotina de snapshot ou backup na Locaweb Cloud;
 - usuario operacional sem uso diario de root.
 
-Nota operacional 2026-06-16: o cliente ainda nao passou o acesso/gestao do registro do dominio. Enquanto `airmovebr.com.br`, `admin.airmovebr.com.br` e `api.airmovebr.com.br` nao apontarem para `191.252.226.11`, a homologacao por dominio fica pendente. Validacoes por IP podem funcionar, mas o formulario publico de pre-chamado deve ser retestado pelo dominio depois da propagacao DNS.
+Nota operacional 2026-07-13: os dominios principais estao em uso publico com HTTPS. Em novo deploy, validar sempre site, admin, API health e formulario publico de pre-chamado.
 
 ## Plano tecnico recomendado
 
@@ -169,10 +181,9 @@ Antes de ativar GPS real:
 
 ## Proximos passos
 
-1. Fazer bootstrap seguro da VM Locaweb.
-2. Configurar DNS para `191.252.226.11`.
-3. Gerar secrets reais de producao.
-4. Ajustar compose/proxy para a VM.
-5. Configurar HTTPS.
-6. Rodar migrations e teste completo em producao controlada.
-7. So depois liberar uso real para a equipe.
+1. Manter deploy somente por `main` alinhada ao GitHub.
+2. Conferir migrations Prisma em todo deploy.
+3. Conferir health interno e publico em todo deploy.
+4. Validar backup/snapshot periodico da VM e banco.
+5. Concluir WhatsApp de producao com templates aprovados e webhook.
+6. Validar O.S. real do admin ao app tecnico, finalizacao, PDF e notificacao.

@@ -1,6 +1,6 @@
 # Resumo Clima do Brasil
 
-Atualizado em: 12/07/2026
+Atualizado em: 13/07/2026
 
 Somente estado atual e proximos passos. Historico concluido fica no Git e nos testes.
 
@@ -16,11 +16,13 @@ Somente estado atual e proximos passos. Historico concluido fica no Git e nos te
 
 ## Estado atual
 
-- Rebrand visual para Clima do Brasil aplicado.
-- Git `dev`, `main`, GitHub e repo da VM alinhados.
-- Backend de producao saudavel.
-- Admin web esta ok por enquanto.
-- APK tecnico esta ok por enquanto.
+- Rebrand visual para Clima do Brasil aplicado; infraestrutura publica ainda usa AIRMOVEBR.
+- Git `dev`, `main`, GitHub e repo da VM alinhados no ultimo deploy.
+- Backend de producao saudavel em `https://api.airmovebr.com.br/api/v1/health`.
+- Banco de producao verificado no deploy: Prisma sem migrations pendentes.
+- Admin web esta ok por enquanto em `https://admin.airmovebr.com.br/`.
+- Site publico esta ok por enquanto em `https://airmovebr.com.br/`.
+- APK tecnico esta ok por enquanto, mas ainda precisa validacao final em campo real.
 - Novo app separado criado em `apps/admin_mobile`.
 - Fase 1 do app admin implementada:
   - login pela mesma API do sistema;
@@ -45,10 +47,10 @@ Somente estado atual e proximos passos. Historico concluido fica no Git e nos te
   - abertura autenticada de PDF PMOC e relatorio avulso;
   - detalhes da frota somente para consulta.
 - Codigo das fases 1 a 4 esta no GitHub e na VM; APK admin ainda nao foi gerado.
-- WhatsApp Cloud API oficial da Airmovebr configurado localmente com o numero `+55 43 3067-3793`.
+- WhatsApp Cloud API oficial da Airmovebr configurado localmente e em producao com o numero `+55 43 3067-3793`.
 - Envio manual por texto livre validado quando existe janela de atendimento aberta.
 - Template `boas_vindas_airmovebr` criado na Meta e aguardando aprovacao para iniciar conversa sem mensagem previa do cliente.
-- Backend recebeu integracao inicial para fila `enviar_whatsapp` na finalizacao de O.S.
+- Backend em producao recebeu integracao inicial para fila `enviar_whatsapp` na finalizacao de O.S.
 
 ## Validacao feita
 
@@ -72,9 +74,22 @@ flutter test --no-pub
 
 Resultado: comando travou sem saida ate o timeout local.
 
-## Proximo foco - App Admin Mobile
+## O que falta fazer
 
-- Concluir notificacoes WhatsApp: template aprovado, webhook de status e validacao em O.S. real.
+1. Confirmar na Meta se o template `boas_vindas_airmovebr` foi aprovado.
+2. Criar templates reais para O.S. finalizada, agendamento/lembrete e aviso de atendimento.
+3. Trocar a automacao `os_finalizada` para template aprovado quando a mensagem for iniciada pela empresa.
+4. Configurar webhook WhatsApp para receber mensagens e status `sent`, `delivered`, `read` e `failed`.
+5. Persistir status real de WhatsApp no banco, nao apenas `messageId`.
+6. Finalizar uma O.S. real e validar se o WhatsApp dispara sozinho.
+7. Validar app tecnico no celular em campo real.
+8. Validar app admin completo no aparelho real.
+9. Gerar APK tecnico/admin somente depois das validacoes acima.
+
+## Proximo foco
+
+- Nao fazer nova feature hoje.
+- Na proxima sessao, continuar por WhatsApp de producao: template aprovado, webhook e O.S. real.
 - Build APK admin somente no final.
 
 ## Comando para testar agora

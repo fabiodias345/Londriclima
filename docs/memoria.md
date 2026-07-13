@@ -1,6 +1,6 @@
 # Memoria Clima do Brasil / AIRMOVEBR
 
-Atualizado em: 12/07/2026
+Atualizado em: 13/07/2026
 
 ## Contexto
 
@@ -8,7 +8,7 @@ Atualizado em: 12/07/2026
 - Cliente piloto e infraestrutura legada: AIRMOVEBR, Londrina/PR.
 - Dominio: `airmovebr.com.br`.
 - Repositorio: `https://github.com/fabiodias345/Londriclima.git`.
-- Workspace local atual: `C:\develop\LondriClima`.
+- Workspace local atual: `E:\develop\Londriclima`.
 - Produto: plataforma operacional para climatizacao, O.S., PMOC, frota e relatorios.
 - Prioridade atual: validar os apps tecnico e admin na operacao real antes de evoluir SaaS.
 
@@ -97,18 +97,18 @@ site -> pre-chamado -> admin -> O.S. -> app tecnico -> checklist/fotos/GPS/assin
   - frota somente para consulta.
 - Validacao estatica atual: `dart analyze lib test` sem problemas.
 - `flutter test --no-pub` ainda trava sem saida neste ambiente.
-- Notificacoes dependem da definicao Meta/telefone.
+- Notificacoes dependem de templates aprovados, webhook e validacao em O.S. real.
 - APK admin fica para o final.
 
 ## WhatsApp Cloud API
 
-- Numero oficial configurado e validado: `+55 43 3067-3793`.
+- Numero oficial configurado e validado localmente e em producao: `+55 43 3067-3793`.
 - Segredos ficam fora do Git em `whats.env`.
 - Token permanente novo validado contra a Graph API.
 - Envio de texto livre funciona quando o contato abriu janela de atendimento.
 - Mensagens iniciadas pela empresa dependem de template aprovado pela Meta.
 - Template `boas_vindas_airmovebr` criado e pendente de aprovacao.
-- Backend tem integracao inicial para processar automacoes `enviar_whatsapp` na finalizacao de O.S.
+- Backend em producao tem integracao inicial para processar automacoes `enviar_whatsapp` na finalizacao de O.S.
 - Falta configurar webhook para receber status `sent`, `delivered`, `read` e `failed`.
 
 ## PMOC e relatorios
@@ -126,6 +126,8 @@ site -> pre-chamado -> admin -> O.S. -> app tecnico -> checklist/fotos/GPS/assin
 - Producao: Locaweb Cloud.
 - IP: `191.252.226.11`.
 - Repo na VM: `/opt/airmovebr/repo`.
+- Deploy WhatsApp validado e promovido por `main`.
+- Banco de producao sem migrations pendentes no ultimo deploy.
 - URLs:
   - `https://airmovebr.com.br/`
   - `https://admin.airmovebr.com.br/`
@@ -149,7 +151,7 @@ site -> pre-chamado -> admin -> O.S. -> app tecnico -> checklist/fotos/GPS/assin
 1. Validar checklist do app tecnico no celular real.
 2. Ajustar regra final de fotos por periodicidade.
 3. Melhorar finalizacao da O.S. no app tecnico.
-4. Finalizar WhatsApp com template aprovado, webhook e teste de O.S. real.
+4. Finalizar WhatsApp com templates aprovados, webhook e teste de O.S. real.
 5. Testar o app admin completo no aparelho real.
 6. Gerar APK tecnico/admin quando aprovados.
 7. Refazer PDF avulso visual com fotos e assinatura reais.
@@ -162,7 +164,7 @@ site -> pre-chamado -> admin -> O.S. -> app tecnico -> checklist/fotos/GPS/assin
 ## Comandos uteis
 
 ```text
-cd C:\develop\LondriClima\apps\mobile
+cd E:\develop\Londriclima\apps\mobile
 flutter run --dart-define=MOBILE_API_BASE_URL=http://10.91.93.11:3000
 flutter run --dart-define=MOBILE_API_BASE_URL=https://api.airmovebr.com.br
 flutter test
@@ -171,7 +173,7 @@ flutter build apk --debug --dart-define=MOBILE_API_BASE_URL=https://api.airmoveb
 ```
 
 ```text
-cd C:\develop\LondriClima\apps\admin_mobile
+cd E:\develop\Londriclima\apps\admin_mobile
 flutter run --dart-define=ADMIN_API_BASE_URL=https://api.airmovebr.com.br
 dart analyze lib test
 ```

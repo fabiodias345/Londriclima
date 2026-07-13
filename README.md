@@ -8,7 +8,7 @@ multiempresa.
 O fluxo principal e:
 
 ```text
-site -> pre-chamado -> painel admin -> ordem de servico -> tecnico -> evidencias/checklist/GPS -> relatorios
+site -> pre-chamado -> painel admin -> ordem de servico -> tecnico -> evidencias/checklist/GPS/assinatura -> relatorios/PMOC/notificacoes
 ```
 
 ## Estado atual
@@ -21,20 +21,24 @@ O repositorio ja possui:
 - Painel administrativo web estatico em `apps/admin`.
 - Landing page publica em `apps/landing`, integrada ao endpoint de
   pre-chamados.
-- Aplicativo Flutter Android em `apps/mobile`, com dashboard do tecnico,
-  detalhe de OS, multiplos equipamentos, inicio de servico e chegada ao cliente
-  com GPS.
+- Aplicativo Flutter Android em `apps/mobile`, com login real, O.S. do tecnico,
+  multiplos equipamentos, GPS, checklist, fotos, assinatura, QR e fila offline.
+- Aplicativo Flutter Android separado em `apps/admin_mobile`, com login admin,
+  consultas reais, criacao/reprogramacao de O.S., pre-chamados, PMOC, frota,
+  relatorios e PDFs autenticados.
 - API mobile para listar OS do tecnico autenticado.
 - Fluxo PMOC com previa, PDF, assinatura Gov.br enviada pelo engenheiro e
   e-mail final ao cliente com PDF assinado anexado.
 - Automacoes SMTP para assinatura PMOC e envio do relatorio assinado.
+- Integracao inicial com Meta WhatsApp Cloud API usando o numero oficial
+  `+55 43 3067-3793`.
 - Docker Compose local para PostgreSQL e Adminer.
 - Testes unitarios/HTTP do backend e testes de contrato do frontend.
 - Documentacao de produto, API, telemetria GPS e implantacao.
 
-Ainda estao como roadmap ou documentacao: WhatsApp real, PDF PMOC em formato
-profissional por maquina, fluxo completo de checklist PMOC no app, assinatura
-mobile, fotos antes/depois e modo offline/sync.
+Ainda estao como proximos passos: templates WhatsApp aprovados para mensagens
+iniciadas pela empresa, webhook de status WhatsApp, validacao real de O.S. em
+campo, teste completo dos apps em aparelho real e geracao final dos APKs.
 
 ## Stack
 
@@ -44,7 +48,8 @@ mobile, fotos antes/depois e modo offline/sync.
 | Banco | PostgreSQL 16, Prisma 5 |
 | Admin | HTML, CSS, JavaScript e Leaflet local |
 | Landing | HTML, CSS e JavaScript |
-| Mobile | Flutter Android |
+| Mobile | Flutter Android, com apps tecnico e admin separados |
+| WhatsApp | Meta WhatsApp Cloud API |
 | Infra local | Docker Compose |
 | Testes | `node:test`, Nest Testing, ESLint, Flutter test |
 
@@ -289,10 +294,13 @@ documentado e `airmovebr.com.br`, com subdominios para admin e API.
 Estado operacional atual:
 
 ```text
-Branches alinhadas: dev, main, seg
+Branches alinhadas: dev, main
+Branch em producao: main
 Branch de deploy:   main
 IP esperado:        191.252.226.11
+Health:             https://api.airmovebr.com.br/api/v1/health
 ```
 
-Antes de publicar, valide DNS, `.env.production`, migrations, SMTP real, backup
-do banco, HTTPS e permissoes de acesso.
+No ultimo deploy, o banco estava sem migrations pendentes e o backend ficou
+healthy. Antes de publicar novas mudancas, validar `.env.production`, migrations,
+health publico, SMTP/WhatsApp, backup do banco, HTTPS e permissoes de acesso.

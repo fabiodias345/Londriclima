@@ -28,32 +28,31 @@ Indice dos documentos principais do projeto.
 - Site: `https://airmovebr.com.br/`
 - Admin: `https://admin.airmovebr.com.br/`
 - API: `https://api.airmovebr.com.br/api/v1`
+- API health: `https://api.airmovebr.com.br/api/v1/health`
+- Producao Locaweb alinhada pela branch `main`.
 - Desenvolvimento mobile atual: maquina local.
 
 ## Mobile
 
-Fases concluidas:
+Estado atual:
 
-1. Dashboard.
-2. Detalhe da OS.
-3. Varias maquinas no mesmo atendimento.
-4. Login/API real.
-5. Iniciar atendimento com GPS.
-6. Selecionar ou cadastrar maquina com dados obrigatorios.
-7. Checklist definido pela recorrencia/API.
-8. Selecao de maquina antes do checklist.
-9. Renderizacao do checklist por tipo de campo.
-10. Salvamento do checklist preenchido por maquina.
+1. App tecnico tem login real, O.S., GPS, multi-maquina, checklist, fotos, assinatura, offline/sync, QR e frota.
+2. App admin mobile tem fases 1 a 4 implementadas em modo operacional.
+3. WhatsApp Cloud API oficial esta configurado com o numero `+55 43 3067-3793`.
+4. Backend processa automacao inicial `enviar_whatsapp`.
+5. Banco de producao esta sem migrations pendentes.
 
-Proximas fases:
+Proximos passos:
 
-1. Fotos dentro dos itens do checklist.
-2. Assinatura e finalizar OS.
-3. Offline/sync.
+1. Aprovar/criar templates WhatsApp para mensagens iniciadas pela empresa.
+2. Configurar webhook WhatsApp e persistir status real.
+3. Validar O.S. real disparando notificacao sozinha.
+4. Validar apps tecnico/admin em aparelho real.
+5. Gerar APKs somente depois da validacao operacional.
 
 Comando local atual:
 
 ```text
-cd C:\develop\LondriClima\apps\mobile
-flutter run --dart-define=MOBILE_API_BASE_URL=http://10.91.93.11:3000
+cd E:\develop\Londriclima\apps\mobile
+flutter run --dart-define=MOBILE_API_BASE_URL=https://api.airmovebr.com.br
 ```
