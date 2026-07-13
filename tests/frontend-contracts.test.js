@@ -63,12 +63,8 @@ test("landing envia pre-chamado publico para a API com JSON", () => {
   assert.match(script, /nome:\s*String\(data\.get\("nome"\)/);
   assert.match(script, /telefone:\s*String\(data\.get\("telefone"\)/);
   assert.match(script, /servico:\s*String\(data\.get\("servico"\)/);
-  assert.match(script, /cep:\s*onlyDigits\(String\(data\.get\("cep"\)/);
-  assert.match(script, /logradouro:\s*String\(data\.get\("logradouro"\)/);
-  assert.match(script, /numero:\s*String\(data\.get\("numero"\)/);
-  assert.match(script, /bairro:\s*String\(data\.get\("bairro"\)/);
-  assert.match(script, /cidade:\s*String\(data\.get\("cidade"\)/);
-  assert.match(script, /uf:\s*String\(data\.get\("uf"\)/);
+  assert.match(script, /local:\s*buildLocalFromAddress\(addressPayload\) \|\| "A definir no atendimento"/);
+  assert.match(script, /detalhes:\s*mensagem/);
   assert.doesNotMatch(script, /Enviar pelo WhatsApp/);
   assert.doesNotMatch(script, /buildWhatsAppMessage/);
 });
@@ -91,7 +87,7 @@ test("landing mostra modal de sucesso com atendimento pelo WhatsApp", () => {
   assert.match(styles, /\.booking-modal\.is-open/);
 });
 
-test("landing possui formulario de pre-chamado com CEP e limpeza de ar-condicionado", () => {
+test("landing possui formulario curto e limpeza de ar-condicionado", () => {
   const html = read("apps/landing/index.html");
   const script = read("apps/landing/script.js");
 
@@ -99,24 +95,17 @@ test("landing possui formulario de pre-chamado com CEP e limpeza de ar-condicion
   assert.match(html, /AIRMOVEBR: climatiza/);
   assert.match(html, /novo padr/);
   assert.match(html, /Limpeza de ar-condicionado/);
+  assert.doesNotMatch(html, /name="cep"|name="logradouro"|name="bairro"|name="cidade"/);
   assert.match(html, /\.\/assets\/services\/pmoc-plataforma\.png/);
   assert.match(html, /\.\/assets\/services\/locacao-ar-condicionado\.png/);
   assert.doesNotMatch(html, /photo-1450101499163-c8848c66ca85/);
   assert.doesNotMatch(html, /photo-1521791136064-7986c2920216/);
-  assert.match(html, /name="cep"/);
-  assert.match(html, /name="logradouro"/);
-  assert.match(html, /name="numero"/);
-  assert.match(html, /name="complemento"/);
-  assert.match(html, /name="bairro"/);
-  assert.match(html, /name="cidade"/);
-  assert.match(html, /name="uf"/);
-  assert.match(html, /id="bookingCepStatus"/);
-  assert.match(script, /https:\/\/viacep\.com\.br\/ws\/\$\{cep\}\/json\//);
-  assert.match(script, /bookingCepStatus/);
-  assert.match(script, /form\.elements\.logradouro\.value = address\.logradouro/);
-  assert.match(script, /form\.elements\.bairro\.value = address\.bairro/);
-  assert.match(script, /form\.elements\.cidade\.value = address\.localidade/);
-  assert.match(script, /form\.elements\.uf\.value = address\.uf/);
+  assert.match(html, /name="nome"/);
+  assert.match(html, /name="telefone"/);
+  assert.match(html, /name="servico"/);
+  assert.match(html, /name="mensagem"/);
+  assert.match(html, /Conversar pelo WhatsApp/);
+  assert.match(script, /local:\s*buildLocalFromAddress\(addressPayload\) \|\| "A definir no atendimento"/);
 });
 
 test("admin autentica, guarda token e protege chamadas administrativas", () => {

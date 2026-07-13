@@ -236,7 +236,6 @@ form?.addEventListener("submit", async (event) => {
 
   const data = new FormData(form);
   const submitButton = form.querySelector("button[type='submit']");
-  const email = String(data.get("email") || "").trim();
   const mensagem = String(data.get("mensagem") || "").trim();
   const addressPayload = {
     cep: onlyDigits(String(data.get("cep") || "")),
@@ -251,9 +250,9 @@ form?.addEventListener("submit", async (event) => {
     nome: String(data.get("nome") || "").trim(),
     telefone: String(data.get("telefone") || "").trim(),
     servico: String(data.get("servico") || "").trim(),
-    local: buildLocalFromAddress(addressPayload),
+    local: buildLocalFromAddress(addressPayload) || "A definir no atendimento",
     ...addressPayload,
-    detalhes: [email ? `Email: ${email}` : "", mensagem].filter(Boolean).join("\n")
+    detalhes: mensagem
   };
 
   status.className = "form-status";
