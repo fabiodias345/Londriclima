@@ -5,17 +5,15 @@ const menuToggle = document.querySelector("[data-menu-toggle]");
 const mainNav = document.querySelector("[data-main-nav]");
 const bookingCepStatus = document.querySelector("#bookingCepStatus");
 const bookingSuccessModal = document.querySelector("#bookingSuccessModal");
-const bookingSuccessWhatsApp = document.querySelector("#bookingSuccessWhatsApp");
 const bookingSuccessCloseButtons = document.querySelectorAll("[data-booking-success-close]");
 const localHosts = ["localhost", "127.0.0.1", ""];
 const apiBaseUrls = localHosts.includes(window.location.hostname)
   ? ["http://localhost:3000/api/v1"]
   : Array.from(new Set([`${window.location.origin}/api/v1`, "http://191.252.226.11/api/v1"]));
-const whatsappNumber = "5543999990000";
 
 const testimonials = [
   {
-    text: "A Clima do Brasil organizou nossa manutenção preventiva e nos entregou relatórios claros para auditoria.",
+    text: "A AIRMOVEBR organizou nossa manutenção preventiva e nos entregou relatórios claros para auditoria.",
     author: "Gestor administrativo",
     role: "Cliente corporativo"
   },
@@ -121,26 +119,9 @@ function buildLocalFromAddress(payload) {
     .join(" - ");
 }
 
-function buildWhatsAppUrl(payload) {
-  const lines = [
-    "Olá, quero atendimento imediato pela Clima do Brasil.",
-    `Nome: ${payload.nome}`,
-    `Telefone: ${payload.telefone}`,
-    `Serviço: ${payload.servico}`,
-    `Endereço: ${payload.local}`,
-    payload.detalhes ? `Detalhes: ${payload.detalhes}` : ""
-  ].filter(Boolean);
-
-  return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(lines.join("\n"))}`;
-}
-
-function openBookingSuccessModal(payload) {
+function openBookingSuccessModal() {
   if (!bookingSuccessModal) {
     return;
-  }
-
-  if (bookingSuccessWhatsApp instanceof HTMLAnchorElement) {
-    bookingSuccessWhatsApp.href = buildWhatsAppUrl(payload);
   }
 
   bookingSuccessModal.classList.add("is-open");

@@ -73,7 +73,7 @@ test("landing envia pre-chamado publico para a API com JSON", () => {
   assert.doesNotMatch(script, /buildWhatsAppMessage/);
 });
 
-test("landing mostra modal de sucesso com opcao imediata pelo WhatsApp", () => {
+test("landing mostra modal de sucesso sem telefone de WhatsApp", () => {
   const html = read("apps/landing/index.html");
   const script = read("apps/landing/script.js");
   const styles = read("apps/landing/css/style.css");
@@ -81,12 +81,12 @@ test("landing mostra modal de sucesso com opcao imediata pelo WhatsApp", () => {
   assert.match(html, /id="bookingSuccessModal"/);
   assert.match(html, /\.\/js\/main\.js\?v=/);
   assert.match(html, /Em breve, um de nossos especialistas entrará em contato/);
-  assert.match(html, /Se preferir um atendimento imediato/);
-  assert.match(html, /id="bookingSuccessWhatsApp"/);
+  assert.match(html, /Recebemos seus dados e nossa equipe entrar/);
+  assert.doesNotMatch(html, /bookingSuccessWhatsApp|wa\.me|WhatsApp/);
   assert.match(html, /data-booking-success-close/);
   assert.match(script, /function openBookingSuccessModal/);
   assert.match(script, /bookingSuccessModal\.classList\.add\("is-open"\)/);
-  assert.match(script, /bookingSuccessWhatsApp\.href = buildWhatsAppUrl/);
+  assert.doesNotMatch(script, /bookingSuccessWhatsApp|buildWhatsAppUrl|wa\.me/);
   assert.match(styles, /\.booking-modal\.is-open/);
 });
 
@@ -95,7 +95,7 @@ test("landing possui formulario de pre-chamado com CEP e limpeza de ar-condicion
   const script = read("apps/landing/script.js");
 
   assert.doesNotMatch(html, /Londriclima/i);
-  assert.match(html, /Clima do Brasil: climatiza/);
+  assert.match(html, /AIRMOVEBR: climatiza/);
   assert.match(html, /novo padr/);
   assert.match(html, /Limpeza de ar-condicionado/);
   assert.match(html, /\.\/assets\/services\/pmoc-plataforma\.png/);
