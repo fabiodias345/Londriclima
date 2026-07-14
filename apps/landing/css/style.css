@@ -432,6 +432,84 @@ h3 {
   text-transform: uppercase;
 }
 
+.process-section {
+  background: var(--paper);
+}
+
+.process-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 22px;
+}
+
+.process-step {
+  position: relative;
+  padding: 30px 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--white);
+  box-shadow: 0 16px 42px rgba(10, 61, 107, 0.08);
+}
+
+.process-number {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  border-radius: 999px;
+  color: var(--white);
+  background: var(--blue);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.process-step i {
+  display: block;
+  margin-bottom: 14px;
+  color: var(--cyan);
+  font-size: 26px;
+}
+
+.process-step p {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.segments-section {
+  background: var(--white);
+}
+
+.segments-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.segment-item {
+  display: flex;
+  min-width: 150px;
+  flex: 1 1 150px;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #f7fbfd;
+}
+
+.segment-item i {
+  color: var(--blue);
+  font-size: 18px;
+}
+
+.segment-item span {
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 14px;
+}
+
 .pmoc-section {
   background: linear-gradient(180deg, var(--paper), #e8f5f9);
 }
@@ -972,7 +1050,8 @@ h3 {
   }
 
   .service-grid,
-  .ai-grid {
+  .ai-grid,
+  .process-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1051,11 +1130,16 @@ h3 {
   .hero-metrics,
   .service-grid,
   .ai-grid,
+  .process-grid,
   .specialty-grid,
   .featured-logos,
   .booking-form,
   .testimonial-shell {
     grid-template-columns: 1fr;
+  }
+
+  .segment-item {
+    min-width: 100%;
   }
 
   .hero-actions {
