@@ -290,14 +290,13 @@ test("gerarPdfRelatorioAvulsoCliente usa respostas reais da corretiva sem checkl
   const resposta = await service.gerarPdfRelatorioAvulsoCliente("cliente-1", usuario);
   const pdf = resposta.buffer.toString("latin1");
 
-  assert.match(pdf, /RELAT\\323RIO DE MANUTEN\\307\\303O/);
-  assert.match(pdf, /RELAT\\323RIO T\\311CNICO AVULSO/);
-  assert.match(pdf, /ORDEM DE SERVI\\307O CONCLU\\315DA/);
-  assert.match(pdf, /Documento n\\343o PMOC/);
-  assert.match(pdf, /Problema encontrado\s+Motor travado/);
-  assert.match(pdf, /A\\347\\343o realizada[\s\S]+Motor destravado e testado/);
-  assert.match(pdf, /Pe\\347as utilizadas[\s\S]+Produtos de limpeza/);
-  assert.match(pdf, /Observa\\347\\343o final[\s\S]+Funcionando/);
+  assert.match(pdf, /RELATÓRIO TÉCNICO AVULSO/);
+  assert.match(pdf, /DADOS DO ATENDIMENTO/);
+  assert.match(pdf, /Documento não PMOC/);
+  assert.match(pdf, /Problema encontrado[\s\S]+Motor travado/);
+  assert.match(pdf, /Ação realizada[\s\S]+Motor destravado e testado/);
+  assert.match(pdf, /Peças utilizadas[\s\S]+Produtos de limpeza/);
+  assert.match(pdf, /Observação final[\s\S]+Funcionando/);
   assert.doesNotMatch(pdf, /Filtro lavado|Operação em modo DRY|Evidência após a limpeza/);
   assert.doesNotMatch(pdf, /C3\.jpg|C6|pendente/);
 });
@@ -352,11 +351,11 @@ test("gerarPdfRelatorioAvulsoCliente imprime checklist preventivo do app com res
     const resposta = await service.gerarPdfRelatorioAvulsoCliente("cliente-1", usuario);
     const pdf = resposta.buffer.toString("latin1");
 
-    assert.match(pdf, /EPIs utilizados\s+Sim/);
-    assert.match(pdf, /T\\351cnico[\s\S]+Equipe 10 - Marcela Londriclima \/ Paulo Londriclima/);
-    assert.match(pdf, /Desligar pelo controle remoto\s+Nao \\?\(controle sem pilha\\?\)/);
-    assert.match(pdf, /Lavar filtros\s+Sim/);
-    assert.match(pdf, /Press\\343o do fluido refrigerante[\s\S]+7\.5 \\?\(pressao ok\\?\)/);
+    assert.match(pdf, /EPIs utilizados[\s\S]+Sim/);
+    assert.match(pdf, /Marcela Londriclima, Paulo Londriclima/);
+    assert.match(pdf, /Desligar pelo controle remoto[\s\S]+Nao [\s\S]+controle sem pilha/);
+    assert.match(pdf, /Lavar filtros[\s\S]+Sim/);
+    assert.match(pdf, /Pressão do fluido refrigerante[\s\S]+7\.5 [\s\S]+pressao ok/);
     assert.equal((pdf.match(/\/Subtype \/Image/g) ?? []).length, 3);
     assert.doesNotMatch(pdf, /M4\.jpg|S3\.jpg/);
   } finally {
@@ -388,7 +387,7 @@ test("gerarPdfRelatorioAvulsoCliente nao imprime foto pendente quando evidencia 
   const resposta = await service.gerarPdfRelatorioAvulsoCliente("cliente-1", usuario);
   const pdf = resposta.buffer.toString("latin1");
 
-  assert.match(pdf, /Antes --- pmoc-001-antes\.jpg/);
+  assert.match(pdf, /EVIDÊNCIAS FOTOGRÁFICAS/);
   assert.doesNotMatch(pdf, /Depois --- pendente|pendente/);
 });
 
@@ -422,8 +421,8 @@ test("gerarPdfRelatorioAvulsoCliente mostra assinatura do cliente com legenda", 
     const resposta = await service.gerarPdfRelatorioAvulsoCliente("cliente-1", usuario);
     const pdf = resposta.buffer.toString("latin1");
 
-    assert.match(pdf, /ASSINATURA DO CLIENTE/);
-    assert.match(pdf, /Assinatura do cliente - Maria Souza/);
+    assert.match(pdf, /Assinatura do cliente/);
+    assert.match(pdf, /Maria Souza/);
     assert.equal((pdf.match(/\/Subtype \/Image/g) ?? []).length, 1);
   } finally {
     rmSync(resolve(process.cwd(), "..", "..", "storage", "os", "os-assinatura-cliente"), { recursive: true, force: true });
@@ -666,9 +665,9 @@ test("gerarPdfRelatorioAvulsoCliente usa somente a OS mais recente", async () =>
   const resposta = await service.gerarPdfRelatorioAvulsoCliente("cliente-1", usuario);
   const pdf = resposta.buffer.toString("latin1");
 
-  assert.match(pdf, /OS: Corretiva atual/);
-  assert.match(pdf, /Problema encontrado\s+Vazamento atual/);
-  assert.doesNotMatch(pdf, /OS: PMOC mensal/);
+  assert.match(pdf, /Corretiva atual/);
+  assert.match(pdf, /Problema encontrado[\s\S]+Vazamento atual/);
+  assert.doesNotMatch(pdf, /PMOC mensal/);
   assert.doesNotMatch(pdf, /Motor travado/);
 });
 
@@ -800,9 +799,9 @@ test("gerarPdfRelatorioAvulsoCliente pagina todos os responsaveis com foto e ass
     assert.match(pdf, /Ana Tecnica/);
     assert.match(pdf, /Bruno Tecnico/);
     assert.match(pdf, /Carla Tecnica/);
-    assert.match(pdf, /RESPONS\\301VEIS PELA EXECU\\307\\303O - CONTINUA\\307\\303O/);
-    assert.match(pdf, /0 -100 130 0 42 200 cm/);
-    assert.equal((pdf.match(/\/Subtype \/Image/g) ?? []).length, 6);
+    assert.match(pdf, /Técnico responsável[\s\S]+Ana Tecnica, Bruno Tecnico, Carla Tecnica/);
+    assert.doesNotMatch(pdf, /RESPONSÁVEIS PELA EXECUÇÃO/);
+    assert.equal((pdf.match(/\/Subtype \/Image/g) ?? []).length, 0);
   } finally {
     rmSync(baseDir, { recursive: true, force: true });
   }
@@ -871,15 +870,15 @@ test("gerarPdfRelatorioAvulsoCliente mostra apenas a manutencao mais recente da 
     const pdf = await service.gerarPdfRelatorioAvulsoCliente("cliente-1", usuario);
     const textoPdf = pdf.buffer.toString("latin1");
 
-    assert.match(textoPdf, /MANUTEN\\307\\303O N:001 DE 001/);
-    assert.match(textoPdf, /OS: Corretiva compressor/);
-    assert.match(textoPdf, /Problema encontrado\s+queimou o compressor/);
-    assert.match(textoPdf, /A\\347\\343o realizada[\s\S]+trocado o mesmo/);
-    assert.match(textoPdf, /Pe\\347as utilizadas[\s\S]+compressor/);
-    assert.doesNotMatch(textoPdf, /OS: PMOC mensal/);
+    assert.match(textoPdf, /RELATÓRIO TÉCNICO AVULSO/);
+    assert.match(textoPdf, /Corretiva compressor/);
+    assert.match(textoPdf, /Problema encontrado[\s\S]+queimou o compressor/);
+    assert.match(textoPdf, /Ação realizada[\s\S]+trocado o mesmo/);
+    assert.match(textoPdf, /Peças utilizadas[\s\S]+compressor/);
+    assert.doesNotMatch(textoPdf, /PMOC mensal/);
     assert.doesNotMatch(textoPdf, /Motor travado/);
-    assert.match(textoPdf, /Antes --- antes\.jpg/);
-    assert.match(textoPdf, /Depois --- depois\.jpg/);
+    assert.match(textoPdf, /Evidência 1/);
+    assert.doesNotMatch(textoPdf, /Evidência 2/);
     assert.match(textoPdf, /\/Subtype \/Image/);
     assert.doesNotMatch(textoPdf, /ANU_ETAPA_|Etapa evaporadora concluida/i);
   } finally {

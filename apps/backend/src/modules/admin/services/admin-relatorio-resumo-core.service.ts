@@ -20,6 +20,7 @@ import {
   montarLinhasAssinaturaRelatorioTecnico,
   montarLinhasChecklistRelatorioTecnico
 } from "./admin-relatorio-pdf-componentes";
+import { AdminRelatorioAvulsoCompactoRendererService } from "./admin-relatorio-avulso-compacto-renderer.service";
 import { AdminRelatorioTecnicoMapper } from "./admin-relatorio-tecnico-mapper";
 
 type PreviaPmocCliente = Awaited<ReturnType<AdminPmocCoreService["obterPreviaPmocCliente"]>>;
@@ -30,6 +31,7 @@ type PaginaPdfTexto = { linhas: string[]; imagens?: ImagemPaginaPdfTexto[] };
 @Injectable()
 export class AdminRelatorioResumoCoreService {
   private readonly frotaService: AdminFrotaService;
+  private readonly relatorioAvulsoCompacto = new AdminRelatorioAvulsoCompactoRendererService();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -672,22 +674,7 @@ export class AdminRelatorioResumoCoreService {
   }
 
   private gerarPdfBasicoRelatorioAvulso(previa: PreviaRelatorioAvulsoCliente) {
-    const paginas: Array<string[] | PaginaPdfTexto> = [this.montarCapaRelatorioAvulso(previa)];
-
-    if (!previa.maquinas.length) {
-      paginas.push([
-        "MAQUINA N:001",
-        "",
-        "Nenhuma maquina com manutencao concluida para este relatorio.",
-        "Finalize a OS antes de emitir o relatorio tecnico."
-      ]);
-    }
-
-    for (const [indice, maquina] of previa.maquinas.entries()) {
-      paginas.push(...this.montarPaginasMaquinaRelatorioAvulso(maquina, indice));
-    }
-
-    return this.criarPdfTexto(paginas);
+    return this.relatorioAvulsoCompacto.gerar(previa, (storageUrl) => this.carregarArquivoStorage(storageUrl));
   }
 
   private montarCapaRelatorioAvulso(previa: PreviaRelatorioAvulsoCliente) {
