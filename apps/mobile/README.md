@@ -1,6 +1,6 @@
-# Clima do Brasil Mobile
+# AIRMOVEBR Mobile
 
-Aplicativo Flutter para a operacao Clima do Brasil.
+Aplicativo Flutter para a operacao AIRMOVEBR.
 
 ## Estado atual
 

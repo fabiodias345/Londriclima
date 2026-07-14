@@ -85,16 +85,16 @@ export class OrdensServicoRelatorioTecnicoRenderer {
     return this.criarPdfVisual(
       [{
         linhas: [
-          "Clima do Brasil - RELATORIO DE MANUTENCAO",
-          "Documento emitido automaticamente pela plataforma Clima do Brasil",
+          "AIRMOVEBR - RELATORIO DE MANUTENCAO",
+          "Documento emitido automaticamente pela plataforma AIRMOVEBR",
           "",
           this.formatarLinhaCampo("Data", this.formatarData(input.finalizadoEm)),
           "",
           "DADOS DA EMPRESA",
           this.formatarLinhaCampo("Campo", "Informacao"),
-          this.formatarLinhaCampo("Razao Social", "Clima do Brasil"),
+          this.formatarLinhaCampo("Razao Social", "AIRMOVEBR"),
           this.formatarLinhaCampo("Base operacional", "Londrina, PR"),
-          this.formatarLinhaCampo("Dominio", "climadobrasilengenharia.com.br"),
+          this.formatarLinhaCampo("Dominio", "airmovebr.com.br"),
           "",
           "DADOS DO CLIENTE",
           this.formatarLinhaCampo("Campo", "Informacao"),
@@ -274,7 +274,7 @@ export class OrdensServicoRelatorioTecnicoRenderer {
       "0.21 0.53 0.73 rg",
       "42 772 528 4 re f"
     ];
-    const titulo = linhas[0] ?? "Clima do Brasil - RELATORIO DE MANUTENCAO";
+    const titulo = linhas[0] ?? "AIRMOVEBR - RELATORIO DE MANUTENCAO";
     const subtitulo = linhas[1] ?? "";
     comandos.push(this.comandoTextoPdf(titulo, 54, 804, 15, "F2", "1 1 1"));
     comandos.push(this.comandoTextoPdf(subtitulo, 54, 787, 9, "F1", "0.88 0.93 0.98"));
@@ -334,7 +334,7 @@ export class OrdensServicoRelatorioTecnicoRenderer {
     }
 
     comandos.push("0.55 0.60 0.66 rg\n42 34 528 1 re f");
-    comandos.push(this.comandoTextoPdf("Documento gerado automaticamente pela plataforma Clima do Brasil.", 42, 20, 7.5, "F1", "0.38 0.42 0.48"));
+    comandos.push(this.comandoTextoPdf("Documento gerado automaticamente pela plataforma AIRMOVEBR.", 42, 20, 7.5, "F1", "0.38 0.42 0.48"));
     return comandos.join("\n");
   }
 

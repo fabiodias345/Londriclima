@@ -107,7 +107,7 @@ function criarPrismaMock() {
         return {
           id: usuarioId,
           empresaId,
-          nome: "Tecnico Clima do Brasil",
+          nome: "Tecnico AIRMOVEBR",
           email: "tecnico@airmovebr.local",
           senhaHash,
           role: UsuarioRole.admin
@@ -148,7 +148,7 @@ function criarPrismaMock() {
             logradouro: "Rua A"
           },
           equipe: { id: "equipe-1", nome: "Equipe 1" },
-          tecnico: { id: usuarioId, nome: "Tecnico Clima do Brasil" },
+          tecnico: { id: usuarioId, nome: "Tecnico AIRMOVEBR" },
           equipamento: {
             id: "equipamento-1",
             patrimonio: "PMOC-001",
@@ -177,7 +177,7 @@ function criarPrismaMock() {
               latitude: new Prisma.Decimal(-23.3047),
               longitude: new Prisma.Decimal(-51.1697),
               registradoEm: new Date("2026-06-10T15:00:00.000Z"),
-              usuario: { id: usuarioId, nome: "Tecnico Clima do Brasil" }
+              usuario: { id: usuarioId, nome: "Tecnico AIRMOVEBR" }
             }
           ],
           evidencias: [
@@ -298,7 +298,7 @@ function criarPrismaMock() {
             placa: "ABC1D23"
           },
           usuario: {
-            nome: "Tecnico Clima do Brasil"
+            nome: "Tecnico AIRMOVEBR"
           }
         }
       ],
@@ -360,7 +360,7 @@ function criarPrismaMock() {
                     agendadaPara: new Date("2026-06-10T12:00:00.000Z"),
                     concluidaEm: new Date("2026-06-10T15:00:00.000Z"),
                     valorCobrado: new Prisma.Decimal(250),
-                    tecnico: { id: usuarioId, nome: "Tecnico Clima do Brasil", email: "tecnico@airmovebr.local" },
+                    tecnico: { id: usuarioId, nome: "Tecnico AIRMOVEBR", email: "tecnico@airmovebr.local" },
                     equipe: { id: "equipe-1", nome: "Equipe 1" },
                     eventos: [
                       {

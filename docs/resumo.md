@@ -1,6 +1,6 @@
-# Resumo Clima do Brasil
+# Resumo AIRMOVEBR
 
-Atualizado em: 13/07/2026
+Atualizado em: 14/07/2026
 
 Somente estado atual e proximos passos. Historico concluido fica no Git e nos testes.
 
@@ -16,12 +16,12 @@ Somente estado atual e proximos passos. Historico concluido fica no Git e nos te
 
 ## Estado atual
 
-- Rebrand visual para Clima do Brasil aplicado; infraestrutura publica ainda usa AIRMOVEBR.
+- Rebrand para AIRMOVEBR aplicado em todos os componentes ativos.
 - Git `dev`, `main`, GitHub e repo da VM alinhados no ultimo deploy.
 - Backend de producao saudavel em `https://api.airmovebr.com.br/api/v1/health`.
 - Banco de producao verificado no deploy: Prisma sem migrations pendentes.
 - Admin web esta ok por enquanto em `https://admin.airmovebr.com.br/`.
-- Site publico esta ok por enquanto em `https://airmovebr.com.br/`.
+- Site publico foi redesenhado no padrao operacional AIRMOVEBR, com servicos, PMOC, projetos, segmentos e formulario de pre-chamado com CEP.
 - APK tecnico esta ok por enquanto, mas ainda precisa validacao final em campo real.
 - Novo app separado criado em `apps/admin_mobile`.
 - Fase 1 do app admin implementada:

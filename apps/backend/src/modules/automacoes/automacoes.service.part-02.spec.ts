@@ -175,7 +175,7 @@ test("processarPendentes envia WhatsApp de OS finalizada e marca automacao como 
       "Sua ordem de servico foi finalizada: Manutencao preventiva.",
       "Finalizacao: 12/06/2026 09:00",
       "",
-      "Clima do Brasil"
+      "AIRMOVEBR"
     ].join("\n")
   });
   assert.deepEqual(chamadas.updateFinal, {

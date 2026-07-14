@@ -94,7 +94,7 @@ export class AssinafyService implements OnModuleInit, OnModuleDestroy {
     const form = new FormData();
     form.append("file", new Blob([pdf.buffer as unknown as BlobPart], { type: pdf.contentType }), pdf.filename);
     form.append("title", `PMOC - ${previa.cliente.nome}`);
-    form.append("description", "Relatorio PMOC gerado pela Clima do Brasil.");
+    form.append("description", "Relatorio PMOC gerado pela AIRMOVEBR.");
 
     const documento = await this.postAssinafy(
       `/accounts/${accountId}/documents`,

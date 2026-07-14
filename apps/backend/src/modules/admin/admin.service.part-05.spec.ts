@@ -1,4 +1,4 @@
-﻿import {
+import {
 AutomacaoTipo,
 OrdemServicoEventoAcao,
 OrdemServicoStatus,
@@ -158,7 +158,7 @@ test("gerarPdfPmocCliente retorna PDF com nome de arquivo e conteudo oficial", a
   assert.match(pdf, /09\/2003/);
   assert.match(pdf, /\/Count 10/);
   assert.match(pdf, /IDENTIFICACAO DO TECNICO EXECUTOR/);
-  assert.ok(pdf.indexOf("(Clima do Brasil") < pdf.indexOf("(IDENTIFICA"));
+  assert.ok(pdf.indexOf("(AIRMOVEBR") < pdf.indexOf("(IDENTIFICA"));
   assert.ok(pdf.indexOf("(IDENTIFICA") < pdf.indexOf("(OBJETIVO, RESPONSABILIDADES"));
   assert.ok(pdf.indexOf("(RESUMO DAS M") < primeiraMaquinaInicio);
   assert.ok(primeiraMaquinaInicio < segundaMaquinaInicio);

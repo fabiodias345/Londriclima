@@ -1,6 +1,6 @@
 # Clima Admin Mobile
 
-Aplicativo Flutter separado para administradores da Clima do Brasil.
+Aplicativo Flutter separado para administradores da AIRMOVEBR.
 
 ## Fase 1
 

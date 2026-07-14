@@ -181,7 +181,7 @@ test("criarPreChamado grava endereco estruturado enviado pelo formulario do site
       cep: "86010000"
     }
   );
-  assert.equal(resposta.mensagem, "Pre-chamado registrado. A equipe Clima do Brasil acompanhara pelo painel de atendimento.");
+  assert.equal(resposta.mensagem, "Pre-chamado registrado. A equipe AIRMOVEBR acompanhara pelo painel de atendimento.");
 });
 
 test("criarPreChamado atualiza cliente existente somente dentro da empresa piloto", async () => {

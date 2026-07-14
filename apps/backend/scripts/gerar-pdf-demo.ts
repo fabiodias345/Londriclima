@@ -30,7 +30,7 @@ const ordemDemo = {
   tecnico: {
     id: "tec-1",
     nome: "Carlos Eduardo Mendes",
-    email: "carlos@climadobrasil.com.br",
+    email: "carlos@airmovebr.com.br",
     foto_perfil_storage_url: FOTO_TECNICO_1,
     assinatura_storage_url: ASSINATURA_1
   },

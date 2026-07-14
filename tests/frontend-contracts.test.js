@@ -49,35 +49,34 @@ test("painel permite substituir a foto do tecnico editado", () => {
 });
 
 test("landing envia pre-chamado publico para a API com JSON", () => {
-  const script = read("apps/landing/script.js");
+  const script = read("apps/landing/js/main.js");
 
   assert.match(script, /http:\/\/localhost:3000\/api\/v1/);
-  assert.match(script, /http:\/\/191\.252\.226\.11\/api\/v1/);
-  assert.match(script, /`\$\{window\.location\.origin\}\/api\/v1`/);
+  assert.match(script, /https:\/\/api\.airmovebr\.com\.br\/api\/v1/);
+  assert.doesNotMatch(script, /191\.252\.226\.11/);
   assert.match(script, /const apiBaseUrls = /);
   assert.match(script, /async function postPreChamado/);
-  assert.match(script, /for \(const apiBaseUrl of apiBaseUrls\)/);
-  assert.match(script, /fetch\(`\$\{apiBaseUrl\}\/site\/pre-chamados`/);
+  assert.match(script, /fetch\(`\$\{apiBaseUrls\[0\]\}\/site\/pre-chamados`/);
   assert.match(script, /method:\s*"POST"/);
   assert.match(script, /"Content-Type":\s*"application\/json"/);
   assert.match(script, /nome:\s*String\(data\.get\("nome"\)/);
   assert.match(script, /telefone:\s*String\(data\.get\("telefone"\)/);
   assert.match(script, /servico:\s*String\(data\.get\("servico"\)/);
   assert.match(script, /local:\s*buildLocalFromAddress\(addressPayload\) \|\| "A definir no atendimento"/);
-  assert.match(script, /detalhes:\s*mensagem/);
+  assert.match(script, /detalhes:\s*String\(data\.get\("mensagem"\)/);
   assert.doesNotMatch(script, /Enviar pelo WhatsApp/);
   assert.doesNotMatch(script, /buildWhatsAppMessage/);
 });
 
 test("landing mostra modal de sucesso com atendimento pelo WhatsApp", () => {
   const html = read("apps/landing/index.html");
-  const script = read("apps/landing/script.js");
+  const script = read("apps/landing/js/main.js");
   const styles = read("apps/landing/css/style.css");
 
   assert.match(html, /id="bookingSuccessModal"/);
   assert.match(html, /\.\/js\/main\.js\?v=/);
-  assert.match(html, /Em breve, um de nossos especialistas entrará em contato/);
-  assert.match(html, /Recebemos seus dados/);
+  assert.match(html, /Em breve, um especialista entrara em contato/);
+  assert.match(html, /Tambem podemos agilizar pelo WhatsApp/);
   assert.match(html, /id="bookingSuccessWhatsApp"/);
   assert.match(html, /wa\.me\/554330673793/);
   assert.match(html, /data-booking-success-close/);
@@ -87,24 +86,25 @@ test("landing mostra modal de sucesso com atendimento pelo WhatsApp", () => {
   assert.match(styles, /\.booking-modal\.is-open/);
 });
 
-test("landing possui formulario curto e limpeza de ar-condicionado", () => {
+test("landing possui formulario de atendimento com endereco", () => {
   const html = read("apps/landing/index.html");
-  const script = read("apps/landing/script.js");
+  const script = read("apps/landing/js/main.js");
 
   assert.doesNotMatch(html, /Londriclima/i);
-  assert.match(html, /AIRMOVEBR: climatiza/);
-  assert.match(html, /novo padr/);
-  assert.match(html, /Limpeza de ar-condicionado/);
-  assert.doesNotMatch(html, /name="cep"|name="logradouro"|name="bairro"|name="cidade"/);
+  assert.match(html, /Climatizacao <em>profissional<\/em>/);
+  assert.match(html, /name="cep"/);
+  assert.match(html, /name="logradouro"/);
+  assert.match(html, /name="bairro"/);
+  assert.match(html, /name="cidade"/);
+  assert.match(html, /id="bookingCepStatus"/);
   assert.match(html, /\.\/assets\/services\/pmoc-plataforma\.png/);
-  assert.match(html, /\.\/assets\/services\/locacao-ar-condicionado\.png/);
   assert.doesNotMatch(html, /photo-1450101499163-c8848c66ca85/);
   assert.doesNotMatch(html, /photo-1521791136064-7986c2920216/);
   assert.match(html, /name="nome"/);
   assert.match(html, /name="telefone"/);
   assert.match(html, /name="servico"/);
   assert.match(html, /name="mensagem"/);
-  assert.match(html, /Conversar pelo WhatsApp/);
+  assert.match(html, /Falar no WhatsApp/);
   assert.match(script, /local:\s*buildLocalFromAddress\(addressPayload\) \|\| "A definir no atendimento"/);
 });
 
@@ -170,6 +170,7 @@ test("admin compila o bundle concatenado antes do deploy", async () => {
     relatorios,
     dom,
     tecnicoFoto,
+    whatsapp,
     eventos,
     bootstrap
   ] = await Promise.all([
@@ -184,6 +185,7 @@ test("admin compila o bundle concatenado antes do deploy", async () => {
     loadModule("apps/admin/js/modules/relatorios.js"),
     loadModule("apps/admin/js/modules/ui/dom.js"),
     loadModule("apps/admin/js/modules/tecnico-foto.js"),
+    loadModule("apps/admin/js/modules/whatsapp.js"),
     loadModule("apps/admin/js/modules/eventos.js"),
     loadModule("apps/admin/js/modules/bootstrap.js")
   ]);
@@ -199,6 +201,7 @@ test("admin compila o bundle concatenado antes do deploy", async () => {
     relatoriosRoot: relatorios.relatoriosRoot,
     domRoot: dom.domRoot,
     tecnicoFotoRoot: tecnicoFoto.tecnicoFotoRoot,
+    whatsappRoot: whatsapp.whatsappRoot,
     eventsRoot: eventos.eventsRoot,
     bootstrapRoot: bootstrap.bootstrapRoot
   };

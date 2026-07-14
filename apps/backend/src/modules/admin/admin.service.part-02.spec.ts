@@ -267,9 +267,9 @@ test("obterEmpresa retorna cadastro completo da empresa do usuario", async () =>
         assert.deepEqual(where, { id: usuario.empresa_id });
         return {
           id: "empresa-1",
-          nome: "Clima do Brasil",
-          razaoSocial: "Clima do Brasil LTDA",
-          nomeFantasia: "Clima do Brasil",
+          nome: "AIRMOVEBR",
+          razaoSocial: "AIRMOVEBR LTDA",
+          nomeFantasia: "AIRMOVEBR",
           cnpj: "12345678000190",
           email: "contato@airmovebr.com.br",
           telefone: "43999999999",
@@ -299,8 +299,8 @@ test("obterEmpresa retorna cadastro completo da empresa do usuario", async () =>
 
   const resposta = await service.obterEmpresa(usuario);
 
-  assert.equal(resposta.razao_social, "Clima do Brasil LTDA");
-  assert.equal(resposta.nome_fantasia, "Clima do Brasil");
+  assert.equal(resposta.razao_social, "AIRMOVEBR LTDA");
+  assert.equal(resposta.nome_fantasia, "AIRMOVEBR");
   assert.equal(resposta.cnpj, "12.345.678/0001-90");
   assert.equal(resposta.responsavel_cpf, "123.456.789-01");
   assert.equal(resposta.status, "ativa");
@@ -444,7 +444,7 @@ test("atualizarEmpresa normaliza cadastro fiscal e status da empresa do usuario"
 
   const resposta = await service.atualizarEmpresa(
     {
-      razao_social: " Clima do Brasil LTDA ",
+      razao_social: " AIRMOVEBR LTDA ",
       nome_fantasia: " AirMove BR ",
       cnpj: "12.345.678/0001-90",
       email: "CONTATO@AIRMOVEBR.COM.BR",
@@ -470,7 +470,7 @@ test("atualizarEmpresa normaliza cadastro fiscal e status da empresa do usuario"
   assert.deepEqual(chamadas.updateWhere, { id: usuario.empresa_id });
   assert.deepEqual(chamadas.updateData, {
     nome: "AirMove BR",
-    razaoSocial: "Clima do Brasil LTDA",
+    razaoSocial: "AIRMOVEBR LTDA",
     nomeFantasia: "AirMove BR",
     cnpj: "12345678000190",
     email: "contato@airmovebr.com.br",

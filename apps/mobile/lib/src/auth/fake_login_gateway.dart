@@ -14,7 +14,7 @@ class FakeLoginGateway implements MobileLoginGateway {
       return LoginSession(
         repository: FakeWorkOrderRepository(),
         fleetRepository: FakeFleetRepository(),
-        technicianName: 'Tecnico Clima do Brasil',
+        technicianName: 'Tecnico AIRMOVEBR',
       );
     }
 

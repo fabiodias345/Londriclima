@@ -110,8 +110,8 @@ async function findOrCreateEmpresa() {
       OR: [
         { cnpj: "04959153000111" },
         { cnpj: "00000000000000" },
-        { nome: "Clima do Brasil" },
-        { nomeFantasia: "Clima do Brasil" }
+        { nome: "AIRMOVEBR" },
+        { nomeFantasia: "AIRMOVEBR" }
       ]
     },
     orderBy: {
@@ -120,9 +120,9 @@ async function findOrCreateEmpresa() {
   });
 
   const data = {
-    nome: "Clima do Brasil",
+    nome: "AIRMOVEBR",
     razaoSocial: "M. Lima Manutencoes Prediais e Industriais LTDA",
-    nomeFantasia: "Clima do Brasil",
+    nomeFantasia: "AIRMOVEBR",
     cnpj: "04959153000111",
     telefone: "(43) 99100-0035",
     email: "airmovebr@gmail.com",
@@ -159,7 +159,7 @@ async function upsertTecnicoLocal(empresaId: string) {
   });
   const adminData = {
     empresaId,
-    nome: "Administrador Clima do Brasil",
+    nome: "Administrador AIRMOVEBR",
     login: "admin",
     email: "admin@airmovebr.local",
     senhaHash,

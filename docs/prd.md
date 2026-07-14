@@ -1,12 +1,12 @@
-# PRD - Clima do Brasil Digital
+# PRD - AIRMOVEBR Digital
 
 Versao: 1.7.2
-Atualizado em: 13/07/2026
+Atualizado em: 14/07/2026
 Cliente piloto: AIRMOVEBR - Londrina/PR
 
 ## Visao
 
-Plataforma Clima do Brasil para manutencao, instalacao, frota, relatorios e PMOC de ar-condicionado. Os dominios e parte da infraestrutura ainda usam o nome AIRMOVEBR.
+Plataforma AIRMOVEBR para manutencao, instalacao, frota, relatorios e PMOC de ar-condicionado.
 
 Fluxo principal:
 
@@ -22,6 +22,8 @@ O produto deve resolver primeiro a operacao real da AIRMOVEBR e depois evoluir p
 
 - Captar pre-chamados.
 - Enviar solicitacoes para o backend.
+- Coletar endereco estruturado com consulta de CEP para viabilizar a triagem inicial.
+- Apresentar servicos, PMOC, segmentos atendidos e contato rapido por WhatsApp.
 - Operar em `https://airmovebr.com.br/`.
 
 ### Painel admin

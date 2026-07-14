@@ -1,11 +1,11 @@
-# Memoria Clima do Brasil / AIRMOVEBR
+# Memoria AIRMOVEBR
 
-Atualizado em: 13/07/2026
+Atualizado em: 14/07/2026
 
 ## Contexto
 
-- Marca atual: Clima do Brasil.
-- Cliente piloto e infraestrutura legada: AIRMOVEBR, Londrina/PR.
+- Marca atual: AIRMOVEBR.
+- Cliente piloto: AIRMOVEBR, Londrina/PR.
 - Dominio: `airmovebr.com.br`.
 - Repositorio: `https://github.com/fabiodias345/Londriclima.git`.
 - Workspace local atual: `E:\develop\Londriclima`.
@@ -28,9 +28,15 @@ Atualizado em: 13/07/2026
 site -> pre-chamado -> admin -> O.S. -> app tecnico -> checklist/fotos/GPS/assinatura -> relatorios/PMOC
 ```
 
+## Site publico
+
+- Landing AIRMOVEBR organizada em servicos, diferenciais, projetos, segmentos, PMOC e contato.
+- Formulario envia pre-chamado com endereco estruturado; CEP preenche os dados quando a consulta esta disponivel.
+- Em producao o formulario usa `https://api.airmovebr.com.br/api/v1`; ambiente local usa `http://localhost:3000/api/v1`.
+
 ## Decisoes ativas
 
-- Marca visivel: Clima do Brasil.
+- Marca visivel: AIRMOVEBR.
 - O app tecnico nao escolhe periodicidade; a O.S. traz `checklist_tipo`.
 - O backend monta o checklist flat e o app apenas renderiza/salva.
 - Uma O.S. pode atender varias maquinas do mesmo cliente/local.

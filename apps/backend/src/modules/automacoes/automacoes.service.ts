@@ -146,7 +146,7 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
         `Sua ordem de servico foi finalizada: ${dados.titulo}.`,
         `Finalizacao: ${this.formatarDataEmail(dados.finalizado_em)}`,
         "",
-        "Clima do Brasil"
+        "AIRMOVEBR"
       ].join("\n")
     });
   }
@@ -234,7 +234,7 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
 
   private montarEmail(payload: Prisma.JsonValue) {
     const dados = validarPayloadAutomacaoEmail(payload);
-    const from = this.config.get<string>("SMTP_FROM", "Clima do Brasil <noreply@climadobrasilengenharia.com.br>");
+    const from = this.config.get<string>("SMTP_FROM", "AIRMOVEBR <noreply@airmovebr.com.br>");
 
     if (dados.tipo === "pmoc_assinatura_engenheiro") {
       return {
@@ -294,7 +294,7 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
         text: [
           `Prezado(a) ${dados.cliente_nome},`,
           "",
-          "Encaminhamos em anexo o relatório de manutenção referente ao atendimento realizado pela Clima do Brasil.",
+          "Encaminhamos em anexo o relatório de manutenção referente ao atendimento realizado pela AIRMOVEBR.",
           "",
           `Atendimento finalizado em: ${this.formatarDataEmail(dados.periodo_fim ?? dados.data_envio)}`,
           `Máquinas atendidas: ${dados.total_maquinas}`,
@@ -304,7 +304,7 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
           "",
           "Cordialmente,",
           "",
-          "Clima do Brasil"
+          "AIRMOVEBR"
         ].join("\n"),
         attachments: [
           {
@@ -338,7 +338,7 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
         "",
         "Cordialmente,",
         "",
-        "Clima do Brasil"
+        "AIRMOVEBR"
       ].join("\n"),
       attachments: [
         {

@@ -247,7 +247,7 @@ class _FirstAccessScreenState extends State<FirstAccessScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Image.asset(
-                      'assets/clima-do-brasil-logo.jpeg',
+                      'assets/airmovebr-logo.png',
                       height: 128,
                     ),
                     const SizedBox(height: 32),

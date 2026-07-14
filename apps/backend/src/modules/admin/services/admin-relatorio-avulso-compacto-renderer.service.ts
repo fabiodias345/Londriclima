@@ -138,7 +138,7 @@ export class AdminRelatorioAvulsoCompactoRendererService {
   private novaPagina(titulo: string): PaginaCompacta {
     const pagina: PaginaCompacta = { comandos: [], imagens: [] };
     pagina.comandos.push("0.05 0.17 0.30 rg", "0 786 612 56 re f");
-    this.texto(pagina, "Clima do Brasil", 52, 816, 18, "F2", "1 1 1");
+    this.texto(pagina, "AIRMOVEBR", 52, 816, 18, "F2", "1 1 1");
     this.texto(pagina, titulo, 52, 798, 8.5, "F1", "0.78 0.90 1");
     this.texto(pagina, "Documento não PMOC", 458, 816, 9, "F1", "1 1 1");
     pagina.comandos.push("0.80 0.84 0.90 RG", "0.8 w", "42 30 m 570 30 l S");

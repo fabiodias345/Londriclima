@@ -61,7 +61,7 @@ function criarServico(options?: {
     get: async (url: string, config?: unknown) => {
       chamadas.gets.push({ url, config });
       if (url === "/accounts") {
-        return { data: { data: [{ id: "account-1", name: "Clima do Brasil" }] } };
+        return { data: { data: [{ id: "account-1", name: "AIRMOVEBR" }] } };
       }
       if (url === "/accounts/account-1/signers") {
         return { data: { data: options?.signers ?? [] } };
@@ -195,7 +195,7 @@ test("enviarPmocParaAssinatura envia PDF e cadastra signatario na Assinafy sem e
   assert.equal(chamadas.posts[1].url, "/accounts/account-1/documents");
   assert.equal(chamadas.posts[1].data instanceof FormData, true);
   assert.equal((chamadas.posts[1].data as FormData).get("title"), "PMOC - Hospital Teste");
-  assert.equal((chamadas.posts[1].data as FormData).get("description"), "Relatorio PMOC gerado pela Clima do Brasil.");
+  assert.equal((chamadas.posts[1].data as FormData).get("description"), "Relatorio PMOC gerado pela AIRMOVEBR.");
   assert.equal((chamadas.posts[1].data as FormData).get("file") instanceof Blob, true);
   assert.equal((chamadas.posts[1].config as { maxBodyLength?: unknown }).maxBodyLength, Infinity);
   assert.equal(chamadas.posts[2].url, "/documents/doc-assinafy-1/assignments");

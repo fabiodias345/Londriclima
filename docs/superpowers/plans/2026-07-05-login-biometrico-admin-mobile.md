@@ -15,7 +15,7 @@
 **Files:**
 - Modify: `apps/admin_mobile/pubspec.yaml`
 - Modify: `apps/admin_mobile/android/app/src/main/AndroidManifest.xml`
-- Modify: `apps/admin_mobile/android/app/src/main/kotlin/br/com/climadobrasil/admin_mobile/MainActivity.kt`
+- Modify: `apps/admin_mobile/android/app/src/main/kotlin/br/com/airmovebr/admin_mobile/MainActivity.kt`
 
 - [ ] Add `local_auth` and `flutter_secure_storage`.
 - [ ] Add biometric permissions.

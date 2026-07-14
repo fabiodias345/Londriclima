@@ -19,8 +19,8 @@ BEGIN
       cidade, uf, cep, telefone, email, atualizado_em
     )
     VALUES (
-      gen_random_uuid(), 'Clima do Brasil',
-      'M. Lima Manutencoes Prediais e Industriais LTDA', 'Clima do Brasil',
+      gen_random_uuid(), 'AIRMOVEBR',
+      'M. Lima Manutencoes Prediais e Industriais LTDA', 'AIRMOVEBR',
       '04.959.153/0001-11', 'Avenida Paissandu', '526',
       'Maringa', 'PR', '87050-130', '(43) 99100-0035',
       'airmovebr@gmail.com', now()
@@ -28,9 +28,9 @@ BEGIN
     RETURNING id INTO v_empresa_id;
   ELSE
     UPDATE empresas
-       SET nome = 'Clima do Brasil',
+       SET nome = 'AIRMOVEBR',
            razao_social = 'M. Lima Manutencoes Prediais e Industriais LTDA',
-           nome_fantasia = 'Clima do Brasil',
+           nome_fantasia = 'AIRMOVEBR',
            cnpj = '04.959.153/0001-11',
            logradouro = 'Avenida Paissandu',
            numero = '526',

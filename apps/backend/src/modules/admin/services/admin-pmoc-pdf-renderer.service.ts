@@ -393,7 +393,7 @@ export class AdminPmocPdfRendererService {
 
   private footer(page: PdfPage, numeroPagina: number) {
     this.line(page, 36, 30, 576, 30, "0.55 0.60 0.66");
-    this.text(page, "Documento gerado pelo sistema Clima do Brasil Digital", 36, 18, 7, false, undefined, "0.38 0.42 0.48");
+    this.text(page, "Documento gerado pelo sistema AIRMOVEBR Digital", 36, 18, 7, false, undefined, "0.38 0.42 0.48");
     this.text(page, `Página ${numeroPagina}`, 535, 18, 7, false, undefined, "0.38 0.42 0.48");
   }
 

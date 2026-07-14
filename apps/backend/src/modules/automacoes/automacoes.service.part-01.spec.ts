@@ -57,7 +57,7 @@ test("processarPendentes envia email PMOC e marca automacao como concluida", asy
       };
     }
   };
-  const service = new AutomacoesService(prisma as never, emailSender, criarConfig({ SMTP_FROM: "Clima do Brasil <noreply@example.com>" }) as never);
+  const service = new AutomacoesService(prisma as never, emailSender, criarConfig({ SMTP_FROM: "AIRMOVEBR <noreply@example.com>" }) as never);
 
   const resultado = await service.processarPendentes(agora);
 
@@ -65,7 +65,7 @@ test("processarPendentes envia email PMOC e marca automacao como concluida", asy
   assert.equal(resultado.concluidas, 1);
   assert.equal(resultado.falhas, 0);
   assert.deepEqual(chamadas.email, {
-    from: "Clima do Brasil <noreply@example.com>",
+    from: "AIRMOVEBR <noreply@example.com>",
     to: "maria@example.com",
     subject: "Relatorio Tecnico PMOC - Junho/2026 - Maria Souza",
     text: [
@@ -83,7 +83,7 @@ test("processarPendentes envia email PMOC e marca automacao como concluida", asy
       "",
       "Cordialmente,",
       "",
-      "Clima do Brasil"
+      "AIRMOVEBR"
     ].join("\n"),
     attachments: [
       {
@@ -165,7 +165,7 @@ test("processarPendentes envia copia oculta interna no email final PMOC quando c
     prisma as never,
     emailSender,
     criarConfig({
-      SMTP_FROM: "Clima do Brasil <noreply@example.com>",
+      SMTP_FROM: "AIRMOVEBR <noreply@example.com>",
       PMOC_INTERNAL_COPY_EMAIL: "airmovebr2@gmail.com"
     }) as never
   );
@@ -221,7 +221,7 @@ test("processarPendentes envia relatorio tecnico avulso direto ao cliente com co
     prisma as never,
     emailSender,
     criarConfig({
-      SMTP_FROM: "Clima do Brasil <noreply@example.com>",
+      SMTP_FROM: "AIRMOVEBR <noreply@example.com>",
       REPORT_INTERNAL_COPY_EMAIL: "airmovebr2@gmail.com"
     }) as never
   );
@@ -230,14 +230,14 @@ test("processarPendentes envia relatorio tecnico avulso direto ao cliente com co
 
   assert.equal(resultado.concluidas, 1);
   assert.deepEqual(chamadas.email, {
-    from: "Clima do Brasil <noreply@example.com>",
+    from: "AIRMOVEBR <noreply@example.com>",
     to: "cliente@example.com",
     bcc: "airmovebr2@gmail.com",
     subject: "Relatório de manutenção - Cliente Avulso",
     text: [
       "Prezado(a) Cliente Avulso,",
       "",
-      "Encaminhamos em anexo o relatório de manutenção referente ao atendimento realizado pela Clima do Brasil.",
+      "Encaminhamos em anexo o relatório de manutenção referente ao atendimento realizado pela AIRMOVEBR.",
       "",
       "Atendimento finalizado em: 11/06/2026 12:00",
       "Máquinas atendidas: 1",
@@ -247,7 +247,7 @@ test("processarPendentes envia relatorio tecnico avulso direto ao cliente com co
       "",
       "Cordialmente,",
       "",
-      "Clima do Brasil"
+      "AIRMOVEBR"
     ].join("\n"),
     attachments: [
       {
@@ -298,13 +298,13 @@ test("processarPendentes envia link de assinatura PMOC para o engenheiro", async
       };
     }
   };
-  const service = new AutomacoesService(prisma as never, emailSender, criarConfig({ SMTP_FROM: "Clima do Brasil <noreply@example.com>" }) as never);
+  const service = new AutomacoesService(prisma as never, emailSender, criarConfig({ SMTP_FROM: "AIRMOVEBR <noreply@example.com>" }) as never);
 
   const resultado = await service.processarPendentes(new Date("2026-06-12T12:00:00.000Z"));
 
   assert.equal(resultado.concluidas, 1);
   assert.deepEqual(chamadas.email, {
-    from: "Clima do Brasil <noreply@example.com>",
+    from: "AIRMOVEBR <noreply@example.com>",
     to: "paulo@example.com",
     subject: "Assinatura PMOC pendente - Maria Souza",
     text: [
@@ -368,7 +368,7 @@ test("processarPendentes envia alerta interno quando assinatura PMOC e negada no
     prisma as never,
     emailSender,
     criarConfig({
-      SMTP_FROM: "Clima do Brasil <noreply@example.com>",
+      SMTP_FROM: "AIRMOVEBR <noreply@example.com>",
       PMOC_SIGNATURE_ALERT_EMAIL: "airmovebr2@gmail.com"
     }) as never
   );
@@ -377,7 +377,7 @@ test("processarPendentes envia alerta interno quando assinatura PMOC e negada no
 
   assert.equal(resultado.concluidas, 1);
   assert.deepEqual(chamadas.email, {
-    from: "Clima do Brasil <noreply@example.com>",
+    from: "AIRMOVEBR <noreply@example.com>",
     to: "airmovebr2@gmail.com",
     subject: "Assinatura PMOC negada - Maria Souza",
     text: [

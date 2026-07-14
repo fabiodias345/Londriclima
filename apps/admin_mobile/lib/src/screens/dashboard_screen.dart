@@ -117,7 +117,7 @@ class _Header extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(14),
             child: Image.asset(
-              'assets/clima-do-brasil-logo.jpeg',
+              'assets/airmovebr-logo.png',
               width: 58,
               height: 58,
               fit: BoxFit.cover,

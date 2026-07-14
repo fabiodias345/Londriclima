@@ -3,496 +3,114 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0A3D6B" />
-    <meta
-      name="description"
-      content="AIRMOVEBR em Londrina-PR: instalação, manutenção, reparo, locação de ar-condicionado e PMOC com relatórios digitais completos."
-    />
-    <meta
-      name="keywords"
-      content="ar-condicionado Londrina, PMOC Londrina, manutenção ar-condicionado Londrina, locação ar-condicionado Londrina"
-    />
-    <meta property="og:title" content="AIRMOVEBR | Climatização e PMOC em Londrina" />
-    <meta
-      property="og:description"
-      content="Líder em climatização, manutenção, locação e PMOC em Londrina e região."
-    />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="./assets/hero-hvac.png" />
-    <title>AIRMOVEBR | Ar-condicionado, PMOC e manutenção em Londrina</title>
-    <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="%230A3D6B"/><text x="50%" y="57%" text-anchor="middle" font-size="36" font-family="Arial" font-weight="800" fill="white">A</text></svg>' />
+    <meta name="theme-color" content="#064da8" />
+    <meta name="description" content="AIRMOVEBR: instalacao, manutencao, PMOC e projetos de climatizacao em Londrina e regiao." />
+    <title>AIRMOVEBR | Climatizacao profissional</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Montserrat:wght@700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="./css/style.css" />
   </head>
   <body>
-    <!-- Header -->
     <header class="site-header" data-header>
-      <a class="brand" href="#home" aria-label="AIRMOVEBR início">
-        <img class="brand-logo" src="./assets/logos/marca/airmovebr-logo.png" alt="" />
-        <span>
-          <strong>AIRMOVEBR</strong>
-          <small>Climatização inteligente</small>
-        </span>
-      </a>
-
-      <button class="menu-toggle" type="button" aria-label="Abrir menu" aria-expanded="false" data-menu-toggle>
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-
-      <nav class="main-nav" aria-label="Navegação principal" data-main-nav>
-        <a href="#historia">Nossa História</a>
-        <a href="#servicos">Serviços</a>
-        <a href="#pmoc">PMOC</a>
-        <a href="#especialidades">Especialidades</a>
-        <a href="#ia">Tecnologia</a>
-        <a href="#clientes">Clientes</a>
-      </nav>
-
-      <a class="header-cta" href="#agendamento">Agendar Visita</a>
+      <div class="header-inner">
+        <a class="brand" href="#inicio" aria-label="AIRMOVEBR inicio">
+          <span class="brand-mark" aria-hidden="true"><i class="fa-solid fa-wind"></i></span>
+          <span><strong>AIRMOVEBR</strong><small>Climatizacao sob demanda</small></span>
+        </a>
+        <button class="menu-toggle" type="button" aria-label="Abrir menu" aria-expanded="false" data-menu-toggle>
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <nav class="main-nav" aria-label="Navegacao principal" data-main-nav>
+          <a class="active" href="#inicio">Inicio</a>
+          <a href="#servicos">Servicos</a>
+          <a href="#pmoc">PMOC</a>
+          <a href="#projetos">Projetos</a>
+          <a href="#sobre">Sobre</a>
+          <a href="#contato">Contato</a>
+        </nav>
+        <a class="header-cta" href="#contato">Solicitar orcamento <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+      </div>
     </header>
-    <!-- End Header -->
 
-    <main id="home">
-      <!-- Hero -->
-      <section class="hero-section">
-        <picture class="hero-media" aria-hidden="true">
-          <img
-            src="./assets/hero-hvac.png"
-            alt=""
-            loading="eager"
-            width="1600"
-            height="1000"
-          />
-        </picture>
-        <div class="hero-overlay"></div>
-        <div class="hero-content reveal">
-          <span class="section-tag">Londrina-PR | Instalação, manutenção, locação e PMOC</span>
-          <h1>AIRMOVEBR: climatização com experiência, confiança e compromisso.</h1>
-          <p>
-            Uma empresa criada para oferecer um novo padrão em climatização, unindo estrutura regional, tecnologia, eficiência e atendimento próximo em cada projeto.
-          </p>
+    <main id="inicio">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Londrina e regiao</p>
+          <h1>Climatizacao <em>profissional</em> para residencias, empresas e industrias.</h1>
+          <p class="hero-lede">Venda, instalacao, manutencao preventiva e corretiva, PMOC e projetos de climatizacao com responsabilidade tecnica.</p>
           <div class="hero-actions">
-            <a class="primary-button" href="#agendamento">Agendar visita técnica</a>
-            <a class="secondary-button" href="#pmoc">Entender o PMOC</a>
+            <a class="button button-primary" href="https://wa.me/554330673793" target="_blank" rel="noreferrer"><i class="fa-brands fa-whatsapp"></i> Falar no WhatsApp</a>
+            <a class="button button-secondary" href="#servicos">Ver servicos <i class="fa-solid fa-arrow-right"></i></a>
           </div>
-          <dl class="hero-metrics" aria-label="Diferenciais da AIRMOVEBR">
-            <div>
-              <dt>PMOC</dt>
-              <dd>documentado</dd>
-            </div>
-            <div>
-              <dt>24h</dt>
-              <dd>triagem rápida</dd>
-            </div>
-            <div>
-              <dt>IA</dt>
-              <dd>gestão técnica</dd>
-            </div>
-          </dl>
+          <div class="hero-points" aria-label="Diferenciais">
+            <span><i class="fa-regular fa-snowflake"></i> Equipe especializada</span>
+            <span><i class="fa-solid fa-location-dot"></i> Atendimento em Londrina</span>
+            <span><i class="fa-solid fa-clipboard-check"></i> PMOC responsavel</span>
+          </div>
         </div>
+        <div class="hero-image" aria-hidden="true"><img src="./assets/hero-hvac.png" alt="" /></div>
       </section>
-      <!-- End Hero -->
 
-      <!-- Nossa História -->
-      <section class="section story-section" id="historia">
-        <div class="section-heading reveal">
-          <span class="section-tag">Nossa História</span>
-          <h2>A evolução da climatização agora se chama AIRMOVEBR.</h2>
-        </div>
-        <div class="story-grid">
-          <article class="story-copy reveal">
-            <p>
-              Com profissionais qualificados, processos digitais e suporte técnico completo, atendemos residências, empresas, eventos, hospitais, escolas e operações críticas que não podem parar.
-            </p>
-            <p>
-              Cada projeto recebe diagnóstico técnico, documentação organizada e acompanhamento próximo para manter conforto, segurança e continuidade operacional.
-            </p>
-          </article>
-          <aside class="story-video reveal" aria-label="Vídeo institucional AIRMOVEBR">
-            <video autoplay muted loop playsinline preload="metadata">
-              <source src="./assets/historia-airmovebr.mp4" type="video/mp4" />
-            </video>
-          </aside>
-        </div>
-      </section>
-      <!-- End Nossa História -->
-
-      <!-- Serviços -->
-      <section class="section services-section" id="servicos">
-        <div class="section-heading reveal">
-          <span class="section-tag">Serviços</span>
-          <h2>Climatização completa, do projeto ao pós-venda.</h2>
-        </div>
-
+      <section class="section services" id="servicos">
+        <div class="section-title"><p class="eyebrow">Solucoes completas</p><h2>Nossos servicos</h2></div>
         <div class="service-grid">
-          <article class="service-card reveal">
-            <img src="./assets/services/instalacao-ar-condicionado.png" alt="Técnico trabalhando na instalação de um ar-condicionado split" loading="lazy" />
-            <div>
-              <h3>Instalação de Ar-Condicionado</h3>
-              <p>Instalação limpa, dimensionada e validada para split, cassete, multi-split, VRF e ambientes corporativos.</p>
-            </div>
-          </article>
-
-          <article class="service-card reveal">
-            <img src="./assets/services/manutencao-dashboard.png" alt="Técnicos fazendo manutenção preventiva e corretiva em ar-condicionado com apoio digital" loading="lazy" />
-            <div>
-              <h3>Manutenção Preventiva e Corretiva</h3>
-              <p>Diagnóstico rápido, reparo técnico e plano preventivo para reduzir paradas, consumo e retrabalho.</p>
-            </div>
-          </article>
-
-          <article class="service-card service-card-featured reveal">
-            <img src="./assets/services/pmoc-plataforma.png" alt="Plataforma digital PMOC com relatórios, checklists e validação técnica" loading="lazy" />
-            <div>
-              <span class="badge">Exigido por Lei</span>
-              <h3>PMOC — Plano de Manutenção, Operação e Controle</h3>
-              <p>Conformidade legal, registros digitais, relatórios técnicos e entrega organizada para auditorias.</p>
-            </div>
-          </article>
-
-          <article class="service-card reveal">
-            <img src="./assets/services/locacao-ar-condicionado.png" alt="Centro de suporte AIRMOVEBR com frota e unidades de ar-condicionado para locação" loading="lazy" />
-            <div>
-              <h3>Locação de Ar-Condicionado</h3>
-              <p>Frota regional para empresas, eventos e operações temporárias, com manutenção inclusa e suporte local.</p>
-            </div>
-          </article>
-
-          <article class="service-card reveal">
-            <img src="./assets/services/automacao-ar-condicionado.png" alt="Automação de ar-condicionado ligada a aplicativo, assistente de voz e painel dedicado" loading="lazy" />
-            <div>
-              <h3>Automação e Smart Home</h3>
-              <p>Alexa, Google Home, painéis dedicados, dashboards e automações para conforto, eficiência e controle.</p>
-            </div>
-          </article>
-
-          <article class="service-card reveal">
-            <img src="./assets/services/venda-equipamentos.png" alt="Consultor apresentando equipamentos de climatizacao em showroom corporativo" loading="lazy" />
-            <div>
-              <h3>Venda de Equipamentos</h3>
-              <p>Orientação técnica para escolha do equipamento certo, considerando carga térmica, consumo e manutenção.</p>
-            </div>
-          </article>
+          <article class="service-card"><i class="fa-solid fa-cart-shopping"></i><div><h3>Venda de equipamentos</h3><p>Marcas confiaveis e orientacao para a escolha correta.</p></div></article>
+          <article class="service-card"><i class="fa-solid fa-screwdriver-wrench"></i><div><h3>Instalacao de ar-condicionado</h3><p>Padrao tecnico, acabamento e comissionamento.</p></div></article>
+          <article class="service-card"><i class="fa-solid fa-shield-heart"></i><div><h3>Manutencao preventiva</h3><p>Mais vida util, eficiencia e menor consumo.</p></div></article>
+          <article class="service-card"><i class="fa-solid fa-triangle-exclamation"></i><div><h3>Manutencao corretiva</h3><p>Diagnostico rapido para resolver a falha.</p></div></article>
+          <article class="service-card"><i class="fa-solid fa-clipboard-list"></i><div><h3>PMOC</h3><p>Plano, operacao e controle com responsabilidade tecnica.</p></div></article>
+          <article class="service-card"><i class="fa-solid fa-ruler-combined"></i><div><h3>Projetos e infraestrutura</h3><p>Dimensionamento para residencias, comercio e industria.</p></div></article>
         </div>
       </section>
-      <!-- End Serviços -->
 
-      <!-- Como trabalhamos -->
-      <section class="section process-section" id="como-trabalhamos">
-        <div class="section-heading reveal">
-          <span class="section-tag">Como trabalhamos</span>
-          <h2>Do primeiro contato à entrega, um processo técnico e transparente.</h2>
-        </div>
-        <div class="process-grid">
-          <article class="process-step reveal">
-            <span class="process-number">1</span>
-            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-            <h3>Visita técnica</h3>
-            <p>Avaliamos o ambiente, o equipamento e a necessidade real antes de qualquer proposta.</p>
-          </article>
-          <article class="process-step reveal">
-            <span class="process-number">2</span>
-            <i class="fa-solid fa-ruler-combined" aria-hidden="true"></i>
-            <h3>Dimensionamento</h3>
-            <p>Apresentamos a solução ideal, com carga térmica, prazos e custos alinhados.</p>
-          </article>
-          <article class="process-step reveal">
-            <span class="process-number">3</span>
-            <i class="fa-solid fa-screwdriver-wrench" aria-hidden="true"></i>
-            <h3>Execução</h3>
-            <p>Instalação, manutenção ou reparo com padrão técnico e checklist documentado.</p>
-          </article>
-          <article class="process-step reveal">
-            <span class="process-number">4</span>
-            <i class="fa-solid fa-headset" aria-hidden="true"></i>
-            <h3>Suporte</h3>
-            <p>Acompanhamento contínuo, histórico por equipamento e atendimento sempre que precisar.</p>
-          </article>
+      <section class="section reasons" id="sobre">
+        <div class="section-title"><p class="eyebrow">Atendimento que resolve</p><h2>Por que escolher a AIRMOVEBR</h2></div>
+        <div class="reason-grid">
+          <article><i class="fa-solid fa-ruler"></i><h3>Dimensionamento certo</h3><p>Solucao sob medida para conforto e eficiencia.</p></article>
+          <article><i class="fa-solid fa-shield-halved"></i><h3>Instalacao limpa e segura</h3><p>Equipe capacitada, processos e seguranca em cada detalhe.</p></article>
+          <article><i class="fa-solid fa-headset"></i><h3>Suporte tecnico agil</h3><p>Atendimento objetivo para sua operacao continuar.</p></article>
+          <article><i class="fa-solid fa-building-user"></i><h3>Atendimento completo</h3><p>Da residencia a operacoes de maior porte.</p></article>
         </div>
       </section>
-      <!-- End Como trabalhamos -->
 
-      <!-- Segmentos atendidos -->
-      <section class="section segments-section" id="segmentos">
-        <div class="section-heading reveal">
-          <span class="section-tag">Onde atuamos</span>
-          <h2>Atendimento para residências, empresas e grandes operações.</h2>
-        </div>
-        <div class="segments-grid">
-          <div class="segment-item reveal">
-            <i class="fa-solid fa-house" aria-hidden="true"></i>
-            <span>Residencial</span>
-          </div>
-          <div class="segment-item reveal">
-            <i class="fa-solid fa-shop" aria-hidden="true"></i>
-            <span>Comercial</span>
-          </div>
-          <div class="segment-item reveal">
-            <i class="fa-solid fa-building" aria-hidden="true"></i>
-            <span>Empresarial</span>
-          </div>
-          <div class="segment-item reveal">
-            <i class="fa-solid fa-industry" aria-hidden="true"></i>
-            <span>Industrial</span>
-          </div>
-          <div class="segment-item reveal">
-            <i class="fa-solid fa-hospital" aria-hidden="true"></i>
-            <span>Clínicas e Hospitais</span>
-          </div>
-          <div class="segment-item reveal">
-            <i class="fa-solid fa-briefcase" aria-hidden="true"></i>
-            <span>Escritórios</span>
-          </div>
-          <div class="segment-item reveal">
-            <i class="fa-solid fa-store" aria-hidden="true"></i>
-            <span>Lojas e Franquias</span>
-          </div>
+      <section class="section projects" id="projetos">
+        <div class="section-title"><p class="eyebrow">Experiencia de campo</p><h2>Projetos e atendimentos</h2></div>
+        <div class="project-grid">
+          <article class="project-card"><img src="./assets/services/instalacao-ar-condicionado.png" alt="Ambiente residencial climatizado" loading="lazy" /><div><h3>Residencias</h3><p>Instalacao de split com execucao precisa.</p></div></article>
+          <article class="project-card"><img src="./assets/services/automacao-ar-condicionado.png" alt="Ambiente comercial climatizado" loading="lazy" /><div><h3>Ambientes comerciais</h3><p>Conforto termico para equipes e clientes.</p></div></article>
+          <article class="project-card"><img src="./assets/services/manutencao-dashboard.png" alt="Tecnico realizando manutencao" loading="lazy" /><div><h3>Manutencao tecnica</h3><p>Preventiva e corretiva documentada.</p></div></article>
+          <article class="project-card"><img src="./assets/services/pmoc-plataforma.png" alt="Documentacao PMOC" loading="lazy" /><div><h3>PMOC e documentacao</h3><p>Relatorios organizados e rastreaveis.</p></div></article>
         </div>
       </section>
-      <!-- End Segmentos atendidos -->
 
-      <!-- PMOC Destaque -->
-      <section class="section pmoc-section" id="pmoc">
-        <div class="pmoc-panel reveal">
-          <div>
-            <span class="section-tag">PMOC em destaque</span>
-            <h2>Plano de Manutenção, Operação e Controle com segurança documental.</h2>
-            <p>
-              O PMOC é essencial para ambientes climatizados de uso coletivo. Ele organiza manutenções, reduz riscos sanitários e apoia a conformidade com a Portaria MS 3.523/98 e demais exigências aplicáveis.
-            </p>
-          </div>
-          <div class="pmoc-list">
-            <article>
-              <strong>Obrigatório por lei</strong>
-              <span>Controle formal das manutenções e condições dos sistemas de climatização.</span>
-            </article>
-            <article>
-              <strong>Relatórios digitais</strong>
-              <span>Documentação entregue em PDF, com histórico, evidências e rastreabilidade.</span>
-            </article>
-            <article>
-              <strong>Engenharia responsável</strong>
-              <span>Processo técnico preparado para auditorias e gestão empresarial.</span>
-            </article>
-          </div>
+      <section class="section audiences">
+        <div class="section-title"><p class="eyebrow">Onde atendemos</p><h2>Solucao para cada operacao</h2></div>
+        <div class="audience-grid">
+          <span><i class="fa-solid fa-house"></i> Residencial</span><span><i class="fa-solid fa-store"></i> Comercial</span><span><i class="fa-solid fa-industry"></i> Industrial</span><span><i class="fa-solid fa-hospital"></i> Clinicas e hospitais</span><span><i class="fa-solid fa-building"></i> Escritorios</span><span><i class="fa-solid fa-bag-shopping"></i> Lojas e franquias</span>
         </div>
       </section>
-      <!-- End PMOC Destaque -->
 
-      <!-- Especialidades -->
-      <section class="section specialties-section" id="especialidades">
-        <div class="section-heading reveal">
-          <span class="section-tag">Especialidades técnicas</span>
-          <h2>Equipe certificada pelas maiores marcas do país.</h2>
-          <p>Atendimento técnico para Split, Multi-Split, Cassete, Fancoil, VRF/VRV e Chiller em sistemas residenciais, comerciais e industriais.</p>
-        </div>
-        <div class="specialty-grid">
-          <span class="brand-badge reveal">LG</span>
-          <span class="brand-badge reveal">Samsung</span>
-          <span class="brand-badge reveal">Daikin</span>
-          <span class="brand-badge reveal">Gree</span>
-          <span class="brand-badge reveal">Midea</span>
-          <span class="brand-badge reveal">Fujitsu</span>
-          <span class="brand-badge reveal">Carrier</span>
-          <span class="brand-badge reveal">Springer</span>
-          <span class="brand-badge reveal">Elgin</span>
-          <span class="brand-badge reveal">Hitachi</span>
-          <span class="brand-badge reveal">TCL</span>
-          <span class="brand-badge reveal">Trane</span>
-        </div>
+      <section class="pmoc" id="pmoc">
+        <div class="pmoc-image"><img src="./assets/services/pmoc-plataforma.png" alt="Tecnico consultando dados de climatizacao" loading="lazy" /></div>
+        <div class="pmoc-copy"><p class="eyebrow">PMOC</p><h2>Organizacao e responsabilidade tecnica.</h2><p>Plano de manutencao com cronograma, relatorios e acompanhamento para manter o ambiente em conformidade.</p><a class="button button-primary" href="#contato">Entender o PMOC <i class="fa-solid fa-arrow-right"></i></a></div>
+        <ul class="pmoc-list"><li><i class="fa-solid fa-circle-check"></i> Plano de Manutencao, Operacao e Controle</li><li><i class="fa-solid fa-circle-check"></i> Responsavel tecnico habilitado</li><li><i class="fa-solid fa-circle-check"></i> Relatorios e registros organizados</li><li><i class="fa-solid fa-circle-check"></i> Conformidade com normas vigentes</li></ul>
       </section>
-      <!-- End Especialidades -->
 
-      <!-- Diferenciais com IA -->
-      <section class="section ai-section" id="ia">
-        <div class="ai-background" aria-hidden="true"></div>
-        <div class="section-heading reveal">
-          <span class="section-tag">Software proprietário</span>
-          <h2>IA aplicada ao atendimento, diagnóstico e histórico técnico.</h2>
-        </div>
-        <div class="ai-grid">
-          <article class="ai-card reveal">
-            <i class="fa-solid fa-calendar-check" aria-hidden="true"></i>
-            <h3>Agendamento inteligente</h3>
-            <p>Solicitações pelo site e app entram em fluxo digital para triagem, agenda e acompanhamento.</p>
-          </article>
-          <article class="ai-card reveal">
-            <i class="fa-solid fa-brain" aria-hidden="true"></i>
-            <h3>Diagnóstico assistido por IA</h3>
-            <p>O técnico recebe sugestões de reparo em campo para reduzir tempo, erro e custo operacional.</p>
-          </article>
-          <article class="ai-card reveal">
-            <i class="fa-solid fa-file-shield" aria-hidden="true"></i>
-            <h3>Tudo documentado</h3>
-            <p>Fotos, checklist, assinatura, relatório e comprovantes são organizados e enviados digitalmente.</p>
-          </article>
-          <article class="ai-card reveal">
-            <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>
-            <h3>Histórico por equipamento</h3>
-            <p>Cada máquina mantém seu histórico completo de atendimentos, peças, observações e recorrências.</p>
-          </article>
-        </div>
-      </section>
-      <!-- End Diferenciais com IA -->
-
-      <!-- Clientes e Parceiros -->
-      <section class="section clients-section" id="clientes">
-        <div class="section-heading reveal">
-          <span class="section-tag">Clientes e Parceiros</span>
-          <h2>Quem confia na nossa engenharia térmica.</h2>
-        </div>
-
-        <div class="featured-logos reveal" aria-label="Parceiros em destaque">
-          <article>
-            <img src="./assets/logos/clientes/hachimitsu.jpeg" alt="Hachimitsu" loading="lazy" />
-          </article>
-          <article>
-            <img src="./assets/logos/clientes/lar.webp" alt="Lar" loading="lazy" />
-          </article>
-          <article>
-            <img src="./assets/logos/clientes/colegio-positivo.jpg" alt="Colégio Positivo" loading="lazy" />
-          </article>
-          <article>
-            <img src="./assets/logos/clientes/hu-uel.png" alt="Hospital Universitário UEL Londrina" loading="lazy" />
-          </article>
-        </div>
-
-        <div class="logo-marquee reveal" aria-label="Lista de parceiros">
-          <div class="logo-track">
-            <span><img src="./assets/logos/clientes/kpmg.png" alt="KPMG" loading="lazy" /></span>
-            <span><img src="./assets/logos/clientes/camara-londrina.jpg" alt="Câmara Municipal de Londrina" loading="lazy" /></span>
-            <span><img src="./assets/logos/clientes/prefeitura-londrina.jpg" alt="Prefeitura de Londrina" loading="lazy" /></span>
-            <span class="logo-placeholder">HUM</span>
-            <span class="logo-placeholder">Prefeitura de Maringá</span>
-            <span><img src="./assets/logos/clientes/dominos.png" alt="Domino's Pizza" loading="lazy" /></span>
-            <span class="logo-placeholder">Primel</span>
-            <span><img src="./assets/logos/clientes/hachimitsu.jpeg" alt="Hachimitsu" loading="lazy" /></span>
-            <span><img src="./assets/logos/clientes/lar.webp" alt="Lar" loading="lazy" /></span>
-            <span><img src="./assets/logos/clientes/colegio-positivo.jpg" alt="Colégio Positivo" loading="lazy" /></span>
-            <span><img src="./assets/logos/clientes/hu-uel.png" alt="Hospital Universitário UEL Londrina" loading="lazy" /></span>
-            <span><img src="./assets/logos/clientes/kpmg.png" alt="KPMG" loading="lazy" /></span>
-            <span><img src="./assets/logos/clientes/camara-londrina.jpg" alt="Câmara Municipal de Londrina" loading="lazy" /></span>
-            <span><img src="./assets/logos/clientes/prefeitura-londrina.jpg" alt="Prefeitura de Londrina" loading="lazy" /></span>
-          </div>
-        </div>
-      </section>
-      <!-- End Clientes e Parceiros -->
-
-      <!-- Depoimentos -->
-      <section class="section testimonials-section" id="depoimentos">
-        <div class="section-heading reveal">
-          <span class="section-tag">Depoimentos</span>
-          <h2>Atendimento técnico que vira recorrência.</h2>
-        </div>
-        <div class="testimonial-shell reveal">
-          <button class="testimonial-button" type="button" aria-label="Depoimento anterior" data-testimonial-prev>&larr;</button>
-          <article class="testimonial-card" data-testimonial-card>
-            <p data-testimonial-text></p>
-            <strong data-testimonial-author></strong>
-            <span data-testimonial-role></span>
-          </article>
-          <button class="testimonial-button" type="button" aria-label="Proximo depoimento" data-testimonial-next>&rarr;</button>
-        </div>
-      </section>
-      <!-- End Depoimentos -->
-
-      <!-- Formulário de contato -->
-      <section class="section contact-section" id="agendamento">
-        <div class="contact-copy reveal">
-          <span class="section-tag">Agendamento</span>
-          <h2>Fale com a equipe AIRMOVEBR.</h2>
-          <p>Prefere conversar agora? Chame a AIRMOVEBR pelo WhatsApp. Se preferir, deixe seus dados essenciais e retornaremos pelo melhor canal.</p>
-          <a class="whatsapp-link" href="https://wa.me/554330673793" target="_blank" rel="noreferrer">Conversar pelo WhatsApp</a>
-        </div>
-
-        <form class="booking-form reveal" id="bookingForm">
-          <label>
-            Nome
-            <input name="nome" type="text" autocomplete="name" placeholder="Seu nome" required />
-          </label>
-          <label>
-            Telefone
-            <input name="telefone" type="tel" autocomplete="tel" placeholder="(43) 99999-0000" required />
-          </label>
-          <label>
-            Tipo de serviço
-            <select name="servico" required>
-              <option value="">Selecione</option>
-              <option>Instalação de ar-condicionado</option>
-              <option>Limpeza de ar-condicionado</option>
-              <option>Manutenção preventiva e corretiva</option>
-              <option>PMOC</option>
-              <option>Locação de ar-condicionado</option>
-              <option>Automação e Smart Home</option>
-              <option>Venda de equipamentos</option>
-            </select>
-          </label>
-          <label class="full">
-            Mensagem
-            <textarea name="mensagem" rows="4" placeholder="Conte brevemente o que você precisa"></textarea>
-          </label>
-          <button type="submit">Enviar solicitação</button>
-          <p class="form-status" id="formStatus" role="status" aria-live="polite"></p>
+      <section class="contact-band" id="contato">
+        <div class="contact-callout"><p class="eyebrow">Fale com a AIRMOVEBR</p><h2>Vamos encontrar a melhor solucao para sua necessidade.</h2><a class="button whatsapp-button" href="https://wa.me/554330673793" target="_blank" rel="noreferrer"><i class="fa-brands fa-whatsapp"></i> Falar no WhatsApp</a></div>
+        <form class="booking-form" id="bookingForm">
+          <div class="form-grid"><label>Nome<input name="nome" autocomplete="name" required /></label><label>Telefone / WhatsApp<input name="telefone" autocomplete="tel" required /></label><label>CEP<input name="cep" inputmode="numeric" autocomplete="postal-code" /></label><label>Servico<select name="servico" required><option value="">Selecione</option><option>Instalacao de ar-condicionado</option><option>Manutencao preventiva</option><option>Manutencao corretiva</option><option>PMOC</option><option>Projetos e infraestrutura</option></select></label><label class="wide">Endereco<input name="logradouro" autocomplete="street-address" /></label><label>Numero<input name="numero" inputmode="numeric" /></label><label>Bairro<input name="bairro" autocomplete="address-level3" /></label><label>Cidade<input name="cidade" value="Londrina" autocomplete="address-level2" /></label><input name="uf" value="PR" type="hidden" /><label class="wide">Mensagem<textarea name="mensagem" rows="3" placeholder="Conte brevemente o que precisa"></textarea></label></div>
+          <p class="form-hint" id="bookingCepStatus" role="status" aria-live="polite"></p><button class="button button-primary" type="submit">Solicitar atendimento <i class="fa-solid fa-arrow-right"></i></button><p class="form-status" id="formStatus" role="status" aria-live="polite"></p>
         </form>
       </section>
-      <!-- End Formulário de contato -->
     </main>
 
-    <!-- Footer -->
-    <footer class="site-footer">
-      <div>
-        <strong>AIRMOVEBR</strong>
-        <p>Inovação a serviço da vida: tecnologia e humanidade caminhando juntas.</p>
-      </div>
-      <nav aria-label="Links do rodapé">
-        <a href="#servicos">Serviços</a>
-        <a href="#pmoc">PMOC</a>
-        <a href="#agendamento">Contato</a>
-        <a href="#">Política de privacidade</a>
-      </nav>
-      <address>
-        Rua Maria Lúcia da Paz, 333 - Palhano 2<br />
-        Londrina - PR, 86050-470<br />
-        WhatsApp: (43) 3067-3793<br />
-        airmovebr@gmail.com
-      </address>
-      <small>Copyright AIRMOVEBR. Todos os direitos reservados.</small>
-    </footer>
-    <!-- End Footer -->
+    <footer class="site-footer"><div class="footer-inner"><div><a class="brand footer-brand" href="#inicio"><span class="brand-mark"><i class="fa-solid fa-wind"></i></span><span><strong>AIRMOVEBR</strong><small>Climatizacao sob demanda</small></span></a><p>Soluciones completas em climatizacao para residencias, empresas e industrias.</p></div><div><h3>Links rapidos</h3><a href="#inicio">Inicio</a><a href="#servicos">Servicos</a><a href="#pmoc">PMOC</a><a href="#contato">Contato</a></div><div><h3>Servicos</h3><p>Instalacao e manutencao<br />PMOC e documentacao<br />Projetos e infraestrutura</p></div><address><h3>Contato</h3><a href="https://wa.me/554330673793">(43) 3067-3793</a><a href="mailto:contato@airmovebr.com.br">contato@airmovebr.com.br</a><p>Londrina - PR e regiao</p></address></div><div class="footer-bottom">&copy; 2026 AIRMOVEBR. Todos os direitos reservados.</div></footer>
 
-    <div class="booking-modal" id="bookingSuccessModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="bookingSuccessTitle">
-      <div class="booking-modal-backdrop" data-booking-success-close></div>
-      <section class="booking-modal-panel" tabindex="-1">
-        <button class="booking-modal-close" type="button" aria-label="Fechar" data-booking-success-close>&times;</button>
-        <span class="section-tag">Solicitação recebida</span>
-        <h2 id="bookingSuccessTitle">Em breve, um de nossos especialistas entrará em contato.</h2>
-        <p>
-          Recebemos seus dados. Se preferir, envie agora as informações pelo WhatsApp para agilizar o atendimento.
-        </p>
-        <div class="booking-modal-actions">
-          <a class="whatsapp-link" id="bookingSuccessWhatsApp" href="https://wa.me/554330673793" target="_blank" rel="noreferrer">Falar no WhatsApp</a>
-          <button type="button" class="secondary-modal-button" data-booking-success-close>Continuar no site</button>
-        </div>
-      </section>
-    </div>
-
-    <a class="floating-whatsapp" href="https://wa.me/554330673793" target="_blank" rel="noreferrer" aria-label="Chamar AIRMOVEBR no WhatsApp">
-      <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
-    </a>
-
-    <script src="./js/main.js?v=20260713-2"></script>
+    <div class="booking-modal" id="bookingSuccessModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="bookingSuccessTitle"><div class="booking-modal-backdrop" data-booking-success-close></div><section class="booking-modal-panel" tabindex="-1"><button class="booking-modal-close" type="button" aria-label="Fechar" data-booking-success-close>&times;</button><p class="eyebrow">Solicitacao recebida</p><h2 id="bookingSuccessTitle">Em breve, um especialista entrara em contato.</h2><p>Tambem podemos agilizar pelo WhatsApp.</p><div class="modal-actions"><a class="button whatsapp-button" id="bookingSuccessWhatsApp" href="https://wa.me/554330673793" target="_blank" rel="noreferrer"><i class="fa-brands fa-whatsapp"></i> Falar no WhatsApp</a><button class="text-button" type="button" data-booking-success-close>Continuar no site</button></div></section></div>
+    <a class="floating-whatsapp" href="https://wa.me/554330673793" target="_blank" rel="noreferrer" aria-label="Chamar a AIRMOVEBR no WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>
+    <script src="./js/main.js?v=20260714-1"></script>
   </body>
 </html>
