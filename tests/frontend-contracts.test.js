@@ -97,7 +97,9 @@ test("landing possui formulario de atendimento com endereco", () => {
   assert.match(html, /name="bairro"/);
   assert.match(html, /name="cidade"/);
   assert.match(html, /id="bookingCepStatus"/);
-  assert.match(html, /\.\/assets\/services\/pmoc-plataforma\.png/);
+  assert.match(html, /\.\/assets\/airmovebr\/atendimento-interno\.jpeg/);
+  assert.match(html, /\.\/assets\/airmovebr\/frota-equipe\.jpeg/);
+  assert.match(html, /\.\/assets\/airmovebr\/pmoc-tecnico\.jpeg/);
   assert.doesNotMatch(html, /photo-1450101499163-c8848c66ca85/);
   assert.doesNotMatch(html, /photo-1521791136064-7986c2920216/);
   assert.match(html, /name="nome"/);
