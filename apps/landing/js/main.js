@@ -6,6 +6,9 @@ const mainNav = document.querySelector("[data-main-nav]");
 const bookingSuccessModal = document.querySelector("#bookingSuccessModal");
 const bookingSuccessWhatsApp = document.querySelector("#bookingSuccessWhatsApp");
 const bookingSuccessCloseButtons = document.querySelectorAll("[data-booking-success-close]");
+const pmocInfoModal = document.querySelector("#pmocInfoModal");
+const pmocInfoOpenButton = document.querySelector("[data-pmoc-info-open]");
+const pmocInfoCloseButtons = document.querySelectorAll("[data-pmoc-info-close]");
 const localHosts = ["localhost", "127.0.0.1", ""];
 const apiBaseUrls = localHosts.includes(window.location.hostname)
   ? ["http://localhost:3000/api/v1"]
@@ -55,6 +58,13 @@ function closeBookingSuccessModal() {
   bookingSuccessModal.classList.remove("is-open");
   bookingSuccessModal.setAttribute("aria-hidden", "true");
   document.body.classList.remove("modal-open");
+}
+
+function setPmocInfoModal(isOpen) {
+  if (!pmocInfoModal) return;
+  pmocInfoModal.classList.toggle("is-open", isOpen);
+  pmocInfoModal.setAttribute("aria-hidden", String(!isOpen));
+  document.body.classList.toggle("modal-open", isOpen);
 }
 
 async function postPreChamado(payload) {
@@ -107,5 +117,7 @@ mainNav?.addEventListener("click", (event) => {
   if (event.target instanceof HTMLAnchorElement) closeMenu();
 });
 bookingSuccessCloseButtons.forEach((button) => button.addEventListener("click", closeBookingSuccessModal));
+pmocInfoOpenButton?.addEventListener("click", () => setPmocInfoModal(true));
+pmocInfoCloseButtons.forEach((button) => button.addEventListener("click", () => setPmocInfoModal(false)));
 window.addEventListener("scroll", updateHeaderState, { passive: true });
 updateHeaderState();
