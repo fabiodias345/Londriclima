@@ -62,7 +62,7 @@ test("landing envia pre-chamado publico para a API com JSON", () => {
   assert.match(script, /nome:\s*String\(data\.get\("nome"\)/);
   assert.match(script, /telefone:\s*String\(data\.get\("telefone"\)/);
   assert.match(script, /servico:\s*String\(data\.get\("servico"\)/);
-  assert.match(script, /local:\s*buildLocalFromAddress\(addressPayload\) \|\| "A definir no atendimento"/);
+  assert.match(script, /local:\s*cidade \? `Cidade: \$\{cidade\}` : "A definir no atendimento"/);
   assert.match(script, /detalhes:\s*String\(data\.get\("mensagem"\)/);
   assert.doesNotMatch(script, /Enviar pelo WhatsApp/);
   assert.doesNotMatch(script, /buildWhatsAppMessage/);
@@ -86,17 +86,16 @@ test("landing mostra modal de sucesso com atendimento pelo WhatsApp", () => {
   assert.match(styles, /\.booking-modal\.is-open/);
 });
 
-test("landing possui formulario de atendimento com endereco", () => {
+test("landing possui formulario de atendimento enxuto", () => {
   const html = read("apps/landing/index.html");
   const script = read("apps/landing/js/main.js");
 
   assert.doesNotMatch(html, /Londriclima/i);
   assert.match(html, /Climatização <em>profissional<\/em>/);
-  assert.match(html, /name="cep"/);
-  assert.match(html, /name="logradouro"/);
-  assert.match(html, /name="bairro"/);
+  assert.doesNotMatch(html, /name="cep"/);
+  assert.doesNotMatch(html, /name="logradouro"/);
+  assert.doesNotMatch(html, /name="bairro"/);
   assert.match(html, /name="cidade"/);
-  assert.match(html, /id="bookingCepStatus"/);
   assert.match(html, /\.\/assets\/airmovebr\/atendimento-interno\.jpeg/);
   assert.match(html, /\.\/assets\/airmovebr\/frota-equipe\.jpeg/);
   assert.match(html, /\.\/assets\/airmovebr\/pmoc-tecnico\.jpeg/);
@@ -107,7 +106,7 @@ test("landing possui formulario de atendimento com endereco", () => {
   assert.match(html, /name="servico"/);
   assert.match(html, /name="mensagem"/);
   assert.match(html, /Falar no WhatsApp/);
-  assert.match(script, /local:\s*buildLocalFromAddress\(addressPayload\) \|\| "A definir no atendimento"/);
+  assert.match(script, /local:\s*cidade \? `Cidade: \$\{cidade\}` : "A definir no atendimento"/);
 });
 
 test("admin autentica, guarda token e protege chamadas administrativas", () => {
