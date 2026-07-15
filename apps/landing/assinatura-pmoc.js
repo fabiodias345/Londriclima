@@ -16,7 +16,7 @@ const reportStatus = document.querySelector("#pmocSignatureReportStatus");
 const reportHash = document.querySelector("#pmocSignatureHash");
 
 if (!token) {
-  statusMessage.textContent = "Token de assinatura nao informado.";
+  statusMessage.textContent = "Token de assinatura não informado.";
 } else {
   carregarAssinatura();
 }
@@ -54,7 +54,7 @@ confirmButton?.addEventListener("click", async () => {
     const result = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      statusMessage.textContent = result.message || "Nao foi possivel confirmar a assinatura.";
+      statusMessage.textContent = result.message || "Não foi possível confirmar a assinatura.";
       confirmButton.disabled = false;
       signedPdfInput.disabled = false;
       confirmButton.textContent = "Enviar PDF assinado";
@@ -67,7 +67,7 @@ confirmButton?.addEventListener("click", async () => {
     confirmButton.textContent = "PDF assinado enviado";
     renderAssinatura(result);
   } catch {
-    statusMessage.textContent = "API indisponivel. Tente novamente em instantes.";
+    statusMessage.textContent = "API indisponível. Tente novamente em instantes.";
     confirmButton.disabled = false;
     signedPdfInput.disabled = false;
     confirmButton.textContent = "Enviar PDF assinado";
@@ -75,14 +75,14 @@ confirmButton?.addEventListener("click", async () => {
 });
 
 async function carregarAssinatura() {
-  statusMessage.textContent = "Consultando relatorio PMOC...";
+  statusMessage.textContent = "Consultando relatório PMOC...";
 
   try {
     const response = await fetch(`${apiBaseUrl}/site/pmoc/assinaturas/${encodeURIComponent(token)}`);
     const result = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      statusMessage.textContent = result.message || "Relatorio PMOC nao encontrado.";
+      statusMessage.textContent = result.message || "Relatório PMOC não encontrado.";
       return;
     }
 
@@ -92,21 +92,21 @@ async function carregarAssinatura() {
     signedPdfInput.disabled = result.status === "assinado";
     confirmButton.textContent = result.status === "assinado" ? "PDF assinado enviado" : "Enviar PDF assinado";
   } catch {
-    statusMessage.textContent = "API indisponivel. Tente novamente em instantes.";
+    statusMessage.textContent = "API indisponível. Tente novamente em instantes.";
   }
 }
 
 function renderAssinatura(result) {
   intro.textContent = result.status === "assinado"
-    ? "Este relatorio PMOC ja foi assinado."
-    : "Baixe o PDF recebido por e-mail, assine no Gov.br e envie o arquivo assinado nesta pagina.";
+    ? "Este relatório PMOC já foi assinado."
+    : "Baixe o PDF recebido por e-mail, assine no Gov.br e envie o arquivo assinado nesta página.";
   clientName.textContent = result.cliente?.nome || "Cliente";
   engineerMeta.textContent = [
     result.engenheiro_responsavel?.nome,
     result.engenheiro_responsavel?.crea
   ].filter(Boolean).join(" - ");
   reportStatus.textContent = formatStatus(result.status);
-  reportHash.textContent = result.pdf_hash ? `Hash PDF: ${result.pdf_hash}` : "Hash PDF indisponivel";
+  reportHash.textContent = result.pdf_hash ? `Hash PDF: ${result.pdf_hash}` : "Hash PDF indisponível";
   resultPanel.classList.remove("hidden");
 }
 

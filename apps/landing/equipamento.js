@@ -46,7 +46,7 @@ form?.addEventListener("submit", async (event) => {
     const result = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      status.textContent = result.message || "Nao foi possivel consultar este equipamento.";
+      status.textContent = result.message || "Não foi possível consultar este equipamento.";
       resultPanel.classList.add("hidden");
       return;
     }
@@ -54,7 +54,7 @@ form?.addEventListener("submit", async (event) => {
     status.textContent = "";
     renderEquipment(result);
   } catch {
-    status.textContent = "API indisponivel. Tente novamente em instantes.";
+    status.textContent = "API indisponível. Tente novamente em instantes.";
   } finally {
     button.disabled = false;
     button.textContent = "Consultar";
@@ -70,25 +70,25 @@ function renderEquipment(result) {
   resultMeta.textContent = [
     result.cliente?.nome,
     equipment.local_instalacao,
-    equipment.numero_serie ? `Serie ${equipment.numero_serie}` : ""
+    equipment.numero_serie ? `Série ${equipment.numero_serie}` : ""
   ]
     .filter(Boolean)
     .join(" · ");
   maintenanceStatus.textContent = formatStatus(maintenance.status || "sem_historico");
   maintenanceDate.textContent = maintenance.ultima_atualizacao
-    ? `Ultima atualizacao: ${formatDate(maintenance.ultima_atualizacao)}`
-    : "Ainda sem manutencoes registradas.";
+    ? `Última atualização: ${formatDate(maintenance.ultima_atualizacao)}`
+    : "Ainda sem manutenções registradas.";
 
   historyList.innerHTML = "";
 
   if (!result.historico?.length) {
-    historyList.innerHTML = '<article class="history-row"><strong>Sem historico liberado.</strong><span>As manutencoes futuras aparecerao aqui.</span></article>';
+    historyList.innerHTML = '<article class="history-row"><strong>Sem histórico liberado.</strong><span>As manutenções futuras aparecerão aqui.</span></article>';
   } else {
     for (const item of result.historico) {
       const row = document.createElement("article");
       row.className = "history-row";
       row.innerHTML = `
-        <strong>${escapeHtml(item.titulo || "Manutencao")}</strong>
+        <strong>${escapeHtml(item.titulo || "Manutenção")}</strong>
         <span>${escapeHtml(formatStatus(item.status))} · ${escapeHtml(formatDate(item.atualizada_em))}</span>
       `;
       historyList.appendChild(row);
@@ -103,11 +103,11 @@ function formatStatus(statusValue) {
     pre_chamado: "Pre-chamado",
     rejeitada: "Rejeitada",
     aberta: "Aberta",
-    em_deslocamento: "Tecnico em deslocamento",
+    em_deslocamento: "Técnico em deslocamento",
     em_atendimento: "Em atendimento",
     cancelada: "Cancelada",
-    concluida: "Concluida",
-    sem_historico: "Sem historico"
+    concluida: "Concluída",
+    sem_historico: "Sem histórico"
   };
 
   return labels[statusValue] || statusValue || "-";

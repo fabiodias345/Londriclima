@@ -40,11 +40,11 @@ function buildLocalFromAddress(payload) {
 
 function buildWhatsAppUrl(payload) {
   const lines = [
-    "Ola, quero atendimento pela AIRMOVEBR.",
+    "Olá, quero atendimento pela AIRMOVEBR.",
     `Nome: ${payload.nome}`,
     `Telefone: ${payload.telefone}`,
-    `Servico: ${payload.servico}`,
-    `Endereco: ${payload.local}`,
+    `Serviço: ${payload.servico}`,
+    `Endereço: ${payload.local}`,
     payload.detalhes ? `Detalhes: ${payload.detalhes}` : ""
   ].filter(Boolean);
   return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(lines.join("\n"))}`;
@@ -90,9 +90,9 @@ async function lookupBookingCep() {
   cepInput.value = formatCep(cepInput.value);
   const cep = onlyDigits(cepInput.value);
   if (!cep) return setBookingCepStatus("");
-  if (cep.length < 8) return setBookingCepStatus("Digite os 8 numeros do CEP.", "warning");
+  if (cep.length < 8) return setBookingCepStatus("Digite os 8 números do CEP.", "warning");
 
-  setBookingCepStatus("Buscando endereco pelo CEP...", "loading");
+  setBookingCepStatus("Buscando endereço pelo CEP...", "loading");
   try {
     const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
     const address = response.ok ? await response.json() : { erro: true };
@@ -101,10 +101,10 @@ async function lookupBookingCep() {
     form.elements.bairro.value = address.bairro || "";
     form.elements.cidade.value = address.localidade || "Londrina";
     form.elements.uf.value = address.uf || "PR";
-    setBookingCepStatus("Endereco preenchido. Informe apenas o numero.", "success");
+    setBookingCepStatus("Endereço preenchido. Informe apenas o número.", "success");
     form.elements.numero?.focus();
   } catch {
-    setBookingCepStatus("CEP nao encontrado. Preencha o endereco manualmente.", "warning");
+    setBookingCepStatus("CEP não encontrado. Preencha o endereço manualmente.", "warning");
   }
 }
 
@@ -142,7 +142,7 @@ form?.addEventListener("submit", async (event) => {
   };
 
   status.className = "form-status";
-  status.textContent = "Enviando solicitacao...";
+  status.textContent = "Enviando solicitação...";
   submitButton.disabled = true;
   try {
     const response = await postPreChamado(payload);
@@ -156,7 +156,7 @@ form?.addEventListener("submit", async (event) => {
     setBookingCepStatus("");
   } catch {
     status.classList.add("error");
-    status.textContent = "Nao foi possivel registrar a solicitacao agora. Tente novamente ou fale pelo WhatsApp.";
+    status.textContent = "Não foi possível registrar a solicitação agora. Tente novamente ou fale pelo WhatsApp.";
   } finally {
     submitButton.disabled = false;
   }

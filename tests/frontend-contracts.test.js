@@ -75,8 +75,8 @@ test("landing mostra modal de sucesso com atendimento pelo WhatsApp", () => {
 
   assert.match(html, /id="bookingSuccessModal"/);
   assert.match(html, /\.\/js\/main\.js\?v=/);
-  assert.match(html, /Em breve, um especialista entrara em contato/);
-  assert.match(html, /Tambem podemos agilizar pelo WhatsApp/);
+  assert.match(html, /Em breve, um especialista entrará em contato/);
+  assert.match(html, /Também podemos agilizar pelo WhatsApp/);
   assert.match(html, /id="bookingSuccessWhatsApp"/);
   assert.match(html, /wa\.me\/554330673793/);
   assert.match(html, /data-booking-success-close/);
@@ -91,7 +91,7 @@ test("landing possui formulario de atendimento com endereco", () => {
   const script = read("apps/landing/js/main.js");
 
   assert.doesNotMatch(html, /Londriclima/i);
-  assert.match(html, /Climatizacao <em>profissional<\/em>/);
+  assert.match(html, /Climatização <em>profissional<\/em>/);
   assert.match(html, /name="cep"/);
   assert.match(html, /name="logradouro"/);
   assert.match(html, /name="bairro"/);
