@@ -49,3 +49,19 @@ test("webhook aceita somente o token configurado", () => {
   assert.equal(service.verificarWebhookToken("segredo"), true);
   assert.equal(service.verificarWebhookToken("outro"), false);
 });
+
+test("detalhe da conversa entrega qualificacao e prévia de O.S.", async () => {
+  const conversa = {
+    id: "conversa-1", telefone: "5543999999999", nomeContato: "Fábio", status: "humano",
+    dados: { nome: "Fábio", servico: "instalacao", cidade_bairro: "Centro, Londrina", detalhes: "Split no quarto", campos_extra: { btus: "12000" } },
+    mensagens: [], cliente: null, ordemServico: null
+  };
+  const service = new WhatsAppService({ whatsAppConversa: { findFirstOrThrow: async () => conversa } } as never, {} as never, {} as never, new BoltRules());
+
+  const resultado = await service.obterConversa("conversa-1", "empresa-1");
+
+  assert.equal(resultado.atendimento.dados.nome, "Fábio");
+  assert.equal(resultado.atendimento.previaOs.tipoServico, "instalacao");
+  assert.match(resultado.atendimento.previaOs.detalhes, /Centro, Londrina/);
+  assert.match(resultado.atendimento.previaOs.detalhes, /btus: 12000/);
+});

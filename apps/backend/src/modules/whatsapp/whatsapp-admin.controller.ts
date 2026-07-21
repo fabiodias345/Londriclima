@@ -74,6 +74,6 @@ export class WhatsAppAdminController {
     @Body() body: { texto?: string },
     @CurrentUser() usuario: AuthenticatedUser
   ) {
-    return this.whatsappService.responderConversa(id, usuario.empresa_id, String(body.texto || "").trim());
+    return this.whatsappService.responderConversa(id, usuario.empresa_id, usuario.id, String(body.texto || "").trim());
   }
 }

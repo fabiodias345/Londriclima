@@ -53,6 +53,7 @@ Somente estado atual e proximos passos. Historico concluido fica no Git e nos te
 - Backend em producao recebeu integracao inicial para fila `enviar_whatsapp` na finalizacao de O.S.
 - Bolt isolado em pasta propria com estados, coleta, triagem, FAQs, fallback e transferencia humana.
 - Admin WhatsApp possui fila humana, alerta, SSE/polling, assumir/liberar/encerrar, resposta manual e historico.
+- Central de atendimento WhatsApp refeita localmente: fila, conversa completa com horario, dados coletados pelo Bolt e criacao de cliente/O.S. pre-preenchida e vinculada; falta publicar e validar no Admin de producao.
 - Conversas podem ser vinculadas manualmente a cliente e O.S.; status de entrega WhatsApp sao persistidos.
 - Suporte a templates aprovados inclui O.S. finalizada e notificacao proativa ao tecnico.
 - Suite backend validada com 211 testes aprovados; todos os arquivos de codigo alterados permanecem abaixo de 500 linhas.

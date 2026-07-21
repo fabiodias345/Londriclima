@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { Prisma } from "@prisma/client";
+import { OrdemServicoTipoServico, Prisma } from "@prisma/client";
 import { Optional } from "@nestjs/common";
 import { AdminService } from "../admin/admin.service";
 import { SalvarClienteDto } from "../admin/dto/salvar-cliente.dto";
@@ -55,7 +55,9 @@ export class WhatsAppService {
   }
 
   async obterConversa(id: string, empresaId: string) {
-    return this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId }, include: { mensagens: { orderBy: { criadoEm: "asc" } }, atribuidoUsuario: { select: { id: true, nome: true } }, cliente: true, ordemServico: { select: { id: true, titulo: true, status: true } } } });
+    const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId }, include: { mensagens: { orderBy: { criadoEm: "asc" } }, atribuidoUsuario: { select: { id: true, nome: true } }, cliente: true, ordemServico: { select: { id: true, titulo: true, status: true } } } });
+    const dados = normalizarDadosBolt(conversa.dados);
+    return { ...conversa, atendimento: { dados, previaOs: this.criarPreviaOs(dados) } };
   }
 
   async assumirConversa(id: string, empresaId: string, usuarioId: string) {
@@ -91,9 +93,10 @@ export class WhatsAppService {
     return { reaberta: true };
   }
 
-  async responderConversa(id: string, empresaId: string, texto: string) {
+  async responderConversa(id: string, empresaId: string, usuarioId: string, texto: string) {
     if (!texto.trim()) throw new BadRequestException("Mensagem vazia.");
     const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId } });
+    if (conversa.status !== "humano" || conversa.atribuidoUsuarioId !== usuarioId) throw new ConflictException("Assuma esta conversa antes de responder.");
     const entrega = await this.sender.enviar({ to: conversa.telefone, text: texto.trim() });
     await this.prisma.$transaction([
       this.prisma.whatsAppConversa.update({ where: { id }, data: { status: "humano", ultimaMensagemEm: new Date(), ultimaLeituraEm: new Date() } }),
@@ -118,8 +121,8 @@ export class WhatsAppService {
     const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId } });
     if (!conversa.clienteId) throw new BadRequestException("Crie ou vincule o cliente antes da O.S.");
     if (conversa.ordemServicoId) throw new ConflictException("Esta conversa ja possui O.S. vinculada.");
-    const dados = normalizarDadosBolt(conversa.dados);
-    const ordem = await this.adminService.criarOrdemAgenda({ ...dto, cliente_id: conversa.clienteId, titulo: dto.titulo || `Atendimento WhatsApp - ${dados.servico || "servico"}`, detalhes: dto.detalhes || dados.detalhes || undefined }, usuario);
+    const previaOs = this.criarPreviaOs(normalizarDadosBolt(conversa.dados));
+    const ordem = await this.adminService.criarOrdemAgenda({ ...dto, cliente_id: conversa.clienteId, titulo: dto.titulo || previaOs.titulo, detalhes: dto.detalhes || previaOs.detalhes, tipo_servico: dto.tipo_servico || previaOs.tipoServico }, usuario);
     await this.prisma.whatsAppConversa.update({ where: { id }, data: { ordemServicoId: ordem.os_id } });
     await this.notificarTecnicoNovaOs(ordem.os_id, empresaId);
     this.emitir({ tipo: "os_vinculada", conversaId: id, empresaId });
@@ -166,6 +169,12 @@ export class WhatsAppService {
   }
 
   private atualizarStatus(dados: unknown, status: BoltData["status"]) { return { ...normalizarDadosBolt(dados), status }; }
+  private criarPreviaOs(dados: BoltData): { titulo: string; detalhes: string; tipoServico: OrdemServicoTipoServico } {
+    const local = dados.cidade_bairro ? `Local: ${dados.cidade_bairro}` : "";
+    const extras = Object.entries(dados.campos_extra).filter(([, value]) => value != null && String(value).trim()).map(([campo, value]) => `${campo.replaceAll("_", " ")}: ${value}`);
+    const tipoServico: OrdemServicoTipoServico = dados.servico === "instalacao" ? "instalacao" : dados.servico === "pmoc" ? "preventiva" : "corretiva";
+    return { titulo: `Atendimento WhatsApp - ${dados.servico || "servico"}`, detalhes: [dados.detalhes, local, ...extras].filter(Boolean).join("\n"), tipoServico };
+  }
   private emitir(evento: WhatsAppEvent) { for (const listener of this.listeners) listener(evento); }
   private async obterEmpresa() { const id = this.config.get<string>("LONDRI_WHATS_EMPRESA_ID"); return id ? this.prisma.empresa.findUnique({ where: { id } }) : this.prisma.empresa.findFirst({ where: { ativa: true }, orderBy: { criadoEm: "asc" } }); }
 

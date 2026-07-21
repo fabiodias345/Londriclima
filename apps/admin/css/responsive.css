@@ -102,6 +102,16 @@
     grid-template-columns: 1fr;
   }
 
+  .whatsapp-workbench,
+  .whatsapp-central {
+    grid-template-columns: 1fr;
+  }
+
+  .whatsapp-queue {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
   .os-workbench-grid .request-list,
   .os-detail-panel {
     grid-column: 1;
