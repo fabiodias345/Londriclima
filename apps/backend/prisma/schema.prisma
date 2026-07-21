@@ -327,6 +327,7 @@ model Cliente {
   ordensServico         OrdemServico[]
   pmocRelatorios        PmocRelatorio[]
   planosRecorrencia     PlanoRecorrencia[]
+  conversasWhatsApp     WhatsAppConversa[]
 
   @@index([empresaId])
   @@index([empresaId, pmocAtivo])
@@ -505,6 +506,7 @@ model OrdemServico {
   automacoes               AutomacaoAgendada[]
   planosRecorrenciaGerada  PlanoRecorrencia[]              @relation("PlanoRecorrenciaUltimaOs")
   planoRecorrenciaGeracoes PlanoRecorrenciaGeracao[]
+  conversaWhatsApp          WhatsAppConversa?
 
   @@index([empresaId, status])
   @@index([empresaId, agendadaPara])
@@ -831,12 +833,18 @@ model WhatsAppConversa {
   status             WhatsAppConversaStatus @default(bot)
   dados              Json?
   ultimaMensagemEm   DateTime              @default(now()) @map("ultima_mensagem_em")
+  ultimaLeituraEm    DateTime?             @map("ultima_leitura_em")
   atribuidoUsuarioId String?               @map("atribuido_usuario_id") @db.Uuid
+  clienteId          String?               @map("cliente_id") @db.Uuid
+  ordemServicoId     String?               @unique @map("ordem_servico_id") @db.Uuid
+  encerramentoMotivo String?               @map("encerramento_motivo")
   criadoEm           DateTime              @default(now()) @map("criado_em")
   atualizadoEm       DateTime              @updatedAt @map("atualizado_em")
 
   empresa          Empresa     @relation(fields: [empresaId], references: [id])
   atribuidoUsuario Usuario?    @relation("WhatsAppConversaAtendente", fields: [atribuidoUsuarioId], references: [id], onDelete: SetNull)
+  cliente          Cliente?    @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+  ordemServico     OrdemServico? @relation(fields: [ordemServicoId], references: [id], onDelete: SetNull)
   mensagens        WhatsAppMensagem[]
 
   @@unique([empresaId, telefone])
@@ -851,6 +859,8 @@ model WhatsAppMensagem {
   texto       String
   mensagemId  String?                @unique @map("mensagem_id")
   tipo        String                 @default("text")
+  statusEntrega    String?                @map("status_entrega")
+  statusEntregaEm  DateTime?              @map("status_entrega_em")
   criadoEm    DateTime               @default(now()) @map("criado_em")
 
   conversa WhatsAppConversa @relation(fields: [conversaId], references: [id], onDelete: Cascade)

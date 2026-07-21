@@ -138,6 +138,11 @@ export class AutomacoesService implements OnModuleInit, OnModuleDestroy {
     }
 
     const dados = validarPayloadAutomacaoWhatsapp(payload);
+    const template = this.config.get<string>("WHATSAPP_TEMPLATE_OS_FINALIZADA");
+    if (template && "enviarTemplate" in this.whatsAppSender && typeof this.whatsAppSender.enviarTemplate === "function") {
+      return this.whatsAppSender.enviarTemplate(dados.cliente_telefone, { name: template, language: this.config.get<string>("WHATSAPP_TEMPLATE_LANGUAGE", "pt_BR"), parameters: [dados.cliente_nome, dados.titulo, this.formatarDataEmail(dados.finalizado_em)] });
+    }
+
     return this.whatsAppSender.enviar({
       to: dados.cliente_telefone,
       text: [
