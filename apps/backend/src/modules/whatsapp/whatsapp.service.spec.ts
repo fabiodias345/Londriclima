@@ -50,6 +50,29 @@ test("webhook aceita somente o token configurado", () => {
   assert.equal(service.verificarWebhookToken("outro"), false);
 });
 
+test("primeira resposta assume automaticamente a conversa livre", async () => {
+  const atualizacoes: Array<{ where: Record<string, unknown>; data: Record<string, unknown> }> = [];
+  const prisma = {
+    whatsAppConversa: {
+      findFirstOrThrow: async () => ({ id: "conversa-1", empresaId: "empresa-1", telefone: "5543999999999", status: "humano", atribuidoUsuarioId: null, dados: {} }),
+      updateMany: async (input: { where: Record<string, unknown>; data: Record<string, unknown> }) => {
+        atualizacoes.push(input);
+        return { count: 1 };
+      },
+      update: async () => undefined
+    },
+    whatsAppMensagem: { create: async () => undefined },
+    $transaction: async (operations: Promise<unknown>[]) => Promise.all(operations)
+  };
+  const sender = { enviar: async () => ({ messageId: "wamid.out", recipient: "5543999999999" }) };
+  const service = new WhatsAppService(prisma as never, {} as never, sender as never, new BoltRules());
+
+  const resultado = await service.responderConversa("conversa-1", "empresa-1", "usuario-1", "Ola");
+
+  assert.equal(resultado.assumida, true);
+  assert.equal(atualizacoes[0].where.atribuidoUsuarioId, null);
+  assert.equal(atualizacoes[0].data.atribuidoUsuarioId, "usuario-1");
+});
 test("detalhe da conversa entrega qualificacao e prévia de O.S.", async () => {
   const conversa = {
     id: "conversa-1", telefone: "5543999999999", nomeContato: "Fábio", status: "humano",

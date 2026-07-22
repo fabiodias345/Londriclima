@@ -95,15 +95,22 @@ export class WhatsAppService {
 
   async responderConversa(id: string, empresaId: string, usuarioId: string, texto: string) {
     if (!texto.trim()) throw new BadRequestException("Mensagem vazia.");
-    const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId } });
-    if (conversa.status !== "humano" || conversa.atribuidoUsuarioId !== usuarioId) throw new ConflictException("Assuma esta conversa antes de responder.");
+    let conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId } });
+    if (conversa.status !== "humano") throw new ConflictException("Esta conversa nao esta disponivel para atendimento.");
+    if (!conversa.atribuidoUsuarioId) {
+      const resultado = await this.prisma.whatsAppConversa.updateMany({ where: { id, empresaId, status: "humano", atribuidoUsuarioId: null }, data: { atribuidoUsuarioId: usuarioId, ultimaLeituraEm: new Date(), dados: this.atualizarStatus(conversa.dados, "HUMAN_ATTENDING") as Prisma.InputJsonValue } });
+      if (!resultado.count) throw new ConflictException("Conversa ja assumida por outro atendente.");
+      conversa = { ...conversa, atribuidoUsuarioId: usuarioId };
+      this.emitir({ tipo: "conversa_assumida", conversaId: id, empresaId });
+    }
+    if (conversa.atribuidoUsuarioId !== usuarioId) throw new ConflictException("Conversa ja assumida por outro atendente.");
     const entrega = await this.sender.enviar({ to: conversa.telefone, text: texto.trim() });
     await this.prisma.$transaction([
       this.prisma.whatsAppConversa.update({ where: { id }, data: { status: "humano", ultimaMensagemEm: new Date(), ultimaLeituraEm: new Date() } }),
       this.prisma.whatsAppMensagem.create({ data: { conversaId: id, direcao: "saida", texto: texto.trim(), mensagemId: entrega.messageId } })
     ]);
     this.emitir({ tipo: "mensagem_enviada", conversaId: id, empresaId });
-    return { enviado: true, messageId: entrega.messageId };
+    return { enviado: true, messageId: entrega.messageId, assumida: true };
   }
 
   async criarClienteDaConversa(id: string, empresaId: string, dto: SalvarClienteDto, usuario: AuthenticatedUser) {
