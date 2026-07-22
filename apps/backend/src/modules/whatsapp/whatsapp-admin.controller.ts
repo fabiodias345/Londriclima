@@ -1,4 +1,4 @@
-import { Body, Controller, Get, MessageEvent, Param, ParseUUIDPipe, Patch, Post, Sse, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, MessageEvent, Param, ParseUUIDPipe, Patch, Post, Sse, UseGuards } from "@nestjs/common";
 import { Observable } from "rxjs";
 import { AuthenticatedUser } from "../auth/auth-user";
 import { AdminRoleGuard } from "../auth/admin-role.guard";
@@ -46,6 +46,11 @@ export class WhatsAppAdminController {
   @Post("conversas/:id/reabrir")
   reabrir(@Param("id", new ParseUUIDPipe()) id: string, @CurrentUser() usuario: AuthenticatedUser) {
     return this.whatsappService.reabrirConversa(id, usuario.empresa_id);
+  }
+
+  @Delete("conversas/:id")
+  apagar(@Param("id", new ParseUUIDPipe()) id: string, @CurrentUser() usuario: AuthenticatedUser) {
+    return this.whatsappService.apagarConversa(id, usuario.empresa_id);
   }
 
   @Post("conversas/:id/cliente")

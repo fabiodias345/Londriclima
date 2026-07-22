@@ -73,6 +73,21 @@ test("primeira resposta assume automaticamente a conversa livre", async () => {
   assert.equal(atualizacoes[0].where.atribuidoUsuarioId, null);
   assert.equal(atualizacoes[0].data.atribuidoUsuarioId, "usuario-1");
 });
+test("apagar conversa remove o historico sem apagar cliente ou O.S.", async () => {
+  let idApagado = "";
+  const prisma = {
+    whatsAppConversa: {
+      findFirstOrThrow: async () => ({ id: "conversa-1", empresaId: "empresa-1" }),
+      delete: async ({ where }: { where: { id: string } }) => { idApagado = where.id; }
+    }
+  };
+  const service = new WhatsAppService(prisma as never, {} as never, {} as never, new BoltRules());
+
+  const resultado = await service.apagarConversa("conversa-1", "empresa-1");
+
+  assert.equal(resultado.apagada, true);
+  assert.equal(idApagado, "conversa-1");
+});
 test("Bolt disponibiliza opcoes clicaveis sem retirar o texto livre", () => {
   const bolt = new BoltRules();
   const menu = bolt.processar({ texto: "Oi" }, null);

@@ -93,6 +93,13 @@ export class WhatsAppService {
     return { reaberta: true };
   }
 
+  async apagarConversa(id: string, empresaId: string) {
+    const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId } });
+    await this.prisma.whatsAppConversa.delete({ where: { id: conversa.id } });
+    this.emitir({ tipo: "conversa_apagada", conversaId: id, empresaId });
+    return { apagada: true };
+  }
+
   async responderConversa(id: string, empresaId: string, usuarioId: string, texto: string) {
     if (!texto.trim()) throw new BadRequestException("Mensagem vazia.");
     let conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId } });

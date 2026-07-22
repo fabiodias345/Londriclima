@@ -1,21 +1,21 @@
 import { BoltData, BoltMessage, BoltOption, BoltResult, BoltServiceType } from "./bolt.types";
 
-const MENU = "Ola! Seja bem-vindo(a) a AIRMOVEBR!\n\nEscolha uma opcao para comecar. Se preferir, escreva o que precisa ou toque em Falar com atendente.";
+const MENU = "Olá! Seja bem-vindo à AIRMOVEBR.\n\nSou o Move, a IA de atendimento da AIRMOVEBR.\n\nVou fazer um breve pré-cadastro para identificar sua necessidade e direcionar seu atendimento ao técnico responsável.\n\nVamos começar?";
 const MENU_OPTIONS: BoltOption[] = [
-  { id: "menu_manutencao", title: "Manutencao" },
-  { id: "menu_instalacao", title: "Instalacao" },
+  { id: "menu_manutencao", title: "Manutenção" },
+  { id: "menu_instalacao", title: "Instalação" },
   { id: "menu_pmoc", title: "PMOC" },
-  { id: "menu_locacao", title: "Locacao" },
+  { id: "menu_locacao", title: "Locação" },
   { id: "menu_atendente", title: "Falar com atendente" }
 ];
 const INSTALLATION_OPTIONS: BoltOption[] = [
-  { id: "inst_aparelho_sim", title: "Ja tenho o aparelho" },
+  { id: "inst_aparelho_sim", title: "Já tenho o aparelho" },
   { id: "inst_aparelho_nao", title: "Quero comprar" },
-  { id: "inst_aparelho_orientacao", title: "Preciso de orientacao" }
+  { id: "inst_aparelho_orientacao", title: "Preciso de orientação" }
 ];
 const MAINTENANCE_OPTIONS: BoltOption[] = [
-  { id: "manut_nao_liga", title: "Nao liga" },
-  { id: "manut_nao_gela", title: "Nao gela" },
+  { id: "manut_nao_liga", title: "Não liga" },
+  { id: "manut_nao_gela", title: "Não gela" },
   { id: "manut_outro", title: "Outro problema" }
 ];
 
@@ -44,7 +44,7 @@ export class BoltRules {
     if (servico) return this.iniciarServico(base, servico);
     if (dados.status === "BOT_QUALIFYING") return this.coletar(base, original, texto);
     if (/atendimento/.test(texto)) return this.resposta(base, "Nosso atendimento humano funciona em horario comercial. Voce ja pode deixar seus dados e responderemos assim que possivel.");
-    if (/(cobertura|regiao|atende)/.test(texto)) return this.resposta(base, "Atendemos Londrina e regiao. Informe sua cidade e bairro para confirmarmos a cobertura.");
+    if (/(cobertura|regiao|atende)/.test(texto)) return this.resposta(base, "Atendemos Londrina e regiao. Informe sua cidade para confirmarmos a cobertura.");
     if (/(documento|orcamento)/.test(texto)) return this.resposta(base, "Para preparar um orcamento, precisamos do nome, cidade/bairro, servico e uma breve descricao. Os valores dependem da avaliacao tecnica.");
     if (/(preco|valor|quanto custa)/.test(texto)) return this.resposta(base, "Nao informo preco final pelo WhatsApp. O valor depende do equipamento, capacidade, metragem e infraestrutura.");
     if (/(pingando|vazando|barulho|nao liga|nao gela|defeito|problema)/.test(texto)) return this.resposta({ ...base, detalhes: original }, "Registrei a ocorrencia. Nao vou orientar um reparo sem avaliacao tecnica; a equipe organizara o atendimento.");
@@ -52,7 +52,7 @@ export class BoltRules {
   }
 
   private coletar(dados: BoltData, original: string, texto: string): BoltResult {
-    if (!dados.nome) return this.resposta({ ...dados, nome: original, etapa_atual: "aguardando_cidade_bairro", tentativas_fallback: 0 }, "Obrigado. Em qual bairro e cidade fica o local?");
+    if (!dados.nome) return this.resposta({ ...dados, nome: original, etapa_atual: "aguardando_cidade_bairro", tentativas_fallback: 0 }, "Obrigado. Qual cidade você fala?");
     if (!dados.cidade_bairro) return this.resposta({ ...dados, cidade_bairro: original, etapa_atual: this.proximaEtapa(dados), tentativas_fallback: 0 }, this.perguntaExtra(dados), this.opcoesPerguntaExtra(dados));
     if (dados.servico === "instalacao" && !dados.campos_extra.situacao_aparelho) {
       if (dados.etapa_atual !== "aguardando_situacao_aparelho") return this.resposta({ ...dados, etapa_atual: "aguardando_situacao_aparelho" }, "Voce ja tem o aparelho?", INSTALLATION_OPTIONS);
