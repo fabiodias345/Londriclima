@@ -19,10 +19,17 @@ export type BoltData = {
   ultima_interacao?: string;
 };
 
+export type BoltOption = {
+  id: string;
+  title: string;
+  description?: string;
+};
+
 export type BoltResult = {
   texto: string;
   assumir: boolean;
   dados: BoltData;
+  opcoes?: BoltOption[];
 };
 
 export type BoltMessage = {

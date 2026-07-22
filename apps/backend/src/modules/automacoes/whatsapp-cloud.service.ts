@@ -2,9 +2,16 @@ import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import axios from "axios";
 
+export type WhatsAppInteractiveOption = {
+  id: string;
+  title: string;
+  description?: string;
+};
+
 export type WhatsAppMessage = {
   to: string;
   text: string;
+  options?: WhatsAppInteractiveOption[];
 };
 
 export type WhatsAppTemplate = {
@@ -45,37 +52,22 @@ export class WhatsAppCloudService implements WhatsAppSender {
     const phoneId = this.obterConfig("LONDRI_PHONE_ID", "WHATSAPP_PHONE_NUMBER_ID");
     const version = this.config.get<string>("WHATSAPP_GRAPH_VERSION", "v20.0");
     const recipient = normalizarTelefoneWhatsapp(message.to);
-
+    const payload = message.options?.length ? this.interactivePayload(message.text, message.options) : { type: "text", text: { preview_url: false, body: message.text } };
     const response = await axios.post<WhatsAppCloudResponse>(
       `https://graph.facebook.com/${version}/${phoneId}/messages`,
-      {
-        messaging_product: "whatsapp",
-        recipient_type: "individual",
-        to: recipient,
-        type: "text",
-        text: {
-          preview_url: false,
-          body: message.text
-        }
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      }
+      { messaging_product: "whatsapp", recipient_type: "individual", to: recipient, ...payload },
+      { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
     );
-
     const messageId = response.data.messages?.[0]?.id;
+    if (!messageId) throw new Error("WhatsApp Cloud API sem comprovante.");
+    return { messageId, recipient };
+  }
 
-    if (!messageId) {
-      throw new Error("WhatsApp Cloud API sem comprovante.");
+  private interactivePayload(body: string, options: WhatsAppInteractiveOption[]) {
+    if (options.length <= 3) {
+      return { type: "interactive", interactive: { type: "button", body: { text: body }, action: { buttons: options.map((option) => ({ type: "reply", reply: { id: option.id, title: option.title.slice(0, 20) } })) } } };
     }
-
-    return {
-      messageId,
-      recipient
-    };
+    return { type: "interactive", interactive: { type: "list", body: { text: body }, action: { button: "Escolher opcao", sections: [{ title: "Opcoes de atendimento", rows: options.slice(0, 10).map((option) => ({ id: option.id, title: option.title.slice(0, 24), ...(option.description ? { description: option.description.slice(0, 72) } : {}) })) }] } } };
   }
 
   private async enviarPayload(payload: Record<string, unknown>): Promise<WhatsAppCloudResponse> {
@@ -88,21 +80,13 @@ export class WhatsAppCloudService implements WhatsAppSender {
 
   private obterConfig(chavePrincipal: string, chaveAlternativa: string) {
     const valor = this.config.get<string>(chavePrincipal) || this.config.get<string>(chaveAlternativa);
-
-    if (!valor?.trim()) {
-      throw new Error(`${chavePrincipal} nao configurado.`);
-    }
-
+    if (!valor?.trim()) throw new Error(`${chavePrincipal} nao configurado.`);
     return valor.trim();
   }
 }
 
 export function normalizarTelefoneWhatsapp(telefone: string) {
   const digitos = telefone.replace(/\D/g, "");
-
-  if (digitos.length === 10 || digitos.length === 11) {
-    return `55${digitos}`;
-  }
-
+  if (digitos.length === 10 || digitos.length === 11) return `55${digitos}`;
   return digitos;
 }

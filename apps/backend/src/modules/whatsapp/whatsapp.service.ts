@@ -159,7 +159,7 @@ export class WhatsAppService {
     const resposta = this.bolt.processar({ texto: mensagem.texto, nomeContato: mensagem.nome }, conversa.dados);
     try {
       if (!resposta.texto) return;
-      const entrega = await this.sender.enviar({ to: mensagem.telefone, text: resposta.texto });
+      const entrega = await this.sender.enviar({ to: mensagem.telefone, text: resposta.texto, options: resposta.opcoes });
       await this.prisma.$transaction([
         this.prisma.whatsAppMensagem.create({ data: { conversaId: conversa.id, direcao: "saida", texto: resposta.texto, mensagemId: entrega.messageId } }),
         this.prisma.whatsAppConversa.update({ where: { id: conversa.id }, data: { ...(resposta.assumir ? { status: "humano" as const } : {}), dados: resposta.dados as Prisma.InputJsonValue, ultimaMensagemEm: new Date() } })
@@ -214,7 +214,11 @@ export class WhatsAppService {
         const contact = this.record(Array.isArray(value.contacts) ? value.contacts[0] : undefined);
         for (const item of Array.isArray(value.messages) ? value.messages : []) {
           const mensagem = this.record(item);
-          const texto = this.record(mensagem.text).body;
+          const textoDireto = this.record(mensagem.text).body;
+          const interativo = this.record(mensagem.interactive);
+          const respostaBotao = this.record(interativo.button_reply);
+          const respostaLista = this.record(interativo.list_reply);
+          const texto = typeof textoDireto === "string" ? textoDireto : typeof respostaBotao.id === "string" ? respostaBotao.id : typeof respostaLista.id === "string" ? respostaLista.id : undefined;
           if (typeof mensagem.from !== "string" || typeof texto !== "string") continue;
           resultado.push({ id: typeof mensagem.id === "string" ? mensagem.id : undefined, telefone: mensagem.from, nome: typeof this.record(contact.profile).name === "string" ? String(this.record(contact.profile).name) : undefined, texto, tipo: typeof mensagem.type === "string" ? mensagem.type : "text" });
         }

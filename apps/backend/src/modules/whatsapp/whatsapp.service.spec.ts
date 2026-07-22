@@ -73,6 +73,16 @@ test("primeira resposta assume automaticamente a conversa livre", async () => {
   assert.equal(atualizacoes[0].where.atribuidoUsuarioId, null);
   assert.equal(atualizacoes[0].data.atribuidoUsuarioId, "usuario-1");
 });
+test("Bolt disponibiliza opcoes clicaveis sem retirar o texto livre", () => {
+  const bolt = new BoltRules();
+  const menu = bolt.processar({ texto: "Oi" }, null);
+  assert.equal(menu.opcoes?.length, 5);
+  const iniciado = bolt.processar({ texto: "menu_manutencao" }, null);
+  const comNome = bolt.processar({ texto: "Maria" }, iniciado.dados);
+  const comLocal = bolt.processar({ texto: "Londrina, Centro" }, comNome.dados);
+  assert.equal(comLocal.opcoes?.[0].id, "manut_nao_liga");
+  assert.equal(comLocal.opcoes?.[2].id, "manut_outro");
+});
 test("detalhe da conversa entrega qualificacao e prévia de O.S.", async () => {
   const conversa = {
     id: "conversa-1", telefone: "5543999999999", nomeContato: "Fábio", status: "humano",
