@@ -1284,3 +1284,7 @@ form button,
   background: #ffffff;
 }
 
+
+.sidebar .brand { display: block; padding: 0 10px 8px; }
+.sidebar .brand-logo { display: block; width: 180px; height: 82px; object-fit: contain; border-radius: 10px; background: #fff; }
+.sidebar .brand strong { display: none; }
