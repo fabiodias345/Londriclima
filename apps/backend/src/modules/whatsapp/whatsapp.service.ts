@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { OrdemServicoTipoServico, Prisma } from "@prisma/client";
+import { OrdemServicoStatus, OrdemServicoTipoServico, Prisma } from "@prisma/client";
 import { Optional } from "@nestjs/common";
 import { AdminService } from "../admin/admin.service";
 import { SalvarClienteDto } from "../admin/dto/salvar-cliente.dto";
@@ -55,7 +55,7 @@ export class WhatsAppService {
   }
 
   async obterConversa(id: string, empresaId: string) {
-    const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId }, include: { mensagens: { orderBy: { criadoEm: "asc" } }, atribuidoUsuario: { select: { id: true, nome: true } }, cliente: true, ordemServico: { select: { id: true, titulo: true, status: true } } } });
+    const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId }, include: { mensagens: { orderBy: { criadoEm: "asc" } }, atribuidoUsuario: { select: { id: true, nome: true } }, cliente: true, ordemServico: { select: { id: true, titulo: true, status: true, agendadaPara: true, equipeId: true, tecnicoId: true } } } });
     const dados = normalizarDadosBolt(conversa.dados);
     return { ...conversa, atendimento: { dados, previaOs: this.criarPreviaOs(dados) } };
   }
@@ -123,26 +123,47 @@ export class WhatsAppService {
   async criarClienteDaConversa(id: string, empresaId: string, dto: SalvarClienteDto, usuario: AuthenticatedUser) {
     if (!this.adminService) throw new BadRequestException("Admin de clientes nao configurado.");
     const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId } });
-    if (conversa.clienteId) return this.obterConversa(id, empresaId);
-    const cliente = await this.adminService.criarCliente({ ...dto, telefone: dto.telefone || conversa.telefone }, usuario);
-    await this.prisma.whatsAppConversa.update({ where: { id }, data: { clienteId: cliente.id } });
-    this.emitir({ tipo: "cliente_vinculado", conversaId: id, empresaId });
+    let clienteId = conversa.clienteId;
+    if (!clienteId) {
+      const cliente = await this.adminService.criarCliente({ ...dto, telefone: dto.telefone || conversa.telefone }, usuario);
+      clienteId = cliente.id;
+      await this.prisma.whatsAppConversa.update({ where: { id }, data: { clienteId } });
+      this.emitir({ tipo: "cliente_vinculado", conversaId: id, empresaId });
+    }
+    if (!conversa.ordemServicoId) {
+      const previaOs = this.criarPreviaOs(normalizarDadosBolt(conversa.dados));
+      const ordem = await this.adminService.criarOrdemAgenda({ cliente_id: clienteId, titulo: previaOs.titulo, detalhes: previaOs.detalhes, tipo_servico: previaOs.tipoServico }, usuario);
+      await this.prisma.whatsAppConversa.update({ where: { id }, data: { ordemServicoId: ordem.os_id } });
+      this.emitir({ tipo: "os_vinculada", conversaId: id, empresaId });
+    }
     return this.obterConversa(id, empresaId);
   }
-
   async criarOrdemDaConversa(id: string, empresaId: string, dto: SalvarOsAgendaDto, usuario: AuthenticatedUser) {
     if (!this.adminService) throw new BadRequestException("Admin de agenda nao configurado.");
     const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId } });
     if (!conversa.clienteId) throw new BadRequestException("Crie ou vincule o cliente antes da O.S.");
-    if (conversa.ordemServicoId) throw new ConflictException("Esta conversa ja possui O.S. vinculada.");
     const previaOs = this.criarPreviaOs(normalizarDadosBolt(conversa.dados));
-    const ordem = await this.adminService.criarOrdemAgenda({ ...dto, cliente_id: conversa.clienteId, titulo: dto.titulo || previaOs.titulo, detalhes: dto.detalhes || previaOs.detalhes, tipo_servico: dto.tipo_servico || previaOs.tipoServico }, usuario);
-    await this.prisma.whatsAppConversa.update({ where: { id }, data: { ordemServicoId: ordem.os_id } });
-    await this.notificarTecnicoNovaOs(ordem.os_id, empresaId);
+    const dadosOs = { ...dto, cliente_id: conversa.clienteId, titulo: dto.titulo || previaOs.titulo, detalhes: dto.detalhes || previaOs.detalhes, tipo_servico: dto.tipo_servico || previaOs.tipoServico };
+    await this.validarHorarioDisponivel(conversa.ordemServicoId, empresaId, dadosOs);
+    const ordem = conversa.ordemServicoId
+      ? await this.adminService.reprogramarOrdemAgenda(conversa.ordemServicoId, dadosOs, usuario)
+      : await this.adminService.criarOrdemAgenda(dadosOs, usuario);
+    if (!conversa.ordemServicoId) await this.prisma.whatsAppConversa.update({ where: { id }, data: { ordemServicoId: ordem.os_id } });
+    if (dto.agendada_para) await this.notificarTecnicoNovaOs(ordem.os_id, empresaId);
     this.emitir({ tipo: "os_vinculada", conversaId: id, empresaId });
     return this.obterConversa(id, empresaId);
   }
 
+  private async validarHorarioDisponivel(osId: string | null, empresaId: string, dto: SalvarOsAgendaDto) {
+    if (!dto.agendada_para || (!dto.equipe_id && !dto.tecnico_id)) return;
+    const horario = new Date(dto.agendada_para);
+    if (Number.isNaN(horario.getTime())) throw new BadRequestException("Horario de agendamento invalido.");
+    const conflito = await this.prisma.ordemServico.findFirst({
+      where: { empresaId, ...(osId ? { NOT: { id: osId } } : {}), status: { in: [OrdemServicoStatus.aberta, OrdemServicoStatus.em_deslocamento, OrdemServicoStatus.em_atendimento] }, agendadaPara: horario, OR: [...(dto.equipe_id ? [{ equipeId: dto.equipe_id }] : []), ...(dto.tecnico_id ? [{ tecnicoId: dto.tecnico_id }] : [])] },
+      select: { id: true }
+    });
+    if (conflito) throw new ConflictException("Este horario ja esta ocupado para a equipe ou tecnico selecionado.");
+  }
   private async notificarTecnicoNovaOs(osId: string, empresaId: string) {
     const template = this.config.get<string>("WHATSAPP_TEMPLATE_OS_NOVA");
     if (!template || !this.sender.enviarTemplate) return;
