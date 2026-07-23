@@ -37,12 +37,13 @@ let lastWhatsappEvent = "";
 let whatsappScheduleOptions = { equipes: [], tecnicos: [], agenda: [] };
 let whatsappSelectedScheduleDate = "";
 let whatsappScheduleDraft = { equipeId: "", tecnicoId: "" };
+const whatsappTopbar = document.querySelector(".topbar");
 
 function esc(value) { const div = document.createElement("div"); div.textContent = String(value ?? ""); return div.innerHTML; }
 function formatDate(value) { const date = new Date(value); return Number.isNaN(date.getTime()) ? String(value || "") : date.toLocaleString("pt-BR"); }
 function localDate(value = new Date()) { const date = new Date(value); const offset = date.getTimezoneOffset() * 60000; return new Date(date.getTime() - offset).toISOString().slice(0, 10); }
-function hideWhatsappView() { whatsappView.classList.add("hidden"); whatsappSummary.classList.add("hidden"); refreshButton?.classList.remove("hidden"); window.clearInterval(whatsappRefreshTimer); whatsappEventAbort?.abort(); }
-function showWhatsappView() { document.querySelectorAll("[id$='View'], [id$='Summary']").forEach((e) => e.classList.add("hidden")); document.querySelectorAll(".nav-link").forEach((e) => e.classList.toggle("active", e === whatsappNav)); viewKicker.textContent = "Atendimento digital"; viewTitle.textContent = "Conversas WhatsApp"; refreshButton?.classList.add("hidden"); whatsappView.classList.remove("hidden"); window.clearInterval(whatsappRefreshTimer); void loadWhatsappConversations(); whatsappRefreshTimer = window.setInterval(() => void loadWhatsappConversations(), 60000); void connectWhatsappEvents(); }
+function hideWhatsappView() { whatsappView.classList.add("hidden"); whatsappSummary.classList.add("hidden"); whatsappTopbar?.classList.remove("hidden"); refreshButton?.classList.remove("hidden"); window.clearInterval(whatsappRefreshTimer); whatsappEventAbort?.abort(); }
+function showWhatsappView() { document.querySelectorAll("[id$='View'], [id$='Summary']").forEach((e) => e.classList.add("hidden")); document.querySelectorAll(".nav-link").forEach((e) => e.classList.toggle("active", e === whatsappNav)); viewKicker.textContent = "Atendimento digital"; viewTitle.textContent = "Conversas WhatsApp"; whatsappTopbar?.classList.add("hidden"); refreshButton?.classList.add("hidden"); whatsappView.classList.remove("hidden"); window.clearInterval(whatsappRefreshTimer); void loadWhatsappConversations(); whatsappRefreshTimer = window.setInterval(() => void loadWhatsappConversations(), 60000); void connectWhatsappEvents(); }
 
 async function loadWhatsappConversations() {
   const status = document.querySelector("#whatsappListStatus");
