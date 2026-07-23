@@ -17,10 +17,10 @@ const whatsappView = document.createElement("section");
 whatsappView.className = "worklist hidden whatsapp-workspace";
 whatsappView.id = "whatsappView";
 whatsappView.innerHTML = \`
-  <div class="whatsapp-page-header"><div><span class="kicker">Central de atendimento</span><h2>Conversas WhatsApp</h2><p>Converse, complete o cadastro e programe a O.S. no mesmo atendimento.</p></div></div>
+  <div class="whatsapp-page-header"><span class="kicker">Central de atendimento</span></div>
   <div class="whatsapp-inbox" role="region" aria-label="Central de conversas WhatsApp">
     <aside class="whatsapp-inbox-list">
-      <div class="whatsapp-list-head"><div><strong>Caixa de entrada</strong><span class="whatsapp-list-count" id="whatsappListStatus">Carregando...</span></div><button class="whatsapp-icon-button" id="whatsappRefreshButton" type="button" aria-label="Atualizar conversas" title="Atualizar conversas">↻</button></div>
+      <div class="whatsapp-list-head"><div><strong>Caixa de entrada</strong><span class="whatsapp-list-count" id="whatsappListStatus">Carregando...</span></div><button class="whatsapp-icon-button" id="whatsappRefreshButton" type="button" aria-label="Atualizar conversas" title="Atualizar conversas">Atualizar</button></div>
       <label class="whatsapp-search"><span class="sr-only">Pesquisar conversa</span><input id="whatsappSearchInput" type="search" placeholder="Pesquisar nome ou telefone" autocomplete="off" /></label>
       <div class="whatsapp-filters" role="tablist" aria-label="Filtro de conversas"><button class="is-active" type="button" data-whatsapp-filter="todas">Todas</button><button type="button" data-whatsapp-filter="aguardando">Aguardando <span id="whatsappPendingBadge">0</span></button><button type="button" data-whatsapp-filter="atendimento">Em atendimento</button><button type="button" data-whatsapp-filter="encerradas">Encerradas</button></div>
       <div class="whatsapp-conversation-list" id="whatsappConversationList"></div>
