@@ -1,4 +1,4 @@
-﻿CREATE TYPE "CatalogoItemTipo" AS ENUM ('servico', 'material', 'peca', 'equipamento');
+CREATE TYPE "CatalogoItemTipo" AS ENUM ('servico', 'material', 'peca', 'equipamento');
 CREATE TYPE "OrcamentoStatus" AS ENUM ('rascunho', 'enviado', 'aprovado', 'recusado', 'expirado');
 
 CREATE TABLE "catalogo_itens" (
