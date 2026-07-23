@@ -433,8 +433,8 @@ export class AdminClientesService {
       throw new BadRequestException("Telefone com DDD e obrigatorio.");
     }
 
-    if (![10, 11].includes(digits.length)) {
-      throw new BadRequestException("Telefone deve incluir DDD com 10 ou 11 digitos.");
+    if (![10, 11, 13].includes(digits.length)) {
+      throw new BadRequestException("Telefone deve incluir DDD com 10, 11 ou 13 digitos.");
     }
 
     return digits;
