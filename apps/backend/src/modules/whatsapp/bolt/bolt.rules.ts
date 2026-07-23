@@ -91,7 +91,8 @@ export class BoltRules {
     return this.resposta({ ...dados, tentativas_fallback: tentativas }, "Nao entendi. Escolha uma opcao abaixo ou escreva o que precisa.", MENU_OPTIONS);
   }
   private resumo(dados: BoltData): BoltResult {
-    const texto = `Resumo ${this.rotulo(dados.servico || "manutencao")}\nCliente: ${dados.nome || "nao informado"} - Local: ${dados.cidade_bairro || "nao informado"}\nDetalhes: ${dados.detalhes || "nao informado"}\n\nSe algum dado estiver incorreto, digite CORRIGIR.\nTransferindo para nossa equipe.`;
+    const servico = ({ manutencao: "Manutenção", instalacao: "Instalação", pmoc: "PMOC", locacao: "Locação" } as Record<BoltServiceType, string>)[dados.servico || "manutencao"];
+    const texto = `Pré-cadastro concluído.\n\nCliente: ${dados.nome || "Não informado"}\nCidade: ${dados.cidade_bairro || "Não informada"}\nServiço: ${servico}\nDetalhes: ${dados.detalhes || "Não informados."}\n\nCaso precise alterar alguma informação, responda com CORRIGIR.\n\nSeu atendimento já está sendo encaminhado ao técnico responsável. Em breve entraremos em contato para dar continuidade ao atendimento.`;
     return { texto, assumir: true, dados: { ...dados, status: "HUMAN_QUEUE", etapa_atual: null, tentativas_fallback: 0 } };
   }
   private humano(dados: BoltData): BoltResult { return { texto: "Vou te transferir para nossa equipe agora.\nSe puder, envie seu nome e o motivo do contato.", assumir: true, dados: { ...dados, status: "HUMAN_QUEUE", etapa_atual: null, tentativas_fallback: 0 } }; }
