@@ -6,9 +6,10 @@ import { WhatsAppAdminController } from "./whatsapp-admin.controller";
 import { WhatsAppController } from "./whatsapp.controller";
 import { WhatsAppService } from "./whatsapp.service";
 import { BoltModule } from "./bolt/bolt.module";
+import { ComercialModule } from "../comercial/comercial.module";
 
 @Module({
-  imports: [AuthModule, AutomacoesModule, BoltModule, AdminModule],
+  imports: [AuthModule, AutomacoesModule, BoltModule, AdminModule, ComercialModule],
   controllers: [WhatsAppController, WhatsAppAdminController],
   providers: [WhatsAppService]
 })

@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
+import { ComercialModule } from "./modules/comercial/comercial.module";
 import { DatabaseModule } from "./database/database.module";
 import { AdminModule } from "./modules/admin/admin.module";
 import { AssinaturasModule } from "./modules/assinaturas/assinaturas.module";
@@ -18,6 +19,7 @@ import { WhatsAppModule } from "./modules/whatsapp/whatsapp.module";
       envFilePath: ["whats.env", "../../whats.env", ".env", ".env.local"]
     }),
     DatabaseModule,
+    ComercialModule,
     AdminModule,
     AssinaturasModule,
     AuthModule,

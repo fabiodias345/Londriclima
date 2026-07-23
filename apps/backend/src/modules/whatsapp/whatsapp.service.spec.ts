@@ -114,7 +114,7 @@ test("detalhe da conversa entrega qualificacao e prévia de O.S.", async () => {
   assert.match(resultado.atendimento.previaOs.detalhes, /btus: 12000/);
 });
 
-test("criar cliente pelo WhatsApp cria a O.S. pré-preenchida", async () => {
+test("criar cliente pelo WhatsApp não cria O.S. antes do orçamento aprovado", async () => {
   const atualizacoes: Array<Record<string, unknown>> = [];
   const conversa = { id: "conversa-1", empresaId: "empresa-1", telefone: "5543999999999", clienteId: null, ordemServicoId: null, dados: { servico: "instalacao", cidade_bairro: "Londrina", detalhes: "Instalar equipamento", campos_extra: {} }, mensagens: [], cliente: null, ordemServico: null };
   const prisma = {
@@ -125,15 +125,12 @@ test("criar cliente pelo WhatsApp cria a O.S. pré-preenchida", async () => {
   };
   const chamadas: Array<Record<string, unknown>> = [];
   const admin = {
-    criarCliente: async () => ({ id: "cliente-1" }),
-    criarOrdemAgenda: async (dto: Record<string, unknown>) => { chamadas.push(dto); return { os_id: "os-1" }; }
+    criarCliente: async () => ({ id: "cliente-1" })
   };
   const service = new WhatsAppService(prisma as never, {} as never, {} as never, new BoltRules(), admin as never);
 
   await service.criarClienteDaConversa("conversa-1", "empresa-1", { nome: "Fábio", cidade: "Londrina", uf: "PR" }, { id: "usuario-1", empresa_id: "empresa-1" } as never);
 
-  assert.equal(chamadas.length, 1);
-  assert.equal(chamadas[0].cliente_id, "cliente-1");
-  assert.equal(chamadas[0].tipo_servico, "instalacao");
-  assert.equal((atualizacoes[1].data as { ordemServicoId: string }).ordemServicoId, "os-1");
+  assert.equal(chamadas.length, 0);
+  assert.equal((atualizacoes[0].data as { clienteId: string }).clienteId, "cliente-1");
 });

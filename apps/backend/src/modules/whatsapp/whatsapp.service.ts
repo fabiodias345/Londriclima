@@ -49,13 +49,13 @@ export class WhatsAppService {
   async listarConversas(empresaId: string) {
     const items = await this.prisma.whatsAppConversa.findMany({
       where: { empresaId }, orderBy: { ultimaMensagemEm: "desc" }, take: 100,
-      include: { mensagens: { orderBy: { criadoEm: "desc" }, take: 1 }, atribuidoUsuario: { select: { id: true, nome: true } }, cliente: { select: { id: true, nome: true } }, ordemServico: { select: { id: true, titulo: true } } }
+      include: { mensagens: { orderBy: { criadoEm: "desc" }, take: 1 }, atribuidoUsuario: { select: { id: true, nome: true } }, cliente: { select: { id: true, nome: true } }, orcamentos: { orderBy: { criadoEm: "desc" }, take: 1, include: { itens: true } }, ordemServico: { select: { id: true, titulo: true } } }
     });
     return { items, total: items.length, pendentes: items.filter((item) => item.status === "humano" && !item.atribuidoUsuarioId).length };
   }
 
   async obterConversa(id: string, empresaId: string) {
-    const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId }, include: { mensagens: { orderBy: { criadoEm: "asc" } }, atribuidoUsuario: { select: { id: true, nome: true } }, cliente: true, ordemServico: { select: { id: true, titulo: true, status: true, agendadaPara: true, equipeId: true, tecnicoId: true } } } });
+    const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId }, include: { mensagens: { orderBy: { criadoEm: "asc" } }, atribuidoUsuario: { select: { id: true, nome: true } }, cliente: true, orcamentos: { orderBy: { criadoEm: "desc" }, take: 1, include: { itens: true } }, ordemServico: { select: { id: true, titulo: true, status: true, agendadaPara: true, equipeId: true, tecnicoId: true } } } });
     const dados = normalizarDadosBolt(conversa.dados);
     return { ...conversa, atendimento: { dados, previaOs: this.criarPreviaOs(dados) } };
   }
@@ -129,12 +129,6 @@ export class WhatsAppService {
       clienteId = cliente.id;
       await this.prisma.whatsAppConversa.update({ where: { id }, data: { clienteId } });
       this.emitir({ tipo: "cliente_vinculado", conversaId: id, empresaId });
-    }
-    if (!conversa.ordemServicoId) {
-      const previaOs = this.criarPreviaOs(normalizarDadosBolt(conversa.dados));
-      const ordem = await this.adminService.criarOrdemAgenda({ cliente_id: clienteId, titulo: previaOs.titulo, detalhes: previaOs.detalhes, tipo_servico: previaOs.tipoServico }, usuario);
-      await this.prisma.whatsAppConversa.update({ where: { id }, data: { ordemServicoId: ordem.os_id } });
-      this.emitir({ tipo: "os_vinculada", conversaId: id, empresaId });
     }
     return this.obterConversa(id, empresaId);
   }

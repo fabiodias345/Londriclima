@@ -172,6 +172,7 @@ test("admin compila o bundle concatenado antes do deploy", async () => {
     dom,
     tecnicoFoto,
     whatsapp,
+    comercial,
     eventos,
     bootstrap
   ] = await Promise.all([
@@ -187,6 +188,7 @@ test("admin compila o bundle concatenado antes do deploy", async () => {
     loadModule("apps/admin/js/modules/ui/dom.js"),
     loadModule("apps/admin/js/modules/tecnico-foto.js"),
     loadModule("apps/admin/js/modules/whatsapp.js"),
+    loadModule("apps/admin/js/modules/comercial.js"),
     loadModule("apps/admin/js/modules/eventos.js"),
     loadModule("apps/admin/js/modules/bootstrap.js")
   ]);
@@ -203,6 +205,7 @@ test("admin compila o bundle concatenado antes do deploy", async () => {
     domRoot: dom.domRoot,
     tecnicoFotoRoot: tecnicoFoto.tecnicoFotoRoot,
     whatsappRoot: whatsapp.whatsappRoot,
+    comercialRoot: comercial.comercialRoot,
     eventsRoot: eventos.eventsRoot,
     bootstrapRoot: bootstrap.bootstrapRoot
   };

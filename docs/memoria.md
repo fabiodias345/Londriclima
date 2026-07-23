@@ -130,6 +130,7 @@ site -> pre-chamado -> admin -> O.S. -> app tecnico -> checklist/fotos/GPS/assin
 ## Infra
 
 - Producao: Locaweb Cloud.
+- Backup: a Locaweb guarda somente copias locais temporarias e snapshot da VM. A copia principal, separada e criptografada, fica no Backblaze B2 (s3.us-east-005.backblazeb2.com/londriclima-storage/restic) via Restic, com envio do banco e dos arquivos a cada 6 horas.
 - IP: `191.252.226.11`.
 - Repo na VM: `/opt/airmovebr/repo`.
 - Deploy WhatsApp validado e promovido por `main`.

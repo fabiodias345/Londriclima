@@ -114,6 +114,21 @@ enum WhatsAppMensagemDirecao {
   saida
 }
 
+enum CatalogoItemTipo {
+  servico
+  material
+  peca
+  equipamento
+}
+
+enum OrcamentoStatus {
+  rascunho
+  enviado
+  aprovado
+  recusado
+  expirado
+}
+
 model Empresa {
   id                 String   @id @default(uuid()) @db.Uuid
   nome               String
@@ -157,6 +172,8 @@ model Empresa {
   funcionarioDocumentos     FuncionarioDocumento[]
   convitesTecnico           ConviteTecnico[]
   conversasWhatsApp         WhatsAppConversa[]
+  catalogoItens             CatalogoItem[]
+  orcamentos                Orcamento[]
 
   @@map("empresas")
 }
@@ -195,6 +212,7 @@ model Usuario {
   documentosFuncionario    FuncionarioDocumento[]
   convitesTecnicoCriados   ConviteTecnico[]          @relation("ConviteTecnicoCriador")
   conviteTecnicoConsumido  ConviteTecnico?           @relation("ConviteTecnicoUsuario")
+  orcamentosCriados       Orcamento[]               @relation("OrcamentoCriador")
 
   @@unique([empresaId, email])
   @@unique([empresaId, cpf])
@@ -328,6 +346,7 @@ model Cliente {
   pmocRelatorios        PmocRelatorio[]
   planosRecorrencia     PlanoRecorrencia[]
   conversasWhatsApp     WhatsAppConversa[]
+  orcamentos            Orcamento[]
 
   @@index([empresaId])
   @@index([empresaId, pmocAtivo])
@@ -825,6 +844,77 @@ model VeiculoLocalizacao {
   @@map("veiculo_localizacoes")
 }
 
+model CatalogoItem {
+  id           String           @id @default(uuid()) @db.Uuid
+  empresaId    String           @map("empresa_id") @db.Uuid
+  tipo         CatalogoItemTipo
+  grupo        String
+  subgrupo     String?
+  codigo       String?
+  nome         String
+  descricao    String?
+  unidade      String
+  custo        Decimal          @default(0) @db.Decimal(12, 2)
+  valor        Decimal          @default(0) @db.Decimal(12, 2)
+  ativo        Boolean          @default(true)
+  criadoEm     DateTime         @default(now()) @map("criado_em")
+  atualizadoEm DateTime         @updatedAt @map("atualizado_em")
+
+  empresa        Empresa         @relation(fields: [empresaId], references: [id])
+  orcamentoItens OrcamentoItem[]
+
+  @@index([empresaId, tipo, grupo])
+  @@index([empresaId, nome])
+  @@map("catalogo_itens")
+}
+
+model Orcamento {
+  id                 String          @id @default(uuid()) @db.Uuid
+  empresaId          String          @map("empresa_id") @db.Uuid
+  clienteId          String          @map("cliente_id") @db.Uuid
+  conversaId         String?         @map("conversa_id") @db.Uuid
+  criadoPorUsuarioId String?         @map("criado_por_usuario_id") @db.Uuid
+  status             OrcamentoStatus @default(rascunho)
+  titulo             String
+  detalhes           String?
+  validoAte          DateTime?       @map("valido_ate")
+  subtotal           Decimal         @default(0) @db.Decimal(12, 2)
+  desconto           Decimal         @default(0) @db.Decimal(12, 2)
+  total              Decimal         @default(0) @db.Decimal(12, 2)
+  enviadoEm          DateTime?       @map("enviado_em")
+  criadoEm           DateTime        @default(now()) @map("criado_em")
+  atualizadoEm       DateTime        @updatedAt @map("atualizado_em")
+
+  empresa   Empresa           @relation(fields: [empresaId], references: [id])
+  cliente   Cliente           @relation(fields: [clienteId], references: [id])
+  conversa  WhatsAppConversa? @relation(fields: [conversaId], references: [id], onDelete: SetNull)
+  criadoPor Usuario?          @relation("OrcamentoCriador", fields: [criadoPorUsuarioId], references: [id], onDelete: SetNull)
+  itens     OrcamentoItem[]
+
+  @@index([empresaId, status])
+  @@index([clienteId])
+  @@index([conversaId])
+  @@map("orcamentos")
+}
+
+model OrcamentoItem {
+  id             String           @id @default(uuid()) @db.Uuid
+  orcamentoId    String           @map("orcamento_id") @db.Uuid
+  itemCatalogoId String?          @map("item_catalogo_id") @db.Uuid
+  tipo           CatalogoItemTipo
+  descricao      String
+  unidade        String
+  quantidade     Decimal          @db.Decimal(12, 3)
+  valorUnitario  Decimal          @map("valor_unitario") @db.Decimal(12, 2)
+  valorTotal     Decimal          @map("valor_total") @db.Decimal(12, 2)
+  criadoEm       DateTime         @default(now()) @map("criado_em")
+
+  orcamento    Orcamento     @relation(fields: [orcamentoId], references: [id], onDelete: Cascade)
+  itemCatalogo CatalogoItem? @relation(fields: [itemCatalogoId], references: [id], onDelete: SetNull)
+
+  @@index([orcamentoId])
+  @@map("orcamento_itens")
+}
 model WhatsAppConversa {
   id                 String                @id @default(uuid()) @db.Uuid
   empresaId          String                @map("empresa_id") @db.Uuid
@@ -846,6 +936,7 @@ model WhatsAppConversa {
   cliente          Cliente?    @relation(fields: [clienteId], references: [id], onDelete: SetNull)
   ordemServico     OrdemServico? @relation(fields: [ordemServicoId], references: [id], onDelete: SetNull)
   mensagens        WhatsAppMensagem[]
+  orcamentos       Orcamento[]
 
   @@unique([empresaId, telefone])
   @@index([empresaId, status, ultimaMensagemEm])
