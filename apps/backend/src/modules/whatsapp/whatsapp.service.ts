@@ -192,7 +192,7 @@ export class WhatsAppService {
     resposta = await this.responderComCep(resposta, mensagem.texto, conversa.dados);
     try {
       if (!resposta.texto) return;
-      const entrega = await this.sender.enviar({ to: mensagem.telefone, text: resposta.texto, options: resposta.opcoes });
+      const entrega = await this.sender.enviar({ to: mensagem.telefone, text: resposta.texto, options: resposta.opcoes, optionsLabel: resposta.rotuloOpcoes });
       await this.prisma.$transaction([
         this.prisma.whatsAppMensagem.create({ data: { conversaId: conversa.id, direcao: "saida", texto: resposta.texto, mensagemId: entrega.messageId } }),
         this.prisma.whatsAppConversa.update({ where: { id: conversa.id }, data: { ...(resposta.assumir ? { status: "humano" as const } : {}), dados: resposta.dados as Prisma.InputJsonValue, ultimaMensagemEm: new Date() } })

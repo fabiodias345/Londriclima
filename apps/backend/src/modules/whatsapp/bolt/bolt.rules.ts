@@ -4,13 +4,11 @@ const MENU = "Olá! Seja bem-vindo à AIRMOVEBR.\n\nSou o Move, a IA de atendime
 const MENU_OPTIONS: BoltOption[] = [
   { id: "menu_instalacao", title: "🔵 Instalação" },
   { id: "menu_manutencao", title: "🟠 Manutenção" },
-  { id: "menu_mais_servicos", title: "🟢 Mais serviços" }
-];
-const MORE_SERVICE_OPTIONS: BoltOption[] = [
   { id: "menu_limpeza", title: "🟢 Limpeza" },
   { id: "menu_pmoc", title: "🟣 PMOC" },
   { id: "menu_atendente", title: "⚪ Atendente" }
 ];
+
 const INSTALLATION_OPTIONS: BoltOption[] = [
   { id: "inst_aparelho_sim", title: "🟢 Já tenho" },
   { id: "inst_aparelho_nao", title: "🔵 Quero comprar" },
@@ -41,7 +39,6 @@ export class BoltRules {
     const base = { ...dados, ultima_interacao: new Date().toISOString() };
     if (dados.status === "HUMAN_ATTENDING" || dados.status === "CLOSED") return { texto: "", assumir: false, dados: base };
     if (/(humano|atendente|pessoa|equipe|suporte|operador|falar com alguem)/.test(texto) || texto === "menu_atendente") return this.humano(base);
-    if (texto === "menu_mais_servicos") return this.resposta(base, "Escolha o serviço que você precisa:", MORE_SERVICE_OPTIONS);
     if (/(^|\s)(menu|cancelar|voltar|recomecar|inicio|ajuda)(\s|$)/.test(texto) || this.ehSaudacao(texto)) return this.menu({ ...dadosBoltIniciais(), ultima_interacao: base.ultima_interacao });
     if (texto === "corrigir" && dados.status === "BOT_QUALIFYING") return this.iniciarServico(base, dados.servico || "manutencao");
     const servico = this.identificarServico(texto, dados);
@@ -93,7 +90,7 @@ export class BoltRules {
     return null;
   }
 
-  private menu(dados: BoltData): BoltResult { return { texto: MENU, assumir: false, dados, opcoes: MENU_OPTIONS }; }
+  private menu(dados: BoltData): BoltResult { return { texto: MENU, assumir: false, dados, opcoes: MENU_OPTIONS, rotuloOpcoes: "Ver serviços" }; }
   private fallback(dados: BoltData): BoltResult {
     const tentativas = dados.tentativas_fallback + 1;
     if (tentativas >= 2) return { texto: "Vou te encaminhar para nossa equipe.", assumir: true, dados: { ...dados, status: "HUMAN_QUEUE", etapa_atual: null, tentativas_fallback: 0 } };

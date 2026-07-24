@@ -35,6 +35,7 @@ export type BoltResult = {
   assumir: boolean;
   dados: BoltData;
   opcoes?: BoltOption[];
+  rotuloOpcoes?: string;
 };
 
 export type BoltMessage = {

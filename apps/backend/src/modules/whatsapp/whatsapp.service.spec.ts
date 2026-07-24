@@ -88,11 +88,13 @@ test("apagar conversa remove o historico sem apagar cliente ou O.S.", async () =
   assert.equal(resultado.apagada, true);
   assert.equal(idApagado, "conversa-1");
 });
-test("Bolt usa botões diretos e confirma o endereço pelo CEP", () => {
+test("Bolt oferece os cinco serviços e confirma o endereço pelo CEP", () => {
   const bolt = new BoltRules();
   const menu = bolt.processar({ texto: "Oi" }, null);
-  assert.equal(menu.opcoes?.length, 3);
+  assert.equal(menu.opcoes?.length, 5);
   assert.equal(menu.opcoes?.[0].id, "menu_instalacao");
+  assert.equal(menu.opcoes?.[4].id, "menu_atendente");
+  assert.equal(menu.rotuloOpcoes, "Ver serviços");
   const iniciado = bolt.processar({ texto: "menu_manutencao" }, null);
   const comNome = bolt.processar({ texto: "Maria Silva" }, iniciado.dados);
   assert.equal(comNome.dados.nome, "Maria");
