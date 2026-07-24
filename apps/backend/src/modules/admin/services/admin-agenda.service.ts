@@ -3,6 +3,7 @@ import {
   CategoriaAtendimento,
   ChecklistTipo,
   OrdemServicoEventoAcao,
+  OrdemServicoOrigem,
   OrdemServicoStatus,
   OrdemServicoTipoServico,
   Prisma,
@@ -378,6 +379,8 @@ export class AdminAgendaService {
           equipamentoId: dto.equipamento_id || undefined,
           equipeId: dto.equipe_id || undefined,
           tecnicoId: dto.tecnico_id || undefined,
+          orcamentoId: dto.orcamento_id || undefined,
+          origem: dto.origem ?? OrdemServicoOrigem.contrato_recorrencia,
           status: OrdemServicoStatus.aberta,
           categoriaServico: dto.categoria_servico ?? CategoriaAtendimento.ar_condicionado,
           tipoServico: dto.tipo_servico ?? OrdemServicoTipoServico.preventiva,
@@ -509,6 +512,14 @@ export class AdminAgendaService {
 
       if (dto.valor_cobrado !== undefined) {
         data.valorCobrado = new Prisma.Decimal(dto.valor_cobrado);
+      }
+
+      if (dto.origem !== undefined) {
+        data.origem = dto.origem;
+      }
+
+      if (dto.orcamento_id !== undefined) {
+        data.orcamentoId = dto.orcamento_id || null;
       }
 
       const ordem = await tx.ordemServico.update({

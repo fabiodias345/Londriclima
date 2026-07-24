@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { OrdemServicoStatus, OrdemServicoTipoServico, Prisma } from "@prisma/client";
+import { OrdemServicoOrigem, OrdemServicoStatus, OrdemServicoTipoServico, OrcamentoStatus, Prisma } from "@prisma/client";
 import { Optional } from "@nestjs/common";
 import { AdminService } from "../admin/admin.service";
 import { SalvarClienteDto } from "../admin/dto/salvar-cliente.dto";
@@ -55,7 +55,7 @@ export class WhatsAppService {
   }
 
   async obterConversa(id: string, empresaId: string) {
-    const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId }, include: { mensagens: { orderBy: { criadoEm: "asc" } }, atribuidoUsuario: { select: { id: true, nome: true } }, cliente: true, orcamentos: { orderBy: { criadoEm: "desc" }, take: 1, include: { itens: true } }, ordemServico: { select: { id: true, titulo: true, status: true, agendadaPara: true, equipeId: true, tecnicoId: true } } } });
+    const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId }, include: { mensagens: { orderBy: { criadoEm: "asc" } }, atribuidoUsuario: { select: { id: true, nome: true } }, cliente: true, orcamentos: { orderBy: { criadoEm: "desc" }, take: 1, include: { itens: true } }, ordemServico: { select: { id: true, titulo: true, status: true, agendadaPara: true, equipeId: true, tecnicoId: true, origem: true, orcamentoId: true } } } });
     const dados = normalizarDadosBolt(conversa.dados);
     return { ...conversa, atendimento: { dados, previaOs: this.criarPreviaOs(dados) } };
   }
@@ -137,7 +137,17 @@ export class WhatsAppService {
     const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId } });
     if (!conversa.clienteId) throw new BadRequestException("Crie ou vincule o cliente antes da O.S.");
     const previaOs = this.criarPreviaOs(normalizarDadosBolt(conversa.dados));
-    const dadosOs = { ...dto, cliente_id: conversa.clienteId, titulo: dto.titulo || previaOs.titulo, detalhes: dto.detalhes || previaOs.detalhes, tipo_servico: dto.tipo_servico || previaOs.tipoServico };
+    let orcamentoId: string | undefined;
+    if (dto.origem === OrdemServicoOrigem.orcamento_aprovado) {
+      const orcamento = await this.prisma.orcamento.findFirst({
+        where: { empresaId, conversaId: conversa.id, status: OrcamentoStatus.aprovado },
+        orderBy: { atualizadoEm: "desc" },
+        select: { id: true }
+      });
+      if (!orcamento) throw new BadRequestException("Registre o aceite do orçamento ou escolha contrato/serviço gratuito.");
+      orcamentoId = orcamento.id;
+    }
+    const dadosOs = { ...dto, orcamento_id: orcamentoId, cliente_id: conversa.clienteId, titulo: dto.titulo || previaOs.titulo, detalhes: dto.detalhes || previaOs.detalhes, tipo_servico: dto.tipo_servico || previaOs.tipoServico };
     await this.validarHorarioDisponivel(conversa.ordemServicoId, empresaId, dadosOs);
     const ordem = conversa.ordemServicoId
       ? await this.adminService.reprogramarOrdemAgenda(conversa.ordemServicoId, dadosOs, usuario)

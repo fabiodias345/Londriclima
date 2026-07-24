@@ -1,4 +1,4 @@
-﻿import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, UseGuards } from "@nestjs/common";
 import { AuthenticatedUser } from "../auth/auth-user";
 import { AdminRoleGuard } from "../auth/admin-role.guard";
 import { CurrentUser } from "../auth/current-user.decorator";
@@ -36,6 +36,10 @@ export class ComercialController {
     return this.comercialService.criarOrcamento(dto, usuario);
   }
 
+  @Post("orcamentos/:id/aceite-whatsapp")
+  registrarAceiteWhatsApp(@Param("id", new ParseUUIDPipe()) id: string, @CurrentUser() usuario: AuthenticatedUser) {
+    return this.comercialService.registrarAceiteWhatsApp(id, usuario.empresa_id);
+  }
   @Post("orcamentos/:id/enviar")
   enviarOrcamento(@Param("id", new ParseUUIDPipe()) id: string, @CurrentUser() usuario: AuthenticatedUser) {
     return this.comercialService.enviarOrcamento(id, usuario.empresa_id);

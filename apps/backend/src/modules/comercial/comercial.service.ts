@@ -1,4 +1,4 @@
-﻿import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { OrcamentoStatus, Prisma } from "@prisma/client";
 import { PrismaService } from "../../database/prisma.service";
 import { AuthenticatedUser } from "../auth/auth-user";
@@ -64,6 +64,18 @@ export class ComercialService {
     return { enviado: true };
   }
 
+  async registrarAceiteWhatsApp(id: string, empresaId: string) {
+    const atualizado = await this.prisma.orcamento.updateMany({
+      where: { id, empresaId, status: OrcamentoStatus.enviado },
+      data: { status: OrcamentoStatus.aprovado }
+    });
+    if (!atualizado.count) {
+      const orcamento = await this.prisma.orcamento.findFirst({ where: { id, empresaId }, select: { status: true } });
+      if (!orcamento) throw new NotFoundException("Orçamento não encontrado.");
+      throw new BadRequestException("O orçamento precisa estar enviado e aguardando aceite.");
+    }
+    return { aprovado: true };
+  }
   private texto(valor: string) { const resultado = String(valor || "").trim(); if (!resultado) throw new BadRequestException("Preencha os campos obrigatórios."); return resultado; }
   private textoOpcional(valor?: string) { const resultado = String(valor || "").trim(); return resultado || null; }
   private data(valor: string) { const data = new Date(`${valor}T23:59:59`); if (Number.isNaN(data.getTime())) throw new BadRequestException("Data de validade inválida."); return data; }

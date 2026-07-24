@@ -1,6 +1,6 @@
 import { Type } from "class-transformer";
 import { IsDateString, IsEnum, IsNumber, IsOptional, IsString, IsUUID, Min } from "class-validator";
-import { CategoriaAtendimento, ChecklistTipo, OrdemServicoTipoServico } from "@prisma/client";
+import { CategoriaAtendimento, ChecklistTipo, OrdemServicoOrigem, OrdemServicoTipoServico } from "@prisma/client";
 
 export class SalvarOsAgendaDto {
   @IsOptional()
@@ -47,4 +47,12 @@ export class SalvarOsAgendaDto {
   @IsNumber()
   @Min(0)
   valor_cobrado?: number;
+
+  @IsOptional()
+  @IsEnum(OrdemServicoOrigem)
+  origem?: OrdemServicoOrigem;
+
+  @IsOptional()
+  @IsUUID()
+  orcamento_id?: string;
 }

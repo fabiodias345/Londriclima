@@ -98,6 +98,12 @@ enum OrdemServicoTipoServico {
   instalacao
 }
 
+enum OrdemServicoOrigem {
+  orcamento_aprovado
+  contrato_recorrencia
+  servico_gratuito
+}
+
 enum CategoriaAtendimento {
   ar_condicionado
   camara_fria
@@ -496,6 +502,8 @@ model OrdemServico {
   equipamentoId    String?                 @map("equipamento_id") @db.Uuid
   equipeId         String?                 @map("equipe_id") @db.Uuid
   tecnicoId        String?                 @map("tecnico_id") @db.Uuid
+  orcamentoId      String?                 @unique @map("orcamento_id") @db.Uuid
+  origem           OrdemServicoOrigem      @default(contrato_recorrencia)
   status           OrdemServicoStatus      @default(pre_chamado)
   categoriaServico CategoriaAtendimento    @default(ar_condicionado) @map("categoria_servico")
   tipoServico      OrdemServicoTipoServico @default(preventiva) @map("tipo_servico")
@@ -514,6 +522,7 @@ model OrdemServico {
   equipamento              Equipamento?                    @relation(fields: [equipamentoId], references: [id])
   equipe                   Equipe?                         @relation(fields: [equipeId], references: [id])
   tecnico                  Usuario?                        @relation("OrdemTecnico", fields: [tecnicoId], references: [id], onDelete: SetNull)
+  orcamento                Orcamento?                      @relation(fields: [orcamentoId], references: [id], onDelete: SetNull)
   responsaveis             OrdemServicoResponsavel[]
   eventos                  OrdemServicoEvento[]
   evidencias               OrdemServicoEvidencia[]
@@ -890,6 +899,7 @@ model Orcamento {
   conversa  WhatsAppConversa? @relation(fields: [conversaId], references: [id], onDelete: SetNull)
   criadoPor Usuario?          @relation("OrcamentoCriador", fields: [criadoPorUsuarioId], references: [id], onDelete: SetNull)
   itens     OrcamentoItem[]
+  ordemServico OrdemServico?
 
   @@index([empresaId, status])
   @@index([clienteId])
