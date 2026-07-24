@@ -9,7 +9,7 @@ import { AuthenticatedUser } from "../auth/auth-user";
 import { PrismaService } from "../../database/prisma.service";
 import { WhatsAppCloudService } from "../automacoes/whatsapp-cloud.service";
 import { BoltRules, dadosBoltIniciais, normalizarDadosBolt } from "./bolt/bolt.rules";
-import { BoltData } from "./bolt/bolt.types";
+import { BoltData, BoltResult } from "./bolt/bolt.types";
 
 type JsonRecord = Record<string, unknown>;
 type WhatsAppEvent = { tipo: string; conversaId: string; empresaId: string };
@@ -188,7 +188,8 @@ export class WhatsAppService {
     await this.prisma.whatsAppMensagem.create({ data: { conversaId: conversa.id, direcao: "entrada", texto: mensagem.texto, mensagemId: mensagem.id, tipo: mensagem.tipo } });
     this.emitir({ tipo: "mensagem_recebida", conversaId: conversa.id, empresaId: empresa.id });
     if (conversa.status === "humano" || conversa.status === "encerrada") return;
-    const resposta = this.bolt.processar({ texto: mensagem.texto, nomeContato: mensagem.nome }, conversa.dados);
+    let resposta = this.bolt.processar({ texto: mensagem.texto, nomeContato: mensagem.nome }, conversa.dados);
+    resposta = await this.responderComCep(resposta, mensagem.texto, conversa.dados);
     try {
       if (!resposta.texto) return;
       const entrega = await this.sender.enviar({ to: mensagem.telefone, text: resposta.texto, options: resposta.opcoes });
@@ -202,6 +203,45 @@ export class WhatsAppService {
     }
   }
 
+  private async responderComCep(resposta: BoltResult, texto: string, dadosEntrada: unknown) {
+    const dados = normalizarDadosBolt(dadosEntrada);
+    if (dados.status !== "BOT_QUALIFYING" || dados.etapa_atual !== "aguardando_cep") return resposta;
+    const cep = texto.replace(/\D/g, "");
+    if (cep.length !== 8) return resposta;
+    const endereco = await this.consultarCep(cep);
+    if (!endereco) return { ...resposta, texto: "Não localizei esse CEP. Confira os oito números e envie novamente." };
+    const cidadeBairro = [endereco.cidade, endereco.bairro].filter(Boolean).join(" - ");
+    const dadosComEndereco: BoltData = {
+      ...dados,
+      cep: endereco.cep,
+      logradouro: endereco.logradouro,
+      bairro: endereco.bairro,
+      cidade: endereco.cidade,
+      uf: endereco.uf,
+      cidade_bairro: cidadeBairro,
+      etapa_atual: "aguardando_confirmacao_endereco",
+      tentativas_fallback: 0,
+      ultima_interacao: new Date().toISOString()
+    };
+    const enderecoTexto = [endereco.logradouro, endereco.bairro, `${endereco.cidade}/${endereco.uf}`].filter(Boolean).join(", ");
+    return {
+      texto: `Encontrei: ${enderecoTexto}. Está correto?`,
+      assumir: false,
+      dados: dadosComEndereco,
+      opcoes: [{ id: "cep_confirmar", title: "🟢 Confirmar" }, { id: "cep_corrigir", title: "🟠 Corrigir CEP" }]
+    };
+  }
+
+  private async consultarCep(cep: string) {
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await response.json() as { erro?: boolean; cep?: string; logradouro?: string; bairro?: string; localidade?: string; uf?: string };
+      if (!response.ok || data.erro || !data.localidade || !data.uf) return null;
+      return { cep: data.cep?.replace(/\D/g, "") || cep, logradouro: data.logradouro?.trim() || null, bairro: data.bairro?.trim() || null, cidade: data.localidade.trim(), uf: data.uf.trim().toUpperCase() };
+    } catch {
+      return null;
+    }
+  }
   private async dadosDaConversa(id: string, empresaId: string) {
     const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId }, select: { dados: true } });
     return conversa.dados;

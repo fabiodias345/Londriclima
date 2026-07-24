@@ -9,6 +9,11 @@ export type BoltServiceType = "manutencao" | "instalacao" | "pmoc" | "locacao";
 
 export type BoltData = {
   nome: string | null;
+  cep: string | null;
+  logradouro: string | null;
+  bairro: string | null;
+  cidade: string | null;
+  uf: string | null;
   servico: BoltServiceType | null;
   cidade_bairro: string | null;
   detalhes: string | null;

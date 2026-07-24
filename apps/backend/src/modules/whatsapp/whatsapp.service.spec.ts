@@ -88,17 +88,20 @@ test("apagar conversa remove o historico sem apagar cliente ou O.S.", async () =
   assert.equal(resultado.apagada, true);
   assert.equal(idApagado, "conversa-1");
 });
-test("Bolt disponibiliza opcoes clicaveis sem retirar o texto livre", () => {
+test("Bolt usa botões diretos e confirma o endereço pelo CEP", () => {
   const bolt = new BoltRules();
   const menu = bolt.processar({ texto: "Oi" }, null);
-  assert.equal(menu.opcoes?.length, 5);
+  assert.equal(menu.opcoes?.length, 3);
+  assert.equal(menu.opcoes?.[0].id, "menu_instalacao");
   const iniciado = bolt.processar({ texto: "menu_manutencao" }, null);
-  const comNome = bolt.processar({ texto: "Maria" }, iniciado.dados);
-  const comLocal = bolt.processar({ texto: "Londrina, Centro" }, comNome.dados);
-  assert.equal(comLocal.opcoes?.[0].id, "manut_nao_liga");
-  assert.equal(comLocal.opcoes?.[2].id, "manut_outro");
-});
-test("detalhe da conversa entrega qualificacao e prévia de O.S.", async () => {
+  const comNome = bolt.processar({ texto: "Maria Silva" }, iniciado.dados);
+  assert.equal(comNome.dados.nome, "Maria");
+  assert.equal(comNome.dados.etapa_atual, "aguardando_cep");
+  const comEndereco = { ...comNome.dados, cep: "86000000", cidade: "Londrina", uf: "PR", cidade_bairro: "Londrina", etapa_atual: "aguardando_confirmacao_endereco" as const };
+  const confirmado = bolt.processar({ texto: "cep_confirmar" }, comEndereco);
+  assert.equal(confirmado.opcoes?.[0].id, "manut_nao_liga");
+  assert.equal(confirmado.opcoes?.[2].id, "manut_outro");
+});test("detalhe da conversa entrega qualificacao e prévia de O.S.", async () => {
   const conversa = {
     id: "conversa-1", telefone: "5543999999999", nomeContato: "Fábio", status: "humano",
     dados: { nome: "Fábio", servico: "instalacao", cidade_bairro: "Centro, Londrina", detalhes: "Split no quarto", campos_extra: { btus: "12000" } },
