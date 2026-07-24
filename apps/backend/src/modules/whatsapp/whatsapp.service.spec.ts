@@ -139,3 +139,21 @@ test("criar cliente pelo WhatsApp não cria O.S. antes do orçamento aprovado", 
   assert.equal(chamadas.length, 0);
   assert.equal((atualizacoes[0].data as { clienteId: string }).clienteId, "cliente-1");
 });
+test("autorização do orçamento pelo WhatsApp aprova e libera o agendamento", async () => {
+  const atualizacoes: Array<Record<string, unknown>> = [];
+  const prisma = {
+    orcamento: { updateMany: async () => ({ count: 1 }) },
+    whatsAppMensagem: { create: async () => undefined },
+    whatsAppConversa: { update: async (input: Record<string, unknown>) => { atualizacoes.push(input); } },
+    $transaction: async (operations: Promise<unknown>[]) => Promise.all(operations)
+  };
+  const sender = { enviar: async () => ({ messageId: "wamid.aprovado", recipient: "5543999999999" }) };
+  const service = new WhatsAppService(prisma as never, {} as never, sender as never, new BoltRules());
+  const processado = await (service as never as { processarRespostaOrcamento: (conversa: { id: string; empresaId: string; telefone: string }, texto: string) => Promise<boolean> }).processarRespostaOrcamento(
+    { id: "conversa-1", empresaId: "empresa-1", telefone: "5543999999999" },
+    "orcamento_aprovar:11111111-1111-1111-1111-111111111111"
+  );
+
+  assert.equal(processado, true);
+  assert.equal((atualizacoes[0].data as { status: string }).status, "humano");
+});

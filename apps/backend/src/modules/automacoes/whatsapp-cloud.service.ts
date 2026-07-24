@@ -21,6 +21,12 @@ export type WhatsAppTemplate = {
   parameters?: string[];
 };
 
+export type WhatsAppDocument = {
+  filename: string;
+  content: Buffer;
+  caption?: string;
+};
+
 export type WhatsAppDeliveryResult = {
   messageId: string;
   recipient: string;
@@ -29,6 +35,7 @@ export type WhatsAppDeliveryResult = {
 export interface WhatsAppSender {
   enviarTemplate?(to: string, template: WhatsAppTemplate): Promise<WhatsAppDeliveryResult>;
   enviar(message: WhatsAppMessage): Promise<WhatsAppDeliveryResult>;
+  enviarDocumento?(to: string, document: WhatsAppDocument): Promise<WhatsAppDeliveryResult>;
 }
 
 type WhatsAppCloudResponse = {
@@ -60,6 +67,24 @@ export class WhatsAppCloudService implements WhatsAppSender {
       { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
     );
     const messageId = response.data.messages?.[0]?.id;
+    if (!messageId) throw new Error("WhatsApp Cloud API sem comprovante.");
+    return { messageId, recipient };
+  }
+
+  async enviarDocumento(to: string, document: WhatsAppDocument): Promise<WhatsAppDeliveryResult> {
+    const token = this.obterConfig("LONDRI_WHATS_TOKEN", "WHATSAPP_ACCESS_TOKEN");
+    const phoneId = this.obterConfig("LONDRI_PHONE_ID", "WHATSAPP_PHONE_NUMBER_ID");
+    const version = this.config.get<string>("WHATSAPP_GRAPH_VERSION", "v20.0");
+    const recipient = normalizarTelefoneWhatsapp(to);
+    const form = new FormData();
+    form.append("messaging_product", "whatsapp");
+    const bytes = document.content.buffer.slice(document.content.byteOffset, document.content.byteOffset + document.content.byteLength) as ArrayBuffer;
+    form.append("file", new Blob([bytes], { type: "application/pdf" }), document.filename);
+    const upload = await fetch(`https://graph.facebook.com/${version}/${phoneId}/media`, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form });
+    const media = await upload.json() as { id?: string; error?: { message?: string } };
+    if (!upload.ok || !media.id) throw new Error(media.error?.message || "WhatsApp Cloud API nao enviou a midia.");
+    const response = await this.enviarPayload({ to: recipient, type: "document", document: { id: media.id, filename: document.filename, ...(document.caption ? { caption: document.caption } : {}) } });
+    const messageId = response.messages?.[0]?.id;
     if (!messageId) throw new Error("WhatsApp Cloud API sem comprovante.");
     return { messageId, recipient };
   }

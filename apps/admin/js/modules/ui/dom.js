@@ -40,8 +40,8 @@ function normalizeSearch(value) {
 }
 
 function validateClientIdentity(tipo, telefone, documento) {
-  if (![10, 11].includes(telefone.length)) {
-    return "Informe telefone com DDD. Exemplo: (43) 3348-9760 ou (43) 99999-9999.";
+  if (telefone.length < 10 || telefone.length > 14) {
+    return "Informe telefone com DDD. Exemplo: (43) 3348-9760 ou (43) 99999-9999. O código do país 55 é aceito, até 14 dígitos.";
   }
 
   if (!documento) {

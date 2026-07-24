@@ -4,12 +4,13 @@ import { PrismaService } from "../../database/prisma.service";
 import { AuthenticatedUser } from "../auth/auth-user";
 import { WhatsAppCloudService } from "../automacoes/whatsapp-cloud.service";
 import { CriarOrcamentoDto, SalvarItemCatalogoDto } from "./dto/comercial.dto";
+import { ComercialOrcamentoPdfRenderer } from "./comercial-orcamento-pdf-renderer";
 
 const itemSelect = { id: true, tipo: true, grupo: true, subgrupo: true, codigo: true, nome: true, descricao: true, unidade: true, custo: true, valor: true, ativo: true } as const;
 
 @Injectable()
 export class ComercialService {
-  constructor(private readonly prisma: PrismaService, private readonly sender: WhatsAppCloudService) {}
+  constructor(private readonly prisma: PrismaService, private readonly sender: WhatsAppCloudService, private readonly pdf: ComercialOrcamentoPdfRenderer) {}
 
   async listarCatalogo(empresaId: string) {
     const items = await this.prisma.catalogoItem.findMany({ where: { empresaId, ativo: true }, select: itemSelect, orderBy: [{ tipo: "asc" }, { grupo: "asc" }, { nome: "asc" }] });
@@ -52,18 +53,32 @@ export class ComercialService {
   }
 
   async enviarOrcamento(id: string, empresaId: string) {
-    const orcamento = await this.prisma.orcamento.findFirst({ where: { id, empresaId }, include: { cliente: { select: { nome: true, telefone: true } }, conversa: { select: { telefone: true } }, itens: true } });
+    const orcamento = await this.prisma.orcamento.findFirst({
+      where: { id, empresaId },
+      include: {
+        empresa: { select: { nome: true, razaoSocial: true, cnpj: true, telefone: true, email: true, logradouro: true, numero: true, bairro: true, cidade: true, uf: true, cep: true } },
+        cliente: { select: { nome: true, telefone: true, enderecos: { where: { principal: true }, take: 1, select: { logradouro: true, numero: true, bairro: true, cidade: true, uf: true, cep: true } } } },
+        conversa: { select: { telefone: true } },
+        itens: true
+      }
+    });
     if (!orcamento) throw new NotFoundException("Orçamento não encontrado.");
     const telefone = orcamento.conversa?.telefone || orcamento.cliente.telefone;
     if (!telefone) throw new BadRequestException("Cliente sem telefone para enviar o orçamento.");
-    const linhas = orcamento.itens.map((item) => `• ${item.descricao} — ${this.moeda(item.valorTotal)}`).join("\n");
-    const texto = `Olá, ${orcamento.cliente.nome}.\n\nOrçamento: ${orcamento.titulo}\n${linhas}\n\nTotal: ${this.moeda(orcamento.total)}${orcamento.validoAte ? `\nValidade: ${orcamento.validoAte.toLocaleDateString("pt-BR")}` : ""}`;
-    const entrega = await this.sender.enviar({ to: telefone, text: texto });
+    const { enderecos, ...cliente } = orcamento.cliente;
+    const pdf = this.pdf.gerar({ ...orcamento, cliente: { ...cliente, ...enderecos[0] }, numero: `ORC-${orcamento.id.slice(0, 8).toUpperCase()}` });
+    const documento = await this.sender.enviarDocumento(telefone, { filename: `orcamento-${orcamento.id.slice(0, 8)}.pdf`, content: pdf, caption: `Orçamento ${orcamento.titulo}` });
+    const texto = `Olá, ${orcamento.cliente.nome}.\n\nEnviamos seu orçamento em PDF. Agradecemos por escolher a AIRMOVEBR.\n\nDeseja autorizar o serviço?`;
+    const confirmacao = await this.sender.enviar({ to: telefone, text: texto, options: [{ id: `orcamento_aprovar:${orcamento.id}`, title: "🟢 Autorizar" }, { id: `orcamento_negociar:${orcamento.id}`, title: "🟠 Negociar" }] });
     await this.prisma.orcamento.update({ where: { id }, data: { status: OrcamentoStatus.enviado, enviadoEm: new Date() } });
-    if (orcamento.conversaId) await this.prisma.whatsAppMensagem.create({ data: { conversaId: orcamento.conversaId, direcao: "saida", texto, mensagemId: entrega.messageId } });
+    if (orcamento.conversaId) {
+      await this.prisma.$transaction([
+        this.prisma.whatsAppMensagem.create({ data: { conversaId: orcamento.conversaId, direcao: "saida", texto: `PDF enviado: Orçamento ${orcamento.titulo}`, mensagemId: documento.messageId, tipo: "document" } }),
+        this.prisma.whatsAppMensagem.create({ data: { conversaId: orcamento.conversaId, direcao: "saida", texto, mensagemId: confirmacao.messageId, tipo: "interactive" } })
+      ]);
+    }
     return { enviado: true };
   }
-
   async registrarAceiteWhatsApp(id: string, empresaId: string) {
     const atualizado = await this.prisma.orcamento.updateMany({
       where: { id, empresaId, status: OrcamentoStatus.enviado },

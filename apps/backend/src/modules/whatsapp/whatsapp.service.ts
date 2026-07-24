@@ -187,6 +187,7 @@ export class WhatsAppService {
     if (mensagem.id && await this.prisma.whatsAppMensagem.findUnique({ where: { mensagemId: mensagem.id } })) return;
     await this.prisma.whatsAppMensagem.create({ data: { conversaId: conversa.id, direcao: "entrada", texto: mensagem.texto, mensagemId: mensagem.id, tipo: mensagem.tipo } });
     this.emitir({ tipo: "mensagem_recebida", conversaId: conversa.id, empresaId: empresa.id });
+    if (await this.processarRespostaOrcamento(conversa, mensagem.texto)) return;
     if (conversa.status === "humano" || conversa.status === "encerrada") return;
     let resposta = this.bolt.processar({ texto: mensagem.texto, nomeContato: mensagem.nome }, conversa.dados);
     resposta = await this.responderComCep(resposta, mensagem.texto, conversa.dados);
@@ -203,6 +204,26 @@ export class WhatsAppService {
     }
   }
 
+  private async processarRespostaOrcamento(conversa: { id: string; empresaId: string; telefone: string }, texto: string) {
+    const resposta = texto.match(/^orcamento_(aprovar|negociar):([0-9a-f-]{36})$/i);
+    if (!resposta) return false;
+    const aprovado = resposta[1].toLowerCase() === "aprovar";
+    const resultado = await this.prisma.orcamento.updateMany({
+      where: { id: resposta[2], empresaId: conversa.empresaId, conversaId: conversa.id, status: OrcamentoStatus.enviado },
+      data: { status: aprovado ? OrcamentoStatus.aprovado : OrcamentoStatus.recusado }
+    });
+    if (!resultado.count) return false;
+    const textoResposta = aprovado
+      ? "Obrigado pela autorização. Vamos programar sua ordem de serviço e entraremos em contato com a confirmação do agendamento."
+      : "Sem problema. Um atendente entrará em contato para negociar o orçamento com você.";
+    const entrega = await this.sender.enviar({ to: conversa.telefone, text: textoResposta });
+    await this.prisma.$transaction([
+      this.prisma.whatsAppMensagem.create({ data: { conversaId: conversa.id, direcao: "saida", texto: textoResposta, mensagemId: entrega.messageId } }),
+      this.prisma.whatsAppConversa.update({ where: { id: conversa.id }, data: { status: "humano", atribuidoUsuarioId: null, ultimaMensagemEm: new Date() } })
+    ]);
+    this.emitir({ tipo: aprovado ? "orcamento_aprovado" : "orcamento_em_negociacao", conversaId: conversa.id, empresaId: conversa.empresaId });
+    return true;
+  }
   private async responderComCep(resposta: BoltResult, texto: string, dadosEntrada: unknown) {
     const dados = normalizarDadosBolt(dadosEntrada);
     if (dados.status !== "BOT_QUALIFYING" || dados.etapa_atual !== "aguardando_cep") return resposta;
