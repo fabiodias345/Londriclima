@@ -140,21 +140,6 @@
           </article>
         </section>
 
-        <section class="summary-grid hidden" id="agendaSummary" aria-label="Resumo da agenda">
-          <article>
-            <span>OS abertas</span>
-            <strong id="agendaCount">0</strong>
-          </article>
-          <article>
-            <span>Em atendimento</span>
-            <strong id="attendanceCount">0</strong>
-          </article>
-          <article>
-            <span>Hoje</span>
-            <strong id="todayCount">0</strong>
-          </article>
-        </section>
-
         <section class="summary-grid recurrence-summary-grid hidden" id="recorrenciasSummary" aria-label="Resumo de recorrencias">
           <button class="recurrence-filter-card recurrence-filter-active" type="button" data-recurrence-filter="ativos">
             <span>Plano ativo</span>
@@ -414,63 +399,35 @@
         </section>
 
         <section class="worklist agenda-panel hidden" id="agendaView">
-          <div class="worklist-header">
-            <div>
-              <h2>Agenda operacional</h2>
-              <p id="agendaStatus" role="status">Carregando...</p>
+          <div class="agenda-month-panel" aria-label="Calendário mensal">
+            <header class="agenda-month-header">
+              <h2>Agenda</h2>
+              <div class="agenda-month-actions">
+                <button class="secondary-button icon-button" id="agendaPrevMonthButton" type="button" aria-label="Mês anterior">&lt;</button>
+                <strong id="agendaMonthTitle">Mês atual</strong>
+                <button class="secondary-button icon-button" id="agendaNextMonthButton" type="button" aria-label="Próximo mês">&gt;</button>
+                <button class="secondary-button compact-button" id="agendaTodayButton" type="button">Hoje</button>
+              </div>
+            </header>
+            <div class="agenda-weekdays" aria-hidden="true">
+              <span>Dom.</span><span>Seg.</span><span>Ter.</span><span>Qua.</span><span>Qui.</span><span>Sex.</span><span>Sáb.</span>
             </div>
-            <button class="secondary-button compact-button" id="newAgendaOsButton" type="button">Nova OS</button>
+            <div class="agenda-month-grid" id="agendaMonthGrid"></div>
+            <div class="agenda-legend" aria-label="Legenda de status">
+              <span><i class="agenda-dot status-aberta"></i>Confirmada</span>
+              <span><i class="agenda-dot status-em_atendimento"></i>Pendente</span>
+              <span><i class="agenda-dot status-cancelada"></i>Conflito</span>
+            </div>
           </div>
-          <div class="agenda-board">
-            <aside class="agenda-side-panel" aria-label="Pendencias da agenda">
-              <div class="agenda-calendar agenda-mini-calendar" id="agendaCalendar" aria-label="Calendario da agenda"></div>
-              <section class="agenda-pending-panel">
-                <div>
-                  <strong>Pendencias</strong>
-                  <span>OS sem horario ou equipe</span>
-                </div>
-                <div id="agendaPendingList"></div>
-              </section>
-            </aside>
-            <section class="agenda-month-panel" aria-label="Calendario mensal">
-              <div class="agenda-month-header">
-                <button class="secondary-button icon-button" id="agendaPrevMonthButton" type="button" aria-label="Mes anterior">&lt;</button>
-                <div>
-                  <span class="kicker">Calendario</span>
-                  <h3 id="agendaMonthTitle">Mes atual</h3>
-                </div>
-                <button class="secondary-button icon-button" id="agendaNextMonthButton" type="button" aria-label="Proximo mes">&gt;</button>
-              </div>
-              <div class="agenda-weekdays" aria-hidden="true">
-                <span>Dom.</span>
-                <span>Seg.</span>
-                <span>Ter.</span>
-                <span>Qua.</span>
-                <span>Qui.</span>
-                <span>Sex.</span>
-                <span>Sab.</span>
-              </div>
-              <div class="agenda-month-grid" id="agendaMonthGrid"></div>
-              <div class="agenda-legend" aria-label="Legenda de status">
-                <span><i class="agenda-dot status-aberta"></i>Agendada</span>
-                <span><i class="agenda-dot status-em_deslocamento"></i>Em deslocamento</span>
-                <span><i class="agenda-dot status-em_atendimento"></i>Em atendimento</span>
-                <span><i class="agenda-dot status-cancelada"></i>Cancelada</span>
-              </div>
-            </section>
-            <section class="agenda-day-panel" aria-label="Horarios do dia selecionado">
-              <div class="agenda-day-header">
-                <div>
-                  <span class="kicker">Dia selecionado</span>
-                  <h3 id="agendaSelectedDateTitle">Selecione uma data</h3>
-                </div>
-                <p id="agendaSelectedDateMeta">0 serviços</p>
-              </div>
-              <div class="agenda-slots" id="agendaList"></div>
-            </section>
-          </div>
+          <aside class="agenda-day-drawer hidden" id="agendaDayDrawer" aria-label="Horários do dia selecionado">
+            <header class="agenda-day-header">
+              <div><span class="kicker">Agenda do dia</span><h3 id="agendaSelectedDateTitle">Selecione uma data</h3><p id="agendaSelectedDateMeta">0 serviços</p></div>
+              <button class="secondary-button icon-button" id="agendaDayCloseButton" type="button" aria-label="Fechar horários">×</button>
+            </header>
+            <div class="agenda-slots" id="agendaList"></div>
+            <button class="secondary-button agenda-other-time" id="agendaOtherTimeButton" type="button">+ Outro horário</button>
+          </aside>
         </section>
-
         <section class="worklist recurrence-panel hidden" id="recorrenciasView">
           <div class="worklist-header">
             <div>

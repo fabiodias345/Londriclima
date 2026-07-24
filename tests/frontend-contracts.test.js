@@ -276,9 +276,10 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.doesNotMatch(html, />Dashboard<\/button>/);
   assert.match(html, /data-view="relatoriosAvulsos"/);
   assert.match(html, /id="agendaView"/);
-  assert.match(html, /id="newAgendaOsButton"/);
-  assert.match(html, /id="agendaCalendar"/);
-  assert.match(html, /id="agendaPendingList"/);
+  assert.match(html, /id="agendaMonthGrid"/);
+  assert.match(html, /id="agendaDayDrawer"/);
+  assert.match(html, /id="agendaOtherTimeButton"/);
+  assert.match(html, /id="agendaTodayButton"/);
   assert.match(html, /id="agendaSelectedDateTitle"/);
   assert.match(html, /id="agendaList"/);
   assert.match(html, /id="agendaOsModal"/);

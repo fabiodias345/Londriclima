@@ -9,31 +9,15 @@ export const agendaRoot = `
     agendaList.appendChild(row);
   }
 
-  if (unscheduledItems.length) {
-    const pending = document.createElement("article");
-    pending.className = "agenda-unscheduled";
-    pending.innerHTML = \`
-      <div>
-        <strong>Sem horario definido</strong>
-        <span>\${unscheduledItems.length === 1 ? "1 OS precisa de agendamento" : \`\${unscheduledItems.length} OS precisam de agendamento\`}</span>
-      </div>
-      <div class="agenda-unscheduled-list">
-        \${unscheduledItems.map(renderAgendaServiceCard).join("")}
-      </div>
-    \`;
-    agendaList.appendChild(pending);
-  }
 }
 
 function buildAgendaSlots(items) {
-  const hours = Array.from({ length: 12 }, (_, index) => \`\${String(index + 7).padStart(2, "0")}:00\`);
-
-  return hours.map((hour) => ({
-    hour,
-    items: items.filter((item) => formatAgendaTime(item.agendada_para).startsWith(hour.slice(0, 2)))
-  }));
+  const hours = Array.from({ length: 11 }, (_, index) => \`\${String(index + 8).padStart(2, "0")}:00\`);
+  const scheduled = new Set(hours);
+  const slots = hours.map((hour) => ({ hour, items: items.filter((item) => formatAgendaTime(item.agendada_para) === hour) }));
+  const others = items.filter((item) => !scheduled.has(formatAgendaTime(item.agendada_para)));
+  return others.length ? [...slots, { hour: "Outro horário", items: others }] : slots;
 }
-
 function renderAgendaServiceCard(item) {
   return \`
     <section class="agenda-service-card \${getAgendaStatusClass(item.status)}">

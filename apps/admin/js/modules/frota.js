@@ -452,14 +452,11 @@ function renderAgenda(items) {
   const calendarDays = buildAgendaCalendarDays(items);
   const preferredDate = pickAgendaDate(calendarDays);
 
-  if (!selectedAgendaDate || !calendarDays.some((day) => day.key === selectedAgendaDate)) {
+  if (!selectedAgendaDate) {
     selectedAgendaDate = preferredDate;
   }
 
-  agendaVisibleMonth = selectedAgendaDate.slice(0, 7);
-  renderAgendaCalendar(calendarDays, selectedAgendaDate);
   renderAgendaMonthGrid(items, selectedAgendaDate);
-  renderAgendaPendingList(items);
   renderAgendaDay(items, selectedAgendaDate);
 }
 
@@ -607,7 +604,7 @@ function renderAgendaDay(items, dateKey) {
   const scheduledItems = items
     .filter((item) => item.agendada_para && getAgendaItemDateKey(item) === dateKey)
     .sort((a, b) => new Date(a.agendada_para).getTime() - new Date(b.agendada_para).getTime());
-  const unscheduledItems = items.filter((item) => !item.agendada_para);
+
   const dayDate = parseLocalDateKey(dateKey);
 
   agendaSelectedDateTitle.textContent = formatLongDate(dayDate);
@@ -622,7 +619,7 @@ function renderAgendaDay(items, dateKey) {
         \${
           slot.items.length
             ? slot.items.map(renderAgendaServiceCard).join("")
-            : '<span class="agenda-free">Livre</span>'
+            : \`<button class="agenda-free" type="button" data-action="novo-agendamento" data-agenda-time="\${slot.hour}">+ Agendar</button>\`
         }
       </div>
 `;

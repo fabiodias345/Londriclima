@@ -49,7 +49,7 @@ const viewKicker = document.querySelector("#viewKicker");
 const viewTitle = document.querySelector("#viewTitle");
 const preChamadosSummary = document.querySelector("#preChamadosSummary");
 const frotaSummary = document.querySelector("#frotaSummary");
-const agendaSummary = document.querySelector("#agendaSummary");
+const agendaSummary = null;
 const recorrenciasSummary = document.querySelector("#recorrenciasSummary");
 const empresaSummary = document.querySelector("#empresaSummary");
 const clientesSummary = document.querySelector("#clientesSummary");
@@ -99,6 +99,10 @@ const agendaSelectedDateTitle = document.querySelector("#agendaSelectedDateTitle
 const agendaSelectedDateMeta = document.querySelector("#agendaSelectedDateMeta");
 const agendaPendingList = document.querySelector("#agendaPendingList");
 const agendaPrevMonthButton = document.querySelector("#agendaPrevMonthButton");
+const agendaTodayButton = document.querySelector("#agendaTodayButton");
+const agendaDayDrawer = document.querySelector("#agendaDayDrawer");
+const agendaDayCloseButton = document.querySelector("#agendaDayCloseButton");
+const agendaOtherTimeButton = document.querySelector("#agendaOtherTimeButton");
 const agendaNextMonthButton = document.querySelector("#agendaNextMonthButton");
 const newAgendaOsButton = document.querySelector("#newAgendaOsButton");
 const agendaOsModal = document.querySelector("#agendaOsModal");
@@ -541,7 +545,7 @@ function setActiveView(view) {
   viewTitle.textContent = meta[1];
   preChamadosSummary.classList.toggle("hidden", view !== "preChamados");
   frotaSummary.classList.toggle("hidden", view !== "frota");
-  agendaSummary.classList.toggle("hidden", view !== "agenda");
+  agendaSummary?.classList.toggle("hidden", view !== "agenda");
   recorrenciasSummary.classList.toggle("hidden", view !== "recorrencias");
   empresaSummary.classList.toggle("hidden", view !== "empresa");
   clientesSummary.classList.toggle("hidden", view !== "clientes");

@@ -101,6 +101,7 @@ agendaMonthGrid?.addEventListener("click", (event) => {
 
   selectedAgendaDate = button.dataset.agendaDate;
   agendaVisibleMonth = selectedAgendaDate.slice(0, 7);
+  agendaDayDrawer?.classList.remove("hidden");
   renderAgenda(latestAgendaItems);
 });
 
@@ -117,20 +118,31 @@ agendaPendingList?.addEventListener("click", (event) => {
 
 agendaList?.addEventListener("click", (event) => {
   const target = event.target;
-  const button = target instanceof Element ? target.closest("[data-action='editar-agenda-os']") : null;
+  const button = target instanceof Element ? target.closest("[data-action]") : null;
 
-  if (!(button instanceof HTMLButtonElement) || !button.dataset.id) {
+  if (!(button instanceof HTMLButtonElement)) {
     return;
   }
 
-  void openAgendaOsModal(button.dataset.id);
-});
+  if (button.dataset.action === "novo-agendamento" && button.dataset.agendaTime) {
+    void openAgendaOsModal().then(() => {
+      if (agendaOsForm?.elements.agendada_para) {
+        agendaOsForm.elements.agendada_para.value = \`\${selectedAgendaDate}T\${button.dataset.agendaTime}\`;
+      }
+    });
+    return;
+  }
 
+  if (button.dataset.action === "editar-agenda-os" && button.dataset.id) {
+    void openAgendaOsModal(button.dataset.id);
+  }
+});
 agendaPrevMonthButton?.addEventListener("click", () => {
   const [year, month] = agendaVisibleMonth.split("-").map(Number);
   const date = new Date(year, month - 2, 1);
   agendaVisibleMonth = getLocalDateKey(date).slice(0, 7);
   selectedAgendaDate = getLocalDateKey(date);
+  agendaDayDrawer?.classList.add("hidden");
   renderAgenda(latestAgendaItems);
 });
 
@@ -139,9 +151,39 @@ agendaNextMonthButton?.addEventListener("click", () => {
   const date = new Date(year, month, 1);
   agendaVisibleMonth = getLocalDateKey(date).slice(0, 7);
   selectedAgendaDate = getLocalDateKey(date);
+  agendaDayDrawer?.classList.add("hidden");
   renderAgenda(latestAgendaItems);
 });
 
+agendaTodayButton?.addEventListener("click", () => {
+  selectedAgendaDate = getLocalDateKey(new Date());
+  agendaVisibleMonth = selectedAgendaDate.slice(0, 7);
+  agendaDayDrawer?.classList.add("hidden");
+  renderAgenda(latestAgendaItems);
+});
+
+agendaDayCloseButton?.addEventListener("click", () => {
+  agendaDayDrawer?.classList.add("hidden");
+});
+
+agendaOtherTimeButton?.addEventListener("click", async () => {
+  const horario = window.prompt("Informe o horário", "18:30");
+
+  if (horario === null) {
+    return;
+  }
+
+  const valor = horario.trim();
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(valor)) {
+    window.alert("Informe o horário no formato HH:MM.");
+    return;
+  }
+
+  await openAgendaOsModal();
+  if (agendaOsForm?.elements.agendada_para) {
+    agendaOsForm.elements.agendada_para.value = \`\${selectedAgendaDate}T\${valor}\`;
+  }
+});
 newAgendaOsButton?.addEventListener("click", () => {
   void openAgendaOsModal();
 });
