@@ -153,9 +153,10 @@ export class WhatsAppService {
       ? await this.adminService.reprogramarOrdemAgenda(conversa.ordemServicoId, dadosOs, usuario)
       : await this.adminService.criarOrdemAgenda(dadosOs, usuario);
     if (!conversa.ordemServicoId) await this.prisma.whatsAppConversa.update({ where: { id }, data: { ordemServicoId: ordem.os_id } });
+    const confirmacaoAgendamentoEnviada = dto.agendada_para ? await this.enviarConfirmacaoAgendamento(conversa, dto.agendada_para, empresaId) : undefined;
     if (dto.agendada_para) await this.notificarTecnicoNovaOs(ordem.os_id, empresaId);
     this.emitir({ tipo: "os_vinculada", conversaId: id, empresaId });
-    return this.obterConversa(id, empresaId);
+    return { ...(await this.obterConversa(id, empresaId)), confirmacaoAgendamentoEnviada };
   }
 
   private async validarHorarioDisponivel(osId: string | null, empresaId: string, dto: SalvarOsAgendaDto) {
@@ -167,6 +168,28 @@ export class WhatsAppService {
       select: { id: true }
     });
     if (conflito) throw new ConflictException("Este horario ja esta ocupado para a equipe ou tecnico selecionado.");
+  }
+  private async enviarConfirmacaoAgendamento(conversa: { id: string; telefone: string; nomeContato: string | null; dados: unknown }, agendadaPara: string, empresaId: string) {
+    const [data, horario] = agendadaPara.split("T");
+    const dataFormatada = new Date(`${data}T12:00:00Z`).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long", day: "2-digit", month: "long" });
+    const texto = `Olá, ${conversa.nomeContato || "cliente"}! Seu atendimento está agendado para ${dataFormatada}, às ${horario.slice(0, 5)}, com nossa equipe AIRMOVEBR.
+
+Pedimos que haja um adulto responsável no local para acompanhar o atendimento e autorizar o acesso ao equipamento.
+
+Se ocorrer qualquer imprevisto ou precisar alterar o horário, por favor nos avise com antecedência para que possamos reorganizar nossa agenda.
+
+Agradecemos pela preferência. Até breve!`;
+    try {
+      const entrega = await this.sender.enviar({ to: conversa.telefone, text: texto });
+      await this.prisma.$transaction([
+        this.prisma.whatsAppConversa.update({ where: { id: conversa.id }, data: { status: "encerrada", atribuidoUsuarioId: null, encerramentoMotivo: "agendamento_confirmado", ultimaMensagemEm: new Date(), ultimaLeituraEm: new Date(), dados: this.atualizarStatus(conversa.dados, "CLOSED") as Prisma.InputJsonValue } }),
+        this.prisma.whatsAppMensagem.create({ data: { conversaId: conversa.id, direcao: "saida", texto, mensagemId: entrega.messageId } })
+      ]);
+      this.emitir({ tipo: "agendamento_confirmado", conversaId: conversa.id, empresaId });
+      return true;
+    } catch {
+      return false;
+    }
   }
   private async notificarTecnicoNovaOs(osId: string, empresaId: string) {
     const template = this.config.get<string>("WHATSAPP_TEMPLATE_OS_NOVA");

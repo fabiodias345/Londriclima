@@ -157,3 +157,27 @@ test("autorização do orçamento pelo WhatsApp aprova e libera o agendamento", 
   assert.equal(processado, true);
   assert.equal((atualizacoes[0].data as { status: string }).status, "humano");
 });
+test("confirmar agendamento envia mensagem final ao cliente", async () => {
+  const mensagens: Array<{ texto: string; direcao: string }> = [];
+  const conversa = { id: "conversa-1", empresaId: "empresa-1", telefone: "5543999999999", nomeContato: "Fábio", clienteId: "cliente-1", ordemServicoId: null, dados: { servico: "instalacao", cidade_bairro: "Londrina", detalhes: "Instalar equipamento", campos_extra: {} }, mensagens: [], cliente: { id: "cliente-1", nome: "Fábio" }, ordemServico: null };
+  const atualizacoes: Array<{ data: Record<string, unknown> }> = [];
+  const prisma = {
+    whatsAppConversa: { findFirstOrThrow: async () => conversa, update: async (input: { data: Record<string, unknown> }) => { atualizacoes.push(input); } },
+    ordemServico: { findFirst: async () => null },
+    whatsAppMensagem: { create: async ({ data }: { data: { texto: string; direcao: string } }) => { mensagens.push(data); } },
+    $transaction: async (operations: Promise<unknown>[]) => Promise.all(operations)
+  };
+  const enviados: string[] = [];
+  const sender = { enviar: async ({ text }: { text: string }) => { enviados.push(text); return { messageId: "wamid.agendamento", recipient: "5543999999999" }; } };
+  const admin = { criarOrdemAgenda: async () => ({ os_id: "os-1" }) };
+  const service = new WhatsAppService(prisma as never, { get: () => undefined } as never, sender as never, new BoltRules(), admin as never);
+
+  const resultado = await service.criarOrdemDaConversa("conversa-1", "empresa-1", { titulo: "Instalação", origem: "servico_gratuito", equipe_id: "equipe-1", agendada_para: "2026-07-22T10:00:00" }, { id: "usuario-1", empresa_id: "empresa-1" } as never);
+
+  assert.equal(resultado.confirmacaoAgendamentoEnviada, true);
+  assert.match(enviados[0], /quarta-feira, 22 de julho/i);
+  assert.match(enviados[0], /adulto responsável/i);
+  assert.equal(mensagens[0].direcao, "saida");
+  assert.equal(atualizacoes.at(-1)?.data.status, "encerrada");
+  assert.equal(atualizacoes.at(-1)?.data.encerramentoMotivo, "agendamento_confirmado");
+});

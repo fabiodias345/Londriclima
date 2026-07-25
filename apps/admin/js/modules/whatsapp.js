@@ -190,6 +190,7 @@ async function confirmWhatsappSchedule() {
   const time = whatsappScheduleDraft.horario || scheduleTimeValue(selectedWhatsappConversation?.ordemServico);
   const response = await fetch(apiBaseUrl + "/admin/whatsapp/conversas/" + selectedWhatsappId + "/os", { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ titulo: data.get("titulo"), detalhes: data.get("detalhes"), origem: data.get("origem"), equipe_id: equipeId || undefined, tecnico_id: tecnicoId || undefined, agendada_para: date + "T" + time + ":00" }) });
   if (!response.ok) { const erro = await response.json().catch(() => null); window.alert(erro?.message || "Não foi possível confirmar o agendamento."); return; }
+  const resultado = await response.json(); if (resultado.confirmacaoAgendamentoEnviada === false) window.alert("Agendamento salvo, mas não foi possível enviar a confirmação ao cliente pelo WhatsApp.");
   whatsappScheduleOptions.agenda = []; whatsappScheduleOpen = false; whatsappScheduleDraft.proposalSent = false;
   await loadWhatsappScheduleOptions(); await loadWhatsappConversation(selectedWhatsappId); await loadWhatsappConversations();
 }
