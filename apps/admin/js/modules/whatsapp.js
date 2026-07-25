@@ -5,8 +5,9 @@ const whatsappNav = document.createElement("button");
 whatsappNav.className = "nav-link";
 whatsappNav.type = "button";
 whatsappNav.dataset.view = "whatsapp";
-whatsappNav.textContent = "Conversas WhatsApp";
-document.querySelector(".nav-group")?.append(whatsappNav);
+whatsappNav.textContent = "WhatsApp";
+const whatsappOperationGroup = document.querySelector('[aria-label="Operação"]');
+whatsappOperationGroup?.insertBefore(whatsappNav, whatsappOperationGroup.querySelector(".nav-link"));
 
 const whatsappSummary = document.createElement("section");
 whatsappSummary.className = "summary-grid hidden whatsapp-summary";
@@ -59,7 +60,7 @@ function esc(value) { const div = document.createElement("div"); div.textContent
 function formatDate(value) { const date = new Date(value); return Number.isNaN(date.getTime()) ? String(value || "") : date.toLocaleString("pt-BR"); }
 function localDate(value = new Date()) { const date = new Date(value); const offset = date.getTimezoneOffset() * 60000; return new Date(date.getTime() - offset).toISOString().slice(0, 10); }
 function hideWhatsappView() { whatsappView.classList.add("hidden"); whatsappSummary.classList.add("hidden"); whatsappTopbar?.classList.remove("hidden"); refreshButton?.classList.remove("hidden"); window.clearInterval(whatsappRefreshTimer); whatsappEventAbort?.abort(); }
-function showWhatsappView() { document.querySelectorAll("[id$='View'], [id$='Summary']").forEach((e) => e.classList.add("hidden")); document.querySelectorAll(".nav-link").forEach((e) => e.classList.toggle("active", e === whatsappNav)); viewKicker.textContent = "Atendimento digital"; viewTitle.textContent = "Conversas WhatsApp"; whatsappTopbar?.classList.add("hidden"); refreshButton?.classList.add("hidden"); whatsappView.classList.remove("hidden"); setWhatsappFilter("atendimento"); window.clearInterval(whatsappRefreshTimer); void loadWhatsappConversations(); whatsappRefreshTimer = window.setInterval(() => void loadWhatsappConversations(), 60000); void connectWhatsappEvents(); }
+function showWhatsappView() { document.querySelectorAll("[id$='View'], [id$='Summary']").forEach((e) => e.classList.add("hidden")); document.querySelectorAll(".nav-link").forEach((e) => e.classList.toggle("active", e === whatsappNav)); viewKicker.textContent = "Atendimento digital"; viewTitle.textContent = "WhatsApp"; whatsappTopbar?.classList.add("hidden"); refreshButton?.classList.add("hidden"); whatsappView.classList.remove("hidden"); setWhatsappFilter("atendimento"); window.clearInterval(whatsappRefreshTimer); void loadWhatsappConversations(); whatsappRefreshTimer = window.setInterval(() => void loadWhatsappConversations(), 60000); void connectWhatsappEvents(); }
 
 async function loadWhatsappConversations() {
   const status = document.querySelector("#whatsappListStatus");

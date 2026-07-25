@@ -7,11 +7,12 @@ Somente estado atual e proximos passos. Historico concluido fica no Git e nos te
 ## Regras
 
 - Executar uma fase por vez e validar antes de continuar.
-- App tecnico e app admin devem ficar separados.
-- App admin aceita somente usuario com `role=admin`.
-- Tecnico e auxiliar nao acessam o app admin.
-- Nao gerar APK admin ainda; testar por `flutter run`.
-- APK admin so depois de validar notificacoes WhatsApp em producao.
+- App tecnico, painel admin web e eventual app admin mobile devem ficar separados.
+- Painel admin web aceita somente usuario com `role=admin`.
+- Tecnico e auxiliar nao acessam o painel admin web.
+- No ciclo atual de Orcamentos, alterar somente `apps/admin` e `apps/backend`.
+- Nao alterar `apps/admin_mobile`, `apps/mobile` ou gerar APK sem ordem explicita do usuario.
+- APK tecnico/admin e validacao por `flutter run` sao trabalho futuro, somente quando solicitados explicitamente.
 - Segredos e credenciais nunca entram no Git.
 
 ## Estado atual
@@ -23,8 +24,8 @@ Somente estado atual e proximos passos. Historico concluido fica no Git e nos te
 - Admin web esta ok por enquanto em `https://admin.airmovebr.com.br/`.
 - Site publico foi redesenhado no padrao operacional AIRMOVEBR, com servicos, PMOC, projetos, segmentos e formulario de pre-chamado com CEP.
 - APK tecnico esta ok por enquanto, mas ainda precisa validacao final em campo real.
-- Novo app separado criado em `apps/admin_mobile`.
-- Fase 1 do app admin implementada:
+- Novo app separado criado em `apps/admin_mobile`, mas esta fora do escopo atual.
+- Fases 1 a 4 do app admin mobile foram implementadas anteriormente e permanecem sem alteracao neste ciclo:
   - login pela mesma API do sistema;
   - bloqueio local para `role != admin`;
   - dashboard com botoes coloridos;
@@ -46,7 +47,7 @@ Somente estado atual e proximos passos. Historico concluido fica no Git e nos te
   - layout compacto para celular pequeno;
   - abertura autenticada de PDF PMOC e relatorio avulso;
   - detalhes da frota somente para consulta.
-- Codigo das fases 1 a 4 esta no GitHub e na VM; APK admin ainda nao foi gerado.
+- Codigo das fases mobile 1 a 4 esta no GitHub e na VM; APK admin ainda nao foi gerado.
 - WhatsApp Cloud API oficial da Airmovebr configurado localmente e em producao com o numero `+55 43 3067-3793`.
 - Envio manual por texto livre validado quando existe janela de atendimento aberta.
 - Template `boas_vindas_airmovebr` criado na Meta e aguardando aprovacao para iniciar conversa sem mensagem previa do cliente.
@@ -58,27 +59,19 @@ Somente estado atual e proximos passos. Historico concluido fica no Git e nos te
 - Suporte a templates aprovados inclui O.S. finalizada e notificacao proativa ao tecnico.
 - Suite backend validada com 211 testes aprovados; todos os arquivos de codigo alterados permanecem abaixo de 500 linhas.
 
-## Validacao feita
+## Validacao atual do painel web
 
 ```powershell
-cd apps\admin_mobile
-dart analyze lib test
+npm.cmd run frontend:test
 ```
 
 Resultado:
 
 ```text
-No issues found
+27 testes aprovados, 0 falhas.
 ```
 
-Tentativa adicional:
-
-```powershell
-cd apps\admin_mobile
-flutter test --no-pub
-```
-
-Resultado: comando travou sem saida ate o timeout local.
+Validacoes de Flutter/APK nao fazem parte deste ciclo.
 
 ## Fases WhatsApp/Bolt e Admin
 
@@ -156,19 +149,20 @@ Executar uma fase por vez. Validar a fase atual antes de iniciar a proxima. Nenh
 ### Depois do WhatsApp
 
 - Validar app tecnico no celular em campo real.
-- Validar app admin completo no aparelho real.
-- Gerar APK tecnico/admin somente depois das validacoes acima.
+- Validar app admin mobile completo no aparelho real, somente quando esse escopo for solicitado.
+- Gerar APK tecnico/admin somente depois das validacoes acima e de ordem explicita.
 
-## Proximo foco
+## Proximo foco: Orcamentos no painel web
 
-- Implementar a aba `Orcamentos` acima de `O.S.` para atendimentos por telefone, presencial, indicacao ou WhatsApp.
-- Iniciar cada novo orcamento escolhendo `Cadastrar novo cliente` ou `Usar cliente existente`.
-- No cadastro novo, exigir nome, telefone, CPF/RG, CEP, endereco, numero, complemento, bairro, cidade e UF; consultar o CEP para preencher o endereco.
-- Montar o orcamento com servicos, materiais, equipamentos e pecas do catalogo, quantidade, valores, desconto, validade e observacoes.
-- Gerar PDF com logo e dados da AIRMOVEBR, enviar por WhatsApp/e-mail e usar Assinafy para valores acima de R$ 2.000.
-- Registrar aprovacao por WhatsApp, e-mail ou telefone, incluindo responsavel e data quando a aprovacao for telefonica.
-- Depois da aprovacao, criar a O.S. copiando cliente, endereco, itens, valores, detalhes e origem; o atendente escolhe apenas equipe, tecnico, data e horario.
-- Exibir os status: Rascunho, Enviado, Aguardando aprovacao, Em negociacao, Aprovado, Recusado e Convertido em O.S.
+- Escopo exclusivo: painel web em `apps/admin` e API em `apps/backend`; nao alterar Flutter ou APK.
+- Fase O1: incluir a aba `Orcamentos` acima de `O.S.`, com listagem, busca, filtros e estados de carregamento/erro.
+- Fase O2: iniciar o orcamento escolhendo `Cadastrar novo cliente` ou `Usar cliente existente`; no cadastro novo exigir nome, telefone, CPF/RG, CEP, endereco, numero, complemento, bairro, cidade e UF, com consulta de CEP.
+- Fase O3: montar o orcamento com servicos, materiais, equipamentos e pecas do catalogo, quantidade, valores, desconto, validade e observacoes; salvar rascunho.
+- Fase O4: gerar PDF com logo e dados da AIRMOVEBR; enviar por WhatsApp/e-mail e usar Assinafy para valores acima de R$ 2.000.
+- Fase O5: registrar aprovacao por WhatsApp, e-mail ou telefone, incluindo responsavel e data quando a aprovacao for telefonica; permitir negociacao e recusa.
+- Fase O6: depois da aprovacao, criar a O.S. copiando cliente, endereco, itens, valores, detalhes e origem; o atendente escolhe apenas equipe, tecnico, data e horario.
+- Fase O7: validar painel web, backend, PDF, canais de envio e conversao em O.S.
+- Status finais: Rascunho, Enviado, Aguardando aprovacao, Em negociacao, Aprovado, Recusado e Convertido em O.S.
 
 ## Apos instalar a API Meta
 - Fazer uma limpeza geral do backend:
@@ -179,6 +173,5 @@ Executar uma fase por vez. Validar a fase atual antes de iniciar a proxima. Nenh
 ## Comando para testar agora
 
 ```powershell
-cd apps\admin_mobile
-flutter run --dart-define=ADMIN_API_BASE_URL=https://api.airmovebr.com.br
+npm.cmd run frontend:test
 ```

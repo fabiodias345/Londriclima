@@ -135,6 +135,16 @@ test("admin autentica, guarda token e protege chamadas administrativas", () => {
   assertFileExists("apps/admin/js/modules/clientes.js");
   assertFileExists("apps/admin/js/modules/pmoc.js");
 
+  assert.match(script, /whatsappNav\.textContent = "WhatsApp"/);
+  assert.match(script, /comercialNav\.textContent = "Orçamentos"/);
+  assert.match(script, /catalogNav\.textContent = "Catálogo"/);
+  assert.match(script, /data-orcamento-filter="aprovado"/);
+  assert.match(script, /orcamentosSearchInput/);
+  assert.match(script, /novoOrcamentoButton/);
+  assert.match(script, /Cadastrar novo cliente/);
+  assert.match(script, /https:\/\/viacep\.com\.br\/ws\/\$\{digits\}\/json\//);
+  assert.match(script, /\/admin\/clientes/);
+
   assert.match(script, /http:\/\/localhost:3000\/api\/v1/);
   assert.match(script, /window\.location\.hostname === "admin\.airmovebr\.com\.br"/);
   assert.match(script, /`\$\{window\.location\.origin\}\/api\/v1`/);
