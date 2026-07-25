@@ -19,27 +19,53 @@
 }
 
 .whatsapp-detail-body:has(.whatsapp-schedule-panel) {
-  display: grid;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.12fr) minmax(390px, .88fr) !important;
   min-height: 0;
-  grid-template-columns: minmax(0, 1fr) minmax(330px, 390px);
+  overflow: hidden;
 }
+
+.whatsapp-conversation-detail:has(.whatsapp-schedule-panel) .whatsapp-quote-approved {
+  min-height: 54px;
+  padding: 8px 16px;
+  border-bottom: 1px solid #e7ebf0;
+  background: #fff;
+}
+
+.whatsapp-quote-approved div:last-child { margin-left: auto; }
+.whatsapp-quote-approved b { margin: 0; color: #0f766e; font-size: 17px; }
+
+.whatsapp-conversation-detail:has(.whatsapp-schedule-panel) .whatsapp-schedule-form {
+  grid-template-columns: minmax(160px, 1fr) minmax(160px, 1fr) minmax(190px, 1fr);
+  align-items: end;
+  gap: 8px;
+  padding: 8px 16px;
+}
+
+.whatsapp-conversation-detail:has(.whatsapp-schedule-panel) .whatsapp-schedule-form .whatsapp-workbench-title,
+.whatsapp-conversation-detail:has(.whatsapp-schedule-panel) .whatsapp-schedule-form label:has(input[name="titulo"]),
+.whatsapp-conversation-detail:has(.whatsapp-schedule-panel) .whatsapp-schedule-form label:has(textarea[name="detalhes"]),
+.whatsapp-conversation-detail:has(.whatsapp-schedule-panel) .whatsapp-schedule-form label:has(select[name="origem"]),
+.whatsapp-conversation-detail:has(.whatsapp-schedule-panel) .whatsapp-schedule-draft { display: none; }
 
 .whatsapp-schedule-panel {
   display: grid;
-  grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
   min-width: 0;
-  overflow: auto;
+  min-height: 0;
+  overflow: hidden;
   border-left: 1px solid #dfe6ee;
   background: #fff;
 }
 
 .whatsapp-schedule-panel > header,
-.whatsapp-schedule-month {
+.whatsapp-schedule-month,
+.whatsapp-schedule-selected-date {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 14px 16px;
+  padding: 10px 14px;
   border-bottom: 1px solid #e7ebf0;
 }
 
@@ -55,19 +81,20 @@
 .whatsapp-schedule-panel header strong,
 .whatsapp-schedule-month strong { color: #172033; font-size: 14px; }
 .whatsapp-schedule-panel header .secondary-button,
-.whatsapp-schedule-month .secondary-button { min-height: 34px; min-width: 34px; padding: 0 9px; }
+.whatsapp-schedule-month .secondary-button,
+.whatsapp-schedule-selected-date .secondary-button { min-height: 34px; min-width: 34px; padding: 0 9px; }
 
 .whatsapp-schedule-weekdays,
 .whatsapp-schedule-calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
 .whatsapp-schedule-weekdays { padding: 5px 10px 3px; color: #94a3b8; font-size: 10px; font-weight: 800; text-align: center; }
-.whatsapp-schedule-calendar { min-height: 0; overflow: hidden; padding: 0 10px 6px; }
+.whatsapp-schedule-calendar { grid-template-rows: repeat(6, minmax(0, 1fr)); min-height: 0; overflow: hidden; padding: 0 10px 8px; }
 
 .whatsapp-schedule-day {
   display: grid;
-  min-height: 48px;
-  align-content: start;
-  gap: 3px;
-  padding: 6px;
+  min-height: 0;
+  align-content: center;
+  gap: 1px;
+  padding: 3px 4px;
   border: 1px solid #edf1f5;
   background: #fff;
   color: #1e293b;
@@ -77,11 +104,11 @@
 .whatsapp-schedule-day:hover,
 .whatsapp-schedule-day.is-selected { position: relative; z-index: 1; border-color: #2563eb; background: #eff6ff; }
 .whatsapp-schedule-day.is-outside { color: #aab4c1; background: #fafbfc; }
-.whatsapp-schedule-day strong { font-size: 12px; }
-.whatsapp-schedule-day small { color: #64748b; font-size: 9px; }
+.whatsapp-schedule-day strong { font-size: 11px; }
+.whatsapp-schedule-day small { color: #64748b; font-size: 8px; }
 
-.whatsapp-schedule-slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding: 10px 14px; border-top: 1px solid #e7ebf0; }
-.whatsapp-schedule-slot { display: grid; gap: 2px; min-height: 46px; border: 1px solid #dbe3ed; border-radius: 8px; color: #1e293b; background: #fff; font-size: 12px; font-weight: 800; }
+.whatsapp-schedule-slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-content: start; gap: 6px; min-height: 0; overflow: hidden; padding: 10px 14px; }
+.whatsapp-schedule-slot { display: grid; gap: 2px; min-height: 42px; border: 1px solid #dbe3ed; border-radius: 8px; color: #1e293b; background: #fff; font-size: 12px; font-weight: 800; }
 .whatsapp-schedule-slot small { color: #64748b; font-size: 9px; font-weight: 700; }
 .whatsapp-schedule-slot:hover:not(:disabled),
 .whatsapp-schedule-slot.is-selected { border-color: #0f766e; color: #fff; background: #0f766e; }
@@ -97,22 +124,6 @@
 .whatsapp-schedule-warning { margin: 0; padding: 18px; color: #a16207; background: #fffbeb; font-size: 12px; line-height: 1.45; }
 
 @media (max-width: 1180px) {
-  .whatsapp-detail-body:has(.whatsapp-schedule-panel) { grid-template-columns: minmax(0, 1fr); }
-  .whatsapp-schedule-panel { max-height: 520px; border-top: 1px solid #dfe6ee; border-left: 0; }
-}
-.whatsapp-schedule-selected-date {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 14px 16px;
-  border-bottom: 1px solid #e7ebf0;
-  color: #172033;
-  font-size: 13px;
-  text-transform: capitalize;
-}
-
-.whatsapp-schedule-selected-date .secondary-button {
-  min-height: 36px;
-  white-space: nowrap;
+  .whatsapp-detail-body:has(.whatsapp-schedule-panel) { grid-template-columns: minmax(0, 1fr) !important; overflow: auto; }
+  .whatsapp-schedule-panel { min-height: 520px; border-top: 1px solid #dfe6ee; border-left: 0; }
 }
