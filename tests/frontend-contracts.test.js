@@ -165,6 +165,7 @@ test("WhatsApp propõe agenda antes de confirmar o agendamento", () => {
   assert.match(whatsapp, /Confirmar agendamento/);
   assert.match(whatsapp, /proposalSent/);
   assert.match(whatsapp, /scheduleProposalText/);
+  assert.match(whatsapp, /data-whatsapp-action="alterar-data"/);
   assert.match(styles, /\.whatsapp-schedule-panel/);
 });
 test("admin compila o bundle concatenado antes do deploy", async () => {

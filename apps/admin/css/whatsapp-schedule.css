@@ -60,7 +60,7 @@
 .whatsapp-schedule-weekdays,
 .whatsapp-schedule-calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
 .whatsapp-schedule-weekdays { padding: 8px 10px 4px; color: #94a3b8; font-size: 10px; font-weight: 800; text-align: center; }
-.whatsapp-schedule-calendar { padding: 0 10px 10px; }
+.whatsapp-schedule-calendar { min-height: 0; overflow: auto; padding: 0 10px 10px; }
 
 .whatsapp-schedule-day {
   display: grid;
@@ -99,4 +99,20 @@
 @media (max-width: 1180px) {
   .whatsapp-detail-body:has(.whatsapp-schedule-panel) { grid-template-columns: minmax(0, 1fr); }
   .whatsapp-schedule-panel { max-height: 520px; border-top: 1px solid #dfe6ee; border-left: 0; }
+}
+.whatsapp-schedule-selected-date {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #e7ebf0;
+  color: #172033;
+  font-size: 13px;
+  text-transform: capitalize;
+}
+
+.whatsapp-schedule-selected-date .secondary-button {
+  min-height: 36px;
+  white-space: nowrap;
 }
