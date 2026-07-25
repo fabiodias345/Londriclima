@@ -5,7 +5,14 @@ export const apiModule = {
 };
 
 export const apiRoot = `
-const localHosts = ["localhost", "127.0.0.1", ""];
+function getToken() { return localStorage.getItem("airmovebr_access_token"); }
+function setToken(token) { localStorage.setItem("airmovebr_access_token", token); }
+function clearToken() {
+  localStorage.removeItem("airmovebr_access_token");
+  localStorage.removeItem("airmovebr_refresh_token");
+  localStorage.removeItem("airmovebr_session_suspended_at");
+}
+function authHeaders() { return { Authorization: \`Bearer \${getToken()}\` }; }const localHosts = ["localhost", "127.0.0.1", ""];
 const apiBaseUrl = localHosts.includes(window.location.hostname)
   ? "http://localhost:3000/api/v1"
   : window.location.hostname === "191.252.226.11" || window.location.hostname === "admin.airmovebr.com.br"
