@@ -155,6 +155,16 @@ Executar uma fase por vez. Validar a fase atual antes de iniciar a proxima. Nenh
 ## Proximo foco: Orcamentos no painel web
 
 - Escopo exclusivo: painel web em `apps/admin` e API em `apps/backend`; nao alterar Flutter ou APK.
+- Processo de execucao da Fase O5: seguir o plano `docs/superpowers/plans/2026-07-25-orcamentos-o5.md` por tarefas, validando cada bloco antes de iniciar o proximo e fazendo checkpoint entre tarefas.
+- Ordem atual da Fase O5: Task 1 persistencia Prisma; Task 2 contratos e integracoes; Task 3 API de detalhe/PDF/envios; Task 4 detalhe e acoes no painel; Task 5 validacao final.
+- Ao concluir cada tarefa, registrar resultado e manter o foco somente em `apps/admin` e `apps/backend`; nao tocar em `apps/admin_mobile`, `apps/mobile` ou Flutter.
+- Checkpoint O5 Task 1: campos comerciais de PDF, canais e Assinafy adicionados ao modelo `Orcamento`; migration `20260725170000_orcamento_canais_assinatura` criada; `prisma generate` e `prisma validate` aprovados.
+- Checkpoint O5 Task 2: contratos comerciais e `ComercialAssinafyService` criados; import não utilizado `IsInt` removido do DTO; `npm.cmd run build` e `npm.cmd run lint -- --fix=false` aprovados.
+- Checkpoint O5 Task 3: API autenticada de detalhe, PDF, envio WhatsApp, envio e-mail e início Assinafy adicionada; testes comerciais de sucesso/falha de e-mail aprovados; build e lint backend aprovados.
+- Checkpoint O5 Task 4: detalhe do orçamento, ações de PDF/WhatsApp/e-mail/Assinafy, estados de ação e layout responsivo adicionados ao painel; teste frontend passou.
+- Checkpoint O5 Task 5: build backend, lint backend, testes comerciais (2 aprovados) e frontend (27 aprovados) passaram; a suíte backend completa excedeu 120s por ruído do scheduler/bootstrap já conhecido, sem falha funcional registrada.
+- Scheduler de recorrências isolado: `AdminRecorrenciaSchedulerService` agora respeita `RECORRENCIA_SCHEDULER_ENABLED` e desativa automaticamente quando `NODE_ENV=test`; produção permanece ativa por padrão.
+- Pendência de validação O5: a suíte backend completa ainda trava em um teste HTTP posterior mesmo com scheduler isolado e `--test-force-exit`; build/lint e frontend continuam aprovados.
 - Fase O1: concluida no painel web. Menu operacional reorganizado em WhatsApp, Orcamentos, O.S., Agenda, Recorrencias e Frota; Catalogo separado em Cadastros. Orcamentos recebeu listagem, busca, filtros e totais.
 - Fase O2: concluida no painel web. `Novo orcamento` permite usar cliente existente ou cadastrar cliente novo com nome, telefone, CPF/RG, CEP, endereco, numero, complemento, bairro, cidade e UF; CEP preenche endereco automaticamente.
 - Fase O3: concluida no painel web. Montagem de rascunho com itens do catalogo, quantidade, valores, desconto, validade e observacoes; totais e persistencia continuam calculados pela API.

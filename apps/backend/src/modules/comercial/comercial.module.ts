@@ -4,11 +4,12 @@ import { AutomacoesModule } from "../automacoes/automacoes.module";
 import { ComercialController } from "./comercial.controller";
 import { ComercialService } from "./comercial.service";
 import { ComercialOrcamentoPdfRenderer } from "./comercial-orcamento-pdf-renderer";
+import { ComercialAssinafyService } from "./comercial-assinafy.service";
 
 @Module({
   imports: [AuthModule, AutomacoesModule],
   controllers: [ComercialController],
-  providers: [ComercialService, ComercialOrcamentoPdfRenderer],
+  providers: [ComercialService, ComercialOrcamentoPdfRenderer, ComercialAssinafyService],
   exports: [ComercialService]
 })
 export class ComercialModule {}

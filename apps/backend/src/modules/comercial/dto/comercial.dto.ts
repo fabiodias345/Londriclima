@@ -1,4 +1,4 @@
-﻿import { IsArray, IsIn, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Max, Min, ValidateNested } from "class-validator";
+import { IsArray, IsEmail, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Max, Min, ValidateNested } from "class-validator";
 import { Type } from "class-transformer";
 
 export class SalvarItemCatalogoDto {
@@ -111,4 +111,10 @@ export class AtualizarStatusOrcamentoDto {
   @IsOptional()
   @IsString()
   responsavel?: string;
+}
+
+export class EnviarOrcamentoEmailDto {
+  @IsOptional()
+  @IsEmail()
+  destinatario?: string;
 }
