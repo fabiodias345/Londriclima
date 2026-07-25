@@ -35,6 +35,12 @@ export class ComercialService {
     return this.prisma.catalogoItem.create({ data: { empresaId, ...data }, select: itemSelect });
   }
 
+  async apagarItemCatalogo(id: string, empresaId: string) {
+    const result = await this.prisma.catalogoItem.updateMany({ where: { id, empresaId, ativo: true }, data: { ativo: false } });
+    if (!result.count) throw new NotFoundException("Item de catálogo não encontrado.");
+    return { apagado: true };
+  }
+
   async listarOrcamentos(empresaId: string) {
     const items = await this.prisma.orcamento.findMany({ where: { empresaId }, include: { cliente: { select: { nome: true } }, conversa: { select: { telefone: true, nomeContato: true } }, _count: { select: { itens: true } } }, orderBy: { criadoEm: "desc" }, take: 100 });
     return { items };

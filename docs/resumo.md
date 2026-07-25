@@ -186,3 +186,4 @@ Executar uma fase por vez. Validar a fase atual antes de iniciar a proxima. Nenh
 ```powershell
 npm.cmd run frontend:test
 ```
+ - Correção adicional do catálogo: painel agora exibe Editar/Apagar; edição usa `PATCH /admin/comercial/catalogo/:id` e apagar usa exclusão lógica (`ativo = false`) via `DELETE`, preservando itens de orçamentos históricos. Build, lint e 27 testes frontend aprovados.

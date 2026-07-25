@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Res, StreamableFile, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Res, StreamableFile, UseGuards } from "@nestjs/common";
 import { AuthenticatedUser } from "../auth/auth-user";
 import { AdminRoleGuard } from "../auth/admin-role.guard";
 import { CurrentUser } from "../auth/current-user.decorator";
@@ -26,6 +26,11 @@ export class ComercialController {
   @Patch("catalogo/:id")
   atualizarItem(@Param("id", new ParseUUIDPipe()) id: string, @Body() dto: SalvarItemCatalogoDto, @CurrentUser() usuario: AuthenticatedUser) {
     return this.comercialService.salvarItemCatalogo(dto, usuario.empresa_id, id);
+  }
+
+  @Delete("catalogo/:id")
+  apagarItem(@Param("id", new ParseUUIDPipe()) id: string, @CurrentUser() usuario: AuthenticatedUser) {
+    return this.comercialService.apagarItemCatalogo(id, usuario.empresa_id);
   }
 
   @Get("orcamentos")
