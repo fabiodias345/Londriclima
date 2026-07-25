@@ -155,14 +155,15 @@ Executar uma fase por vez. Validar a fase atual antes de iniciar a proxima. Nenh
 ## Proximo foco: Orcamentos no painel web
 
 - Escopo exclusivo: painel web em `apps/admin` e API em `apps/backend`; nao alterar Flutter ou APK.
-- Fase O1: incluir a aba `Orcamentos` acima de `O.S.`, com listagem, busca, filtros e estados de carregamento/erro.
-- Fase O2: iniciar o orcamento escolhendo `Cadastrar novo cliente` ou `Usar cliente existente`; no cadastro novo exigir nome, telefone, CPF/RG, CEP, endereco, numero, complemento, bairro, cidade e UF, com consulta de CEP.
-- Fase O3: montar o orcamento com servicos, materiais, equipamentos e pecas do catalogo, quantidade, valores, desconto, validade e observacoes; salvar rascunho.
-- Fase O4: gerar PDF com logo e dados da AIRMOVEBR; enviar por WhatsApp/e-mail e usar Assinafy para valores acima de R$ 2.000.
-- Fase O5: registrar aprovacao por WhatsApp, e-mail ou telefone, incluindo responsavel e data quando a aprovacao for telefonica; permitir negociacao e recusa.
+- Fase O1: concluida no painel web. Menu operacional reorganizado em WhatsApp, Orcamentos, O.S., Agenda, Recorrencias e Frota; Catalogo separado em Cadastros. Orcamentos recebeu listagem, busca, filtros e totais.
+- Fase O2: concluida no painel web. `Novo orcamento` permite usar cliente existente ou cadastrar cliente novo com nome, telefone, CPF/RG, CEP, endereco, numero, complemento, bairro, cidade e UF; CEP preenche endereco automaticamente.
+- Fase O3: concluida no painel web. Montagem de rascunho com itens do catalogo, quantidade, valores, desconto, validade e observacoes; totais e persistencia continuam calculados pela API.
+- Fase O4: concluida no backend. Status adicionados: `aguardando_aprovacao`, `em_negociacao` e `convertido_os`; atualizacao protegida para negociacao, aprovacao e recusa; aprovacao por telefone exige responsavel. Migration Prisma criada.
+- Fase O5: proxima. Revisao no painel, download de PDF, envio por WhatsApp/e-mail e Assinafy acima de R$ 2.000. PDF e envio WhatsApp iniciais ja existem; e-mail e Assinafy precisam de integracao propria de orcamento, sem reutilizar dados de PMOC.
 - Fase O6: depois da aprovacao, criar a O.S. copiando cliente, endereco, itens, valores, detalhes e origem; o atendente escolhe apenas equipe, tecnico, data e horario.
 - Fase O7: validar painel web, backend, PDF, canais de envio e conversao em O.S.
 - Status finais: Rascunho, Enviado, Aguardando aprovacao, Em negociacao, Aprovado, Recusado e Convertido em O.S.
+- Nenhuma das fases O1 a O4 foi commitada ou publicada; todas as alteracoes permanecem locais para revisao.
 
 ## Apos instalar a API Meta
 - Fazer uma limpeza geral do backend:

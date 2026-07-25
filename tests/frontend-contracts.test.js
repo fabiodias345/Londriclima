@@ -144,6 +144,9 @@ test("admin autentica, guarda token e protege chamadas administrativas", () => {
   assert.match(script, /Cadastrar novo cliente/);
   assert.match(script, /https:\/\/viacep\.com\.br\/ws\/\$\{digits\}\/json\//);
   assert.match(script, /\/admin\/clientes/);
+  assert.match(script, /Montar orçamento/);
+  assert.match(script, /\/admin\/comercial\/orcamentos/);
+  assert.match(script, /Inclua ao menos um item/);
 
   assert.match(script, /http:\/\/localhost:3000\/api\/v1/);
   assert.match(script, /window\.location\.hostname === "admin\.airmovebr\.com\.br"/);

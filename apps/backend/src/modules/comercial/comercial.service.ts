@@ -3,7 +3,7 @@ import { OrcamentoStatus, Prisma } from "@prisma/client";
 import { PrismaService } from "../../database/prisma.service";
 import { AuthenticatedUser } from "../auth/auth-user";
 import { WhatsAppCloudService } from "../automacoes/whatsapp-cloud.service";
-import { CriarOrcamentoDto, SalvarItemCatalogoDto } from "./dto/comercial.dto";
+import { AtualizarStatusOrcamentoDto, CriarOrcamentoDto, SalvarItemCatalogoDto } from "./dto/comercial.dto";
 import { ComercialOrcamentoPdfRenderer } from "./comercial-orcamento-pdf-renderer";
 
 const itemSelect = { id: true, tipo: true, grupo: true, subgrupo: true, codigo: true, nome: true, descricao: true, unidade: true, custo: true, valor: true, ativo: true } as const;
@@ -51,6 +51,12 @@ export class ComercialService {
     const orcamento = await this.prisma.orcamento.create({ data: { empresaId: usuario.empresa_id, clienteId: cliente.id, conversaId: dto.conversa_id || null, criadoPorUsuarioId: usuario.id, titulo: this.texto(dto.titulo), detalhes: this.textoOpcional(dto.detalhes), validoAte: dto.valido_ate ? this.data(dto.valido_ate) : null, subtotal, desconto, total: subtotal.minus(desconto), itens: { create: itens } }, include: { itens: true, cliente: { select: { nome: true, telefone: true } } } });
     return orcamento;
   }
+  async atualizarStatus(id: string, dto: AtualizarStatusOrcamentoDto, empresaId: string) {
+    if (dto.canal === "telefone" && !this.textoOpcional(dto.responsavel)) throw new BadRequestException("Informe o responsavel pela aprovacao telefonica.");
+    const result = await this.prisma.orcamento.updateMany({ where: { id, empresaId, status: { in: [OrcamentoStatus.enviado, OrcamentoStatus.aguardando_aprovacao, OrcamentoStatus.em_negociacao] } }, data: { status: dto.status as OrcamentoStatus } });
+    if (!result.count) throw new BadRequestException("O orcamento nao esta disponivel para esta atualizacao.");
+    return { atualizado: true, status: dto.status, canal: dto.canal || null, responsavel: this.textoOpcional(dto.responsavel) };
+  }
 
   async enviarOrcamento(id: string, empresaId: string) {
     const orcamento = await this.prisma.orcamento.findFirst({
@@ -70,7 +76,7 @@ export class ComercialService {
     const documento = await this.sender.enviarDocumento(telefone, { filename: `orcamento-${orcamento.id.slice(0, 8)}.pdf`, content: pdf, caption: `Orçamento ${orcamento.titulo}` });
     const texto = `Olá, ${orcamento.cliente.nome}.\n\nEnviamos seu orçamento em PDF. Agradecemos por escolher a AIRMOVEBR.\n\nDeseja autorizar o serviço?`;
     const confirmacao = await this.sender.enviar({ to: telefone, text: texto, options: [{ id: `orcamento_aprovar:${orcamento.id}`, title: "🟢 Autorizar" }, { id: `orcamento_negociar:${orcamento.id}`, title: "🟠 Negociar" }] });
-    await this.prisma.orcamento.update({ where: { id }, data: { status: OrcamentoStatus.enviado, enviadoEm: new Date() } });
+    await this.prisma.orcamento.update({ where: { id }, data: { status: OrcamentoStatus.aguardando_aprovacao, enviadoEm: new Date() } });
     if (orcamento.conversaId) {
       await this.prisma.$transaction([
         this.prisma.whatsAppMensagem.create({ data: { conversaId: orcamento.conversaId, direcao: "saida", texto: `PDF enviado: Orçamento ${orcamento.titulo}`, mensagemId: documento.messageId, tipo: "document" } }),
@@ -81,7 +87,7 @@ export class ComercialService {
   }
   async registrarAceiteWhatsApp(id: string, empresaId: string) {
     const atualizado = await this.prisma.orcamento.updateMany({
-      where: { id, empresaId, status: OrcamentoStatus.enviado },
+      where: { id, empresaId, status: OrcamentoStatus.aguardando_aprovacao },
       data: { status: OrcamentoStatus.aprovado }
     });
     if (!atualizado.count) {

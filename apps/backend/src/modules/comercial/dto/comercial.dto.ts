@@ -99,3 +99,16 @@ export class CriarOrcamentoDto {
   @Type(() => ItemOrcamentoDto)
   itens: ItemOrcamentoDto[];
 }
+
+export class AtualizarStatusOrcamentoDto {
+  @IsIn(["em_negociacao", "aprovado", "recusado"])
+  status: "em_negociacao" | "aprovado" | "recusado";
+
+  @IsOptional()
+  @IsIn(["whatsapp", "email", "telefone"])
+  canal?: "whatsapp" | "email" | "telefone";
+
+  @IsOptional()
+  @IsString()
+  responsavel?: string;
+}

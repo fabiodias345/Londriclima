@@ -130,8 +130,11 @@ enum CatalogoItemTipo {
 enum OrcamentoStatus {
   rascunho
   enviado
+  aguardando_aprovacao
+  em_negociacao
   aprovado
   recusado
+  convertido_os
   expirado
 }
 

@@ -4,7 +4,7 @@ import { AdminRoleGuard } from "../auth/admin-role.guard";
 import { CurrentUser } from "../auth/current-user.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { ComercialService } from "./comercial.service";
-import { CriarOrcamentoDto, SalvarItemCatalogoDto } from "./dto/comercial.dto";
+import { AtualizarStatusOrcamentoDto, CriarOrcamentoDto, SalvarItemCatalogoDto } from "./dto/comercial.dto";
 
 @Controller("admin/comercial")
 @UseGuards(JwtAuthGuard, AdminRoleGuard)
@@ -34,6 +34,10 @@ export class ComercialController {
   @Post("orcamentos")
   criarOrcamento(@Body() dto: CriarOrcamentoDto, @CurrentUser() usuario: AuthenticatedUser) {
     return this.comercialService.criarOrcamento(dto, usuario);
+  }
+  @Patch("orcamentos/:id/status")
+  atualizarStatus(@Param("id", new ParseUUIDPipe()) id: string, @Body() dto: AtualizarStatusOrcamentoDto, @CurrentUser() usuario: AuthenticatedUser) {
+    return this.comercialService.atualizarStatus(id, dto, usuario.empresa_id);
   }
 
   @Post("orcamentos/:id/aceite-whatsapp")
