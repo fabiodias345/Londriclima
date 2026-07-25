@@ -338,8 +338,14 @@ async function login(event) {
     const result = await response.json();
     aplicarSessao(result);
     showDashboard();
-    await loadActiveView();
-  } catch {
+    try {
+      await loadActiveView();
+    } catch (error) {
+      console.error("Falha ao carregar o painel apos o login.", error);
+      listStatus.textContent = "Login realizado. Atualize a pagina para carregar os dados.";
+    }
+  } catch (error) {
+    console.error("Falha no login.", error);
     loginStatus.textContent = "Nao foi possivel conectar na API.";
   } finally {
     submitButton.disabled = false;
