@@ -12,7 +12,14 @@ function clearToken() {
   localStorage.removeItem("airmovebr_refresh_token");
   localStorage.removeItem("airmovebr_session_suspended_at");
 }
-function authHeaders() { return { Authorization: \`Bearer \${getToken()}\` }; }const localHosts = ["localhost", "127.0.0.1", ""];
+function authHeaders() { return { Authorization: \`Bearer \${getToken()}\` }; }
+function aplicarSessao(resultado) {
+  setToken(resultado.access_token);
+  localStorage.setItem("airmovebr_refresh_token", resultado.refresh_token || "");
+  localStorage.removeItem("airmovebr_session_suspended_at");
+  if (typeof sincronizarRenovacaoSessao === "function") sincronizarRenovacaoSessao();
+}
+const localHosts = ["localhost", "127.0.0.1", ""];
 const apiBaseUrl = localHosts.includes(window.location.hostname)
   ? "http://localhost:3000/api/v1"
   : window.location.hostname === "191.252.226.11" || window.location.hostname === "admin.airmovebr.com.br"

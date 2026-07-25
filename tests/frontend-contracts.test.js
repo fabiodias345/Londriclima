@@ -993,6 +993,7 @@ test("admin mantém sessão aberta e expira somente após suspensão", () => {
 
   assert.match(session, /SESSION_SUSPENSION_LIMIT_MS = 15 \* 60 \* 1000/);
   assert.match(session, /\/auth\/refresh/);
+  assert.match(read("apps\/admin\/js\/modules\/api.js"), /function aplicarSessao\(resultado\)/);
   assert.match(session, /visibilitychange/);
   assert.match(session, /Sessão expirada após 15 minutos com a tela em suspensão/);
 });
