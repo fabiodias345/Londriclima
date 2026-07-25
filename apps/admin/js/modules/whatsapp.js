@@ -22,7 +22,7 @@ whatsappView.innerHTML = \`
     <aside class="whatsapp-inbox-list">
       <div class="whatsapp-list-head"><div><strong>Caixa de entrada</strong><span class="whatsapp-list-count" id="whatsappListStatus">Carregando...</span></div><button class="whatsapp-icon-button" id="whatsappRefreshButton" type="button" aria-label="Atualizar conversas" title="Atualizar conversas">Atualizar</button></div>
       <label class="whatsapp-search"><span class="sr-only">Pesquisar conversa</span><input id="whatsappSearchInput" type="search" placeholder="Pesquisar nome ou telefone" autocomplete="off" /></label>
-      <div class="whatsapp-filters" role="tablist" aria-label="Filtro de conversas"><button type="button" data-whatsapp-filter="todas">Todas</button><button type="button" data-whatsapp-filter="aguardando">Aguardando <span id="whatsappPendingBadge">0</span></button><button class="is-active" type="button" data-whatsapp-filter="atendimento">Em atendimento</button><button type="button" data-whatsapp-filter="encerradas">Encerradas</button></div>
+      <div class="whatsapp-filters" role="tablist" aria-label="Filtro de conversas"><button class="is-active" type="button" data-whatsapp-filter="atendimento">Em atendimento</button><button type="button" data-whatsapp-filter="aguardando">Aguardando <span id="whatsappPendingBadge">0</span></button><button type="button" data-whatsapp-filter="encerradas">Encerradas</button><button type="button" data-whatsapp-filter="todas">Todas</button></div>
       <div class="whatsapp-conversation-list" id="whatsappConversationList"></div>
     </aside>
     <section class="whatsapp-conversation-detail" id="whatsappConversationDetail"><div class="whatsapp-empty-state"><span class="whatsapp-empty-icon">◉</span><strong>Selecione uma conversa</strong><p>As mensagens, o cadastro e o agendamento aparecerão aqui.</p></div></section>
@@ -44,11 +44,22 @@ let whatsappScheduleVisibleMonth = localDate().slice(0, 7);
 let whatsappScheduleMode = "calendar";
 const whatsappTopbar = document.querySelector(".topbar");
 
+function clearWhatsappSelection(message = "Selecione uma conversa") {
+  selectedWhatsappId = "";
+  selectedWhatsappConversation = null;
+  const detail = document.querySelector("#whatsappConversationDetail");
+  if (detail) detail.innerHTML = '<div class="whatsapp-empty-state"><span class="whatsapp-empty-icon" aria-hidden="true">&bull;</span><strong>' + esc(message) + '</strong><p>Selecione uma conversa para ver as mensagens, o cadastro, o orcamento e o agendamento.</p></div>';
+}
+function setWhatsappFilter(filter) {
+  document.querySelectorAll("[data-whatsapp-filter]").forEach((item) => item.classList.toggle("is-active", item.dataset.whatsappFilter === filter));
+  clearWhatsappSelection(filter === "atendimento" ? "Nenhuma conversa em atendimento" : "Selecione uma conversa");
+  renderWhatsappConversations();
+}
 function esc(value) { const div = document.createElement("div"); div.textContent = String(value ?? ""); return div.innerHTML; }
 function formatDate(value) { const date = new Date(value); return Number.isNaN(date.getTime()) ? String(value || "") : date.toLocaleString("pt-BR"); }
 function localDate(value = new Date()) { const date = new Date(value); const offset = date.getTimezoneOffset() * 60000; return new Date(date.getTime() - offset).toISOString().slice(0, 10); }
 function hideWhatsappView() { whatsappView.classList.add("hidden"); whatsappSummary.classList.add("hidden"); whatsappTopbar?.classList.remove("hidden"); refreshButton?.classList.remove("hidden"); window.clearInterval(whatsappRefreshTimer); whatsappEventAbort?.abort(); }
-function showWhatsappView() { document.querySelectorAll("[id$='View'], [id$='Summary']").forEach((e) => e.classList.add("hidden")); document.querySelectorAll(".nav-link").forEach((e) => e.classList.toggle("active", e === whatsappNav)); viewKicker.textContent = "Atendimento digital"; viewTitle.textContent = "Conversas WhatsApp"; whatsappTopbar?.classList.add("hidden"); refreshButton?.classList.add("hidden"); whatsappView.classList.remove("hidden"); window.clearInterval(whatsappRefreshTimer); void loadWhatsappConversations(); whatsappRefreshTimer = window.setInterval(() => void loadWhatsappConversations(), 60000); void connectWhatsappEvents(); }
+function showWhatsappView() { document.querySelectorAll("[id$='View'], [id$='Summary']").forEach((e) => e.classList.add("hidden")); document.querySelectorAll(".nav-link").forEach((e) => e.classList.toggle("active", e === whatsappNav)); viewKicker.textContent = "Atendimento digital"; viewTitle.textContent = "Conversas WhatsApp"; whatsappTopbar?.classList.add("hidden"); refreshButton?.classList.add("hidden"); whatsappView.classList.remove("hidden"); setWhatsappFilter("atendimento"); window.clearInterval(whatsappRefreshTimer); void loadWhatsappConversations(); whatsappRefreshTimer = window.setInterval(() => void loadWhatsappConversations(), 60000); void connectWhatsappEvents(); }
 
 async function loadWhatsappConversations() {
   const status = document.querySelector("#whatsappListStatus");
@@ -74,6 +85,7 @@ function renderWhatsappConversations() {
   const list = document.querySelector("#whatsappConversationList"); const query = String(document.querySelector("#whatsappSearchInput")?.value || "").toLowerCase().trim(); const filter = document.querySelector("[data-whatsapp-filter].is-active")?.dataset.whatsappFilter || "atendimento";
   const prioridade = { atendimento: 0, aguardando: 1, encerradas: 2 }; const items = whatsappConversations.filter((item) => { const state = getWhatsappState(item); const text = \`\${item.nomeContato || ""} \${item.telefone || ""}\`.toLowerCase(); return (!query || text.includes(query)) && (filter === "todas" || filter === state.key); }).sort((a, b) => prioridade[getWhatsappState(a).key] - prioridade[getWhatsappState(b).key] || new Date(b.ultimaMensagemEm || 0).getTime() - new Date(a.ultimaMensagemEm || 0).getTime());
   list.innerHTML = items.length ? items.map((item) => { const state = getWhatsappState(item); const last = item.mensagens?.[0]?.texto || "Sem mensagens"; return \`<button class="whatsapp-conversation-card \${state.className} \${selectedWhatsappId === item.id ? "is-selected" : ""}" type="button" data-whatsapp-id="\${esc(item.id)}"><span class="whatsapp-status-dot" aria-hidden="true"></span><span class="whatsapp-avatar">\${esc((item.nomeContato || item.telefone || "?").slice(0, 1).toUpperCase())}</span><span class="whatsapp-conversation-copy"><strong>\${esc(item.nomeContato || item.telefone)}</strong><small>\${esc(last.slice(0, 78))}</small><em>\${state.label}</em></span><span class="whatsapp-conversation-time">\${state.ageMinutes ? formatWaiting(state.ageMinutes) : ""}</span></button>\`; }).join("") : '<div class="whatsapp-list-empty">Nenhuma conversa encontrada.</div>';
+  if (!items.some((item) => item.id === selectedWhatsappId)) clearWhatsappSelection(filter === "atendimento" && !items.length ? "Nenhuma conversa em atendimento" : "Selecione uma conversa");
 }
 
 async function loadWhatsappScheduleOptions() {
@@ -161,7 +173,7 @@ whatsappNav.addEventListener("click", (event) => { event.stopImmediatePropagatio
 document.querySelectorAll(".nav-link").forEach((link) => link.addEventListener("click", () => { if (link !== whatsappNav) hideWhatsappView(); }));
 document.querySelector("#whatsappRefreshButton").addEventListener("click", () => void loadWhatsappConversations());
 document.querySelector("#whatsappSearchInput").addEventListener("input", renderWhatsappConversations);
-document.querySelector(".whatsapp-filters").addEventListener("click", (event) => { const target = event.target.closest("[data-whatsapp-filter]"); if (!target) return; document.querySelectorAll("[data-whatsapp-filter]").forEach((item) => item.classList.toggle("is-active", item === target)); renderWhatsappConversations(); });
+document.querySelector(".whatsapp-filters").addEventListener("click", (event) => { const target = event.target.closest("[data-whatsapp-filter]"); if (target) setWhatsappFilter(target.dataset.whatsappFilter); });
 document.querySelector("#whatsappConversationList").addEventListener("click", (event) => { const target = event.target.closest("[data-whatsapp-id]"); if (target) void loadWhatsappConversation(target.dataset.whatsappId); });
 document.querySelector("#whatsappConversationDetail").addEventListener("click", async (event) => { const action = event.target.dataset.whatsappAction; if (action === "registrar-aceite") { if (!window.confirm("Confirma que o cliente aprovou este orçamento pelo WhatsApp?")) return; const response = await fetch(\`\${apiBaseUrl}/admin/comercial/orcamentos/\${event.target.dataset.orcamentoId}/aceite-whatsapp\`, { method: "POST", headers: authHeaders() }); if (!response.ok) { window.alert("Não foi possível registrar o aceite."); return; } await loadWhatsappConversation(selectedWhatsappId); return; } if (action === "enviar-orcamento") { const response = await fetch(\`\${apiBaseUrl}/admin/comercial/orcamentos/\${event.target.dataset.orcamentoId}/enviar\`, { method: "POST", headers: authHeaders() }); if (!response.ok) { window.alert("Não foi possível enviar o orçamento."); return; } await loadWhatsappConversation(selectedWhatsappId); return; } if (["apagar", "liberar", "reabrir", "encerrar"].includes(action)) await whatsappAction(action); });
 function prepareWhatsappScheduleProposal() {

@@ -166,6 +166,9 @@ test("WhatsApp propõe agenda antes de confirmar o agendamento", () => {
   assert.match(whatsapp, /proposalSent/);
   assert.match(whatsapp, /scheduleProposalText/);
   assert.match(whatsapp, /data-whatsapp-filter="atendimento"/);
+  assert.match(whatsapp, /data-whatsapp-filter="atendimento"[\s\S]*data-whatsapp-filter="aguardando"[\s\S]*data-whatsapp-filter="encerradas"[\s\S]*data-whatsapp-filter="todas"/);
+  assert.match(whatsapp, /setWhatsappFilter\("atendimento"\)/);
+  assert.match(whatsapp, /Nenhuma conversa em atendimento/);
   assert.match(whatsapp, /prioridade = \{ atendimento: 0/);
   assert.match(whatsapp, /whatsapp-quote-approved/);
   assert.match(whatsapp, /data-whatsapp-action="alterar-data"/);
