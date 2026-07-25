@@ -255,6 +255,15 @@ export class AdminClientesService {
         }
       });
 
+      if (tx.orcamento) {
+        await tx.orcamento.deleteMany({
+          where: {
+            clienteId,
+            empresaId: usuario.empresa_id
+          }
+        });
+      }
+
       await tx.clienteEquipe.deleteMany({
         where: {
           clienteId,
