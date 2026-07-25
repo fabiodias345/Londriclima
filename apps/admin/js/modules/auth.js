@@ -41,7 +41,7 @@ async function loadDispatchOptions() {
 }
 
 async function loadAgenda() {
-  agendaStatus.textContent = "Carregando...";
+  if (agendaStatus) { agendaStatus.textContent = "Carregando..."; }
   await Promise.all([
     loadDispatchOptions(),
     loadClientesForAgenda()
@@ -58,10 +58,10 @@ async function loadAgenda() {
   const today = getLocalDateKey(new Date());
 
   latestAgendaItems = items;
-  agendaCount.textContent = operationalItems.length;
-  attendanceCount.textContent = operationalItems.filter((item) => item.status === "em_atendimento").length;
-  todayCount.textContent = operationalItems.filter((item) => item.agendada_para && getAgendaItemDateKey(item) === today).length;
-  agendaStatus.textContent = operationalItems.length === 1 ? "1 OS aberta" : \`\${operationalItems.length} OS abertas\`;
+  if (agendaCount) { agendaCount.textContent = operationalItems.length; }
+  if (attendanceCount) { attendanceCount.textContent = operationalItems.filter((item) => item.status === "em_atendimento").length; }
+  if (todayCount) { todayCount.textContent = operationalItems.filter((item) => item.agendada_para && getAgendaItemDateKey(item) === today).length; }
+  if (agendaStatus) { agendaStatus.textContent = operationalItems.length === 1 ? "1 OS aberta" : \`\${operationalItems.length} OS abertas\`; }
   renderAgenda(operationalItems);
 }
 

@@ -276,6 +276,7 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.doesNotMatch(html, />Dashboard<\/button>/);
   assert.match(html, /data-view="relatoriosAvulsos"/);
   assert.match(html, /id="agendaView"/);
+  assert.doesNotMatch(html, /id="agendaSummary"/);
   assert.match(html, /id="agendaMonthGrid"/);
   assert.match(html, /id="agendaDayDrawer"/);
   assert.match(html, /id="agendaOtherTimeButton"/);
@@ -339,6 +340,8 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(html, /id="relatoriosAvulsosView"/);
   assert.match(html, /id="relatoriosAvulsosList"/);
   assert.match(script, /async function loadAgenda/);
+  assert.match(script, /if \(agendaStatus\)/);
+  assert.match(script, /if \(agendaCount\)/);
   assert.match(agendaModule, /view:\s*"agenda"/);
   assert.match(agendaModule, /summaryId:\s*"agendaSummary"/);
   assert.match(script, /async function submitAgendaOs/);
