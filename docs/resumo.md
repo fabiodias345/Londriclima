@@ -1,6 +1,6 @@
 # Resumo AIRMOVEBR
 
-Atualizado em: 21/07/2026
+Atualizado em: 25/07/2026
 
 Somente estado atual e proximos passos. Historico concluido fica no Git e nos testes.
 
@@ -53,7 +53,7 @@ Somente estado atual e proximos passos. Historico concluido fica no Git e nos te
 - Backend em producao recebeu integracao inicial para fila `enviar_whatsapp` na finalizacao de O.S.
 - Bolt isolado em pasta propria com estados, coleta, triagem, FAQs, fallback e transferencia humana.
 - Admin WhatsApp possui fila humana, alerta, SSE/polling, assumir/liberar/encerrar, resposta manual e historico.
-- Central de atendimento WhatsApp refeita localmente: fila, conversa completa com horario, dados coletados pelo Bolt e criacao de cliente/O.S. pre-preenchida e vinculada; falta publicar e validar no Admin de producao.
+- Central de atendimento WhatsApp publicada: fila inicia em `Em atendimento`, seguida por `Aguardando`, `Encerradas` e `Todas`; sem conversa em atendimento, o painel direito fica limpo para impedir envio ao cliente errado.
 - Conversas podem ser vinculadas manualmente a cliente e O.S.; status de entrega WhatsApp sao persistidos.
 - Suporte a templates aprovados inclui O.S. finalizada e notificacao proativa ao tecnico.
 - Suite backend validada com 211 testes aprovados; todos os arquivos de codigo alterados permanecem abaixo de 500 linhas.
@@ -161,13 +161,16 @@ Executar uma fase por vez. Validar a fase atual antes de iniciar a proxima. Nenh
 
 ## Proximo foco
 
-- Validar a migration WhatsApp em banco de homologacao/producao.
-- Confirmar aprovacao dos templates na Meta e configurar `WHATSAPP_TEMPLATE_OS_FINALIZADA` e `WHATSAPP_TEMPLATE_OS_NOVA`.
-- Testar no Admin: transferencia, alerta, assumir, responder, criar cliente e criar O.S.
-- Validar um disparo real para tecnico/cliente antes de publicar.
+- Implementar a aba `Orcamentos` acima de `O.S.` para atendimentos por telefone, presencial, indicacao ou WhatsApp.
+- Iniciar cada novo orcamento escolhendo `Cadastrar novo cliente` ou `Usar cliente existente`.
+- No cadastro novo, exigir nome, telefone, CPF/RG, CEP, endereco, numero, complemento, bairro, cidade e UF; consultar o CEP para preencher o endereco.
+- Montar o orcamento com servicos, materiais, equipamentos e pecas do catalogo, quantidade, valores, desconto, validade e observacoes.
+- Gerar PDF com logo e dados da AIRMOVEBR, enviar por WhatsApp/e-mail e usar Assinafy para valores acima de R$ 2.000.
+- Registrar aprovacao por WhatsApp, e-mail ou telefone, incluindo responsavel e data quando a aprovacao for telefonica.
+- Depois da aprovacao, criar a O.S. copiando cliente, endereco, itens, valores, detalhes e origem; o atendente escolhe apenas equipe, tecnico, data e horario.
+- Exibir os status: Rascunho, Enviado, Aguardando aprovacao, Em negociacao, Aprovado, Recusado e Convertido em O.S.
 
 ## Apos instalar a API Meta
-
 - Fazer uma limpeza geral do backend:
   - alinhar a spec PMOC ao texto acentuado do PDF;
   - limpar os 4 avisos de lint;
