@@ -290,24 +290,6 @@ let dispatchOptions = {
   tecnicos: []
 };
 
-function getToken() {
-  return localStorage.getItem("airmovebr_access_token");
-}
-
-function setToken(token) {
-  localStorage.setItem("airmovebr_access_token", token);
-}
-
-function clearToken() {
-  localStorage.removeItem("airmovebr_access_token");
-}
-
-function authHeaders() {
-  return {
-    Authorization: \`Bearer \${getToken()}\`
-  };
-}
-
 function showDashboard() {
   loginPanel.classList.add("hidden");
   dashboard.classList.remove("hidden");
@@ -347,7 +329,7 @@ async function login(event) {
     }
 
     const result = await response.json();
-    setToken(result.access_token);
+    aplicarSessao(result);
     showDashboard();
     await loadActiveView();
   } catch {

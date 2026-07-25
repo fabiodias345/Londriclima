@@ -165,6 +165,8 @@ test("WhatsApp propõe agenda antes de confirmar o agendamento", () => {
   assert.match(whatsapp, /Confirmar agendamento/);
   assert.match(whatsapp, /proposalSent/);
   assert.match(whatsapp, /scheduleProposalText/);
+  assert.match(whatsapp, /data-whatsapp-filter="atendimento"/);
+  assert.match(whatsapp, /prioridade = \{ atendimento: 0/);
   assert.match(whatsapp, /whatsapp-quote-approved/);
   assert.match(whatsapp, /data-whatsapp-action="alterar-data"/);
   assert.match(styles, /\.whatsapp-schedule-panel/);
@@ -176,6 +178,7 @@ test("admin compila o bundle concatenado antes do deploy", async () => {
     recurrenceStatus,
     api,
     auth,
+    session,
     frota,
     agenda,
     recorrencias,
@@ -192,6 +195,7 @@ test("admin compila o bundle concatenado antes do deploy", async () => {
     loadModule("apps/admin/js/modules/recurrence-status.js"),
     loadModule("apps/admin/js/modules/api.js"),
     loadModule("apps/admin/js/modules/auth.js"),
+    loadModule("apps/admin/js/modules/session.js"),
     loadModule("apps/admin/js/modules/frota.js"),
     loadModule("apps/admin/js/modules/agenda.js"),
     loadModule("apps/admin/js/modules/recorrencias.js"),
@@ -209,6 +213,7 @@ test("admin compila o bundle concatenado antes do deploy", async () => {
     recurrenceStatusRoot: recurrenceStatus.recurrenceStatusRoot,
     apiRoot: api.apiRoot,
     authRoot: auth.authRoot,
+    sessionRoot: session.sessionRoot,
     frotaRoot: frota.frotaRoot,
     agendaRoot: agenda.agendaRoot,
     recorrenciasRoot: recorrencias.recorrenciasRoot,
@@ -981,4 +986,13 @@ test("admin usa layout operacional escuro para frota", () => {
   assert.match(styles, /\.fleet-monitor-panel/);
   assert.match(styles, /\.fleet-empty-state/);
   assert.match(styles, /\.fleet-report-row/);
+});
+
+test("admin mantém sessão aberta e expira somente após suspensão", () => {
+  const session = read("apps/admin/js/modules/session.js");
+
+  assert.match(session, /SESSION_SUSPENSION_LIMIT_MS = 15 \* 60 \* 1000/);
+  assert.match(session, /\/auth\/refresh/);
+  assert.match(session, /visibilitychange/);
+  assert.match(session, /Sessão expirada após 15 minutos com a tela em suspensão/);
 });

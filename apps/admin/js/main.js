@@ -1,5 +1,6 @@
 import { apiModule, apiRoot } from "./modules/api.js?v=20260704-access";
 import { authModule, authRoot } from "./modules/auth.js?v=20260704-access";
+import { sessionModule, sessionRoot } from "./modules/session.js?v=20260725-session";
 import { agendaModule, agendaRoot } from "./modules/agenda.js?v=20260704-access";
 import { recurrenceUiModule } from "./modules/recurrence-ui.js?v=20260704-access";
 import { recurrenceStatusRoot } from "./modules/recurrence-status.js?v=20260704-access";
@@ -18,6 +19,7 @@ import { comercialModule, comercialRoot } from "./modules/comercial.js?v=2026072
 export const adminModules = {
   api: apiModule,
   auth: authModule,
+  session: sessionModule,
   agenda: agendaModule,
   recurrenceUi: recurrenceUiModule,
   clientes: clientesModule,
@@ -36,6 +38,7 @@ export const adminModules = {
 const adminSources = [
   recurrenceStatusRoot,
   apiRoot,
+  sessionRoot,
   authRoot,
   frotaRoot,
   agendaRoot,
