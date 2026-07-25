@@ -202,7 +202,7 @@ Agradecemos pela preferência. Até breve!`;
   private async processarMensagem(mensagem: IncomingMessage) {
     const empresa = await this.obterEmpresa();
     if (!empresa) return;
-    const conversa = await this.prisma.whatsAppConversa.upsert({
+    let conversa = await this.prisma.whatsAppConversa.upsert({
       where: { empresaId_telefone: { empresaId: empresa.id, telefone: mensagem.telefone } },
       create: { empresaId: empresa.id, telefone: mensagem.telefone, nomeContato: mensagem.nome, dados: dadosBoltIniciais() as Prisma.InputJsonValue, ultimaMensagemEm: new Date() },
       update: { nomeContato: mensagem.nome, ultimaMensagemEm: new Date() }
@@ -210,8 +210,15 @@ Agradecemos pela preferência. Até breve!`;
     if (mensagem.id && await this.prisma.whatsAppMensagem.findUnique({ where: { mensagemId: mensagem.id } })) return;
     await this.prisma.whatsAppMensagem.create({ data: { conversaId: conversa.id, direcao: "entrada", texto: mensagem.texto, mensagemId: mensagem.id, tipo: mensagem.tipo } });
     this.emitir({ tipo: "mensagem_recebida", conversaId: conversa.id, empresaId: empresa.id });
+    if (conversa.status === "encerrada") {
+      conversa = await this.prisma.whatsAppConversa.update({
+        where: { id: conversa.id },
+        data: { status: "bot", atribuidoUsuarioId: null, encerramentoMotivo: null, dados: dadosBoltIniciais() as Prisma.InputJsonValue, ultimaMensagemEm: new Date() }
+      });
+      this.emitir({ tipo: "conversa_reaberta", conversaId: conversa.id, empresaId: empresa.id });
+    }
     if (await this.processarRespostaOrcamento(conversa, mensagem.texto)) return;
-    if (conversa.status === "humano" || conversa.status === "encerrada") return;
+    if (conversa.status === "humano") return;
     let resposta = this.bolt.processar({ texto: mensagem.texto, nomeContato: mensagem.nome }, conversa.dados);
     resposta = await this.responderComCep(resposta, mensagem.texto, conversa.dados);
     try {

@@ -181,3 +181,26 @@ test("confirmar agendamento envia mensagem final ao cliente", async () => {
   assert.equal(atualizacoes.at(-1)?.data.status, "encerrada");
   assert.equal(atualizacoes.at(-1)?.data.encerramentoMotivo, "agendamento_confirmado");
 });
+
+test("nova mensagem reabre conversa encerrada para o Bolt responder", async () => {
+  const chamadas: string[] = [];
+  const prisma = {
+    empresa: { findFirst: async () => ({ id: "empresa-1" }) },
+    whatsAppConversa: {
+      upsert: async () => ({ id: "conversa-1", telefone: "5543999999999", status: "encerrada", dados: null }),
+      update: async () => ({ id: "conversa-1", telefone: "5543999999999", status: "bot", dados: null }),
+      updateMany: async () => ({ count: 1 })
+    },
+    whatsAppMensagem: {
+      findUnique: async () => null,
+      create: async ({ data }: { data: { direcao: string } }) => { chamadas.push(data.direcao); }
+    },
+    $transaction: async (operations: Promise<unknown>[]) => Promise.all(operations)
+  };
+  const sender = { enviar: async () => ({ messageId: "wamid.out", recipient: "5543999999999" }) };
+  const service = new WhatsAppService(prisma as never, {} as never, sender as never, new BoltRules());
+
+  await service.receberWebhook({ entry: [{ changes: [{ value: { messages: [{ id: "wamid.in", from: "5543999999999", type: "text", text: { body: "Oi" } }] } }] }] });
+
+  assert.deepEqual(chamadas, ["entrada", "saida"]);
+});
