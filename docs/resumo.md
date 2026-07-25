@@ -188,3 +188,4 @@ npm.cmd run frontend:test
 ```
  - Correção adicional do catálogo: painel agora exibe Editar/Apagar; edição usa `PATCH /admin/comercial/catalogo/:id` e apagar usa exclusão lógica (`ativo = false`) via `DELETE`, preservando itens de orçamentos históricos. Build, lint e 27 testes frontend aprovados.
  - Correção adicional de clientes: exclusão agora remove também orçamentos e seus itens antes de remover o cliente, evitando falha de chave estrangeira após o módulo comercial. Build, lint e 14 testes do serviço administrativo aprovados.
+ - Ajuste do fluxo de novo orçamento: cadastro rápido agora exige e-mail e, após criar o cliente, abre diretamente o montador de orçamento com o cliente selecionado. Node check, build backend e 27 testes frontend aprovados.
