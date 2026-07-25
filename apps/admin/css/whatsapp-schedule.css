@@ -59,8 +59,8 @@
 
 .whatsapp-schedule-weekdays,
 .whatsapp-schedule-calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
-.whatsapp-schedule-weekdays { padding: 8px 10px 4px; color: #94a3b8; font-size: 10px; font-weight: 800; text-align: center; }
-.whatsapp-schedule-calendar { min-height: 0; overflow: auto; padding: 0 10px 10px; }
+.whatsapp-schedule-weekdays { padding: 5px 10px 3px; color: #94a3b8; font-size: 10px; font-weight: 800; text-align: center; }
+.whatsapp-schedule-calendar { min-height: 0; overflow: hidden; padding: 0 10px 6px; }
 
 .whatsapp-schedule-day {
   display: grid;
@@ -80,7 +80,7 @@
 .whatsapp-schedule-day strong { font-size: 12px; }
 .whatsapp-schedule-day small { color: #64748b; font-size: 9px; }
 
-.whatsapp-schedule-slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; padding: 12px 16px; border-top: 1px solid #e7ebf0; }
+.whatsapp-schedule-slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding: 10px 14px; border-top: 1px solid #e7ebf0; }
 .whatsapp-schedule-slot { display: grid; gap: 2px; min-height: 46px; border: 1px solid #dbe3ed; border-radius: 8px; color: #1e293b; background: #fff; font-size: 12px; font-weight: 800; }
 .whatsapp-schedule-slot small { color: #64748b; font-size: 9px; font-weight: 700; }
 .whatsapp-schedule-slot:hover:not(:disabled),
@@ -89,7 +89,7 @@
 .whatsapp-schedule-slot.is-selected small { color: rgba(255,255,255,.84); }
 .whatsapp-schedule-slot:disabled { opacity: .45; cursor: not-allowed; }
 
-.whatsapp-schedule-actions { display: grid; gap: 8px; padding: 14px 16px; border-top: 1px solid #e7ebf0; }
+.whatsapp-schedule-actions { display: grid; gap: 7px; padding: 10px 14px; border-top: 1px solid #e7ebf0; }
 .whatsapp-schedule-actions p { margin: 0; color: #64748b; font-size: 11px; line-height: 1.4; }
 .whatsapp-schedule-actions button { min-height: 36px; border-radius: 8px; font-size: 12px; font-weight: 800; }
 .whatsapp-schedule-actions button[data-whatsapp-action="confirmar-agendamento"] { border: 0; color: #fff; background: #0f766e; }
