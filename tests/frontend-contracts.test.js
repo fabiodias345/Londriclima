@@ -156,6 +156,17 @@ test("admin autentica, guarda token e protege chamadas administrativas", () => {
   assert.match(script, /response\.status !== 401/);
 });
 
+test("WhatsApp propõe agenda antes de confirmar o agendamento", () => {
+  const whatsapp = read("apps/admin/js/modules/whatsapp.js");
+  const styles = readAdminCss();
+
+  assert.match(whatsapp, /data-whatsapp-action="abrir-agenda"/);
+  assert.match(whatsapp, /Preparar mensagem/);
+  assert.match(whatsapp, /Confirmar agendamento/);
+  assert.match(whatsapp, /proposalSent/);
+  assert.match(whatsapp, /scheduleProposalText/);
+  assert.match(styles, /\.whatsapp-schedule-panel/);
+});
 test("admin compila o bundle concatenado antes do deploy", async () => {
   const main = read("apps/admin/js/main.js");
   const loadModule = async (relativePath) => import(pathToFileURL(join(root, relativePath)).href);
