@@ -197,6 +197,14 @@ agendaOsClientSelect?.addEventListener("change", () => {
 recurrenceClientSelect?.addEventListener("change", () => {
   void loadRecurrenceEquipments(recurrenceClientSelect.value);
 });
+document.querySelector("#newRecurrenceButton")?.addEventListener("click", () => {
+  resetRecurrenceForm();
+  recurrenceForm?.scrollIntoView({ behavior: "smooth", block: "start" });
+  recurrenceForm?.elements.cliente_id?.focus();
+});
+document.querySelector("#refreshRecurrenceButton")?.addEventListener("click", () => {
+  void loadRecorrencias();
+});
 recurrenceList?.addEventListener("click", (event) => {
   const target = event.target;
   const button = target instanceof Element ? target.closest("[data-action]") : null;

@@ -180,3 +180,177 @@
 .recurrence-generate-button.is-muted {
   opacity: 0.62;
 }
+
+/* Visao de recorrencias: filtros compactos, formulario unico e acoes semanticas. */
+.recurrence-summary-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  padding: 16px 38px 12px;
+}
+
+.recurrence-filter-card {
+  position: relative;
+  min-height: 70px;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-width: 1px;
+  border-top-width: 3px;
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+.recurrence-filter-card span {
+  font-size: 12px;
+}
+
+.recurrence-filter-card strong {
+  font-size: 26px;
+}
+
+.recurrence-filter-card:hover,
+.recurrence-filter-card.is-active {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, .08);
+}
+
+.recurrence-filter-active { border-top-color: #16a34a; }
+.recurrence-filter-generating { border-top-color: #2563eb; }
+.recurrence-filter-technician { border-top-color: #7c3aed; }
+.recurrence-filter-due { border-top-color: #dc2626; }
+.recurrence-filter-done { border-top-color: #d97706; }
+
+.recurrence-panel {
+  margin-top: 0;
+  border-radius: 14px;
+}
+
+.recurrence-panel > .worklist-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px 14px;
+}
+
+.recurrence-header-actions,
+.recurrence-form .form-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+#newRecurrenceButton {
+  color: #ffffff;
+  background: #2563eb;
+}
+
+#refreshRecurrenceButton {
+  color: #402400;
+  background: #f5a623;
+}
+
+.recurrence-form {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  padding: 16px 24px 20px;
+  background: #f5f8fc;
+}
+
+.recurrence-form > label {
+  gap: 6px;
+  color: #29415d;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.recurrence-form input,
+.recurrence-form select,
+.recurrence-form textarea {
+  min-height: 42px;
+  border-radius: 9px;
+}
+
+.recurrence-form textarea {
+  min-height: 64px;
+}
+
+.recurrence-calendar {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 8px;
+  padding: 12px;
+  border-color: #dbe4ee;
+  background: #ffffff;
+}
+
+.recurrence-calendar legend {
+  margin-bottom: 0;
+  color: #1e3a5f;
+  font-size: 14px;
+}
+
+.recurrence-calendar label {
+  gap: 5px;
+  color: #52657f;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.recurrence-calendar select {
+  min-height: 36px;
+  padding: 6px 7px;
+  font-size: 11px;
+}
+
+.recurrence-form .form-actions button[type="submit"] {
+  min-height: 40px;
+  border: 0;
+  border-radius: 9px;
+  padding: 0 18px;
+  color: #ffffff;
+  background: #16a34a;
+  font-weight: 900;
+}
+
+.recurrence-list {
+  border-top: 1px solid var(--line);
+}
+
+.recurrence-card .request-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.recurrence-card .request-actions button[data-action="editar-recorrencia"] {
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+
+.recurrence-card .request-actions button[data-action="apagar-recorrencia"] {
+  color: #b91c1c;
+  border-color: #fecaca;
+  background: #fff1f2;
+}
+
+.recurrence-card .request-actions .recurrence-generate-button {
+  color: #047857;
+  border-color: #bbf7d0;
+  background: #ecfdf5;
+  opacity: 1;
+}
+
+@media (max-width: 1200px) {
+  .recurrence-calendar { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+
+@media (max-width: 760px) {
+  .recurrence-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 12px; }
+  .recurrence-panel > .worklist-header { align-items: flex-start; flex-direction: column; padding: 16px; }
+  .recurrence-form { grid-template-columns: 1fr; padding: 14px 16px 18px; }
+  .recurrence-calendar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
