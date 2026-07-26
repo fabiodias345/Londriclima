@@ -14,6 +14,8 @@ export type BoltData = {
   bairro: string | null;
   cidade: string | null;
   uf: string | null;
+  numero: string | null;
+  email: string | null;
   servico: BoltServiceType | null;
   cidade_bairro: string | null;
   detalhes: string | null;

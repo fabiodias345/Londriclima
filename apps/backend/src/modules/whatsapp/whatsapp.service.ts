@@ -125,7 +125,19 @@ export class WhatsAppService {
     const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId } });
     let clienteId = conversa.clienteId;
     if (!clienteId) {
-      const cliente = await this.adminService.criarCliente({ ...dto, telefone: dto.telefone || conversa.telefone }, usuario);
+      const dados = normalizarDadosBolt(conversa.dados);
+      const cliente = await this.adminService.criarCliente({
+        ...dto,
+        nome: dto.nome || dados.nome || conversa.nomeContato || "Cliente",
+        email: dto.email || dados.email || undefined,
+        telefone: dto.telefone || conversa.telefone,
+        logradouro: dto.logradouro || dados.logradouro || undefined,
+        numero: dto.numero || dados.numero || undefined,
+        bairro: dto.bairro || dados.bairro || undefined,
+        cidade: dto.cidade || dados.cidade || undefined,
+        uf: dto.uf || dados.uf || undefined,
+        cep: dto.cep || dados.cep || undefined
+      }, usuario);
       clienteId = cliente.id;
       await this.prisma.whatsAppConversa.update({ where: { id }, data: { clienteId } });
       this.emitir({ tipo: "cliente_vinculado", conversaId: id, empresaId });

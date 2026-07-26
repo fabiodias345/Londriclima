@@ -454,7 +454,7 @@ export class AdminClientesService {
     const documento = dto.documento?.trim() ?? "";
 
     if (!documento) {
-      throw new BadRequestException(tipo === PessoaTipo.pj ? "CNPJ e obrigatorio." : "CPF ou RG e obrigatorio.");
+      return null;
     }
 
     if (tipo === PessoaTipo.pj) {

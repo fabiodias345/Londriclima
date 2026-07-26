@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
 import { WhatsAppService } from "./whatsapp.service";
-import { BoltRules } from "./bolt/bolt.rules";
+import { BoltRules, estaNoHorarioComercial } from "./bolt/bolt.rules";
 
 test("webhook WhatsApp salva mensagem e responde a saudacao do bot", async () => {
   const chamadas: Array<{ direcao: string; texto: string }> = [];
@@ -32,16 +32,19 @@ test("webhook WhatsApp salva mensagem e responde a saudacao do bot", async () =>
 
   assert.equal(chamadas[0].direcao, "entrada");
   assert.equal(chamadas[1].direcao, "saida");
-  assert.match(chamadas[1].texto, /Seja bem-vindo/);
+  assert.match(chamadas[1].texto, /Move/);
+  assert.match(chamadas[1].texto, /como posso te chamar/i);
 });
 
-test("Bolt transfere apos dois fallbacks", () => {
+test("Bolt inicia conversa natural sem menus", () => {
   const bolt = new BoltRules();
   const primeiro = bolt.processar({ texto: "xyz" }, null);
   const segundo = bolt.processar({ texto: "abc" }, primeiro.dados);
   assert.equal(primeiro.assumir, false);
-  assert.equal(segundo.assumir, true);
-  assert.equal(segundo.dados.status, "HUMAN_QUEUE");
+  assert.equal(segundo.assumir, false);
+  assert.equal(primeiro.opcoes, undefined);
+  assert.equal(segundo.opcoes, undefined);
+  assert.match(primeiro.texto, /Move/);
 });
 
 test("webhook aceita somente o token configurado", () => {
@@ -65,7 +68,7 @@ test("primeira resposta assume automaticamente a conversa livre", async () => {
     $transaction: async (operations: Promise<unknown>[]) => Promise.all(operations)
   };
   const sender = { enviar: async () => ({ messageId: "wamid.out", recipient: "5543999999999" }) };
-  const service = new WhatsAppService(prisma as never, {} as never, sender as never, new BoltRules());
+  const service = new WhatsAppService(prisma as never, { get: () => undefined } as never, sender as never, new BoltRules());
 
   const resultado = await service.responderConversa("conversa-1", "empresa-1", "usuario-1", "Ola");
 
@@ -88,21 +91,19 @@ test("apagar conversa remove o historico sem apagar cliente ou O.S.", async () =
   assert.equal(resultado.apagada, true);
   assert.equal(idApagado, "conversa-1");
 });
-test("Bolt oferece os cinco serviços e confirma o endereço pelo CEP", () => {
+test("Bolt remove menus e confirma o endereço pelo CEP", () => {
   const bolt = new BoltRules();
   const menu = bolt.processar({ texto: "Oi" }, null);
-  assert.equal(menu.opcoes?.length, 5);
-  assert.equal(menu.opcoes?.[0].id, "menu_instalacao");
-  assert.equal(menu.opcoes?.[4].id, "menu_atendente");
-  assert.equal(menu.rotuloOpcoes, "Ver serviços");
+  assert.equal(menu.opcoes, undefined);
+  assert.match(menu.texto, /Move/);
   const iniciado = bolt.processar({ texto: "menu_manutencao" }, null);
   const comNome = bolt.processar({ texto: "Maria Silva" }, iniciado.dados);
-  assert.equal(comNome.dados.nome, "Maria");
-  assert.equal(comNome.dados.etapa_atual, "aguardando_cep");
-  const comEndereco = { ...comNome.dados, cep: "86000000", cidade: "Londrina", uf: "PR", cidade_bairro: "Londrina", etapa_atual: "aguardando_confirmacao_endereco" as const };
+  assert.equal(comNome.dados.nome, "Maria Silva");
+  assert.equal(comNome.dados.etapa_atual, "aguardando_descricao");
+  const comEndereco = { ...comNome.dados, detalhes: "Manutenção do ar", cep: "86000000", cidade: "Londrina", uf: "PR", cidade_bairro: "Londrina", etapa_atual: "aguardando_confirmacao_endereco" as const };
   const confirmado = bolt.processar({ texto: "cep_confirmar" }, comEndereco);
-  assert.equal(confirmado.opcoes?.[0].id, "manut_nao_liga");
-  assert.equal(confirmado.opcoes?.[2].id, "manut_outro");
+  assert.equal(confirmado.opcoes, undefined);
+  assert.equal(confirmado.dados.etapa_atual, "aguardando_numero");
 });test("detalhe da conversa entrega qualificacao e prévia de O.S.", async () => {
   const conversa = {
     id: "conversa-1", telefone: "5543999999999", nomeContato: "Fábio", status: "humano",
@@ -119,9 +120,51 @@ test("Bolt oferece os cinco serviços e confirma o endereço pelo CEP", () => {
   assert.match(resultado.atendimento.previaOs.detalhes, /btus: 12000/);
 });
 
-test("criar cliente pelo WhatsApp não cria O.S. antes do orçamento aprovado", async () => {
+test("Bolt coleta número e e-mail um por vez", () => {
+  const bolt = new BoltRules();
+  const inicio = bolt.processar({ texto: "Oi" }, null);
+  const nome = bolt.processar({ texto: "Fábio Dias" }, inicio.dados);
+  const problema = bolt.processar({ texto: "Meu ar parou de gelar" }, nome.dados);
+  assert.match(problema.texto, /Puxa, que pena/i);
+  const confirmado = bolt.processar({ texto: "sim" }, { ...problema.dados, cep: "86000000", cidade: "Londrina", uf: "PR", etapa_atual: "aguardando_confirmacao_endereco" });
+  const comNumero = bolt.processar({ texto: "42" }, confirmado.dados);
+  assert.match(comNumero.texto, /seu e-mail/i);
+  assert.equal(comNumero.dados.numero, "42");
+  const invalido = bolt.processar({ texto: "sem email" }, comNumero.dados);
+  assert.match(invalido.texto, /e-mail válido/i);
+  assert.equal(invalido.dados.etapa_atual, "aguardando_email");
+  const final = bolt.processar({ texto: "F@bio.com" }, comNumero.dados);
+  assert.equal(final.dados.email, "f@bio.com");
+  assert.equal(final.dados.status, "HUMAN_QUEUE");
+  assert.equal(final.assumir, true);
+  assert.match(final.texto, /especialista|horário/i);
+  assert.equal(final.opcoes, undefined);
+});
+
+test("horário comercial respeita dias úteis e limites de 08h a 18h", () => {
+  assert.equal(estaNoHorarioComercial(new Date("2026-07-27T11:00:00Z")), true);
+  assert.equal(estaNoHorarioComercial(new Date("2026-07-27T10:59:00Z")), false);
+  assert.equal(estaNoHorarioComercial(new Date("2026-07-27T21:00:00Z")), false);
+  assert.equal(estaNoHorarioComercial(new Date("2026-07-25T15:00:00Z")), false);
+});
+
+test("Bolt não usa pena para instalação e preserva campos do estado", () => {
+  const bolt = new BoltRules();
+  const inicio = bolt.processar({ texto: "Oi" }, null);
+  assert.equal(inicio.dados.numero, null);
+  assert.equal(inicio.dados.email, null);
+  const nome = bolt.processar({ texto: "Maria Silva" }, inicio.dados);
+  const instalacao = bolt.processar({ texto: "Quero instalar um ar novo" }, nome.dados);
+  assert.doesNotMatch(instalacao.texto, /pena/i);
+  assert.equal(instalacao.dados.servico, "instalacao");
+  const preservado = bolt.processar({ texto: "abc" }, { numero: "42", email: "a@b.com" });
+  assert.equal(preservado.dados.numero, "42");
+  assert.equal(preservado.dados.email, "a@b.com");
+});
+
+test("criar cliente pelo WhatsApp salva endereço e e-mail sem exigir CPF", async () => {
   const atualizacoes: Array<Record<string, unknown>> = [];
-  const conversa = { id: "conversa-1", empresaId: "empresa-1", telefone: "5543999999999", clienteId: null, ordemServicoId: null, dados: { servico: "instalacao", cidade_bairro: "Londrina", detalhes: "Instalar equipamento", campos_extra: {} }, mensagens: [], cliente: null, ordemServico: null };
+  const conversa = { id: "conversa-1", empresaId: "empresa-1", telefone: "5543999999999", nomeContato: "Fábio", clienteId: null, ordemServicoId: null, dados: { nome: "Fábio", cep: "86000000", logradouro: "Rua Teste", bairro: "Centro", cidade: "Londrina", uf: "PR", numero: "42", email: "fabio@example.com", servico: "instalacao", cidade_bairro: "Londrina", detalhes: "Instalar equipamento", campos_extra: {} }, mensagens: [], cliente: null, ordemServico: null };
   const prisma = {
     whatsAppConversa: {
       findFirstOrThrow: async () => conversa,
@@ -130,13 +173,17 @@ test("criar cliente pelo WhatsApp não cria O.S. antes do orçamento aprovado", 
   };
   const chamadas: Array<Record<string, unknown>> = [];
   const admin = {
-    criarCliente: async () => ({ id: "cliente-1" })
+    criarCliente: async (dto: Record<string, unknown>) => { chamadas.push(dto); return { id: "cliente-1" }; }
   };
   const service = new WhatsAppService(prisma as never, {} as never, {} as never, new BoltRules(), admin as never);
 
-  await service.criarClienteDaConversa("conversa-1", "empresa-1", { nome: "Fábio", cidade: "Londrina", uf: "PR" }, { id: "usuario-1", empresa_id: "empresa-1" } as never);
+  await service.criarClienteDaConversa("conversa-1", "empresa-1", { nome: "Fábio" }, { id: "usuario-1", empresa_id: "empresa-1" } as never);
 
-  assert.equal(chamadas.length, 0);
+  assert.equal(chamadas.length, 1);
+  assert.equal(chamadas[0].email, "fabio@example.com");
+  assert.equal(chamadas[0].numero, "42");
+  assert.equal(chamadas[0].logradouro, "Rua Teste");
+  assert.equal(chamadas[0].documento, undefined);
   assert.equal((atualizacoes[0].data as { clienteId: string }).clienteId, "cliente-1");
 });
 test("autorização do orçamento pelo WhatsApp aprova e libera o agendamento", async () => {
@@ -198,7 +245,7 @@ test("nova mensagem reabre conversa encerrada para o Bolt responder", async () =
     $transaction: async (operations: Promise<unknown>[]) => Promise.all(operations)
   };
   const sender = { enviar: async () => ({ messageId: "wamid.out", recipient: "5543999999999" }) };
-  const service = new WhatsAppService(prisma as never, {} as never, sender as never, new BoltRules());
+  const service = new WhatsAppService(prisma as never, { get: () => undefined } as never, sender as never, new BoltRules());
 
   await service.receberWebhook({ entry: [{ changes: [{ value: { messages: [{ id: "wamid.in", from: "5543999999999", type: "text", text: { body: "Oi" } }] } }] }] });
 
