@@ -1195,6 +1195,56 @@ form button,
   background: rgba(255, 255, 255, 0.25);
 }
 
+/* O resumo superior repetia os mesmos estados das abas e poluia a tela de O.S. */
+#preChamadosSummary {
+  display: none !important;
+}
+
+.os-tabs .subnav-button {
+  transition: color .18s ease, background-color .18s ease, box-shadow .18s ease;
+}
+
+.os-tabs .subnav-button:not(.active):hover {
+  background: #f5f7fb;
+}
+
+.os-tabs .subnav-button:nth-child(1) { --os-tab-color: #2563eb; --os-tab-soft: #dbeafe; }
+.os-tabs .subnav-button:nth-child(2) { --os-tab-color: #7c3aed; --os-tab-soft: #ede9fe; }
+.os-tabs .subnav-button:nth-child(3) { --os-tab-color: #d97706; --os-tab-soft: #fef3c7; }
+.os-tabs .subnav-button:nth-child(4) { --os-tab-color: #0891b2; --os-tab-soft: #cffafe; }
+.os-tabs .subnav-button:nth-child(5) { --os-tab-color: #16a34a; --os-tab-soft: #dcfce7; }
+.os-tabs .subnav-button:nth-child(6) { --os-tab-color: #dc2626; --os-tab-soft: #fee2e2; }
+
+.os-tabs .subnav-button:not(.active) {
+  color: var(--os-tab-color);
+  box-shadow: inset 0 3px 0 var(--os-tab-color);
+}
+
+.os-tabs .subnav-button:not(.active) .os-count-badge {
+  color: var(--os-tab-color);
+  background: var(--os-tab-soft);
+}
+
+.os-tabs .subnav-button.active {
+  color: #ffffff;
+  background: var(--os-tab-color, #2563eb);
+  box-shadow: 0 4px 10px rgba(37, 99, 235, .16);
+}
+
+.os-tabs .subnav-button.active .os-count-badge {
+  color: var(--os-tab-color, #2563eb);
+}
+
+#newOsShortcutButton {
+  color: #402400;
+  background: #f5a623;
+  box-shadow: 0 5px 12px rgba(245, 166, 35, .2);
+}
+
+#newOsShortcutButton:hover {
+  background: #e99712;
+}
+
 .os-toolbar {
   order: 3;
   padding: 12px 0;
