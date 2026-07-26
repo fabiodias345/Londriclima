@@ -183,6 +183,67 @@ Executar uma fase por vez. Validar a fase atual antes de iniciar a proxima. Nenh
 - Status finais: Rascunho, Enviado, Aguardando aprovacao, Em negociacao, Aprovado, Recusado e Convertido em O.S.
 - Nenhuma das fases O1 a O4 foi commitada ou publicada; todas as alteracoes permanecem locais para revisao.
 
+## Checkpoint nova sessao - 26/07/2026
+
+### Git e deploy
+
+- Branch atual: `dev`.
+- `dev`, `main`, `origin/dev` e `origin/main` estao alinhadas no commit `cff2623`.
+- O usuario confirmou o deploy Locaweb do fluxo de atendimento WhatsApp.
+- Commits principais da L2: `8be036e` persistencia; `b8f99b6` regras do laudo; `ff67a58` API e fotos; `64e64b6` autorizacao administrativa; `cff2623` escolha entre levantamento e orcamento.
+- O plano `docs/superpowers/plans/2026-07-26-fase-l2-laudo-tecnico-web.md` permanece local e nao rastreado.
+- `.headroom/` e contexto local do Headroom; nao commitar.
+
+### Fluxo aprovado
+
+- Depois de criar ou selecionar o cliente, o atendente escolhe `Levantamento tecnico` ou `Orcamento direto`.
+- Levantamento nao possui preco, desconto ou O.S. de execucao.
+- O levantamento possui problema, equipe/tecnico, agenda, data e horario da visita.
+- A agenda bloqueia horarios ocupados por O.S. e outros levantamentos.
+- Depois da visita, o tecnico registra diagnostico, causa provavel, servicos recomendados, itens, observacoes e fotos.
+- A decisao do laudo e `precisa_orcamento` ou `resolvido_na_visita`.
+
+### L2 implementada
+
+- Migration `20260726120000_laudo_levantamento` criada e Prisma Client gerado.
+- API `mobile/levantamentos` protegida para listar, obter, iniciar, salvar rascunho, anexar foto e finalizar.
+- Acesso isolado por empresa, tecnico atribuido ou membro ativo da equipe.
+- Fotos limitadas a 8 MB; limpeza recomendada exige foto.
+- Admin pode solicitar, aprovar, recusar e expirar autorizacao de visita em 20 minutos, alem de reabrir laudo com motivo.
+- Build backend aprovado e 7 testes direcionados do servico tecnico aprovados.
+
+### Admin web implementado
+
+- Central WhatsApp oferece escolha explicita entre levantamento e orcamento.
+- Levantamento abre agenda de equipe/tecnico e confirma visita sem criar O.S. ou orcamento.
+- Sintaxe do modulo WhatsApp aprovada e `npm.cmd run frontend:test` aprovado com 29 testes.
+
+### Headroom local
+
+- Headroom `0.32.1` instalado globalmente via `uv` com `[all]`.
+- MCP registrado somente no OpenAI Codex.
+- Tarefas Windows `HeadroomProxy` e `HeadroomHealthCheck` configuradas para iniciar e monitorar automaticamente.
+- Estado confirmado apos reinicio: `healthy`, `ready=True`, `memory=True` e `learn=True`.
+
+### Proximo foco
+
+1. Testar no WhatsApp/Admin: cliente -> levantamento -> tecnico/equipe -> agenda -> confirmacao.
+2. Confirmar aviso ao tecnico e levantamento na aba administrativa.
+3. Implementar troca levantamento -> orcamento apos laudo `precisa_orcamento`.
+4. Implementar troca orcamento -> levantamento somente enquanto o orcamento estiver em rascunho.
+5. Testar o tecnico preenchendo o laudo pelo navegador e o admin aprovando/recusando autorizacao.
+6. Nao alterar Flutter/mobile nesta etapa.
+
+### Validacao
+
+```powershell
+npm.cmd run frontend:test
+npm.cmd run backend:prisma:generate
+npm.cmd run backend:build
+git diff --check
+Invoke-RestMethod http://127.0.0.1:8787/health
+```
+
 ## Apos instalar a API Meta
 - Fazer uma limpeza geral do backend:
   - alinhar a spec PMOC ao texto acentuado do PDF;
