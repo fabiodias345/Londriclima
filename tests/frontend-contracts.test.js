@@ -207,8 +207,13 @@ test("WhatsApp agenda levantamento de manutenção sem criar O.S. ou orçamento"
 test("WhatsApp oferece escolha explícita entre levantamento e orçamento", () => {
   const whatsapp = read("apps/admin/js/modules/whatsapp.js");
   assert.match(whatsapp, /serviceChoiceForm/);
+  assert.match(whatsapp, /Montar or/);
+  assert.match(whatsapp, /Agendar visita ao cliente/);
   assert.match(whatsapp, /escolher-levantamento/);
   assert.match(whatsapp, /escolher-orcamento/);
+  assert.match(whatsapp, /whatsappServiceChoiceRequired = true/);
+  assert.match(whatsapp, /if \(whatsappServiceChoiceRequired\) return serviceChoiceForm\(\)/);
+  assert.match(whatsapp, /whatsappServiceMode = action === "escolher-levantamento" \? "levantamento" : "orcamento"/);
 });
 test("admin compila o bundle concatenado antes do deploy", async () => {
   const main = read("apps/admin/js/main.js");
