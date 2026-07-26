@@ -1,6 +1,6 @@
 # Resumo AIRMOVEBR
 
-Atualizado em: 25/07/2026
+Atualizado em: 26/07/2026
 
 Somente estado atual e proximos passos. Historico concluido fica no Git e nos testes.
 
@@ -57,6 +57,10 @@ Somente estado atual e proximos passos. Historico concluido fica no Git e nos te
 - Central de atendimento WhatsApp publicada: fila inicia em `Em atendimento`, seguida por `Aguardando`, `Encerradas` e `Todas`; sem conversa em atendimento, o painel direito fica limpo para impedir envio ao cliente errado.
 - Conversas podem ser vinculadas manualmente a cliente e O.S.; status de entrega WhatsApp sao persistidos.
 - Suporte a templates aprovados inclui O.S. finalizada e notificacao proativa ao tecnico.
+- Orçamentos comerciais atualizados localmente: até R$ 2.000,00 permitem envio por WhatsApp ou e-mail; acima desse valor exigem assinatura digital por e-mail via Assinafy.
+- PDF comercial atualizado localmente com acentuação em português, quebra de texto, blocos dinâmicos e paginação para listas longas de itens.
+- Painel de Orçamentos e central WhatsApp usam os endpoints específicos de WhatsApp, e-mail e Assinafy; o endpoint legado de envio não é mais usado pela interface.
+- Validação desta melhoria: 7 testes comerciais, 2 testes do PDF, 27 testes frontend e build backend aprovados.
 - Suite backend validada com 211 testes aprovados; todos os arquivos de codigo alterados permanecem abaixo de 500 linhas.
 
 ## Validacao atual do painel web
@@ -173,6 +177,7 @@ Executar uma fase por vez. Validar a fase atual antes de iniciar a proxima. Nenh
 - Fase O3: concluida no painel web. Montagem de rascunho com itens do catalogo, quantidade, valores, desconto, validade e observacoes; totais e persistencia continuam calculados pela API.
 - Fase O4: concluida no backend. Status adicionados: `aguardando_aprovacao`, `em_negociacao` e `convertido_os`; atualizacao protegida para negociacao, aprovacao e recusa; aprovacao por telefone exige responsavel. Migration Prisma criada.
 - Fase O5: proxima. Revisao no painel, download de PDF, envio por WhatsApp/e-mail e Assinafy acima de R$ 2.000. PDF e envio WhatsApp iniciais ja existem; e-mail e Assinafy precisam de integracao propria de orcamento, sem reutilizar dados de PMOC.
+- Evolução O5 em 26/07/2026: canais por valor e PDF comercial revisados localmente; próximo passo é validação visual autenticada do PDF e deploy controlado do backend/admin.
 - Fase O6: depois da aprovacao, criar a O.S. copiando cliente, endereco, itens, valores, detalhes e origem; o atendente escolhe apenas equipe, tecnico, data e horario.
 - Fase O7: validar painel web, backend, PDF, canais de envio e conversao em O.S.
 - Status finais: Rascunho, Enviado, Aguardando aprovacao, Em negociacao, Aprovado, Recusado e Convertido em O.S.

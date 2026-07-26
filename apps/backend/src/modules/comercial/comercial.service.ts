@@ -74,7 +74,8 @@ export class ComercialService {
 
   async obterOrcamento(id: string, empresaId: string) {
     const orcamento = await this.obterOrcamentoOperacional(id, empresaId);
-    return { ...orcamento, acoes: { pdf: true, whatsapp: Boolean(orcamento.conversa?.telefone || orcamento.cliente.telefone), email: Boolean(orcamento.cliente.email), assinafy: Number(orcamento.total) > 2000 && Boolean(orcamento.cliente.email) && !orcamento.assinafyDocumentId } };
+    const assinaturaObrigatoria = this.exigeAssinatura(orcamento.total);
+    return { ...orcamento, acoes: { pdf: true, whatsapp: !assinaturaObrigatoria && Boolean(orcamento.conversa?.telefone || orcamento.cliente.telefone), email: !assinaturaObrigatoria && Boolean(orcamento.cliente.email), assinafy: assinaturaObrigatoria && Boolean(orcamento.cliente.email) && !orcamento.assinafyDocumentId } };
   }
 
   async gerarPdfOrcamento(id: string, empresaId: string) {
@@ -86,6 +87,7 @@ export class ComercialService {
 
   async enviarWhatsApp(id: string, empresaId: string) {
     const orcamento = await this.obterOrcamentoOperacional(id, empresaId);
+    this.validarCanalDireto(orcamento);
     const telefone = orcamento.conversa?.telefone || orcamento.cliente.telefone;
     if (!telefone) throw new BadRequestException("Cliente sem telefone para enviar o orçamento.");
     const pdf = this.gerarPdf(orcamento);
@@ -101,6 +103,7 @@ export class ComercialService {
 
   async enviarEmail(id: string, dto: EnviarOrcamentoEmailDto, empresaId: string) {
     const orcamento = await this.obterOrcamentoOperacional(id, empresaId);
+    this.validarCanalDireto(orcamento);
     const destinatario = (dto.destinatario || orcamento.cliente.email || "").trim();
     if (!destinatario) throw new BadRequestException("Cliente sem e-mail para enviar o orçamento.");
     const remetente = orcamento.empresa.email?.trim();
@@ -118,7 +121,7 @@ export class ComercialService {
     const pdf = this.gerarPdf(orcamento);
     const resultado = await this.assinafy.enviarOrcamento(orcamento, { filename: `orcamento-${id.slice(0, 8)}.pdf`, content: pdf, contentType: "application/pdf" });
     const salvo = await this.prisma.orcamento.update({ where: { id }, data: { status: OrcamentoStatus.aguardando_aprovacao, assinafyDocumentId: resultado.documentId, assinafyAssignmentId: resultado.assignmentId, assinafyStatus: resultado.status, assinafyUltimoEvento: resultado.evento as Prisma.InputJsonValue, assinafyIniciadoEm: new Date(), pdfGeradoEm: new Date() } });
-    return { enviado: true, status: salvo.status, assinafy_document_id: resultado.documentId, assinafy_assignment_id: resultado.assignmentId, assinafy_status: resultado.status };
+    return { enviado: true, canal: "assinatura_email", mensagem: "O cliente receberá um e-mail para assinar digitalmente.", status: salvo.status, assinafy_document_id: resultado.documentId, assinafy_assignment_id: resultado.assignmentId, assinafy_status: resultado.status };
   }
 
   async enviarOrcamento(id: string, empresaId: string) { return this.enviarWhatsApp(id, empresaId); }
@@ -137,6 +140,14 @@ export class ComercialService {
     const orcamento = await this.prisma.orcamento.findFirst({ where: { id, empresaId }, include: { empresa: { select: { nome: true, razaoSocial: true, cnpj: true, telefone: true, email: true, logradouro: true, numero: true, bairro: true, cidade: true, uf: true, cep: true } }, cliente: { select: { nome: true, telefone: true, email: true, enderecos: { where: { principal: true }, take: 1, select: { logradouro: true, numero: true, bairro: true, cidade: true, uf: true, cep: true } } } }, conversa: { select: { telefone: true } }, itens: true } });
     if (!orcamento) throw new NotFoundException("Orçamento não encontrado.");
     return orcamento;
+  }
+
+  private exigeAssinatura(total: unknown) { return Number(total) > 2000; }
+
+  private validarCanalDireto(orcamento: { total: unknown }) {
+    if (this.exigeAssinatura(orcamento.total)) {
+      throw new BadRequestException("Orçamentos acima de R$ 2.000,00 devem ser enviados para assinatura por e-mail.");
+    }
   }
 
   private gerarPdf(orcamento: Awaited<ReturnType<ComercialService["obterOrcamentoOperacional"]>>) {

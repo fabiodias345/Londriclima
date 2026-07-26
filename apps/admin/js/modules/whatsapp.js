@@ -117,7 +117,12 @@ function quoteForm(conversa) {
   if (quote) {
     if (quote.status === "aprovado") return '<div class="whatsapp-quote-summary whatsapp-quote-approved"><div><span>Orçamento aprovado</span><strong>' + esc(quote.titulo) + '</strong></div><div><b>' + money(quote.total) + '</b></div></div>';
     const items = quote.itens.map((item) => '<li>' + esc(item.descricao) + ' <strong>' + money(item.valorTotal) + '</strong></li>').join("");
-    const action = quote.status === "rascunho" ? '<button type="button" data-whatsapp-action="enviar-orcamento" data-orcamento-id="' + esc(quote.id) + '">Enviar pelo WhatsApp</button>' : quote.status === "enviado" ? '<span>Aguardando autorização do cliente</span>' : "";
+    const assinaturaObrigatoria = Number(quote.total) > 2000;
+    const action = quote.status === "rascunho"
+      ? assinaturaObrigatoria
+        ? '<button type="button" data-whatsapp-action="enviar-orcamento-assinatura" data-orcamento-id="' + esc(quote.id) + '">Enviar para assinatura por e-mail</button><p>O cliente receberá um e-mail para assinar digitalmente.</p>'
+        : '<button type="button" data-whatsapp-action="enviar-orcamento-whatsapp" data-orcamento-id="' + esc(quote.id) + '">Enviar por WhatsApp</button><button type="button" data-whatsapp-action="enviar-orcamento-email" data-orcamento-id="' + esc(quote.id) + '" data-orcamento-email="' + esc(quote.cliente?.email || conversa.cliente?.email || "") + '">Enviar por e-mail</button>'
+      : quote.status === "enviado" ? '<span>Aguardando autorização do cliente</span>' : "";
     return '<div class="whatsapp-quote-summary"><div><span>Orçamento ' + esc(quote.status) + '</span><strong>' + esc(quote.titulo) + '</strong><ul>' + items + '</ul></div><div><b>' + money(quote.total) + '</b>' + action + '</div></div>';
   }
   if (!whatsappCatalogItems.length) return '<div class="whatsapp-quote-summary"><div><span>Orçamento</span><strong>Cadastre itens no catálogo antes de montar a proposta.</strong></div></div>';
@@ -184,7 +189,21 @@ document.querySelector("#whatsappRefreshButton").addEventListener("click", () =>
 document.querySelector("#whatsappSearchInput").addEventListener("input", renderWhatsappConversations);
 document.querySelector(".whatsapp-filters").addEventListener("click", (event) => { const target = event.target.closest("[data-whatsapp-filter]"); if (target) setWhatsappFilter(target.dataset.whatsappFilter); });
 document.querySelector("#whatsappConversationList").addEventListener("click", (event) => { const target = event.target.closest("[data-whatsapp-id]"); if (target) void loadWhatsappConversation(target.dataset.whatsappId); });
-document.querySelector("#whatsappConversationDetail").addEventListener("click", async (event) => { const action = event.target.dataset.whatsappAction; if (action === "registrar-aceite") { if (!window.confirm("Confirma que o cliente aprovou este orçamento pelo WhatsApp?")) return; const response = await fetch(\`\${apiBaseUrl}/admin/comercial/orcamentos/\${event.target.dataset.orcamentoId}/aceite-whatsapp\`, { method: "POST", headers: authHeaders() }); if (!response.ok) { window.alert("Não foi possível registrar o aceite."); return; } await loadWhatsappConversation(selectedWhatsappId); return; } if (action === "enviar-orcamento") { const response = await fetch(\`\${apiBaseUrl}/admin/comercial/orcamentos/\${event.target.dataset.orcamentoId}/enviar\`, { method: "POST", headers: authHeaders() }); if (!response.ok) { window.alert("Não foi possível enviar o orçamento."); return; } await loadWhatsappConversation(selectedWhatsappId); return; } if (["apagar", "liberar", "reabrir", "encerrar"].includes(action)) await whatsappAction(action); });
+document.querySelector("#whatsappConversationDetail").addEventListener("click", async (event) => {
+  const action = event.target.dataset.whatsappAction;
+  const endpoints = { "enviar-orcamento-whatsapp": "enviar-whatsapp", "enviar-orcamento-email": "enviar-email", "enviar-orcamento-assinatura": "assinafy" };
+  const endpoint = endpoints[action];
+  if (endpoint) {
+    const destinatario = action === "enviar-orcamento-email" ? window.prompt("E-mail para envio:", event.target.dataset.orcamentoEmail || "")?.trim() : "";
+    if (action === "enviar-orcamento-email" && !destinatario) return;
+    const response = await fetch(\`\${apiBaseUrl}/admin/comercial/orcamentos/\${event.target.dataset.orcamentoId}/\${endpoint}\`, { method: "POST", headers: { ...authHeaders(), ...(action === "enviar-orcamento-email" ? { "Content-Type": "application/json" } : {}) }, body: action === "enviar-orcamento-email" ? JSON.stringify({ destinatario }) : undefined });
+    if (!response.ok) { const erro = await response.json().catch(() => null); window.alert(erro?.message || "Não foi possível enviar o orçamento."); return; }
+    const resultado = await response.json().catch(() => null);
+    window.alert(resultado?.mensagem || "Envio concluído.");
+    await loadWhatsappConversation(selectedWhatsappId); await loadWhatsappConversations(); return;
+  }
+  if (["apagar", "liberar", "reabrir", "encerrar"].includes(action)) await whatsappAction(action);
+});
 function prepareWhatsappScheduleProposal() {
   const form = document.querySelector('[data-whatsapp-form="os"]');
   if (!(form instanceof HTMLFormElement) || !selectedWhatsappConversation) return;

@@ -1,6 +1,6 @@
 # Memoria AIRMOVEBR
 
-Atualizado em: 14/07/2026
+Atualizado em: 26/07/2026
 
 ## Contexto
 
@@ -88,6 +88,8 @@ site -> pre-chamado -> admin -> O.S. -> app tecnico -> checklist/fotos/GPS/assin
 - O painel deve ser usado para gerar O.S. real e validar o app no campo.
 - Recorrencia em producao ja gera O.S. automaticamente pelo scheduler do backend quando `proxima_execucao` vence; em 30/06/2026 gerou O.S. para Luri/Paulo e avancou o plano para 30/07/2026.
 - Menu `Dashboard` do admin foi removido; a tela de O.S. virou a visao operacional principal.
+- Orçamentos: até R$ 2.000,00 podem ser enviados por WhatsApp ou e-mail; valores acima de R$ 2.000,00 seguem para assinatura digital por e-mail no Assinafy.
+- O PDF comercial possui quebra de linha, paginação de itens, rodapé reservado e textos em português; validar visualmente um PDF autenticado antes do próximo deploy.
 
 ## App admin mobile
 
