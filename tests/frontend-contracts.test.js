@@ -187,6 +187,23 @@ test("WhatsApp propõe agenda antes de confirmar o agendamento", () => {
   assert.match(whatsapp, /data-whatsapp-action="alterar-data"/);
   assert.match(styles, /\.whatsapp-schedule-panel/);
 });
+test("WhatsApp agenda levantamento de manutenção sem criar O.S. ou orçamento", () => {
+  const whatsapp = read("apps/admin/js/modules/whatsapp.js");
+  const comercial = read("apps/admin/js/modules/comercial.js");
+
+  assert.match(whatsapp, /Levantamento técnico/);
+  assert.match(whatsapp, /isWhatsappMaintenance/);
+  assert.match(whatsapp, /data-whatsapp-form="levantamento"/);
+  assert.match(whatsapp, /data-whatsapp-action="abrir-agenda-levantamento"/);
+  assert.match(whatsapp, /data-whatsapp-action="confirmar-levantamento"/);
+  assert.match(whatsapp, /\/admin\/whatsapp\/conversas\/" \+ selectedWhatsappId \+ "\/levantamento/);
+  assert.match(whatsapp, /"\/levantamento\/agendar"/);
+  assert.match(whatsapp, /\/admin\/levantamentos\/" \+ id \+ "\/notificacao\/reenviar/);
+  assert.match(whatsapp, /Reenviar aviso/);
+  assert.match(whatsapp, /sem criar O\.S\. ou orçamento/);
+  assert.match(comercial, /levantamentosNav\.textContent = "Levantamentos"/);
+  assert.match(comercial, /\/admin\/levantamentos/);
+});
 test("admin compila o bundle concatenado antes do deploy", async () => {
   const main = read("apps/admin/js/main.js");
   const loadModule = async (relativePath) => import(pathToFileURL(join(root, relativePath)).href);

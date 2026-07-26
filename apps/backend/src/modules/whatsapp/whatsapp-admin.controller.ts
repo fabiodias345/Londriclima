@@ -7,6 +7,7 @@ import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { WhatsAppService } from "./whatsapp.service";
 import { SalvarClienteDto } from "../admin/dto/salvar-cliente.dto";
 import { SalvarOsAgendaDto } from "../admin/dto/salvar-os-agenda.dto";
+import { AgendarLevantamentoDto, CriarLevantamentoDto } from "../levantamentos/dto/levantamentos.dto";
 
 @Controller("admin/whatsapp")
 @UseGuards(JwtAuthGuard, AdminRoleGuard)
@@ -61,6 +62,16 @@ export class WhatsAppAdminController {
   @Post("conversas/:id/os")
   criarOs(@Param("id", new ParseUUIDPipe()) id: string, @Body() dto: SalvarOsAgendaDto, @CurrentUser() usuario: AuthenticatedUser) {
     return this.whatsappService.criarOrdemDaConversa(id, usuario.empresa_id, dto, usuario);
+  }
+
+  @Post("conversas/:id/levantamento")
+  criarLevantamento(@Param("id", new ParseUUIDPipe()) id: string, @Body() dto: CriarLevantamentoDto, @CurrentUser() usuario: AuthenticatedUser) {
+    return this.whatsappService.criarLevantamentoDaConversa(id, usuario.empresa_id, dto);
+  }
+
+  @Patch("conversas/:id/levantamento/agendar")
+  agendarLevantamento(@Param("id", new ParseUUIDPipe()) id: string, @Body() dto: AgendarLevantamentoDto, @CurrentUser() usuario: AuthenticatedUser) {
+    return this.whatsappService.agendarLevantamentoDaConversa(id, usuario.empresa_id, dto);
   }
 
   @Sse("eventos")

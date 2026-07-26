@@ -10,6 +10,9 @@ import { PrismaService } from "../../database/prisma.service";
 import { WhatsAppCloudService } from "../automacoes/whatsapp-cloud.service";
 import { BoltRules, dadosBoltIniciais, normalizarDadosBolt } from "./bolt/bolt.rules";
 import { BoltData, BoltResult } from "./bolt/bolt.types";
+import { AgendarLevantamentoDto, CriarLevantamentoDto } from "../levantamentos/dto/levantamentos.dto";
+import { LevantamentosNotificacaoService } from "../levantamentos/levantamentos-notificacao.service";
+import { LevantamentosService } from "../levantamentos/levantamentos.service";
 
 type JsonRecord = Record<string, unknown>;
 type WhatsAppEvent = { tipo: string; conversaId: string; empresaId: string };
@@ -24,7 +27,9 @@ export class WhatsAppService {
     private readonly config: ConfigService,
     private readonly sender: WhatsAppCloudService,
     private readonly bolt: BoltRules,
-    @Optional() private readonly adminService?: AdminService
+    @Optional() private readonly adminService?: AdminService,
+    private readonly levantamentos?: LevantamentosService,
+    private readonly notificacoesLevantamento?: LevantamentosNotificacaoService
   ) {}
 
   subscribe(listener: EventListener) {
@@ -55,9 +60,9 @@ export class WhatsAppService {
   }
 
   async obterConversa(id: string, empresaId: string) {
-    const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId }, include: { mensagens: { orderBy: { criadoEm: "asc" } }, atribuidoUsuario: { select: { id: true, nome: true } }, cliente: true, orcamentos: { orderBy: { criadoEm: "desc" }, take: 1, include: { itens: true } }, ordemServico: { select: { id: true, titulo: true, status: true, agendadaPara: true, equipeId: true, tecnicoId: true, origem: true, orcamentoId: true } } } });
+    const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId }, include: { mensagens: { orderBy: { criadoEm: "asc" } }, atribuidoUsuario: { select: { id: true, nome: true } }, cliente: true, orcamentos: { orderBy: { criadoEm: "desc" }, take: 1, include: { itens: true } }, ordemServico: { select: { id: true, titulo: true, status: true, agendadaPara: true, equipeId: true, tecnicoId: true, origem: true, orcamentoId: true } }, levantamentoTecnico: { include: { equipe: { select: { id: true, nome: true } }, tecnico: { select: { id: true, nome: true, telefone: true } } } } } });
     const dados = normalizarDadosBolt(conversa.dados);
-    return { ...conversa, atendimento: { dados, previaOs: this.criarPreviaOs(dados) } };
+    return { ...conversa, levantamento: conversa.levantamentoTecnico, atendimento: { dados, previaOs: this.criarPreviaOs(dados) } };
   }
 
   async assumirConversa(id: string, empresaId: string, usuarioId: string) {
@@ -169,6 +174,29 @@ export class WhatsAppService {
     if (dto.agendada_para) await this.notificarTecnicoNovaOs(ordem.os_id, empresaId);
     this.emitir({ tipo: "os_vinculada", conversaId: id, empresaId });
     return { ...(await this.obterConversa(id, empresaId)), confirmacaoAgendamentoEnviada };
+  }
+
+  async criarLevantamentoDaConversa(id: string, empresaId: string, dto: CriarLevantamentoDto) {
+    if (!this.levantamentos) throw new BadRequestException("Levantamentos tecnicos nao configurados.");
+    const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId }, select: { id: true, clienteId: true, dados: true } });
+    if (!conversa.clienteId) throw new BadRequestException("Crie ou vincule o cliente antes de agendar o levantamento.");
+    const dados = normalizarDadosBolt(conversa.dados);
+    if (dados.servico !== "manutencao") throw new BadRequestException("Levantamento tecnico e exclusivo para manutencao.");
+    const levantamento = await this.levantamentos.criar(empresaId, conversa.clienteId, conversa.id, { ...dto, cliente_id: conversa.clienteId, conversa_id: conversa.id, problema: dto.problema || dados.detalhes || "Problema informado pelo cliente" });
+    this.emitir({ tipo: "levantamento_criado", conversaId: id, empresaId });
+    return { levantamento };
+  }
+
+  async agendarLevantamentoDaConversa(id: string, empresaId: string, dto: AgendarLevantamentoDto) {
+    if (!this.levantamentos) throw new BadRequestException("Levantamentos tecnicos nao configurados.");
+    const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId }, include: { levantamentoTecnico: { select: { id: true, status: true } } } });
+    if (!conversa.levantamentoTecnico) throw new BadRequestException("Crie o levantamento antes de agendar.");
+    const eraAgendado = conversa.levantamentoTecnico.status === "agendado";
+    const levantamento = await this.levantamentos.agendar(conversa.levantamentoTecnico.id, empresaId, dto);
+    if (eraAgendado) await this.notificacoesLevantamento?.enviarAlteracao(levantamento.id, empresaId);
+    else await this.notificacoesLevantamento?.enviarConfirmacao(levantamento.id, empresaId);
+    this.emitir({ tipo: "levantamento_agendado", conversaId: id, empresaId });
+    return { levantamento };
   }
 
   private async validarHorarioDisponivel(osId: string | null, empresaId: string, dto: SalvarOsAgendaDto) {

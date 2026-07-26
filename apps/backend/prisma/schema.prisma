@@ -138,6 +138,15 @@ enum OrcamentoStatus {
   expirado
 }
 
+enum LevantamentoStatus {
+  pendente_agendamento
+  agendado
+  em_levantamento
+  diagnostico_concluido
+  resolvido_na_visita
+  cancelado
+}
+
 model Empresa {
   id                 String   @id @default(uuid()) @db.Uuid
   nome               String
@@ -183,6 +192,7 @@ model Empresa {
   conversasWhatsApp         WhatsAppConversa[]
   catalogoItens             CatalogoItem[]
   orcamentos                Orcamento[]
+  levantamentosTecnicos     LevantamentoTecnico[]
 
   @@map("empresas")
 }
@@ -222,6 +232,7 @@ model Usuario {
   convitesTecnicoCriados   ConviteTecnico[]          @relation("ConviteTecnicoCriador")
   conviteTecnicoConsumido  ConviteTecnico?           @relation("ConviteTecnicoUsuario")
   orcamentosCriados       Orcamento[]               @relation("OrcamentoCriador")
+  levantamentosComoTecnico LevantamentoTecnico[]     @relation("LevantamentoTecnico")
 
   @@unique([empresaId, email])
   @@unique([empresaId, cpf])
@@ -290,6 +301,7 @@ model Equipe {
   ordensServico     OrdemServico[]
   ordensResponsavel OrdemServicoResponsavel[]
   planosRecorrencia PlanoRecorrencia[]
+  levantamentosTecnicos LevantamentoTecnico[]
 
   @@index([empresaId])
   @@map("equipes")
@@ -356,6 +368,7 @@ model Cliente {
   planosRecorrencia     PlanoRecorrencia[]
   conversasWhatsApp     WhatsAppConversa[]
   orcamentos            Orcamento[]
+  levantamentosTecnicos LevantamentoTecnico[]
 
   @@index([empresaId])
   @@index([empresaId, pmocAtivo])
@@ -543,6 +556,32 @@ model OrdemServico {
   @@index([empresaId, agendadaPara])
   @@index([clienteId])
   @@map("ordens_servico")
+}
+
+model LevantamentoTecnico {
+  id                String             @id @default(uuid()) @db.Uuid
+  empresaId         String             @map("empresa_id") @db.Uuid
+  clienteId         String             @map("cliente_id") @db.Uuid
+  conversaId        String?            @unique @map("conversa_id") @db.Uuid
+  equipeId          String?            @map("equipe_id") @db.Uuid
+  tecnicoId         String?            @map("tecnico_id") @db.Uuid
+  problema          String
+  agendadaPara      DateTime?          @map("agendada_para")
+  status            LevantamentoStatus @default(pendente_agendamento)
+  criadoEm          DateTime           @default(now()) @map("criado_em")
+  tecnicoAvisadoEm  DateTime?          @map("tecnico_avisado_em")
+  lembreteTecnicoEm DateTime?          @map("lembrete_tecnico_em")
+  notificacaoErro   String?            @map("notificacao_erro")
+  atualizadoEm      DateTime           @updatedAt @map("atualizado_em")
+
+  empresa  Empresa           @relation(fields: [empresaId], references: [id])
+  cliente  Cliente           @relation(fields: [clienteId], references: [id])
+  conversa WhatsAppConversa? @relation(fields: [conversaId], references: [id], onDelete: SetNull)
+  equipe   Equipe?           @relation(fields: [equipeId], references: [id], onDelete: SetNull)
+  tecnico  Usuario?          @relation("LevantamentoTecnico", fields: [tecnicoId], references: [id], onDelete: SetNull)
+
+  @@index([empresaId, status, agendadaPara])
+  @@map("levantamentos_tecnicos")
 }
 
 model OrdemServicoSeguranca {
@@ -959,6 +998,7 @@ model WhatsAppConversa {
   ordemServico     OrdemServico? @relation(fields: [ordemServicoId], references: [id], onDelete: SetNull)
   mensagens        WhatsAppMensagem[]
   orcamentos       Orcamento[]
+  levantamentoTecnico LevantamentoTecnico?
 
   @@unique([empresaId, telefone])
   @@index([empresaId, status, ultimaMensagemEm])

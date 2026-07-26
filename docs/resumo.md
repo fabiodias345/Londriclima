@@ -197,3 +197,13 @@ npm.cmd run frontend:test
  - Correção adicional do catálogo: painel agora exibe Editar/Apagar; edição usa `PATCH /admin/comercial/catalogo/:id` e apagar usa exclusão lógica (`ativo = false`) via `DELETE`, preservando itens de orçamentos históricos. Build, lint e 27 testes frontend aprovados.
  - Correção adicional de clientes: exclusão agora remove também orçamentos e seus itens antes de remover o cliente, evitando falha de chave estrangeira após o módulo comercial. Build, lint e 14 testes do serviço administrativo aprovados.
  - Ajuste do fluxo de novo orçamento: cadastro rápido agora exige e-mail e, após criar o cliente, abre diretamente o montador de orçamento com o cliente selecionado. Node check, build backend e 27 testes frontend aprovados.
+
+## Fase L1 — Levantamentos técnicos web (implementada localmente em 26/07/2026)
+
+- Manutenção iniciada pelo WhatsApp agora cria um levantamento técnico, sem gerar orçamento ou O.S. de execução antes do diagnóstico.
+- O atendimento usa a agenda real de equipes/técnicos, bloqueando horários ocupados por O.S. operacionais ou outros levantamentos.
+- O painel mostra a aba Levantamentos e permite confirmar visita, preparar a mensagem editável ao cliente e consultar o estado do aviso ao técnico.
+- Confirmação, reagendamento e cancelamento acionam templates WhatsApp ao técnico; o lembrete é processado uma hora antes e falhas ficam visíveis para reenvio, sem cancelar a visita.
+- Migration `20260726100000_levantamentos_tecnicos` criada; Prisma generate, build backend, testes de notificações (4), testes WhatsApp (14) e frontend (28) aprovados.
+- Para ativar disparos reais em produção, cadastrar/aprovar na Meta e configurar: `WHATSAPP_TEMPLATE_LEVANTAMENTO_AGENDADO`, `WHATSAPP_TEMPLATE_LEVANTAMENTO_ALTERADO`, `WHATSAPP_TEMPLATE_LEVANTAMENTO_CANCELADO`, `WHATSAPP_TEMPLATE_LEVANTAMENTO_LEMBRETE` e `WHATSAPP_TEMPLATE_LANGUAGE`.
+- Próxima fase: diagnóstico preenchido pelo técnico, decisão “resolvido na visita” versus “precisa de orçamento” e montagem do orçamento pela atendente. Não alterar Flutter/app técnico nesta fase.
