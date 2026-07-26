@@ -62,7 +62,8 @@ export class WhatsAppService {
   async obterConversa(id: string, empresaId: string) {
     const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId }, include: { mensagens: { orderBy: { criadoEm: "asc" } }, atribuidoUsuario: { select: { id: true, nome: true } }, cliente: true, orcamentos: { orderBy: { criadoEm: "desc" }, take: 1, include: { itens: true } }, ordemServico: { select: { id: true, titulo: true, status: true, agendadaPara: true, equipeId: true, tecnicoId: true, origem: true, orcamentoId: true } }, levantamentoTecnico: { include: { equipe: { select: { id: true, nome: true } }, tecnico: { select: { id: true, nome: true, telefone: true } }, itensTecnicos: true, fotos: true, autorizacao: true } } } });
     const dados = normalizarDadosBolt(conversa.dados);
-    return { ...conversa, levantamento: conversa.levantamentoTecnico, atendimento: { dados, previaOs: this.criarPreviaOs(dados) } };
+    const clientesCandidatos = conversa.clienteId ? [] : await this.listarClientesCandidatos(conversa.empresaId, conversa.telefone);
+    return { ...conversa, levantamento: conversa.levantamentoTecnico, clientes_candidatos: clientesCandidatos, atendimento: { dados, previaOs: this.criarPreviaOs(dados) } };
   }
 
   async assumirConversa(id: string, empresaId: string, usuarioId: string) {
@@ -149,6 +150,15 @@ export class WhatsAppService {
     }
     return this.obterConversa(id, empresaId);
   }
+
+  async vincularClienteDaConversa(id: string, clienteId: string, empresaId: string) {
+    const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId }, select: { id: true } });
+    const cliente = await this.prisma.cliente.findFirst({ where: { id: clienteId, empresaId }, select: { id: true } });
+    if (!cliente) throw new BadRequestException("Cliente nao encontrado para esta empresa.");
+    await this.prisma.whatsAppConversa.update({ where: { id: conversa.id }, data: { clienteId: cliente.id } });
+    this.emitir({ tipo: "cliente_vinculado", conversaId: id, empresaId });
+    return this.obterConversa(id, empresaId);
+  }
   async criarOrdemDaConversa(id: string, empresaId: string, dto: SalvarOsAgendaDto, usuario: AuthenticatedUser) {
     if (!this.adminService) throw new BadRequestException("Admin de agenda nao configurado.");
     const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId } });
@@ -209,6 +219,18 @@ export class WhatsAppService {
     });
     if (conflito) throw new ConflictException("Este horario ja esta ocupado para a equipe ou tecnico selecionado.");
   }
+
+  private async listarClientesCandidatos(empresaId: string, telefone: string) {
+    const sufixo = this.normalizarTelefone(telefone).slice(-10);
+    if (!sufixo) return [];
+    const clientes = await this.prisma.cliente.findMany({
+      where: { empresaId, telefone: { endsWith: sufixo } },
+      select: { id: true, nome: true, telefone: true, email: true, enderecos: { orderBy: { principal: "desc" }, take: 1, select: { logradouro: true, numero: true, bairro: true, cidade: true, uf: true, cep: true } } }
+    });
+    return clientes.filter((cliente) => this.normalizarTelefone(cliente.telefone).slice(-10) === sufixo).map((cliente) => ({ ...cliente, endereco: cliente.enderecos[0] ?? null, enderecos: undefined }));
+  }
+
+  private normalizarTelefone(telefone: string | null | undefined) { return String(telefone || "").replace(/\D/g, ""); }
   private async enviarConfirmacaoAgendamento(conversa: { id: string; telefone: string; nomeContato: string | null; dados: unknown }, agendadaPara: string, empresaId: string) {
     const [data, horario] = agendadaPara.split("T");
     const dataFormatada = new Date(`${data}T12:00:00Z`).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long", day: "2-digit", month: "long" });

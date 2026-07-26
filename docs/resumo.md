@@ -255,6 +255,13 @@ Invoke-RestMethod http://127.0.0.1:8787/health
 ```powershell
 npm.cmd run frontend:test
 ```
+
+## Fase clientes existentes no WhatsApp - implementada localmente em 26/07/2026
+
+- Ao abrir uma conversa sem cliente vinculado, a API pesquisa somente clientes da mesma empresa pelo telefone normalizado.
+- O painel mostra os candidatos sem vincular automaticamente: a atendente pode usar um cadastro, atualizar seus dados antes do vínculo ou informar que é outra pessoa.
+- O vínculo explícito mantém a escolha entre orçamento direto e levantamento técnico; clientes novos continuam sendo criados somente por confirmação.
+- Validação aprovada: 16 testes direcionados do WhatsApp, build backend e 30 testes frontend.
  - Correção adicional do catálogo: painel agora exibe Editar/Apagar; edição usa `PATCH /admin/comercial/catalogo/:id` e apagar usa exclusão lógica (`ativo = false`) via `DELETE`, preservando itens de orçamentos históricos. Build, lint e 27 testes frontend aprovados.
  - Correção adicional de clientes: exclusão agora remove também orçamentos e seus itens antes de remover o cliente, evitando falha de chave estrangeira após o módulo comercial. Build, lint e 14 testes do serviço administrativo aprovados.
  - Ajuste do fluxo de novo orçamento: cadastro rápido agora exige e-mail e, após criar o cliente, abre diretamente o montador de orçamento com o cliente selecionado. Node check, build backend e 27 testes frontend aprovados.

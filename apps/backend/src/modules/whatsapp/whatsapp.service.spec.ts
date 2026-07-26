@@ -110,7 +110,7 @@ test("Bolt remove menus e confirma o endereço pelo CEP", () => {
     dados: { nome: "Fábio", servico: "instalacao", cidade_bairro: "Centro, Londrina", detalhes: "Split no quarto", campos_extra: { btus: "12000" } },
     mensagens: [], cliente: null, ordemServico: null
   };
-  const service = new WhatsAppService({ whatsAppConversa: { findFirstOrThrow: async () => conversa } } as never, {} as never, {} as never, new BoltRules());
+  const service = new WhatsAppService({ whatsAppConversa: { findFirstOrThrow: async () => conversa }, cliente: { findMany: async () => [] } } as never, {} as never, {} as never, new BoltRules());
 
   const resultado = await service.obterConversa("conversa-1", "empresa-1");
 
@@ -169,7 +169,8 @@ test("criar cliente pelo WhatsApp salva endereço e e-mail sem exigir CPF", asyn
     whatsAppConversa: {
       findFirstOrThrow: async () => conversa,
       update: async (input: Record<string, unknown>) => { atualizacoes.push(input); }
-    }
+    },
+    cliente: { findMany: async () => [] }
   };
   const chamadas: Array<Record<string, unknown>> = [];
   const admin = {
@@ -250,4 +251,34 @@ test("nova mensagem reabre conversa encerrada para o Bolt responder", async () =
   await service.receberWebhook({ entry: [{ changes: [{ value: { messages: [{ id: "wamid.in", from: "5543999999999", type: "text", text: { body: "Oi" } }] } }] }] });
 
   assert.deepEqual(chamadas, ["entrada", "saida"]);
+});
+
+test("detalhe sugere cliente pelo telefone sem vincular automaticamente", async () => {
+  const conversa = { id: "conversa-1", empresaId: "empresa-1", telefone: "5543999999999", dados: {}, clienteId: null, cliente: null, mensagens: [], orcamentos: [], ordemServico: null, levantamentoTecnico: null };
+  let busca: Record<string, unknown> | undefined;
+  const prisma = {
+    whatsAppConversa: { findFirstOrThrow: async () => conversa },
+    cliente: { findMany: async (input: Record<string, unknown>) => { busca = input; return [{ id: "cliente-1", nome: "Fabio", telefone: "(43) 99999-9999", email: "fabio@example.com", enderecos: [{ cidade: "Londrina", uf: "PR" }] }]; } }
+  };
+  const service = new WhatsAppService(prisma as never, {} as never, {} as never, new BoltRules());
+
+  const resultado = await service.obterConversa("conversa-1", "empresa-1");
+
+  assert.equal((busca?.where as { empresaId: string }).empresaId, "empresa-1");
+  assert.equal(resultado.clientes_candidatos.length, 1);
+  assert.equal(resultado.clientes_candidatos[0].id, "cliente-1");
+  assert.equal(conversa.clienteId, null);
+});
+
+test("vinculo de cliente exige que ele pertença à empresa da conversa", async () => {
+  const atualizacoes: Array<Record<string, unknown>> = [];
+  const prisma = {
+    whatsAppConversa: { findFirstOrThrow: async () => ({ id: "conversa-1", empresaId: "empresa-1", telefone: "5543999999999", dados: {}, clienteId: "cliente-1", cliente: { id: "cliente-1" }, mensagens: [], orcamentos: [], ordemServico: null, levantamentoTecnico: null }), update: async (input: Record<string, unknown>) => { atualizacoes.push(input); } },
+    cliente: { findFirst: async ({ where }: { where: { id: string; empresaId: string } }) => where.empresaId === "empresa-1" ? { id: "cliente-1" } : null, findMany: async () => [] }
+  };
+  const service = new WhatsAppService(prisma as never, {} as never, {} as never, new BoltRules());
+
+  await service.vincularClienteDaConversa("conversa-1", "cliente-1", "empresa-1");
+
+  assert.equal((atualizacoes[0].data as { clienteId: string }).clienteId, "cliente-1");
 });

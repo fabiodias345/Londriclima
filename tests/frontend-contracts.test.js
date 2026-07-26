@@ -215,6 +215,16 @@ test("WhatsApp oferece escolha explícita entre levantamento e orçamento", () =
   assert.match(whatsapp, /if \(whatsappServiceChoiceRequired\) return serviceChoiceForm\(\)/);
   assert.match(whatsapp, /whatsappServiceMode = action === "escolher-levantamento" \? "levantamento" : "orcamento"/);
 });
+test("WhatsApp resolve cliente existente antes de criar outro cadastro", () => {
+  const whatsapp = read("apps/admin/js/modules/whatsapp.js");
+  assert.match(whatsapp, /clientes_candidatos/);
+  assert.match(whatsapp, /Usar este cliente/);
+  assert.match(whatsapp, /Atualizar dados/);
+  assert.match(whatsapp, /N.o . este cliente/);
+  assert.match(whatsapp, /data-whatsapp-form="cliente-existente"/);
+  assert.match(whatsapp, /\/admin\/whatsapp\/conversas\/" \+ selectedWhatsappId \+ "\/cliente\//);
+  assert.match(whatsapp, /\/admin\/clientes\/" \+ form\.dataset\.clienteId/);
+});
 test("admin compila o bundle concatenado antes do deploy", async () => {
   const main = read("apps/admin/js/main.js");
   const loadModule = async (relativePath) => import(pathToFileURL(join(root, relativePath)).href);

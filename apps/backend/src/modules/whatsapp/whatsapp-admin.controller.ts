@@ -59,6 +59,11 @@ export class WhatsAppAdminController {
     return this.whatsappService.criarClienteDaConversa(id, usuario.empresa_id, dto, usuario);
   }
 
+  @Post("conversas/:id/cliente/:clienteId")
+  vincularCliente(@Param("id", new ParseUUIDPipe()) id: string, @Param("clienteId", new ParseUUIDPipe()) clienteId: string, @CurrentUser() usuario: AuthenticatedUser) {
+    return this.whatsappService.vincularClienteDaConversa(id, clienteId, usuario.empresa_id);
+  }
+
   @Post("conversas/:id/os")
   criarOs(@Param("id", new ParseUUIDPipe()) id: string, @Body() dto: SalvarOsAgendaDto, @CurrentUser() usuario: AuthenticatedUser) {
     return this.whatsappService.criarOrdemDaConversa(id, usuario.empresa_id, dto, usuario);
