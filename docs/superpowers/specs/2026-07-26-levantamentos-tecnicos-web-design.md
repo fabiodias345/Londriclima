@@ -13,6 +13,8 @@ Impedir que atendimentos de manutenção corretiva recebam orçamento sem diagn�
 - Exibir uma aba operacional `Levantamentos` no painel web.
 - Exibir a agenda de equipes e técnicos durante o atendimento, com dias e horários livres/ocupados.
 - Permitir que a atendente escolha equipe e/ou técnico, data e horário, e confirme a visita.
+- Notificar o técnico por WhatsApp assim que o levantamento for confirmado, com cliente, endereço, data, horário e resumo do problema.
+- Enviar lembrete automático ao técnico uma hora antes da visita e atualizações imediatas em caso de reagendamento ou cancelamento.
 - Permitir registrar diagnóstico, itens necessários, observações e fotos depois da visita.
 - Exibir uma aba comercial de orçamento a partir do diagnóstico, para a atendente revisar o que o técnico encontrou e montar a proposta.
 - Permitir encerrar o levantamento como visita resolutiva quando o técnico corrigir um erro simples no local, cobrando apenas a visita técnica.
@@ -33,11 +35,13 @@ A Fase L2 não será implementada neste ciclo.
 4. A atendente abre o bloco `Levantamento técnico` na conversa, escolhe equipe e/ou técnico e consulta a agenda.
 5. A agenda mostra horários ocupados e livres; a atendente confirma apenas um horário disponível.
 6. Antes de confirmar, o atendimento preenche automaticamente a mensagem de levantamento para o cliente. A atendente pode revisar e ajustar o texto.
-7. Ao confirmar, o sistema cria o levantamento agendado e envia a mensagem pelo WhatsApp.
-8. Após a visita, o técnico ou a equipe registra o diagnóstico e informa se o problema foi resolvido no local.
-9. Se houve resolução no local, a atendente revisa o relato e encerra como `visita técnica resolutiva`, cobrando somente a visita.
-10. Se houver reparo, peça ou serviço a aprovar, o levantamento abre uma aba de orçamento. A atendente vê o diagnóstico, itens recomendados, fotos e observações do técnico e monta o orçamento com base nesses dados.
-11. Antes do diagnóstico concluído, a aba de orçamento fica indisponível.
+7. Ao confirmar, o sistema cria o levantamento agendado, envia a mensagem ao cliente e notifica o técnico responsável pelo WhatsApp.
+8. Uma hora antes da visita, o sistema envia lembrete ao técnico.
+9. Se a visita for reagendada ou cancelada, o técnico recebe atualização imediata.
+10. Após a visita, o técnico ou a equipe registra o diagnóstico e informa se o problema foi resolvido no local.
+11. Se houve resolução no local, a atendente revisa o relato e encerra como `visita técnica resolutiva`, cobrando somente a visita.
+12. Se houver reparo, peça ou serviço a aprovar, o levantamento abre uma aba de orçamento. A atendente vê o diagnóstico, itens recomendados, fotos e observações do técnico e monta o orçamento com base nesses dados.
+13. Antes do diagnóstico concluído, a aba de orçamento fica indisponível.
 
 Instalação e serviços padronizados continuam podendo usar o fluxo comercial direto. A regra de levantamento obrigatório se aplica a manutenção/corretiva.
 
@@ -90,6 +94,14 @@ Ao criar um levantamento de manutenção, o painel prepara esta mensagem antes d
 
 A atendente pode ajustar o texto antes de confirmar. A mensagem só é enviada depois que uma equipe ou técnico e um horário disponível forem selecionados e o levantamento for salvo.
 
+## Notificações ao técnico
+
+O levantamento confirmado gera uma notificação operacional ao técnico responsável. A mensagem inclui nome do cliente, endereço, data, horário e resumo do defeito relatado.
+
+O sistema também agenda um lembrete para uma hora antes da visita. Reagendamento e cancelamento invalidam o lembrete anterior e enviam imediatamente a nova situação ao técnico.
+
+Quando não houver janela de atendimento aberta com o técnico, o envio usa templates WhatsApp aprovados para notificação de levantamento, lembrete, reagendamento e cancelamento. A ausência ou falha de template fica registrada como erro operacional visível no painel; ela não remove o levantamento nem o agendamento já salvo.
+
 ## Diagnóstico e orçamento
 
 O diagnóstico registra descrição técnica, causa provável, serviços recomendados, peças necessárias, observações, fotos e o resultado da visita (`precisa_orcamento` ou `resolvido_na_visita`). A criação de orçamento reutiliza cliente e dados do levantamento, mas exige `diagnostico_concluido`; não calcula preço automático e mantém o montador comercial atual para valores e itens.
@@ -101,6 +113,7 @@ Para `resolvido_na_visita`, o fluxo gera somente a cobrança de visita técnica,
 - Todas as consultas e alterações são isoladas por empresa e protegidas por administrador no painel web.
 - Agendamento concorrente retorna conflito legível e recarrega a disponibilidade.
 - Falha de confirmação WhatsApp não apaga o agendamento já salvo; o painel informa que a mensagem precisa ser reenviada.
+- Falha de notificação ao técnico não apaga o levantamento; o painel mostra a pendência e permite reenviar o aviso.
 - Nenhum orçamento é criado automaticamente por mensagem do cliente ou por diagnóstico incompleto.
 - Somente a atendente/admin pode montar proposta, definir preço ou cobrar a visita; o técnico apenas informa o resultado do campo.
 
@@ -110,8 +123,9 @@ Para `resolvido_na_visita`, o fluxo gera somente a cobrança de visita técnica,
 - Testes frontend para a aba, calendário no atendimento e disponibilidade condicional do botão de orçamento.
 - Validação manual no painel web: abrir manutenção, escolher equipe/técnico, visualizar horário ocupado/livre, agendar visita, registrar diagnóstico e abrir a aba de orçamento para a atendente.
 - Validar o desfecho resolvido em visita: registrar solução simples, informar valor de visita, confirmar cobrança e garantir que não seja criado orçamento de reparo.
+- Validar notificação ao técnico na criação, lembrete de uma hora antes e atualização após reagendamento/cancelamento.
 - Build backend, suíte backend, testes frontend e `git diff --check` aprovados.
 
 ## Critério de conclusão
 
-No painel web, uma manutenção recebida pelo WhatsApp vira levantamento técnico agendado com disponibilidade real de agenda. Após o diagnóstico, a atendente abre uma aba comercial com os achados de campo para montar o orçamento; se o técnico resolver no local, a atendente cobra apenas a visita técnica. O app técnico fica explicitamente como próxima fase.
+No painel web, uma manutenção recebida pelo WhatsApp vira levantamento técnico agendado com disponibilidade real de agenda e aviso imediato ao técnico. O técnico recebe lembrete uma hora antes e atualizações de reagendamento/cancelamento. Após o diagnóstico, a atendente abre uma aba comercial com os achados de campo para montar o orçamento; se o técnico resolver no local, a atendente cobra apenas a visita técnica. O app técnico fica explicitamente como próxima fase.
