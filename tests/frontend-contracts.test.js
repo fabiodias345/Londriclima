@@ -204,6 +204,12 @@ test("WhatsApp agenda levantamento de manutenção sem criar O.S. ou orçamento"
   assert.match(comercial, /levantamentosNav\.textContent = "Levantamentos"/);
   assert.match(comercial, /\/admin\/levantamentos/);
 });
+test("WhatsApp oferece escolha explícita entre levantamento e orçamento", () => {
+  const whatsapp = read("apps/admin/js/modules/whatsapp.js");
+  assert.match(whatsapp, /serviceChoiceForm/);
+  assert.match(whatsapp, /escolher-levantamento/);
+  assert.match(whatsapp, /escolher-orcamento/);
+});
 test("admin compila o bundle concatenado antes do deploy", async () => {
   const main = read("apps/admin/js/main.js");
   const loadModule = async (relativePath) => import(pathToFileURL(join(root, relativePath)).href);
