@@ -1,4 +1,4 @@
-import { IsDateString, IsOptional, IsString, IsUUID, MinLength } from "class-validator";
+import { IsDateString, IsNumber, IsOptional, IsString, IsUUID, MinLength } from "class-validator";
 
 export class CriarLevantamentoDto {
   @IsUUID()
@@ -31,4 +31,14 @@ export class CancelarLevantamentoDto {
   @IsString()
   @IsOptional()
   motivo?: string;
+}
+
+export class SolicitarAutorizacaoLevantamentoDto {
+  @IsNumber()
+  valor!: number;
+}
+
+export class ReabrirLevantamentoDto {
+  @IsString()
+  motivo!: string;
 }

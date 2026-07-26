@@ -1,7 +1,8 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
-import { LevantamentoStatus, OrdemServicoStatus, UsuarioRole } from "@prisma/client";
+import { AutorizacaoLevantamentoStatus, LevantamentoDecisao, LevantamentoStatus, OrdemServicoStatus, UsuarioRole } from "@prisma/client";
 import { PrismaService } from "../../database/prisma.service";
 import { AgendarLevantamentoDto, CriarLevantamentoDto } from "./dto/levantamentos.dto";
+import type { AuthenticatedUser } from "../auth/auth-user";
 
 const STATUS_OS_OCUPADA = [OrdemServicoStatus.aberta, OrdemServicoStatus.em_deslocamento, OrdemServicoStatus.em_atendimento];
 
@@ -64,6 +65,41 @@ export class LevantamentosService {
     return this.mapear(await this.prisma.levantamentoTecnico.update({ where: { id }, data: { status: LevantamentoStatus.cancelado }, include: this.detalheInclude() }));
   }
 
+  async solicitarAutorizacao(id: string, valor: number, usuario: AuthenticatedUser) {
+    const levantamento = await this.prisma.levantamentoTecnico.findFirst({ where: { id, empresaId: usuario.empresa_id }, include: { autorizacao: true } });
+    if (!levantamento) throw new NotFoundException("Levantamento nao encontrado.");
+    if (levantamento.decisao !== LevantamentoDecisao.resolvido_na_visita) throw new BadRequestException("Autorizacao exige laudo resolutivo.");
+    if (!Number.isFinite(valor) || valor <= 0) throw new BadRequestException("Informe um valor positivo para a visita.");
+    const expiraEm = new Date(Date.now() + 20 * 60 * 1000);
+    return this.prisma.levantamentoAutorizacao.upsert({ where: { levantamentoId: id }, create: { levantamentoId: id, valor, expiraEm, status: AutorizacaoLevantamentoStatus.aguardando }, update: { valor, expiraEm, status: AutorizacaoLevantamentoStatus.aguardando, autorizadaEm: null } });
+  }
+
+  async aprovarAutorizacao(id: string, usuario: AuthenticatedUser) {
+    const levantamento = await this.prisma.levantamentoTecnico.findFirst({ where: { id, empresaId: usuario.empresa_id }, include: { autorizacao: true } });
+    if (!levantamento) throw new NotFoundException("Levantamento nao encontrado.");
+    if (!levantamento.autorizacao || levantamento.autorizacao.status !== AutorizacaoLevantamentoStatus.aguardando) throw new ConflictException("Nao existe autorizacao aguardando aceite.");
+    if (levantamento.autorizacao.expiraEm <= new Date()) { await this.prisma.levantamentoAutorizacao.update({ where: { id: levantamento.autorizacao.id }, data: { status: AutorizacaoLevantamentoStatus.expirada } }); throw new ConflictException("Autorizacao de visita expirada."); }
+    const [autorizacao] = await this.prisma.$transaction([
+      this.prisma.levantamentoAutorizacao.update({ where: { id: levantamento.autorizacao.id }, data: { status: AutorizacaoLevantamentoStatus.aprovada, autorizadaEm: new Date() } }),
+      this.prisma.levantamentoTecnico.update({ where: { id }, data: { status: LevantamentoStatus.resolvido_na_visita } })
+    ]);
+    return autorizacao;
+  }
+
+  async recusarAutorizacao(id: string, usuario: AuthenticatedUser) {
+    const levantamento = await this.prisma.levantamentoTecnico.findFirst({ where: { id, empresaId: usuario.empresa_id }, include: { autorizacao: true } });
+    if (!levantamento?.autorizacao) throw new NotFoundException("Autorizacao nao encontrada.");
+    if (levantamento.autorizacao.status !== AutorizacaoLevantamentoStatus.aguardando) throw new ConflictException("Autorizacao nao esta aguardando resposta.");
+    return this.prisma.levantamentoAutorizacao.update({ where: { id: levantamento.autorizacao.id }, data: { status: AutorizacaoLevantamentoStatus.recusada } });
+  }
+
+  async reabrirLaudo(id: string, motivo: string, usuario: AuthenticatedUser) {
+    if (!motivo.trim()) throw new BadRequestException("Informe o motivo da reabertura.");
+    const levantamento = await this.prisma.levantamentoTecnico.findFirst({ where: { id, empresaId: usuario.empresa_id } });
+    if (!levantamento) throw new NotFoundException("Levantamento nao encontrado.");
+    return this.mapear(await this.prisma.levantamentoTecnico.update({ where: { id }, data: { status: LevantamentoStatus.em_levantamento, laudoFinalizadoEm: null, laudoFinalizadoPorId: null, reabertoEm: new Date(), reabertoPorId: usuario.id, motivoReabertura: motivo.trim() }, include: this.detalheInclude() }));
+  }
+
   private async validarDestino(empresaId: string, dto: AgendarLevantamentoDto) {
     const [equipe, tecnico] = await Promise.all([
       dto.equipe_id ? this.prisma.equipe.findFirst({ where: { id: dto.equipe_id, empresaId, ativa: true }, select: { id: true } }) : Promise.resolve(undefined),
@@ -86,7 +122,10 @@ export class LevantamentosService {
     return {
       cliente: { select: { id: true, nome: true, telefone: true, email: true, enderecos: { orderBy: { principal: "desc" as const }, take: 1, select: { logradouro: true, numero: true, bairro: true, cidade: true, uf: true, cep: true } } } },
       equipe: { select: { id: true, nome: true } },
-      tecnico: { select: { id: true, nome: true, telefone: true } }
+      tecnico: { select: { id: true, nome: true, telefone: true } },
+      itensTecnicos: true,
+      fotos: true,
+      autorizacao: true
     };
   }
 
@@ -95,7 +134,11 @@ export class LevantamentosService {
       id: item.id, empresa_id: item.empresaId, cliente_id: item.clienteId, conversa_id: item.conversaId, problema: item.problema, status: item.status,
       equipe_id: item.equipeId, tecnico_id: item.tecnicoId, agendada_para: item.agendadaPara?.toISOString() ?? null,
       tecnico_avisado_em: item.tecnicoAvisadoEm?.toISOString() ?? null, lembrete_tecnico_em: item.lembreteTecnicoEm?.toISOString() ?? null, notificacao_erro: item.notificacaoErro ?? null,
-      criado_em: item.criadoEm.toISOString(), atualizado_em: item.atualizadoEm.toISOString(), cliente: item.cliente, equipe: item.equipe, tecnico: item.tecnico
+      criado_em: item.criadoEm.toISOString(), atualizado_em: item.atualizadoEm.toISOString(), cliente: item.cliente, equipe: item.equipe, tecnico: item.tecnico,
+      diagnostico: item.diagnostico ?? null, causa_provavel: item.causaProvavel ?? null, servicos_recomendados: item.servicosRecomendados ?? null,
+      observacoes: item.observacoes ?? null, limpeza_recomendada: item.limpezaRecomendada ?? "nao_recomendada", decisao: item.decisao ?? null,
+      laudo_rascunho_em: item.laudoRascunhoEm?.toISOString() ?? null, laudo_finalizado_em: item.laudoFinalizadoEm?.toISOString() ?? null,
+      itens: item.itensTecnicos ?? [], fotos: item.fotos ?? [], autorizacao: item.autorizacao ?? null
     };
   }
 }

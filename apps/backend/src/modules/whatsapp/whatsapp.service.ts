@@ -60,7 +60,7 @@ export class WhatsAppService {
   }
 
   async obterConversa(id: string, empresaId: string) {
-    const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId }, include: { mensagens: { orderBy: { criadoEm: "asc" } }, atribuidoUsuario: { select: { id: true, nome: true } }, cliente: true, orcamentos: { orderBy: { criadoEm: "desc" }, take: 1, include: { itens: true } }, ordemServico: { select: { id: true, titulo: true, status: true, agendadaPara: true, equipeId: true, tecnicoId: true, origem: true, orcamentoId: true } }, levantamentoTecnico: { include: { equipe: { select: { id: true, nome: true } }, tecnico: { select: { id: true, nome: true, telefone: true } } } } } });
+    const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId }, include: { mensagens: { orderBy: { criadoEm: "asc" } }, atribuidoUsuario: { select: { id: true, nome: true } }, cliente: true, orcamentos: { orderBy: { criadoEm: "desc" }, take: 1, include: { itens: true } }, ordemServico: { select: { id: true, titulo: true, status: true, agendadaPara: true, equipeId: true, tecnicoId: true, origem: true, orcamentoId: true } }, levantamentoTecnico: { include: { equipe: { select: { id: true, nome: true } }, tecnico: { select: { id: true, nome: true, telefone: true } }, itensTecnicos: true, fotos: true, autorizacao: true } } } });
     const dados = normalizarDadosBolt(conversa.dados);
     return { ...conversa, levantamento: conversa.levantamentoTecnico, atendimento: { dados, previaOs: this.criarPreviaOs(dados) } };
   }
