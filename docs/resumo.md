@@ -66,6 +66,7 @@ npm.cmd run frontend:test
 ```
  - Melhoria visual da tela de O.S.: resumo duplicado ocultado, abas com cores por status e botao de Nova O.S. destacado; commit `ec23e81`.
  - Melhoria visual da tela de recorrencias: filtros de status compactos e coloridos, cabecalho com Novo plano/Atualizar, formulario em quatro colunas, calendario anual compacto e acoes coloridas por funcao. 27 testes frontend aprovados.
+ - Melhoria visual da Frota: indicadores reduzidos para uma faixa operacional compacta, abas coloridas por funcao, mapa/lista preservados e botoes de cadastro, relatorio e abastecimento com cores semanticas. 27 testes frontend aprovados.
 
 Resultado:
 

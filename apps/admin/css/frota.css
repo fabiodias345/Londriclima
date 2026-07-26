@@ -231,6 +231,108 @@
   color: #3b82f6;
 }
 
+/* Frota: resumo operacional compacto e hierarquia visual mais leve. */
+.fleet-summary-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  padding: 14px 38px 12px;
+  background: #0b0f14;
+}
+
+.fleet-summary-grid.fleet-summary-grid > article,
+.fleet-stat-card {
+  display: grid;
+  min-height: 68px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 10px 14px;
+  border-width: 1px 1px 1px 3px;
+  border-radius: 9px;
+  background: #131920;
+}
+
+.fleet-stat-card span {
+  grid-column: 1;
+  color: #9aabbd;
+  font-size: 10px;
+  letter-spacing: .06em;
+}
+
+.fleet-stat-card strong {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  margin: 0;
+  color: #f3f6fb;
+  font-size: 28px;
+}
+
+.fleet-stat-card small {
+  grid-column: 1;
+  margin: 0;
+  color: #8192a5;
+  font-size: 11px;
+}
+
+.fleet-stat-operational { border-left-color: #00d4aa !important; }
+.fleet-stat-moving { border-left-color: #3b82f6 !important; }
+.fleet-stat-stopped { border-left-color: #f59e0b !important; }
+.fleet-stat-efficiency { border-left-color: #84cc16 !important; }
+.fleet-stat-operational small,
+.fleet-stat-efficiency small { color: #00d4aa; }
+.fleet-stat-moving small { color: #60a5fa; }
+.fleet-stat-stopped small { color: #fbbf24; }
+
+.fleet-shell .subnav {
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 10px;
+}
+
+.fleet-shell .subnav-button {
+  min-height: 40px;
+  border-radius: 8px;
+  color: #9aabbd;
+  transition: color .18s ease, background-color .18s ease, box-shadow .18s ease;
+}
+
+.fleet-shell .subnav-button:nth-child(1) { --fleet-tab-color: #00d4aa; }
+.fleet-shell .subnav-button:nth-child(2) { --fleet-tab-color: #60a5fa; }
+.fleet-shell .subnav-button:nth-child(3) { --fleet-tab-color: #a78bfa; }
+.fleet-shell .subnav-button:nth-child(4) { --fleet-tab-color: #f59e0b; }
+
+.fleet-shell .subnav-button:not(.active):hover {
+  color: var(--fleet-tab-color);
+  background: rgba(255, 255, 255, .05);
+}
+
+.fleet-shell .subnav-button.active {
+  color: var(--fleet-tab-color);
+  background: color-mix(in srgb, var(--fleet-tab-color) 14%, transparent);
+  box-shadow: inset 0 -2px 0 var(--fleet-tab-color);
+}
+
+.fleet-shell button[type="submit"],
+#fleetReportExportButton {
+  border: 0;
+  border-radius: 8px;
+  color: #06241e;
+  background: #00d4aa;
+  font-weight: 900;
+}
+
+.fleet-shell .vehicle-form .secondary-button,
+.fleet-shell .fuel-form .secondary-button {
+  color: #bfdbfe;
+  border-color: #315d91;
+  background: #17283d;
+}
+
+.fleet-shell .fleet-map-legend i.moving { background: #3b82f6; }
+.fleet-shell .fleet-map-legend i.stopped { background: #f59e0b; }
+
 .fleet-map-panel {
   grid-template-columns: minmax(520px, 1fr) minmax(330px, 384px);
   gap: 14px;
