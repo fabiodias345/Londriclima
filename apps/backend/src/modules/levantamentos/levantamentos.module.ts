@@ -5,6 +5,8 @@ import { LevantamentosController } from "./levantamentos.controller";
 import { LevantamentosLembreteScheduler } from "./levantamentos-lembrete.scheduler";
 import { LevantamentosNotificacaoService } from "./levantamentos-notificacao.service";
 import { LevantamentosService } from "./levantamentos.service";
+import { LevantamentosTecnicoController } from "./levantamentos-tecnico.controller";
+import { LevantamentosTecnicoService } from "./levantamentos-tecnico.service";
 
-@Module({ imports: [AuthModule, AutomacoesModule], controllers: [LevantamentosController], providers: [LevantamentosService, LevantamentosNotificacaoService, LevantamentosLembreteScheduler], exports: [LevantamentosService, LevantamentosNotificacaoService] })
+@Module({ imports: [AuthModule, AutomacoesModule], controllers: [LevantamentosController, LevantamentosTecnicoController], providers: [LevantamentosService, LevantamentosTecnicoService, LevantamentosNotificacaoService, LevantamentosLembreteScheduler], exports: [LevantamentosService, LevantamentosTecnicoService, LevantamentosNotificacaoService] })
 export class LevantamentosModule {}

@@ -40,3 +40,13 @@ test("bloqueia rascunho depois da finalizacao", async () => {
   const { service } = criar({ laudoFinalizadoEm: new Date() });
   await assert.rejects(() => service.salvarRascunho("levantamento-1", { diagnostico: "Novo" }, tecnico), /imutavel/i);
 });
+
+test("bloqueia arquivo que nao e imagem", async () => {
+  const { service } = criar();
+  await assert.rejects(() => service.adicionarFoto("levantamento-1", { originalname: "arquivo.pdf", mimetype: "application/pdf", size: 20, buffer: Buffer.from("pdf") }, tecnico), /formato de arquivo/i);
+});
+
+test("exige foto de limpeza ao recomendar limpeza", async () => {
+  const { service } = criar();
+  await assert.rejects(() => service.finalizar("levantamento-1", { diagnostico: "Serpentina suja", limpeza_recomendada: "recomendada", decisao: "precisa_orcamento" }, tecnico), /foto obrigatoria para limpeza recomendada/i);
+});

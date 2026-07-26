@@ -29,7 +29,7 @@ export class SalvarLaudoLevantamentoDto {
   @IsOptional() @IsString() diagnostico?: string;
   @IsOptional() @IsString() causa_provavel?: string;
   @IsOptional() @IsString() servicos_recomendados?: string;
-  @IsOptional() @IsEnum(LimpezaRecomendadaDto) limpeza_recomendada?: LimpezaRecomendadaDto;
+  @IsOptional() @IsEnum(LimpezaRecomendadaDto) limpeza_recomendada?: "nao_recomendada" | "recomendada" | "urgente";
   @IsOptional() @IsString() observacoes?: string;
   @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ItemLaudoLevantamentoDto)
   itens?: ItemLaudoLevantamentoDto[];
