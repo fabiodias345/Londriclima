@@ -147,6 +147,24 @@ enum LevantamentoStatus {
   cancelado
 }
 
+enum LimpezaRecomendada {
+  nao_recomendada
+  recomendada
+  urgente
+}
+
+enum LevantamentoDecisao {
+  precisa_orcamento
+  resolvido_na_visita
+}
+
+enum AutorizacaoLevantamentoStatus {
+  aguardando
+  aprovada
+  recusada
+  expirada
+}
+
 model Empresa {
   id                 String   @id @default(uuid()) @db.Uuid
   nome               String
@@ -233,6 +251,9 @@ model Usuario {
   conviteTecnicoConsumido  ConviteTecnico?           @relation("ConviteTecnicoUsuario")
   orcamentosCriados       Orcamento[]               @relation("OrcamentoCriador")
   levantamentosComoTecnico LevantamentoTecnico[]     @relation("LevantamentoTecnico")
+  levantamentosLaudosFinalizados LevantamentoTecnico[] @relation("LevantamentoLaudoFinalizadoPor")
+  levantamentosReabertos         LevantamentoTecnico[] @relation("LevantamentoReabertoPor")
+  levantamentosFotos              LevantamentoFoto[]   @relation("LevantamentoFotoCriadoPor")
 
   @@unique([empresaId, email])
   @@unique([empresaId, cpf])
@@ -572,6 +593,18 @@ model LevantamentoTecnico {
   tecnicoAvisadoEm  DateTime?          @map("tecnico_avisado_em")
   lembreteTecnicoEm DateTime?          @map("lembrete_tecnico_em")
   notificacaoErro   String?            @map("notificacao_erro")
+  diagnostico       String?
+  causaProvavel     String?            @map("causa_provavel")
+  servicosRecomendados String?         @map("servicos_recomendados")
+  observacoes       String?
+  limpezaRecomendada LimpezaRecomendada @default(nao_recomendada) @map("limpeza_recomendada")
+  decisao           LevantamentoDecisao?
+  laudoRascunhoEm   DateTime?          @map("laudo_rascunho_em")
+  laudoFinalizadoEm DateTime?          @map("laudo_finalizado_em")
+  laudoFinalizadoPorId String?         @map("laudo_finalizado_por_id") @db.Uuid
+  reabertoEm        DateTime?          @map("reaberto_em")
+  reabertoPorId     String?            @map("reaberto_por_id") @db.Uuid
+  motivoReabertura  String?            @map("motivo_reabertura")
   atualizadoEm      DateTime           @updatedAt @map("atualizado_em")
 
   empresa  Empresa           @relation(fields: [empresaId], references: [id])
@@ -579,9 +612,63 @@ model LevantamentoTecnico {
   conversa WhatsAppConversa? @relation(fields: [conversaId], references: [id], onDelete: SetNull)
   equipe   Equipe?           @relation(fields: [equipeId], references: [id], onDelete: SetNull)
   tecnico  Usuario?          @relation("LevantamentoTecnico", fields: [tecnicoId], references: [id], onDelete: SetNull)
+  laudoFinalizadoPor Usuario? @relation("LevantamentoLaudoFinalizadoPor", fields: [laudoFinalizadoPorId], references: [id], onDelete: SetNull)
+  reabertoPor Usuario?       @relation("LevantamentoReabertoPor", fields: [reabertoPorId], references: [id], onDelete: SetNull)
+  itensTecnicos LevantamentoItemTecnico[]
+  fotos         LevantamentoFoto[]
+  autorizacao   LevantamentoAutorizacao?
 
   @@index([empresaId, status, agendadaPara])
   @@map("levantamentos_tecnicos")
+}
+
+model LevantamentoItemTecnico {
+  id             String   @id @default(uuid()) @db.Uuid
+  levantamentoId String   @map("levantamento_id") @db.Uuid
+  descricao      String
+  quantidade     Decimal  @default(1) @db.Decimal(10, 2)
+  observacoes    String?
+  criadoEm      DateTime @default(now()) @map("criado_em")
+  atualizadoEm  DateTime @updatedAt @map("atualizado_em")
+
+  levantamento LevantamentoTecnico @relation(fields: [levantamentoId], references: [id], onDelete: Cascade)
+
+  @@index([levantamentoId])
+  @@map("levantamentos_itens_tecnicos")
+}
+
+model LevantamentoFoto {
+  id             String   @id @default(uuid()) @db.Uuid
+  levantamentoId String   @map("levantamento_id") @db.Uuid
+  criadoPorId    String?  @map("criado_por_id") @db.Uuid
+  url            String
+  legenda        String?
+  mimeType       String   @map("mime_type")
+  tamanhoBytes   Int      @map("tamanho_bytes")
+  limpeza        Boolean  @default(false)
+  criadoEm       DateTime @default(now()) @map("criado_em")
+
+  levantamento LevantamentoTecnico @relation(fields: [levantamentoId], references: [id], onDelete: Cascade)
+  criadoPor    Usuario?            @relation("LevantamentoFotoCriadoPor", fields: [criadoPorId], references: [id], onDelete: SetNull)
+
+  @@index([levantamentoId, limpeza])
+  @@map("levantamentos_fotos")
+}
+
+model LevantamentoAutorizacao {
+  id             String                           @id @default(uuid()) @db.Uuid
+  levantamentoId String                           @unique @map("levantamento_id") @db.Uuid
+  status         AutorizacaoLevantamentoStatus    @default(aguardando)
+  valor          Decimal?                         @db.Decimal(12, 2)
+  expiraEm       DateTime                         @map("expira_em")
+  autorizadaEm   DateTime?                        @map("autorizada_em")
+  criadoEm       DateTime                         @default(now()) @map("criado_em")
+  atualizadoEm   DateTime                         @updatedAt @map("atualizado_em")
+
+  levantamento LevantamentoTecnico @relation(fields: [levantamentoId], references: [id], onDelete: Cascade)
+
+  @@index([status, expiraEm])
+  @@map("levantamentos_autorizacoes")
 }
 
 model OrdemServicoSeguranca {
