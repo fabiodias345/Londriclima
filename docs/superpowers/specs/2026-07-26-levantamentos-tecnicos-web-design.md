@@ -32,11 +32,12 @@ A Fase L2 não será implementada neste ciclo.
 3. A conversa é transferida para atendimento humano com indicação de que é necessário levantamento técnico.
 4. A atendente abre o bloco `Levantamento técnico` na conversa, escolhe equipe e/ou técnico e consulta a agenda.
 5. A agenda mostra horários ocupados e livres; a atendente confirma apenas um horário disponível.
-6. O sistema cria o levantamento agendado e envia a confirmação ao cliente pelo fluxo de WhatsApp já existente.
-7. Após a visita, o técnico ou a equipe registra o diagnóstico e informa se o problema foi resolvido no local.
-8. Se houve resolução no local, a atendente revisa o relato e encerra como `visita técnica resolutiva`, cobrando somente a visita.
-9. Se houver reparo, peça ou serviço a aprovar, o levantamento abre uma aba de orçamento. A atendente vê o diagnóstico, itens recomendados, fotos e observações do técnico e monta o orçamento com base nesses dados.
-10. Antes do diagnóstico concluído, a aba de orçamento fica indisponível.
+6. Antes de confirmar, o atendimento preenche automaticamente a mensagem de levantamento para o cliente. A atendente pode revisar e ajustar o texto.
+7. Ao confirmar, o sistema cria o levantamento agendado e envia a mensagem pelo WhatsApp.
+8. Após a visita, o técnico ou a equipe registra o diagnóstico e informa se o problema foi resolvido no local.
+9. Se houve resolução no local, a atendente revisa o relato e encerra como `visita técnica resolutiva`, cobrando somente a visita.
+10. Se houver reparo, peça ou serviço a aprovar, o levantamento abre uma aba de orçamento. A atendente vê o diagnóstico, itens recomendados, fotos e observações do técnico e monta o orçamento com base nesses dados.
+11. Antes do diagnóstico concluído, a aba de orçamento fica indisponível.
 
 Instalação e serviços padronizados continuam podendo usar o fluxo comercial direto. A regra de levantamento obrigatório se aplica a manutenção/corretiva.
 
@@ -62,6 +63,7 @@ Para conversa de manutenção, a área operacional exibe um bloco `Levantamento 
 - resumo do problema informado pelo cliente;
 - equipe e técnico selecionáveis;
 - calendário e horários livres/ocupados da agenda real;
+- mensagem automática de levantamento, editável pela atendente antes do envio;
 - confirmação de agendamento;
 - estado do levantamento e diagnóstico quando existir;
 - botão `Criar orçamento` disponível somente após `diagnostico_concluido`.
@@ -79,6 +81,14 @@ Quando o estado for `resolvido_na_visita`, essa aba não cria proposta de reparo
 ## Agenda e conflitos
 
 O sistema usa as mesmas regras de indisponibilidade da agenda/O.S. atual. Não deve permitir agendar um levantamento para equipe ou técnico ocupado no horário. Alterações e cancelamentos atualizam a disponibilidade exibida no atendimento.
+
+## Mensagem automática ao cliente
+
+Ao criar um levantamento de manutenção, o painel prepara esta mensagem antes do envio:
+
+> Para identificar certinho o problema, vamos agendar uma visita técnica. Se for algo simples e puder ser resolvido no local, será cobrada apenas a visita técnica. Caso precise de peças ou reparo adicional, nossa equipe prepara um orçamento para sua aprovação antes de executar.
+
+A atendente pode ajustar o texto antes de confirmar. A mensagem só é enviada depois que uma equipe ou técnico e um horário disponível forem selecionados e o levantamento for salvo.
 
 ## Diagnóstico e orçamento
 
