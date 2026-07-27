@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import {
   CategoriaAtendimento,
   ChecklistTipo,
+  LevantamentoStatus,
   OrdemServicoEventoAcao,
   OrdemServicoOrigem,
   OrdemServicoStatus,
@@ -26,14 +27,136 @@ const STATUS_OS_PAINEL: OrdemServicoStatus[] = [
   OrdemServicoStatus.rejeitada
 ];
 
+const STATUS_LEVANTAMENTO_AGENDA: LevantamentoStatus[] = [LevantamentoStatus.agendado, LevantamentoStatus.em_levantamento];
+
 @Injectable()
 export class AdminAgendaService {
   constructor(private readonly prisma: PrismaService) {}
 
   async listarAgenda(usuario: AuthenticatedUser) {
-    const ordens = await this.prisma.ordemServico.findMany({
+    const [ordens, levantamentos] = await Promise.all([
+      this.buscarOrdensAgenda(usuario.empresa_id),
+      this.buscarLevantamentosAgenda(usuario.empresa_id)
+    ]);
+
+    const items = [...ordens.map((ordem) => this.mapearOrdemAgenda(ordem)), ...levantamentos.map((item) => this.mapearLevantamentoAgenda(item))].sort(
+      (a, b) => {
+        const dataA = a.agendada_para ?? "";
+        const dataB = b.agendada_para ?? "";
+        return dataA === dataB ? b.criada_em.localeCompare(a.criada_em) : dataA.localeCompare(dataB);
+      }
+    );
+
+    return {
+      total: items.length,
+      items
+    };
+  }
+
+  private async buscarLevantamentosAgenda(empresaId: string) {
+    if (!this.prisma.levantamentoTecnico) {
+      return [];
+    }
+
+    return this.prisma.levantamentoTecnico.findMany({
       where: {
-        empresaId: usuario.empresa_id,
+        empresaId,
+        status: {
+          in: STATUS_LEVANTAMENTO_AGENDA
+        }
+      },
+      orderBy: [
+        {
+          agendadaPara: "asc"
+        },
+        {
+          criadoEm: "desc"
+        }
+      ],
+      select: {
+        id: true,
+        problema: true,
+        status: true,
+        agendadaPara: true,
+        criadoEm: true,
+        cliente: {
+          select: {
+            id: true,
+            nome: true,
+            telefone: true,
+            enderecos: {
+              orderBy: {
+                principal: "desc"
+              },
+              take: 1,
+              select: {
+                bairro: true,
+                cidade: true,
+                uf: true
+              }
+            }
+          }
+        },
+        equipe: {
+          select: {
+            id: true,
+            nome: true
+          }
+        },
+        tecnico: {
+          select: {
+            id: true,
+            nome: true
+          }
+        }
+      }
+    });
+  }
+
+  private mapearLevantamentoAgenda(levantamento: {
+    id: string;
+    problema: string;
+    status: LevantamentoStatus;
+    agendadaPara: Date | null;
+    criadoEm: Date;
+    cliente: { id: string; nome: string; telefone: string | null; enderecos: Array<{ bairro: string | null; cidade: string; uf: string }> };
+    equipe: { id: string; nome: string } | null;
+    tecnico: { id: string; nome: string } | null;
+  }) {
+    return {
+      id: levantamento.id,
+      tipo: "levantamento" as const,
+      titulo: "Levantamento tecnico",
+      detalhes: levantamento.problema,
+      status: levantamento.status,
+      categoria_servico: null,
+      tipo_servico: null,
+      agendada_para: levantamento.agendadaPara?.toISOString() ?? null,
+      criada_em: levantamento.criadoEm.toISOString(),
+      valor_cobrado: null,
+      checklist_tipo: null,
+      cliente: {
+        id: levantamento.cliente.id,
+        nome: levantamento.cliente.nome,
+        telefone: levantamento.cliente.telefone
+      },
+      endereco: levantamento.cliente.enderecos[0] ?? null,
+      equipe: levantamento.equipe,
+      tecnico: levantamento.tecnico,
+      equipamento: null,
+      equipamentos: [],
+      equipamentos_executados: [],
+      eventos: [],
+      evidencias: [],
+      checklist: null,
+      assinatura: null
+    };
+  }
+
+  private async buscarOrdensAgenda(empresaId: string) {
+    return this.prisma.ordemServico.findMany({
+      where: {
+        empresaId,
         status: {
           in: STATUS_OS_PAINEL
         }
@@ -166,9 +289,10 @@ export class AdminAgendaService {
       }
     });
 
+  }
+
+  private mapearOrdemAgenda(ordem: Awaited<ReturnType<AdminAgendaService["buscarOrdensAgenda"]>>[number]) {
     return {
-      total: ordens.length,
-      items: ordens.map((ordem) => ({
         id: ordem.id,
         titulo: ordem.titulo,
         detalhes: ordem.problemaRelatado,
@@ -220,7 +344,6 @@ export class AdminAgendaService {
               assinado_em: ordem.assinatura.assinadoEm.toISOString()
             }
           : null
-      }))
     };
   }
 

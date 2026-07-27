@@ -34,6 +34,7 @@ const OS_STATUS_TABS = {
   canceladas: ["cancelada", "rejeitada"]
 };
 const AGENDA_OPERATIONAL_STATUSES = ["aberta", "em_deslocamento", "em_atendimento"];
+const AGENDA_VISIBLE_STATUSES = [...AGENDA_OPERATIONAL_STATUSES, "agendado", "em_levantamento"];
 const loginPanel = document.querySelector("#loginPanel");
 const dashboard = document.querySelector("#dashboard");
 const loginForm = document.querySelector("#loginForm");

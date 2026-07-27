@@ -19,10 +19,12 @@ function buildAgendaSlots(items) {
   return others.length ? [...slots, { hour: "Outro horário", items: others }] : slots;
 }
 function renderAgendaServiceCard(item) {
+  const isLevantamento = item.tipo === "levantamento";
+
   return \`
     <section class="agenda-service-card \${getAgendaStatusClass(item.status)}">
       <div>
-        <strong>\${escapeHtml(item.titulo)}</strong>
+        <strong>\${escapeHtml(isLevantamento ? "Levantamento técnico" : item.titulo)}</strong>
         <span>\${escapeHtml(item.cliente?.nome || "Cliente não informado")} - \${escapeHtml(formatAddress(item.endereco))}</span>
       </div>
       <div>
@@ -30,10 +32,10 @@ function renderAgendaServiceCard(item) {
         <span>\${item.agendada_para ? formatAgendaTime(item.agendada_para) : "Definir horario"}</span>
       </div>
       <div>
-        <span>\${escapeHtml(item.equipamento ? formatAgendaEquipment(item.equipamento) : "Todos os equipamentos do cliente")}</span>
+        <span>\${escapeHtml(isLevantamento ? item.detalhes || "Diagnóstico técnico" : item.equipamento ? formatAgendaEquipment(item.equipamento) : "Todos os equipamentos do cliente")}</span>
         <span>\${escapeHtml(item.equipe?.nome || item.tecnico?.nome || "Equipe nao atribuida")}</span>
       </div>
-      <button class="secondary-button compact-button" type="button" data-action="editar-agenda-os" data-id="\${item.id}">Editar</button>
+      \${isLevantamento ? "" : \`<button class="secondary-button compact-button" type="button" data-action="editar-agenda-os" data-id="\${item.id}">Editar</button>\`}
     </section>
   \`;
 }

@@ -54,7 +54,7 @@ async function loadAgenda() {
   }
 
   const items = result.items || [];
-  const operationalItems = items.filter((item) => AGENDA_OPERATIONAL_STATUSES.includes(item.status));
+  const operationalItems = items.filter((item) => AGENDA_VISIBLE_STATUSES.includes(item.status));
   const today = getLocalDateKey(new Date());
 
   latestAgendaItems = items;
