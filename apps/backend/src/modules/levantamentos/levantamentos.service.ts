@@ -32,7 +32,7 @@ export class LevantamentosService {
 
   async listar(empresaId: string) {
     const items = await this.prisma.levantamentoTecnico.findMany({
-      where: { empresaId }, orderBy: [{ agendadaPara: "asc" }, { criadoEm: "desc" }], include: this.detalheInclude()
+      where: { empresaId, status: { not: LevantamentoStatus.cancelado } }, orderBy: [{ agendadaPara: "asc" }, { criadoEm: "desc" }], include: this.detalheInclude()
     });
     return { total: items.length, items: items.map((item) => this.mapear(item)) };
   }
