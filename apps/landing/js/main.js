@@ -17,7 +17,7 @@ const whatsappNumber = "554330673793";
 
 function buildWhatsAppUrl(payload) {
   const lines = [
-    "Olá, quero atendimento pela AIRMOVEBR.",
+    "Olá, quero atendimento pela AIR MOVE Climatização.",
     `Nome: ${payload.nome}`,
     `Telefone: ${payload.telefone}`,
     `Serviço: ${payload.servico}`,

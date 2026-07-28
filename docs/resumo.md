@@ -257,6 +257,17 @@ Invoke-RestMethod http://127.0.0.1:8787/health
 npm.cmd run frontend:test
 ```
 
+## Identidade visual e nome Meta - 28/07/2026
+
+- Nome de exibicao anterior `Airmovebr` foi rejeitado pela Meta.
+- Novo nome enviado para analise: `Airmovebr Climatizacao`.
+- Conta do WhatsApp Business verificada e aprovada; telefone conectado e qualidade alta.
+- Os quatro templates de levantamento continuam em analise: `levantamento_agendado`, `levantamento_alterado`, `levantamento_cancelado` e `levantamento_lembrete`.
+- Site principal ajustado para exibir somente `Airmovebr` e `Climatizacao` no cabecalho e rodape, sem simbolo.
+- Seis fotos do site atualizadas com as tres setas azuis e o texto `Airmovebr Climatizacao`: `atendimento-interno.jpeg`, `frota-equipe.jpeg`, `limpeza-split.jpeg`, `instalacao-comercial.jpeg`, `manutencao-vrf.jpeg` e `pmoc-tecnico.jpeg`.
+- Validacao local: 30 testes frontend aprovados e `git diff --check` sem erros.
+- Ajustes visuais e fotos registrados nos commits `09541dc`, `f997578` e `3f4b120`; `dev`, `main`, `origin/dev` e `origin/main` estao alinhadas em `3f4b120`. Deploy em producao ainda nao foi validado.
+
 ## Fase clientes existentes no WhatsApp - implementada localmente em 26/07/2026
 
 - Ao abrir uma conversa sem cliente vinculado, a API pesquisa somente clientes da mesma empresa pelo telefone normalizado.

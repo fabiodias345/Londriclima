@@ -105,8 +105,8 @@ label {
 }
 
 .brand-logo {
-  width: 58px;
-  height: 44px;
+  width: 86px;
+  height: 58px;
   object-fit: contain;
   border-radius: 8px;
   background: var(--white);
