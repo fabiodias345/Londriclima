@@ -754,6 +754,45 @@ export class AdminAgendaService {
     };
   }
 
+  async cancelarOrdemAgenda(osId: string, usuario: AuthenticatedUser) {
+    const agora = new Date();
+    return this.prisma.$transaction(async (tx) => {
+      const ordem = await tx.ordemServico.findFirst({
+        where: { id: osId, empresaId: usuario.empresa_id },
+        select: { id: true, status: true }
+      });
+
+      if (!ordem) {
+        throw new NotFoundException("OS nao encontrada.");
+      }
+
+      const statusNaoCancelaveis: OrdemServicoStatus[] = [OrdemServicoStatus.concluida, OrdemServicoStatus.cancelada, OrdemServicoStatus.rejeitada];
+      if (statusNaoCancelaveis.includes(ordem.status)) {
+        throw new ConflictException("Esta OS nao pode mais ser cancelada.");
+      }
+
+      const atualizada = await tx.ordemServico.update({
+        where: { id: ordem.id },
+        data: { status: OrdemServicoStatus.cancelada },
+        select: { id: true, status: true }
+      });
+
+      await tx.ordemServicoEvento.create({
+        data: {
+          empresaId: usuario.empresa_id,
+          ordemServicoId: ordem.id,
+          usuarioId: usuario.id,
+          acao: OrdemServicoEventoAcao.cancelar,
+          statusAnterior: ordem.status,
+          statusNovo: OrdemServicoStatus.cancelada,
+          registradoEm: agora
+        }
+      });
+
+      return { os_id: atualizada.id, status: atualizada.status };
+    });
+  }
+
   private async validarDestinoAgenda(
     tx: Pick<Prisma.TransactionClient, "equipamento" | "equipe" | "usuario">,
     dto: SalvarOsAgendaDto,

@@ -114,6 +114,14 @@ export class AdminController {
     return this.adminService.reprogramarOrdemAgenda(osId, dto, usuario);
   }
 
+  @Post("agenda/ordens/:osId/cancelar")
+  cancelarOrdemAgenda(
+    @Param("osId", new ParseUUIDPipe()) osId: string,
+    @CurrentUser() usuario: AuthenticatedUser
+  ) {
+    return this.adminService.cancelarOrdemAgenda(osId, usuario);
+  }
+
   @Delete("agenda/ordens/:osId")
   apagarOrdemAgenda(
     @Param("osId", new ParseUUIDPipe()) osId: string,

@@ -35,7 +35,10 @@ function renderAgendaServiceCard(item) {
         <span>\${escapeHtml(isLevantamento ? item.detalhes || "Diagnóstico técnico" : item.equipamento ? formatAgendaEquipment(item.equipamento) : "Todos os equipamentos do cliente")}</span>
         <span>\${escapeHtml(item.equipe?.nome || item.tecnico?.nome || "Equipe nao atribuida")}</span>
       </div>
-      \${isLevantamento ? "" : \`<button class="secondary-button compact-button" type="button" data-action="editar-agenda-os" data-id="\${item.id}">Editar</button>\`}
+      <div class="agenda-service-actions">
+        \${isLevantamento ? "" : \`<button class="secondary-button compact-button" type="button" data-action="editar-agenda-os" data-id="\${item.id}">Editar</button>\`}
+        <button class="secondary-button compact-button danger-button" type="button" data-action="cancelar-agenda-item" data-id="\${item.id}" data-tipo="\${isLevantamento ? "levantamento" : "os"}">Cancelar</button>
+      </div>
     </section>
   \`;
 }

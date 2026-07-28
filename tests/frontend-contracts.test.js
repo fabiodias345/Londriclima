@@ -665,6 +665,9 @@ test("admin abre detalhe lateral da O.S. com acoes por status", () => {
   assert.match(script, /Revisar motivo/);
   assert.match(script, /data-action="apagar-agenda-os"/);
   assert.match(script, /async function deleteAgendaOs/);
+  assert.match(script, /async function cancelarAgendaItem/);
+  assert.match(script, /\/admin\/agenda\/ordens\/\$\{itemId\}\/cancelar/);
+  assert.match(script, /\/admin\/levantamentos\/\$\{itemId\}\/cancelar/);
   assert.match(styles, /\.os-detail-panel/);
   assert.match(styles, /\.os-detail-panel\.is-open/);
   assert.match(styles, /\.os-detail-facts/);

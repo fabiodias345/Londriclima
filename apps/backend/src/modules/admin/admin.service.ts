@@ -205,6 +205,10 @@ export class AdminService {
     return this.agendaService.reprogramarOrdemAgenda(osId, dto, usuario);
   }
 
+  async cancelarOrdemAgenda(osId: string, usuario: AuthenticatedUser) {
+    return this.agendaService.cancelarOrdemAgenda(osId, usuario);
+  }
+
   async apagarOrdemAgenda(osId: string, usuario: AuthenticatedUser) {
     return this.agendaService.apagarOrdemAgenda(osId, usuario);
   }

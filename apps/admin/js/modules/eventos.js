@@ -773,6 +773,54 @@ async function deleteAgendaOs(osId, button = null) {
   }
 }
 
+async function cancelarAgendaItem(itemId, tipo, button = null) {
+  const item = latestAgendaItems.find((agendaItem) => agendaItem.id === itemId);
+  const titulo = tipo === "levantamento" ? "este levantamento tecnico" : item?.titulo || "esta O.S.";
+
+  if (!window.confirm(\`Cancelar \${titulo}? O historico sera mantido.\`)) {
+    return;
+  }
+
+  if (button) {
+    button.disabled = true;
+  }
+
+  listStatus.textContent = "Cancelando agenda...";
+
+  try {
+    const endpoint = tipo === "levantamento"
+      ? \`/admin/levantamentos/\${itemId}/cancelar\`
+      : \`/admin/agenda/ordens/\${itemId}/cancelar\`;
+    const response = await fetch(\`\${apiBaseUrl}\${endpoint}\`, {
+      method: "POST",
+      headers: {
+        ...authHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: "{}"
+    });
+
+    if (await handleUnauthorized(response)) {
+      return;
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      listStatus.textContent = error.message || "Nao foi possivel cancelar a agenda.";
+      return;
+    }
+
+    listStatus.textContent = "Agenda cancelada.";
+    await loadAgenda();
+  } catch {
+    listStatus.textContent = "API indisponivel.";
+  } finally {
+    if (button) {
+      button.disabled = false;
+    }
+  }
+}
+
 function getSelectedValues(select) {
   if (!select) {
     return [];

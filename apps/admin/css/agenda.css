@@ -109,7 +109,8 @@ button.agenda-free:hover { color: #1d4ed8; }
 .agenda-service-card .status-pill { display: none; }
 .agenda-service-card > div:nth-of-type(2),
 .agenda-service-card > div:nth-of-type(3) { display: none; }
-.agenda-service-card .compact-button { grid-column: 2; grid-row: 1; min-height: 30px; padding: 5px 8px; font-size: 11px; }
+.agenda-service-actions { display: flex; grid-column: 2; grid-row: 1; gap: 5px; }
+.agenda-service-card .compact-button { min-height: 30px; padding: 5px 8px; font-size: 11px; }
 .agenda-other-time { margin: 12px; border-color: #2563eb; color: #1d4ed8; }
 
 @media (max-width: 900px) {

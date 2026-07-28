@@ -136,6 +136,10 @@ agendaList?.addEventListener("click", (event) => {
   if (button.dataset.action === "editar-agenda-os" && button.dataset.id) {
     void openAgendaOsModal(button.dataset.id);
   }
+
+  if (button.dataset.action === "cancelar-agenda-item" && button.dataset.id) {
+    void cancelarAgendaItem(button.dataset.id, button.dataset.tipo, button);
+  }
 });
 agendaPrevMonthButton?.addEventListener("click", () => {
   const [year, month] = agendaVisibleMonth.split("-").map(Number);
