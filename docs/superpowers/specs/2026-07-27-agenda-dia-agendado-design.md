@@ -17,7 +17,7 @@ Ao renderizar o mês, o painel calcula as datas dos itens que possuem `agendada_
 
 ## Visual
 
-A classe `has-scheduled` usará fundo verde suave e borda/acento verde discreto. O conteúdo, clique, seleção e indicador de dia atual continuam funcionando. Quando houver sobreposição entre dia atual e dia agendado, ambos os estados devem permanecer legíveis.
+A classe `has-scheduled` usará fundo verde suave e borda/acento verde discreto. Os textos dos itens usarão preto `#111827` para manter contraste. O conteúdo, clique, seleção e indicador de dia atual continuam funcionando. Quando houver sobreposição entre dia atual e dia agendado, ambos os estados devem permanecer legíveis.
 
 ## Validação
 
