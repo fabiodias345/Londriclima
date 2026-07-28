@@ -245,6 +245,7 @@ Invoke-RestMethod http://127.0.0.1:8787/health
 ```
 
 ## Apos instalar a API Meta
+- Status Meta em 27/07/2026: os quatro templates de levantamento foram criados e enviados para analise: `levantamento_agendado`, `levantamento_alterado`, `levantamento_cancelado` e `levantamento_lembrete`. Nao criar novamente; falta aprovacao da Meta, configuracao das variaveis `WHATSAPP_TEMPLATE_LEVANTAMENTO_*` e validacao do disparo real em producao.
 - Fazer uma limpeza geral do backend:
   - alinhar a spec PMOC ao texto acentuado do PDF;
   - limpar os 4 avisos de lint;
