@@ -22,8 +22,10 @@ button, input, select, textarea { font: inherit; }
 .header-inner { display: flex; align-items: center; gap: 28px; width: min(1240px, 100%); height: 78px; margin: auto; padding: 0 28px; }
 .brand { display: inline-flex; align-items: center; gap: 10px; min-width: max-content; }
 .brand-mark { display: grid; place-items: center; width: 37px; height: 37px; color: var(--blue); font-size: 26px; transform: rotate(-22deg); }
-.brand strong { display: block; font: 800 20px/1 Montserrat, sans-serif; letter-spacing: .4px; }
-.brand small { display: block; margin-top: 4px; color: #69798e; font-size: 8px; letter-spacing: .68px; text-transform: uppercase; }
+.brand strong { display: block; font: 0/1 Montserrat, sans-serif; letter-spacing: 1px; }
+.brand strong::after { content: "AIR MOVE"; font-size: 20px; }
+.brand small { display: block; margin-top: 4px; color: #69798e; font-size: 0; letter-spacing: .42px; text-transform: uppercase; }
+.brand small::after { content: "Ar-Condicionado Sob Demanda"; font-size: 8px; }
 .main-nav { display: flex; align-items: center; gap: 24px; margin-left: auto; color: #536276; font-size: 12px; font-weight: 800; }
 .main-nav a { display: flex; align-items: center; height: 78px; border-bottom: 2px solid transparent; }
 .main-nav a:hover, .main-nav .active { color: var(--blue); border-color: var(--blue); }
@@ -158,7 +160,7 @@ button, input, select, textarea { font: inherit; }
 
 @media (max-width: 640px) {
   .header-inner { height: 66px; padding: 0 20px; }
-  .brand strong { font-size: 17px; }
+  .brand strong::after { font-size: 17px; }
   .main-nav { position: absolute; top: 65px; right: 0; left: 0; display: none; padding: 8px 20px; background: #fff; border-bottom: 1px solid var(--line); box-shadow: 0 12px 30px rgba(16,35,61,.12); }
   .main-nav.is-open { display: block; }
   .main-nav a { height: auto; padding: 12px 0; }
