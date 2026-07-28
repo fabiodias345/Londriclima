@@ -549,6 +549,7 @@ function renderAgendaMonthGrid(items, activeDateKey) {
     cell.className = "agenda-month-cell";
     cell.dataset.agendaDate = dateKey;
     cell.classList.toggle("outside", date.getMonth() !== month - 1);
+    cell.classList.toggle("has-scheduled", dayItems.length > 0);
     cell.classList.toggle("active", dateKey === activeDateKey);
     cell.innerHTML = \`
       <span class="agenda-month-day">\${date.getDate()}</span>

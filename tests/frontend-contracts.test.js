@@ -422,6 +422,7 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(script, /tipo_servico:\s*String\(data\.get\("tipo_servico"\) \|\| "preventiva"\)/);
   assert.match(script, /checklist_tipo:\s*String\(data\.get\("checklist_tipo"\) \|\| "mensal"\)/);
   assert.match(script, /function renderAgendaMonthGrid/);
+  assert.match(script, /has-scheduled/);
   assert.match(script, /function renderAgendaCalendar/);
   assert.match(script, /function renderAgendaDay/);
   assert.match(script, /function renderAgendaPendingList/);

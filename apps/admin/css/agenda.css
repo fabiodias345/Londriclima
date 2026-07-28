@@ -54,6 +54,7 @@
 
 .agenda-month-cell:nth-child(7n) { border-right: 0; }
 .agenda-month-cell.outside { background: #fafbfc; color: #9ca8b5; }
+.agenda-month-cell.has-scheduled { background: #ecfdf3; }
 .agenda-month-cell:hover,
 .agenda-month-cell.active { z-index: 1; background: #f0f7ff; box-shadow: inset 0 0 0 2px #2563eb; }
 .agenda-month-day { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; font-family: "Archivo", sans-serif; font-weight: 800; }
