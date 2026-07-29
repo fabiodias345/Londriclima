@@ -191,7 +191,7 @@ export class WhatsAppService {
     const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId }, select: { id: true, clienteId: true, dados: true } });
     if (!conversa.clienteId) throw new BadRequestException("Crie ou vincule o cliente antes de agendar o levantamento.");
     const dados = normalizarDadosBolt(conversa.dados);
-    if (dados.servico !== "manutencao") throw new BadRequestException("Levantamento tecnico e exclusivo para manutencao.");
+    if (!dados.servico?.startsWith("manutencao_")) throw new BadRequestException("Levantamento tecnico e exclusivo para manutencao.");
     const levantamento = await this.levantamentos.criar(empresaId, conversa.clienteId, conversa.id, { ...dto, cliente_id: conversa.clienteId, conversa_id: conversa.id, problema: dto.problema || dados.detalhes || "Problema informado pelo cliente" });
     this.emitir({ tipo: "levantamento_criado", conversaId: id, empresaId });
     return { levantamento };
@@ -336,6 +336,7 @@ Agradecemos pela preferência. Até breve!`;
       tentativas_fallback: 0,
       ultima_interacao: new Date().toISOString()
     };
+    dadosComEndereco.memoria = { ...dadosComEndereco.memoria, cep_status: "informado" };
     const enderecoTexto = [endereco.logradouro, endereco.bairro, `${endereco.cidade}/${endereco.uf}`].filter(Boolean).join(", ");
     return {
       texto: `Encontrei: ${enderecoTexto}. Está correto?`,
@@ -364,7 +365,7 @@ Agradecemos pela preferência. Até breve!`;
   private criarPreviaOs(dados: BoltData): { titulo: string; detalhes: string; tipoServico: OrdemServicoTipoServico } {
     const local = dados.cidade_bairro ? `Local: ${dados.cidade_bairro}` : "";
     const extras = Object.entries(dados.campos_extra).filter(([, value]) => value != null && String(value).trim()).map(([campo, value]) => `${campo.replaceAll("_", " ")}: ${value}`);
-    const tipoServico: OrdemServicoTipoServico = dados.servico === "instalacao" ? "instalacao" : dados.servico === "pmoc" ? "preventiva" : "corretiva";
+    const tipoServico: OrdemServicoTipoServico = dados.servico === "instalacao" ? "instalacao" : dados.servico === "manutencao_preventiva" || dados.servico === "pmoc" ? "preventiva" : "corretiva";
     return { titulo: `Atendimento WhatsApp - ${dados.servico || "servico"}`, detalhes: [dados.detalhes, local, ...extras].filter(Boolean).join("\n"), tipoServico };
   }
   private emitir(evento: WhatsAppEvent) { for (const listener of this.listeners) listener(evento); }
