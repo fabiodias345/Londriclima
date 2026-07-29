@@ -23,7 +23,7 @@ whatsappView.innerHTML = \`
     <aside class="whatsapp-inbox-list">
       <div class="whatsapp-list-head"><div><strong>Caixa de entrada</strong><span class="whatsapp-list-count" id="whatsappListStatus">Carregando...</span></div><button class="whatsapp-icon-button" id="whatsappRefreshButton" type="button" aria-label="Atualizar conversas" title="Atualizar conversas">Atualizar</button></div>
       <label class="whatsapp-search"><span class="sr-only">Pesquisar conversa</span><input id="whatsappSearchInput" type="search" placeholder="Pesquisar nome ou telefone" autocomplete="off" /></label>
-      <div class="whatsapp-filters" role="tablist" aria-label="Filtro de conversas"><button class="is-active" type="button" data-whatsapp-filter="atendimento">Em atendimento</button><button type="button" data-whatsapp-filter="aguardando">Aguardando <span id="whatsappPendingBadge">0</span></button><button type="button" data-whatsapp-filter="encerradas">Encerradas</button><button type="button" data-whatsapp-filter="todas">Todas</button></div>
+      <div class="whatsapp-filters" role="tablist" aria-label="Filtro de conversas"><button class="is-active" type="button" data-whatsapp-filter="atendimento">Em Atendimento</button><button type="button" data-whatsapp-filter="encerradas">Encerradas</button><button type="button" data-whatsapp-filter="todas">Todas</button></div>
       <div class="whatsapp-conversation-list" id="whatsappConversationList"></div>
     </aside>
     <section class="whatsapp-conversation-detail" id="whatsappConversationDetail"><div class="whatsapp-empty-state"><span class="whatsapp-empty-icon">◉</span><strong>Selecione uma conversa</strong><p>As mensagens, o cadastro e o agendamento aparecerão aqui.</p></div></section>
@@ -72,15 +72,13 @@ async function loadWhatsappConversations() {
   if (await handleUnauthorized(response)) return;
   if (!response.ok) { status.textContent = "Não foi possível carregar."; return; }
   const result = await response.json(); whatsappConversations = result.items || [];
-  const pendingCount = result.pendentes ?? whatsappConversations.filter((item) => item.status === "humano" && !item.atribuidoUsuarioId).length;
-  document.querySelector("#whatsappPendingBadge").textContent = pendingCount;
   status.textContent = whatsappConversations.length ? \`\${whatsappConversations.length} conversas\` : "Nenhuma conversa";
   renderWhatsappConversations();
 }
 
 function getWhatsappState(item) {
   if (item.status === "encerrada") return { key: "encerradas", className: "is-closed", label: "Encerrada", ageMinutes: 0 };
-  if (item.status === "humano" && item.atribuidoUsuarioId) return { key: "atendimento", className: "is-attending", label: "Em atendimento", ageMinutes: 0 };
+  if (item.status === "humano" && item.atribuidoUsuarioId) return { key: "atendimento", className: "is-attending", label: "Em Atendimento", ageMinutes: 0 };
   const reference = new Date(item.ultimaMensagemEm || item.criadoEm || Date.now());
   const ageMinutes = Number.isNaN(reference.getTime()) ? 0 : Math.max(0, Math.floor((Date.now() - reference.getTime()) / 60000));
   return ageMinutes >= 15 ? { key: "aguardando", className: "is-overdue", label: "Aguardando há muito tempo", ageMinutes } : { key: "aguardando", className: "is-waiting", label: "Aguardando atendimento", ageMinutes };
