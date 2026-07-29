@@ -173,6 +173,7 @@ function filterOsAgendaItems(items) {
   const query = normalizeSearch(osSearchInput?.value || "");
   const categoryFilter = normalizeServiceCategory(osCategoryFilter?.value || "ar_condicionado");
   const hasCategoryFilter = Boolean(osCategoryFilter?.value);
+  const serviceFilter = osServiceFilter?.value || "";
   const tabItems = filterOsAgendaItemsByTab(items, activeOsTab);
 
   return tabItems.filter((item) => {
@@ -189,6 +190,10 @@ function filterOsAgendaItems(items) {
     ].filter(Boolean).join(" "));
 
     if (hasCategoryFilter && itemCategory !== categoryFilter) {
+      return false;
+    }
+
+    if (serviceFilter && item.tipo_servico !== serviceFilter) {
       return false;
     }
 
@@ -424,6 +429,9 @@ function formatOsServiceType(item) {
   }
   if (item.tipo_servico === "instalacao") {
     return "Instalação";
+  }
+  if (item.tipo_servico === "levantamento_tecnico") {
+    return "Levantamento técnico";
   }
 
   return "Preventiva " + formatChecklistTipo(item.checklist_tipo).toLowerCase();

@@ -258,6 +258,14 @@ osCategoryFilter?.addEventListener("change", () => {
   renderOsAgendaItems(filterOsAgendaItems(latestAgendaItems));
 });
 
+osServiceFilter?.addEventListener("change", () => {
+  if (activeOsTab === "solicitacoes") {
+    return;
+  }
+
+  renderOsAgendaItems(filterOsAgendaItems(latestAgendaItems));
+});
+
 applyEquipmentCategoryPreset();
 
 newOsShortcutButton?.addEventListener("click", () => {

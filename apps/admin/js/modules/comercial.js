@@ -14,13 +14,6 @@ comercialNav.type = "button";
 comercialNav.dataset.view = "orcamentos";
 comercialNav.textContent = "Orçamentos";
 comercialOperationGroup?.insertBefore(comercialNav, comercialOperationGroup.querySelector('[data-view="preChamados"]'));
-const levantamentosNav = document.createElement("button");
-levantamentosNav.className = "nav-link";
-levantamentosNav.type = "button";
-levantamentosNav.dataset.view = "levantamentos";
-levantamentosNav.textContent = "Levantamentos";
-comercialOperationGroup?.insertBefore(levantamentosNav, comercialOperationGroup.querySelector('[data-view="preChamados"]'));
-
 const catalogNav = document.createElement("button");
 catalogNav.className = "nav-link";
 catalogNav.type = "button";
@@ -44,12 +37,6 @@ catalogView.className = "worklist hidden comercial-workspace";
 catalogView.id = "catalogView";
 catalogView.innerHTML = \`<div class="comercial-header"><div><span class="kicker">Cadastros</span><h2>Catálogo</h2><p>Serviços, materiais, peças e equipamentos usados nos orçamentos.</p></div><button class="refresh-button compact-button" id="catalogRefreshButton" type="button">Atualizar</button></div><div class="comercial-grid"><section class="comercial-panel"><div class="comercial-panel-title"><div><span>NOVO ITEM</span><h3>Catálogo comercial</h3></div><p>Cadastre o valor de venda que será sugerido no orçamento.</p></div><form id="comercialCatalogForm" class="comercial-form"><label>Tipo<select name="tipo"><option value="servico">Serviço</option><option value="material">Material</option><option value="peca">Peça</option><option value="equipamento">Equipamento</option></select></label><label>Grupo<input name="grupo" placeholder="Ex.: Climatização" required></label><label>Subgrupo<input name="subgrupo" placeholder="Ex.: Instalação"></label><label>Nome<input name="nome" placeholder="Ex.: Instalação split 12.000 BTU" required></label><label>Código<input name="codigo" placeholder="Opcional"></label><label>Unidade<input name="unidade" value="un" required></label><label>Custo<input name="custo" type="number" min="0" step="0.01" value="0" required></label><label>Preço de venda<input name="valor" type="number" min="0" step="0.01" required></label><label class="comercial-field-wide">Descrição<textarea name="descricao" rows="2" placeholder="Opcional"></textarea></label><button type="submit">Salvar item</button></form></section><section class="comercial-panel comercial-catalog-list"><div class="comercial-panel-title"><div><span>ITENS ATIVOS</span><h3>Catálogo</h3></div><strong id="comercialCatalogCount">0</strong></div><div id="comercialCatalogItems"></div></section></div>\`;
 document.querySelector("#dashboard")?.append(catalogView);
-const levantamentosView = document.createElement("section");
-levantamentosView.className = "worklist hidden comercial-workspace";
-levantamentosView.id = "levantamentosView";
-levantamentosView.innerHTML = '<div class="comercial-header"><div><span class="kicker">Operação técnica</span><h2>Levantamentos</h2><p>Visitas de diagnóstico agendadas pelo atendimento, sem orçamento ou O.S. de execução.</p></div><button class="refresh-button compact-button" id="levantamentosRefreshButton" type="button">Atualizar</button></div><section class="comercial-panel comercial-quotes"><div class="comercial-panel-title"><div><span>AGENDA TÉCNICA</span><h3>Levantamentos recentes</h3></div><strong id="levantamentosCount">0</strong></div><div id="levantamentosItems"></div></section>';
-document.querySelector("#dashboard")?.append(levantamentosView);
-
 let comercialCatalog = [];
 let comercialQuotes = [];
 let comercialClients = [];
@@ -57,10 +44,6 @@ let selectedBudgetClient = null;
 let selectedCommercialQuote = null;
 let budgetDraftItems = [];
 let comercialFilter = "todos";
-let comercialLevantamentos = [];
-function renderComercialLevantamentos() { const target = document.querySelector("#levantamentosItems"); const count = document.querySelector("#levantamentosCount"); if (!target || !count) return; count.textContent = comercialLevantamentos.length; target.innerHTML = comercialLevantamentos.length ? comercialLevantamentos.map((item) => { const agendadaPara = item.agendada_para || item.agendadaPara; return '<article class="quote-item" data-levantamento-id="' + item.id + '"><div><span class="quote-status quote-status-' + comercialEscape(item.status || "pendente_agendamento") + '">' + comercialEscape(String(item.status || "pendente_agendamento").replaceAll("_", " ")) + '</span><strong>' + comercialEscape(item.cliente?.nome || item.clienteNome || "Cliente não informado") + '</strong><small>' + comercialEscape(item.problema || "Sem problema informado") + ' · ' + comercialEscape(item.equipe?.nome || item.tecnico?.nome || "Responsável não definido") + '</small></div><b>' + comercialEscape(agendadaPara ? comercialDate(agendadaPara) : "Pendente") + '</b><div class="catalog-actions"><button type="button" data-levantamento-action="apagar">Apagar</button></div></article>'; }).join("") : '<p class="comercial-empty">Nenhum levantamento encontrado.</p>'; }
-async function loadComercialLevantamentos() { const response = await fetch(apiBaseUrl + "/admin/levantamentos", { headers: authHeaders() }); if (!response.ok) { comercialLevantamentos = []; renderComercialLevantamentos(); return; } comercialLevantamentos = (await response.json()).items || []; renderComercialLevantamentos(); }
-async function deleteLevantamento(id) { const item = comercialLevantamentos.find((entry) => entry.id === id); if (!item || !window.confirm("Apagar este levantamento? O histórico será mantido.")) return; const response = await fetch(apiBaseUrl + "/admin/levantamentos/" + id + "/cancelar", { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: "{}" }); if (!response.ok) { const result = await response.json().catch(() => ({})); window.alert(result.message || "Não foi possível apagar o levantamento."); return; } await loadComercialLevantamentos(); }
 function comercialMoney(value) { return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value || 0)); }
 function comercialEscape(value) { const node = document.createElement("div"); node.textContent = String(value ?? ""); return node.innerHTML; }
 function comercialDate(value) { return value ? new Date(value).toLocaleDateString("pt-BR") : "Sem validade"; }
@@ -97,11 +80,4 @@ document.querySelector("#orcamentosSearchInput").addEventListener("input", rende
 document.querySelector("#comercialQuoteItems").addEventListener("click", (event) => { const item = event.target.closest(".quote-item"); if (!item) return; const items = comercialQuotesFiltrados(); const index = Array.from(item.parentElement.children).indexOf(item); const quote = items[index]; if (quote) void loadCommercialQuote(quote.id); });
 document.querySelector("#orcamentosFilters").addEventListener("click", (event) => { const button = event.target.closest("[data-orcamento-filter]"); if (!(button instanceof HTMLButtonElement)) return; comercialFilter = button.dataset.orcamentoFilter || "todos"; document.querySelectorAll("[data-orcamento-filter]").forEach((item) => item.classList.toggle("active", item === button)); renderComercialQuotes(); });
 document.querySelector("#comercialCatalogForm").addEventListener("submit", async (event) => { event.preventDefault(); const form = event.target; const data = new FormData(form); const response = await fetch(\`\${apiBaseUrl}/admin/comercial/catalogo\`, { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(Object.fromEntries(data)) }); if (!response.ok) { const error = await response.json().catch(() => null); window.alert(error?.message || "Não foi possível salvar o item."); return; } form.reset(); form.elements.unidade.value = "un"; form.elements.custo.value = "0"; await loadCommercial(); });
-const hideCommercialViewsBase = hideCommercialViews;
-hideCommercialViews = function () { hideCommercialViewsBase(); levantamentosView.classList.add("hidden"); };
-const showCommercialViewBase = showCommercialView;
-showCommercialView = function (view, nav, title, kicker) { showCommercialViewBase(view, nav, title, kicker); if (view === levantamentosView) void loadComercialLevantamentos(); };
-levantamentosNav.addEventListener("click", (event) => { event.stopImmediatePropagation(); showCommercialView(levantamentosView, levantamentosNav, "Levantamentos", "Operação técnica"); });
-document.querySelector("#levantamentosRefreshButton").addEventListener("click", () => void loadComercialLevantamentos());
-document.querySelector("#levantamentosItems").addEventListener("click", (event) => { const button = event.target.closest("[data-levantamento-action]"); if (!button) return; const item = button.closest("[data-levantamento-id]"); if (!item) return; if (button.dataset.levantamentoAction === "apagar") void deleteLevantamento(item.dataset.levantamentoId); });
 `;

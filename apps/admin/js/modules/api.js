@@ -44,6 +44,7 @@ const requestList = document.querySelector("#requestList");
 const osTabs = document.querySelector("#osTabs");
 const osSearchInput = document.querySelector("#osSearchInput");
 const osCategoryFilter = document.querySelector("#osCategoryFilter");
+const osServiceFilter = document.querySelector("#osServiceFilter");
 const newOsShortcutButton = document.querySelector("#newOsShortcutButton");
 const osDetailPanel = document.querySelector("#osDetailPanel");
 const osDetailTitle = document.querySelector("#osDetailTitle");
