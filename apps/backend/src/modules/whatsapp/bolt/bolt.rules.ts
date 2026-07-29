@@ -190,7 +190,7 @@ export class BoltRules {
   private humano(dados: BoltData): BoltResult { return { texto: "Vou transferir você para nossa equipe agora.", assumir: true, dados: { ...dados, status: "HUMAN_QUEUE", etapa_atual: null, tentativas_fallback: 0 } }; }
   private menu(dados: BoltData): BoltResult { return this.resposta({ ...dados, status: "BOT_QUALIFYING", etapa_atual: "aguardando_servico" }, `${WELCOME}\n\n${ASK_SERVICE}`); }
   private resposta(dados: BoltData, texto: string): BoltResult { return { texto, assumir: false, dados }; }
-  private ehRecusa(texto: string) { return /\b(nao quero|nao tenho|sem email|sem e-mail|prefiro whatsapp|pelo whatsapp|nao vou informar|prefiro nao)\b/.test(texto); }
+  private ehRecusa(texto: string) { return /\b(nao quero|nao tenho|sem email|sem e-mail|prefiro whatsapp|pelo whatsapp|nao vou informar|prefiro nao|nao precisa|seguir|ok|whatsapp|pode ser)\b/.test(texto); }
   private ehProblema(texto: string) { return /\b(parou|problema|defeito|nao gela|nao liga|quebrou|vazando|ruido)\b/.test(texto); }
   private extrairEquipamento(texto: string) { return /\b(split|cassete|piso teto|janela|portatil|evaporadora|condensadora)\b/.exec(texto)?.[1] || null; }
   private normalizar(texto: string) { return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim(); }
