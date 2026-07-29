@@ -9,6 +9,7 @@ function memoriaInicial(): BoltMemory {
   return {
     equipamento: null,
     btus: null,
+    btus_status: "nao_informado",
     possui_aparelho: "nao_informado",
     infraestrutura: null,
     fotos: "nao_informado",
@@ -85,7 +86,10 @@ export class BoltRules {
     if (atualizado.memoria.nome_status === "nao_informado" && !atualizado.nome && !this.identificarServico(texto) && !this.ehRecusa(texto)) {
       return this.resposta({ ...atualizado, nome: original, memoria: { ...atualizado.memoria, nome_status: "informado" }, etapa_atual: "aguardando_servico" }, `Prazer, ${original}. ${ASK_SERVICE}`);
     }
-    if (!atualizado.servico) return this.resposta({ ...atualizado, status: "BOT_QUALIFYING", etapa_atual: "aguardando_servico" }, ASK_SERVICE);
+    if (!atualizado.servico) {
+      const tentouExplicar = atualizado.etapa_atual === "aguardando_servico" && atualizado.detalhes && atualizado.detalhes !== atualizado.nome;
+      return this.resposta({ ...atualizado, status: "BOT_QUALIFYING", etapa_atual: "aguardando_servico" }, tentouExplicar ? "Entendi. Você quer instalar, desinstalar, trocar o aparelho de lugar ou fazer algum tipo de manutenção?" : ASK_SERVICE);
+    }
 
     const pergunta = this.proximaPergunta(atualizado);
     if (pergunta) return this.resposta({ ...atualizado, status: "BOT_QUALIFYING", etapa_atual: pergunta.etapa }, pergunta.texto);
@@ -100,13 +104,15 @@ export class BoltRules {
     const recusouEmail = dados.etapa_atual === "aguardando_email" && this.ehRecusa(texto);
     const recusouCep = dados.etapa_atual === "aguardando_cep" && this.ehRecusa(texto);
     const recusouNome = dados.etapa_atual === "aguardando_nome" && this.ehRecusa(texto);
-    const btus = texto.match(/\b(\d{4,5})\s*(?:btu|btus)\b/)?.[1] || dados.memoria.btus;
+    const numeroBtus = texto.match(/\b(\d{4,5})\s*(?:btu|btus)?\b/)?.[1];
+    const btus = numeroBtus ? (numeroBtus.length <= 2 ? `${Number(numeroBtus) * 1000}` : numeroBtus) : dados.memoria.btus;
+    const recusouBtus = dados.etapa_atual === "aguardando_btus" && /^(nao|nao sei|nao sei informar|nao lembro)$/.test(texto);
     const possui: BoltMemory["possui_aparelho"] = /\b(ja\s+tenho|ja\s+possuo|tenho\s+o\s+aparelho)\b/.test(texto) ? "informado" : dados.memoria.possui_aparelho;
     const naoPossui: BoltMemory["possui_aparelho"] = /\b(ainda\s+nao|nao\s+tenho|vou\s+comprar)\b/.test(texto) ? "informado" : possui;
     const email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(original) ? original.toLowerCase() : dados.email;
     const emailInformado = Boolean(email && email !== dados.email);
     const nome = recusouNome ? (nomeContato || null) : dados.etapa_atual === "aguardando_nome" ? original : dados.nome || nomeContato || null;
-    const detalhes = dados.etapa_atual === "aguardando_problema" ? original : dados.detalhes || (this.ehSaudacao(texto) ? null : original) || null;
+    const detalhes = ["aguardando_problema", "aguardando_servico"].includes(dados.etapa_atual || "") ? original : dados.detalhes || (this.ehSaudacao(texto) ? null : original) || null;
     const equipamento = dados.memoria.equipamento || (dados.etapa_atual === "aguardando_equipamento" ? original : this.extrairEquipamento(texto));
     const infraestrutura = dados.memoria.infraestrutura || (dados.etapa_atual === "aguardando_infraestrutura" ? original : null);
     return {
@@ -119,6 +125,7 @@ export class BoltRules {
       memoria: {
         ...dados.memoria,
         btus,
+        btus_status: recusouBtus ? "recusado" : btus !== dados.memoria.btus ? "informado" : dados.memoria.btus_status,
         possui_aparelho: naoPossui,
         nome_status: nome ? "informado" : recusouNome ? "recusado" : dados.memoria.nome_status,
         cep_status: recusouCep ? "recusado" : dados.memoria.cep_status,
@@ -135,7 +142,7 @@ export class BoltRules {
     switch (dados.servico) {
       case "instalacao":
         if (dados.memoria.possui_aparelho === "nao_informado") return { etapa: "aguardando_aparelho", texto: "Você já tem o aparelho ou ainda está escolhendo?" };
-        if (!dados.memoria.btus) return { etapa: "aguardando_btus", texto: "Sabe quantos BTUs ele possui? Se preferir, pode mandar uma foto da etiqueta." };
+        if (!dados.memoria.btus && dados.memoria.btus_status !== "recusado") return { etapa: "aguardando_btus", texto: "Sabe quantos BTUs ele possui? Se preferir, pode mandar uma foto da etiqueta." };
         if (!dados.memoria.infraestrutura) return { etapa: "aguardando_infraestrutura", texto: "No local já existe tubulação para ar-condicionado ou será uma instalação nova?" };
         break;
       case "manutencao_corretiva":
@@ -160,6 +167,7 @@ export class BoltRules {
   }
 
   private identificarServico(texto: string): BoltServiceType | null {
+    if (/\b(trocar|troca|mudar|mudan[çc]a)\b.*\b(aparelho|maquina|máquina|lugar)\b/.test(texto)) return "desinstalacao";
     if (/\b(desinstal|retirar|remover)\w*\b/.test(texto)) return "desinstalacao";
     if (/\b(instal|instala)\w*\b/.test(texto)) return "instalacao";
     if (/\b(pmoc)\b/.test(texto)) return "pmoc";

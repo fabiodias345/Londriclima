@@ -27,6 +27,7 @@ export type BoltFieldState = {
 export type BoltMemory = {
   equipamento: string | null;
   btus: string | null;
+  btus_status: BoltFieldStatus;
   possui_aparelho: BoltFieldStatus;
   infraestrutura: string | null;
   fotos: BoltFieldStatus;
