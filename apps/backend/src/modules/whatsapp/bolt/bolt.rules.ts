@@ -4,6 +4,17 @@ const WELCOME = "Olá! Eu sou o Move, da AIRMOVEBR. Como posso te ajudar?";
 const ASK_NAME = "Como posso te chamar?";
 const ASK_SERVICE = "O que você precisa: instalação, manutenção, limpeza, aluguel ou PMOC?";
 const ASK_CEP = "Para calcular o atendimento na sua região, qual é o seu CEP?";
+const SERVICO_OPCOES = [
+  { id: "servico_instalacao", title: "Instalação" },
+  { id: "servico_manutencao", title: "Manutenção" },
+  { id: "servico_limpeza", title: "Limpeza" },
+  { id: "servico_aluguel", title: "Aluguel" },
+  { id: "servico_pmoc", title: "PMOC" }
+];
+const MANUTENCAO_OPCOES = [
+  { id: "manutencao_preventiva", title: "Preventiva" },
+  { id: "manutencao_corretiva", title: "Está com problema" }
+];
 
 function memoriaInicial(): BoltMemory {
   return {
@@ -84,15 +95,15 @@ export class BoltRules {
       return this.resposta({ ...atualizado, nome: null, status: "BOT_QUALIFYING", etapa_atual: "aguardando_nome", memoria: { ...atualizado.memoria, nome_status: "nao_informado" } }, `${WELCOME}\n\n${ASK_NAME}`);
     }
     if (atualizado.memoria.nome_status === "nao_informado" && !atualizado.nome && !this.identificarServico(texto) && !this.ehRecusa(texto)) {
-      return this.resposta({ ...atualizado, nome: original, memoria: { ...atualizado.memoria, nome_status: "informado" }, etapa_atual: "aguardando_servico" }, `Prazer, ${original}. ${ASK_SERVICE}`);
+      return this.resposta({ ...atualizado, nome: original, memoria: { ...atualizado.memoria, nome_status: "informado" }, etapa_atual: "aguardando_servico" }, `Prazer, ${original}. ${ASK_SERVICE}`, SERVICO_OPCOES);
     }
     if (!atualizado.servico) {
       const tentouExplicar = atualizado.etapa_atual === "aguardando_servico" && atualizado.detalhes && atualizado.detalhes !== atualizado.nome;
-      return this.resposta({ ...atualizado, status: "BOT_QUALIFYING", etapa_atual: "aguardando_servico" }, tentouExplicar ? "Entendi. Você quer instalar, desinstalar, trocar o aparelho de lugar ou fazer algum tipo de manutenção?" : ASK_SERVICE);
+      return this.resposta({ ...atualizado, status: "BOT_QUALIFYING", etapa_atual: "aguardando_servico" }, tentouExplicar ? "Entendi. Você quer instalar, desinstalar, trocar o aparelho de lugar ou fazer algum tipo de manutenção?" : ASK_SERVICE, SERVICO_OPCOES);
     }
 
     const pergunta = this.proximaPergunta(atualizado);
-    if (pergunta) return this.resposta({ ...atualizado, status: "BOT_QUALIFYING", etapa_atual: pergunta.etapa }, pergunta.texto);
+    if (pergunta) return this.resposta({ ...atualizado, status: "BOT_QUALIFYING", etapa_atual: pergunta.etapa }, pergunta.texto, pergunta.opcoes);
     if (atualizado.memoria.cep_status === "nao_informado") return this.resposta({ ...atualizado, status: "BOT_QUALIFYING", etapa_atual: "aguardando_cep" }, ASK_CEP);
     if (atualizado.memoria.email_status === "invalido") return this.resposta({ ...atualizado, status: "BOT_QUALIFYING", etapa_atual: "aguardando_email" }, "Esse e-mail parece inválido. Se preferir, podemos continuar pelo WhatsApp.");
     if (atualizado.memoria.email_status === "nao_informado") return this.resposta({ ...atualizado, status: "BOT_QUALIFYING", etapa_atual: "aguardando_email" }, "Se quiser receber o orçamento por e-mail, qual endereço devo usar? Se preferir, seguimos pelo WhatsApp.");
@@ -138,7 +149,7 @@ export class BoltRules {
     };
   }
 
-  private proximaPergunta(dados: BoltData): { etapa: string; texto: string } | null {
+  private proximaPergunta(dados: BoltData): { etapa: string; texto: string; opcoes?: BoltResult["opcoes"] } | null {
     switch (dados.servico) {
       case "instalacao":
         if (dados.memoria.possui_aparelho === "nao_informado") return { etapa: "aguardando_aparelho", texto: "Você já tem o aparelho ou ainda está escolhendo?" };
@@ -146,10 +157,10 @@ export class BoltRules {
         if (!dados.memoria.infraestrutura) return { etapa: "aguardando_infraestrutura", texto: "No local já existe tubulação para ar-condicionado ou será uma instalação nova?" };
         break;
       case "manutencao_corretiva":
-        if (!dados.detalhes || dados.detalhes === dados.nome) return { etapa: "aguardando_problema", texto: "O que está acontecendo com o equipamento?" };
+        if (dados.etapa_atual === "aguardando_tipo_manutencao" || !dados.detalhes || dados.detalhes === dados.nome) return { etapa: "aguardando_problema", texto: "O que está acontecendo com o equipamento?" };
         break;
       case "manutencao":
-        return { etapa: "aguardando_tipo_manutencao", texto: "É uma manutenção preventiva ou o aparelho está com algum problema?" };
+        return { etapa: "aguardando_tipo_manutencao", texto: "É uma manutenção preventiva ou o aparelho está com algum problema?", opcoes: MANUTENCAO_OPCOES };
       case "aluguel":
         if (!dados.memoria.equipamento) return { etapa: "aguardando_equipamento", texto: "Qual equipamento você precisa alugar e por quanto tempo?" };
         break;
@@ -167,6 +178,13 @@ export class BoltRules {
   }
 
   private identificarServico(texto: string): BoltServiceType | null {
+    if (texto === "servico_instalacao") return "instalacao";
+    if (texto === "servico_manutencao") return "manutencao";
+    if (texto === "servico_limpeza") return "limpeza_filtro";
+    if (texto === "servico_aluguel") return "aluguel";
+    if (texto === "servico_pmoc") return "pmoc";
+    if (texto === "manutencao_preventiva") return "manutencao_preventiva";
+    if (texto === "manutencao_corretiva" || texto === "problema") return "manutencao_corretiva";
     if (/\b(trocar|troca|mudar|mudan[çc]a)\b.*\b(aparelho|maquina|máquina|lugar)\b/.test(texto)) return "desinstalacao";
     if (/\b(desinstal|retirar|remover)\w*\b/.test(texto)) return "desinstalacao";
     if (/\b(instal|instala)\w*\b/.test(texto)) return "instalacao";
@@ -188,8 +206,8 @@ export class BoltRules {
   }
 
   private humano(dados: BoltData): BoltResult { return { texto: "Vou transferir você para nossa equipe agora.", assumir: true, dados: { ...dados, status: "HUMAN_QUEUE", etapa_atual: null, tentativas_fallback: 0 } }; }
-  private menu(dados: BoltData): BoltResult { return this.resposta({ ...dados, status: "BOT_QUALIFYING", etapa_atual: "aguardando_servico" }, `${WELCOME}\n\n${ASK_SERVICE}`); }
-  private resposta(dados: BoltData, texto: string): BoltResult { return { texto, assumir: false, dados }; }
+  private menu(dados: BoltData): BoltResult { return this.resposta({ ...dados, status: "BOT_QUALIFYING", etapa_atual: "aguardando_servico" }, `${WELCOME}\n\n${ASK_SERVICE}`, SERVICO_OPCOES); }
+  private resposta(dados: BoltData, texto: string, opcoes?: BoltResult["opcoes"]): BoltResult { return { texto, assumir: false, dados, opcoes }; }
   private ehRecusa(texto: string) { return /\b(nao quero|nao tenho|sem email|sem e-mail|prefiro whatsapp|pelo whatsapp|nao vou informar|prefiro nao|nao precisa|seguir|ok|whatsapp|pode ser)\b/.test(texto); }
   private ehProblema(texto: string) { return /\b(parou|problema|defeito|nao gela|nao liga|quebrou|vazando|ruido)\b/.test(texto); }
   private extrairEquipamento(texto: string) { return /\b(split|cassete|piso teto|janela|portatil|evaporadora|condensadora)\b/.exec(texto)?.[1] || null; }
