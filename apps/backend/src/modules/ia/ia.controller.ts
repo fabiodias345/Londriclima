@@ -10,6 +10,21 @@ import { IaService } from "./ia.service";
 export class IaController {
   constructor(private readonly iaService: IaService) {}
 
+  @Post("clientes/buscar")
+  buscarClientes(@Body() body: { termo?: string }, @CurrentUser() usuario: AuthenticatedUser) {
+    return this.iaService.buscarClientes(usuario.empresa_id, String(body.termo || ""));
+  }
+
+  @Post("catalogo/consultar")
+  consultarCatalogo(@Body() body: { termo?: string }, @CurrentUser() usuario: AuthenticatedUser) {
+    return this.iaService.consultarCatalogo(usuario.empresa_id, body.termo);
+  }
+
+  @Post("rascunho/validar")
+  validarRascunho(@Body() body: { itens?: Array<{ item_catalogo_id?: string; tipo?: string; descricao?: string; unidade?: string; quantidade?: number; valor_unitario?: number }>; desconto?: number; total_informado?: number }, @CurrentUser() usuario: AuthenticatedUser) {
+    return this.iaService.validarRascunho(usuario.empresa_id, body);
+  }
+
   @Post("conversas/:conversaId/analisar")
   analisar(
     @Param("conversaId", new ParseUUIDPipe()) conversaId: string,

@@ -1,5 +1,6 @@
-import { BadGatewayException, Injectable } from "@nestjs/common";
+import { BadGatewayException, BadRequestException, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { Prisma } from "@prisma/client";
 import { PrismaService } from "../../database/prisma.service";
 
 export type AiDraft = {
@@ -20,6 +21,48 @@ export type AiDraft = {
 @Injectable()
 export class IaService {
   constructor(private readonly prisma: PrismaService, private readonly config: ConfigService) {}
+
+  async buscarClientes(empresaId: string, termo: string) {
+    const busca = termo.trim();
+    if (busca.length < 2) return { items: [] };
+    const items = await this.prisma.cliente.findMany({
+      where: { empresaId, OR: [{ nome: { contains: busca, mode: "insensitive" } }, { documento: { contains: busca } }, { telefone: { contains: busca } }, { email: { contains: busca, mode: "insensitive" } }] },
+      select: { id: true, tipo: true, nome: true, documento: true, email: true, telefone: true, enderecos: { where: { principal: true }, take: 1 } },
+      orderBy: { nome: "asc" }, take: 10
+    });
+    return { items };
+  }
+
+  async consultarCatalogo(empresaId: string, termo?: string) {
+    const busca = termo?.trim();
+    const items = await this.prisma.catalogoItem.findMany({
+      where: { empresaId, ativo: true, ...(busca ? { OR: [{ nome: { contains: busca, mode: "insensitive" } }, { grupo: { contains: busca, mode: "insensitive" } }, { descricao: { contains: busca, mode: "insensitive" } }] } : {}) },
+      select: { id: true, tipo: true, grupo: true, nome: true, unidade: true, descricao: true, valor: true },
+      orderBy: { nome: "asc" }, take: 100
+    });
+    return { items: items.map((item) => ({ ...item, valor: Number(item.valor) })) };
+  }
+
+  async validarRascunho(empresaId: string, body: { itens?: Array<{ item_catalogo_id?: string; tipo?: string; descricao?: string; unidade?: string; quantidade?: number; valor_unitario?: number }>; desconto?: number; total_informado?: number }) {
+    const itens = body.itens || [];
+    if (!itens.length) throw new BadRequestException("Inclua ao menos um item no rascunho.");
+    const catalogoIds = itens.map((item) => item.item_catalogo_id).filter((id): id is string => Boolean(id));
+    const catalogo = await this.prisma.catalogoItem.findMany({ where: { empresaId, id: { in: catalogoIds }, ativo: true }, select: { id: true, valor: true } });
+    const catalogoMap = new Map(catalogo.map((item) => [item.id, Number(item.valor)]));
+    const normalizados = itens.map((item) => {
+      const quantidade = Number(item.quantidade || 0);
+      const valor = Number(item.valor_unitario || 0);
+      if (!item.descricao?.trim() || quantidade <= 0 || valor < 0) throw new BadRequestException("Item de rascunho inválido.");
+      if (item.item_catalogo_id && !catalogoMap.has(item.item_catalogo_id)) throw new BadRequestException("Item de catálogo inválido para esta empresa.");
+      return { ...item, quantidade, valor_unitario: valor, valor_catalogo: item.item_catalogo_id ? catalogoMap.get(item.item_catalogo_id) : null, total: new Prisma.Decimal(quantidade).mul(new Prisma.Decimal(valor)).toNumber() };
+    });
+    const subtotal = normalizados.reduce((total, item) => total + item.total, 0);
+    const desconto = Number(body.desconto || 0);
+    if (desconto < 0 || desconto > subtotal) throw new BadRequestException("Desconto inválido para o rascunho.");
+    const total = subtotal - desconto;
+    const informado = body.total_informado == null ? null : Number(body.total_informado);
+    return { valido: true, itens: normalizados, subtotal, desconto, total, total_informado: informado, diferenca_total: informado == null ? null : Number((informado - total).toFixed(2)) };
+  }
 
   async analisarConversa(conversaId: string, empresaId: string, contexto: string): Promise<AiDraft> {
     const conversa = await this.prisma.whatsAppConversa.findFirst({

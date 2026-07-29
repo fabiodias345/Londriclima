@@ -54,6 +54,11 @@ export class ComercialService {
       const conversa = await this.prisma.whatsAppConversa.findFirst({ where: { id: dto.conversa_id, empresaId: usuario.empresa_id, clienteId: cliente.id }, select: { id: true } });
       if (!conversa) throw new BadRequestException("A conversa não pertence a este cliente.");
     }
+    const catalogoIds = dto.itens.map((item) => item.item_catalogo_id).filter((id): id is string => Boolean(id));
+    if (catalogoIds.length) {
+      const catalogoValidado = await this.prisma.catalogoItem.count({ where: { empresaId: usuario.empresa_id, ativo: true, id: { in: catalogoIds } } });
+      if (catalogoValidado !== new Set(catalogoIds).size) throw new BadRequestException("Há item de catálogo inválido para esta empresa.");
+    }
     const itens = dto.itens.map((item) => {
       const quantidade = new Prisma.Decimal(item.quantidade);
       const valorUnitario = new Prisma.Decimal(item.valor_unitario);
