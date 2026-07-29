@@ -33,6 +33,8 @@ document.querySelector("#dashboard")?.append(whatsappView);
 let whatsappConversations = [];
 let selectedWhatsappId = "";
 let selectedWhatsappConversation = null;
+let whatsappAiDraft = null;
+let whatsappAiLoading = false;
 let whatsappRefreshTimer = 0;
 let whatsappEventAbort = null;
 let whatsappLoadingConversations = false;
@@ -52,6 +54,8 @@ const whatsappTopbar = document.querySelector(".topbar");
 function clearWhatsappSelection(message = "Selecione uma conversa") {
   selectedWhatsappId = "";
   selectedWhatsappConversation = null;
+  whatsappAiDraft = null;
+  whatsappAiLoading = false;
   const detail = document.querySelector("#whatsappConversationDetail");
   if (detail) detail.innerHTML = '<div class="whatsapp-empty-state"><span class="whatsapp-empty-icon" aria-hidden="true">&bull;</span><strong>' + esc(message) + '</strong><p>Selecione uma conversa para ver as mensagens, o cadastro, o orcamento e o agendamento.</p></div>';
 }
@@ -185,6 +189,26 @@ function scheduleForm(conversa) { const os = conversa.ordemServico; const equipe
 
 const schedulePanelBase = schedulePanel;
 schedulePanel = function (conversa) { if (whatsappScheduleDraft.context !== "levantamento") return schedulePanelBase(conversa); const levantamento = conversa.levantamento; const date = levantamentoDateValue(levantamento); const time = levantamentoTimeValue(levantamento); const equipeId = whatsappScheduleDraft.equipeId || levantamento?.equipeId || levantamento?.equipe_id || ""; const tecnicoId = whatsappScheduleDraft.tecnicoId || levantamento?.tecnicoId || levantamento?.tecnico_id || ""; const ready = Boolean(equipeId || tecnicoId); const label = new Date(date + "T12:00").toLocaleDateString("pt-BR", { month: "long", year: "numeric" }); const header = '<aside class="whatsapp-schedule-panel" aria-label="Disponibilidade da agenda"><header><div><span>Levantamento técnico</span><strong>' + (whatsappScheduleMode === "calendar" ? "Escolha uma data" : "Escolha um horário") + '</strong></div><button type="button" class="secondary-button" data-whatsapp-action="fechar-agenda">×</button></header>'; if (!ready) return header + '<p class="whatsapp-schedule-warning">Selecione uma equipe ou técnico antes de consultar a disponibilidade.</p></aside>'; if (whatsappScheduleMode === "calendar") return header + '<div class="whatsapp-schedule-month"><button type="button" class="secondary-button" data-whatsapp-action="mes-anterior">‹</button><strong>' + label.charAt(0).toUpperCase() + label.slice(1) + '</strong><button type="button" class="secondary-button" data-whatsapp-action="mes-proximo">›</button></div><div class="whatsapp-schedule-weekdays"><span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span></div><div class="whatsapp-schedule-calendar">' + scheduleCalendar(date) + '</div></aside>'; const selectedDate = new Date(date + "T12:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" }); return header + '<div class="whatsapp-schedule-selected-date"><strong>' + selectedDate + '</strong><button type="button" class="secondary-button" data-whatsapp-action="alterar-data">Alterar data</button></div><div class="whatsapp-schedule-slots">' + scheduleSlots(date, equipeId, tecnicoId, levantamento?.id, time) + '</div><div class="whatsapp-schedule-actions"><p>Confirme o horário livre para criar ou atualizar o levantamento. A mensagem editável ao cliente será preenchida depois da confirmação.</p><button type="button" data-whatsapp-action="confirmar-levantamento">Confirmar levantamento</button></div></aside>'; };
+function aiWorkbench() {
+  const draft = whatsappAiDraft;
+  const items = draft?.orcamento?.itens || [];
+  const result = draft ? '<div class="whatsapp-ai-result"><strong>Rascunho identificado</strong><p>' + esc([draft.cliente?.nome, draft.cliente?.documento, draft.atendimento?.servico, draft.atendimento?.equipamento].filter(Boolean).join(" · ")) + '</p><ul>' + items.map((item) => '<li>' + esc(item.descricao) + ' — ' + money(item.valor_unitario) + '</li>').join("") + '</ul><small>' + (draft.perguntas_pendentes?.length ? 'Pendências: ' + esc(draft.perguntas_pendentes.join("; ")) : 'Nenhuma pergunta pendente.') + '</small><button type="button" class="secondary-button" data-whatsapp-action="criar-rascunho-ia">Criar rascunho do orçamento</button></div>' : '';
+  return '<section class="whatsapp-ai-panel"><div class="whatsapp-workbench-title"><span>Copiloto IA</span><strong>Descreva o contexto para preencher um rascunho sem alterar dados automaticamente.</strong></div><textarea id="whatsappAiContext" rows="3" placeholder="Ex.: Cliente quer instalar ar-condicionado de 12.000 BTUs. Mão de obra R$ 350 e materiais R$ 150."></textarea><button type="button" data-whatsapp-action="analisar-ia">' + (whatsappAiLoading ? 'Analisando...' : 'Analisar conversa e contexto') + '</button>' + result + '</section>';
+}
+function preencherCamposComAi() {
+  const draft = whatsappAiDraft;
+  if (!draft) return;
+  const form = document.querySelector('[data-whatsapp-form="cliente"], [data-whatsapp-form="cliente-existente"]');
+  const endereco = draft.cliente?.endereco || {};
+  const preencher = (nome, valor) => { const campo = form?.elements.namedItem(nome); if (campo && valor && !campo.value) campo.value = valor; };
+  preencher("nome", draft.cliente?.nome); preencher("documento", draft.cliente?.documento); preencher("email", draft.cliente?.email); preencher("telefone", draft.cliente?.telefone); preencher("logradouro", endereco.logradouro); preencher("numero", endereco.numero); preencher("bairro", endereco.bairro); preencher("cidade", endereco.cidade); preencher("uf", endereco.uf); preencher("cep", endereco.cep);
+  const quote = document.querySelector('[data-whatsapp-form="orcamento"]');
+  if (!quote) return;
+  const titulo = quote.elements.namedItem("titulo");
+  if (titulo && draft.orcamento?.titulo) titulo.value = draft.orcamento.titulo;
+  const linhas = quote.querySelectorAll("[data-quote-line]");
+  (draft.orcamento?.itens || []).forEach((item, index) => { const linha = linhas[index]; if (!linha) return; const catalogo = whatsappCatalogItems.find((entry) => entry.nome.toLowerCase() === item.descricao.toLowerCase()); const select = linha.querySelector('[name="catalogo_item"]'); const quantidade = linha.querySelector('[name="quantidade"]'); if (catalogo && select) { select.value = catalogo.id; select.dispatchEvent(new Event("change", { bubbles: true })); } if (quantidade) quantidade.value = item.quantidade; });
+}
 async function loadWhatsappConversation(id) {
   if (id !== selectedWhatsappId) { whatsappSelectedScheduleDate = ""; whatsappScheduleDraft = { equipeId: "", tecnicoId: "", data: "", horario: "", proposalText: "", proposalSent: false, context: "os" }; whatsappServiceMode = ""; whatsappServiceChoiceRequired = false; whatsappClientResolution = ""; whatsappScheduleOpen = false; whatsappScheduleVisibleMonth = localDate().slice(0, 7); whatsappScheduleMode = "calendar"; }
   const response = await fetch(\`\${apiBaseUrl}/admin/whatsapp/conversas/\${id}\`, { headers: authHeaders() }); if (!response.ok) return;
@@ -193,6 +217,8 @@ async function loadWhatsappConversation(id) {
   const form = operationalForm(conversa);
   const schedulePanelHtml = whatsappScheduleOpen && conversa.cliente ? schedulePanel(conversa) : "";
   document.querySelector("#whatsappConversationDetail").innerHTML = \`<header class="whatsapp-detail-header"><div class="whatsapp-detail-person"><span class="whatsapp-avatar whatsapp-avatar-large">\${esc((conversa.nomeContato || conversa.telefone || "?").slice(0, 1).toUpperCase())}</span><div><h3>\${esc(conversa.nomeContato || conversa.telefone)}</h3><p>\${esc(conversa.telefone || "Sem telefone")} · \${conversa.status === "encerrada" ? "Conversa encerrada" : conversa.atribuidoUsuario ? \`Atendimento com \${esc(conversa.atribuidoUsuario.nome)}\` : "Aguardando atendente"}</p></div></div><div class="whatsapp-detail-actions">\${action}<button class="danger-button" data-whatsapp-action="apagar">Apagar conversa</button></div></header><div class="whatsapp-operational-strip">\${form}</div><div class="whatsapp-detail-body"><div class="whatsapp-thread-wrap"><div class="whatsapp-thread-heading"><strong>Histórico da conversa</strong><span>\${conversa.mensagens.length} mensagens</span></div><div class="whatsapp-thread">\${conversa.mensagens.map((item) => \`<div class="whatsapp-message whatsapp-message-\${item.direcao}"><small>\${item.direcao === "entrada" ? "Cliente" : "AIRMOVEBR"} · \${esc(formatDate(item.criadoEm))}</small><p>\${esc(item.texto)}</p></div>\`).join("")}</div><form class="whatsapp-reply-form" id="whatsappReplyForm"><textarea name="texto" rows="2" placeholder="Escreva uma resposta..." required></textarea><div><span>A primeira resposta assume a conversa automaticamente.</span><button type="submit">Enviar resposta</button></div></form></div>\${schedulePanelHtml}</div>\`;
+  document.querySelector(".whatsapp-operational-strip")?.insertAdjacentHTML("afterbegin", aiWorkbench());
+  preencherCamposComAi();
   renderWhatsappConversations(); requestAnimationFrame(() => { const thread = document.querySelector(".whatsapp-thread"); if (thread) thread.scrollTo({ top: thread.scrollHeight, behavior: "smooth" }); });
 }
 
@@ -221,6 +247,28 @@ document.querySelector("#whatsappRefreshButton").addEventListener("click", () =>
 document.querySelector("#whatsappSearchInput").addEventListener("input", renderWhatsappConversations);
 document.querySelector(".whatsapp-filters").addEventListener("click", (event) => { const target = event.target.closest("[data-whatsapp-filter]"); if (target) setWhatsappFilter(target.dataset.whatsappFilter); });
 document.querySelector("#whatsappConversationList").addEventListener("click", (event) => { const target = event.target.closest("[data-whatsapp-id]"); if (target) void loadWhatsappConversation(target.dataset.whatsappId); });
+async function analisarWhatsappComIa() {
+  if (!selectedWhatsappId || whatsappAiLoading) return;
+  const contexto = String(document.querySelector("#whatsappAiContext")?.value || "").trim();
+  whatsappAiLoading = true;
+  await loadWhatsappConversation(selectedWhatsappId);
+  const response = await fetch(apiBaseUrl + "/admin/ia/conversas/" + selectedWhatsappId + "/analisar", { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ contexto }) });
+  whatsappAiLoading = false;
+  if (!response.ok) { const erro = await response.json().catch(() => null); window.alert(erro?.message || "Não foi possível analisar a conversa."); await loadWhatsappConversation(selectedWhatsappId); return; }
+  whatsappAiDraft = await response.json();
+  await loadWhatsappConversation(selectedWhatsappId);
+}
+async function criarRascunhoIa() {
+  const conversa = selectedWhatsappConversation;
+  const draft = whatsappAiDraft;
+  if (!conversa?.cliente?.id || !draft?.orcamento?.itens?.length) { window.alert("Vincule o cliente e informe pelo menos um item com valor."); return; }
+  const itens = draft.orcamento.itens.map((item) => { const catalogo = whatsappCatalogItems.find((entry) => entry.nome.toLowerCase() === item.descricao.toLowerCase()); return { item_catalogo_id: catalogo?.id, tipo: item.tipo, descricao: item.descricao, unidade: item.unidade || "un", quantidade: Number(item.quantidade || 1), valor_unitario: Number(item.valor_unitario || 0) }; });
+  const response = await fetch(apiBaseUrl + "/admin/comercial/orcamentos", { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ cliente_id: conversa.cliente.id, conversa_id: conversa.id, titulo: draft.orcamento.titulo || draft.atendimento?.servico || "Orçamento WhatsApp", detalhes: draft.atendimento?.detalhes, desconto: Number(draft.orcamento.desconto || 0), itens }) });
+  if (!response.ok) { const erro = await response.json().catch(() => null); window.alert(erro?.message || "Não foi possível criar o rascunho."); return; }
+  whatsappAiDraft = null;
+  await loadWhatsappConversation(selectedWhatsappId);
+}
+
 document.querySelector("#whatsappConversationDetail").addEventListener("click", async (event) => {
   const action = event.target.dataset.whatsappAction;
   const endpoints = { "enviar-orcamento-whatsapp": "enviar-whatsapp", "enviar-orcamento-email": "enviar-email", "enviar-orcamento-assinatura": "assinafy" };
@@ -275,6 +323,8 @@ document.querySelector("#whatsappConversationDetail").addEventListener("click", 
   const target = event.target.closest("[data-whatsapp-action], [data-whatsapp-schedule-date], [data-whatsapp-schedule-time]");
   if (!(target instanceof HTMLButtonElement)) return;
   const action = target.dataset.whatsappAction;
+  if (action === "analisar-ia") { await analisarWhatsappComIa(); return; }
+  if (action === "criar-rascunho-ia") { await criarRascunhoIa(); return; }
   if (action === "escolher-levantamento" || action === "escolher-orcamento") { whatsappServiceMode = action === "escolher-levantamento" ? "levantamento" : "orcamento"; whatsappServiceChoiceRequired = false; await loadWhatsappConversation(selectedWhatsappId); return; }
   if (action === "abrir-agenda") { whatsappScheduleDraft.context = "os"; whatsappScheduleOpen = true; whatsappScheduleMode = "calendar"; whatsappScheduleOptions.agenda = []; await loadWhatsappScheduleOptions(); await loadWhatsappConversation(selectedWhatsappId); return; }
   if (action === "abrir-agenda-levantamento") { whatsappScheduleDraft.context = "levantamento"; whatsappScheduleOpen = true; whatsappScheduleMode = "calendar"; whatsappScheduleOptions.agenda = []; await loadWhatsappScheduleOptions(); await loadWhatsappConversation(selectedWhatsappId); return; }

@@ -4,6 +4,12 @@ Atualizado em: 26/07/2026
 
 ## Contexto
 
+## Regra de uso da chave OpenAI
+
+- A chave `OPENAI_API_KEY` é exclusiva da IA do produto, no Admin e no APK.
+- Não usar essa chave para Codex, VSCode, respostas nesta conversa ou tarefas de codificação.
+- Não versionar a chave nem compartilhá-la fora do ambiente do backend.
+
 - Marca atual: AIRMOVEBR.
 - Cliente piloto: AIRMOVEBR, Londrina/PR.
 - Dominio: `airmovebr.com.br`.

@@ -6,6 +6,12 @@ Cliente piloto: AIRMOVEBR - Londrina/PR
 
 ## Visao
 
+## Regra de uso da chave OpenAI
+
+- A chave `OPENAI_API_KEY` será usada exclusivamente pelos recursos de IA do Admin e do APK.
+- Créditos dessa chave não devem ser usados pelo Codex, VSCode, por respostas do assistente ou por tarefas de desenvolvimento.
+- A chave permanece somente no ambiente do backend e nunca no frontend, APK ou Git.
+
 Plataforma AIRMOVEBR para manutencao, instalacao, frota, relatorios e PMOC de ar-condicionado.
 
 Fluxo principal:

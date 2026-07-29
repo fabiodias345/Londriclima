@@ -1,289 +1,89 @@
 # Resumo AIRMOVEBR
 
-Atualizado em: 26/07/2026
+Atualizado em: 29/07/2026
 
-Somente estado atual e proximos passos. Historico concluido fica no Git e nos testes.
+## Regras atuais
 
-## Regras
-
-- Executar uma fase por vez e validar antes de continuar.
-- App tecnico, painel admin web e eventual app admin mobile devem ficar separados.
-- Painel admin web aceita somente usuario com `role=admin`.
-- Tecnico e auxiliar nao acessam o painel admin web.
-- No ciclo atual de Orcamentos, alterar somente `apps/admin` e `apps/backend`.
-- Nao alterar `apps/admin_mobile`, `apps/mobile` ou gerar APK sem ordem explicita do usuario.
-- APK tecnico/admin e validacao por `flutter run` sao trabalho futuro, somente quando solicitados explicitamente.
-- Segredos e credenciais nunca entram no Git.
+- Evoluir o sistema existente; não recomeçar do zero.
+- A IA será implantada gradualmente no software atual.
+- A chave `OPENAI_API_KEY` é exclusiva da IA do produto, no Admin e no APK.
+- Não usar os créditos da chave para Codex, VSCode, respostas nesta conversa ou codificação.
+- A chave permanece somente no backend, fora do frontend, APK e Git.
+- O modelo inicial escolhido é `gpt-5.6-luna`.
+- Toda ação comercial gerada pela IA deve passar pela confirmação do atendente.
 
 ## Estado atual
 
-- Rebrand para AIRMOVEBR aplicado em todos os componentes ativos.
-- Git `dev`, `main`, GitHub e repo da VM alinhados no ultimo deploy.
-- Backend de producao saudavel em `https://api.airmovebr.com.br/api/v1/health`.
-- Banco de producao verificado no deploy: Prisma sem migrations pendentes.
-- Admin web esta ok por enquanto em `https://admin.airmovebr.com.br/`.
-- Site publico foi redesenhado no padrao operacional AIRMOVEBR, com servicos, PMOC, projetos, segmentos e formulario de pre-chamado com CEP.
-- APK tecnico esta ok por enquanto, mas ainda precisa validacao final em campo real.
-- Novo app separado criado em `apps/admin_mobile`, mas esta fora do escopo atual.
-- Fases 1 a 4 do app admin mobile foram implementadas anteriormente e permanecem sem alteracao neste ciclo:
-  - login pela mesma API do sistema;
-  - bloqueio local para `role != admin`;
-  - dashboard com botoes coloridos;
-  - botoes para O.S., Agenda, Clientes, PMOC, Frota, Relatorios, Tecnicos e Pendencias;
-  - telas-resumo preparadas para as proximas fases.
-- Fase 2 do app admin implementada:
-  - cliente HTTP autenticado para endpoints admin;
-  - botoes do dashboard abrem dados reais;
-  - O.S., Agenda, Clientes, PMOC, Frota, Relatorios, Tecnicos e Pendencias em modo somente leitura;
-  - estados de carregamento, vazio, erro e atualizacao manual.
-- Fase 3 do app admin implementada:
-  - criar nova O.S. com cliente, titulo, detalhes, tecnico e agendamento;
-  - reprogramar O.S. operacional;
-  - aprovar ou rejeitar pre-chamado com confirmacao;
-  - reenviar assinatura PMOC com confirmacao;
-  - atualizacao automatica da lista depois da acao.
-- Fase 4 do app admin implementada:
-  - busca e filtros locais nos modulos;
-  - layout compacto para celular pequeno;
-  - abertura autenticada de PDF PMOC e relatorio avulso;
-  - detalhes da frota somente para consulta.
-- Codigo das fases mobile 1 a 4 esta no GitHub e na VM; APK admin ainda nao foi gerado.
-- WhatsApp Cloud API oficial da Airmovebr configurado localmente e em producao com o numero `+55 43 3067-3793`.
-- Envio manual por texto livre validado quando existe janela de atendimento aberta.
-- Template `boas_vindas_airmovebr` criado na Meta e aguardando aprovacao para iniciar conversa sem mensagem previa do cliente.
-- Backend em producao recebeu integracao inicial para fila `enviar_whatsapp` na finalizacao de O.S.
-- Bolt isolado em pasta propria com estados, coleta, triagem, FAQs, fallback e transferencia humana.
-- Admin WhatsApp possui fila humana, alerta, SSE/polling, assumir/liberar/encerrar, resposta manual e historico.
-- Central de atendimento WhatsApp publicada: fila inicia em `Em atendimento`, seguida por `Aguardando`, `Encerradas` e `Todas`; sem conversa em atendimento, o painel direito fica limpo para impedir envio ao cliente errado.
-- Conversas podem ser vinculadas manualmente a cliente e O.S.; status de entrega WhatsApp sao persistidos.
-- Suporte a templates aprovados inclui O.S. finalizada e notificacao proativa ao tecnico.
-- Orçamentos comerciais atualizados localmente: até R$ 2.000,00 permitem envio por WhatsApp ou e-mail; acima desse valor exigem assinatura digital por e-mail via Assinafy.
-- PDF comercial atualizado localmente com acentuação em português, quebra de texto, blocos dinâmicos e paginação para listas longas de itens.
-- Painel de Orçamentos e central WhatsApp usam os endpoints específicos de WhatsApp, e-mail e Assinafy; o endpoint legado de envio não é mais usado pela interface.
-- Validação desta melhoria: 7 testes comerciais, 2 testes do PDF, 27 testes frontend e build backend aprovados.
-- Suite backend validada com 211 testes aprovados; todos os arquivos de codigo alterados permanecem abaixo de 500 linhas.
+- Sistema AIRMOVEBR existente com backend, painel Admin, WhatsApp e aplicativo.
+- WhatsApp oficial integrado ao sistema.
+- Módulo de clientes, atendimento, orçamento, PDF comercial e envio de mensagens já existente.
+- Chave OpenAI configurada no ambiente real do backend.
+- Crédito adicionado e chamada mínima à API validada com sucesso.
 
-## Validacao atual do painel web
+## Novo direcionamento: IA no atendimento e orçamento
 
-```powershell
-npm.cmd run frontend:test
-```
- - Melhoria visual da tela de O.S.: resumo duplicado ocultado, abas com cores por status e botao de Nova O.S. destacado; commit `ec23e81`.
- - Melhoria visual da tela de recorrencias: filtros de status compactos e coloridos, cabecalho com Novo plano/Atualizar, formulario em quatro colunas, calendario anual compacto e acoes coloridas por funcao. 27 testes frontend aprovados.
- - Melhoria visual da Frota: indicadores reduzidos para uma faixa operacional compacta, abas coloridas por funcao, mapa/lista preservados e botoes de cadastro, relatorio e abastecimento com cores semanticas. 27 testes frontend aprovados.
+- Unificar WhatsApp e orçamento na mesma tela do Admin.
+- Criar um copiloto para auxiliar a atendente durante a conversa.
+- Interpretar mensagens e identificar cliente, serviço, equipamento, endereço e urgência.
+- Sugerir perguntas quando faltarem informações.
+- Montar rascunho do orçamento com dados estruturados.
+- Consultar clientes, catálogo e preços através das funções do sistema.
+- Permitir revisão e alteração manual antes da aprovação.
+- Gerar o PDF final do orçamento usando o template oficial do sistema.
+- Permitir visualizar, salvar e enviar o PDF pelo WhatsApp.
+- Registrar histórico das sugestões, alterações, aprovação e envio.
 
-Resultado:
+## Regras do orçamento com IA
 
-```text
-27 testes aprovados, 0 falhas.
-```
+- A IA não define preços finais por conta própria.
+- Valores, descontos, totais e condições devem ser validados pelo backend.
+- O PDF só pode ser gerado após confirmação da atendente.
+- O PDF só pode ser enviado ao cliente após confirmação explícita.
+- O fluxo atual deve continuar disponível como fallback.
 
-Validacoes de Flutter/APK nao fazem parte deste ciclo.
+## Plano ativo: IA no atendimento e orçamento
 
-## Fases WhatsApp/Bolt e Admin
+### Fase 1 — Preparação do backend
 
-Executar uma fase por vez. Validar a fase atual antes de iniciar a proxima. Nenhum arquivo de codigo novo ou editado pode passar de 500 linhas.
+- Mapear os endpoints e telas atuais de WhatsApp, clientes e orçamento.
+- Criar o serviço OpenAI no backend usando `OPENAI_API_KEY` e `OPENAI_MODEL`.
+- Usar `gpt-5.6-luna` pela Responses API.
+- Definir entradas, saídas estruturadas, logs e tratamento de erros.
 
-### Fase W1 — Contrato e estados da conversa (concluida)
+### Fase 2 — Ferramentas do copiloto
 
-- Criar a pasta exclusiva `apps/backend/src/modules/whatsapp/bolt/`.
-- Separar tipos, estados, normalizacao, respostas e regras globais do Bolt.
-- Padronizar os dados salvos em `whatsapp_conversas.dados`.
-- Definir o mapeamento entre os estados do Bolt e os estados atuais do banco.
-- Manter deduplicacao, silencio em atendimento humano/encerrado e fallback persistido.
+- Criar função para buscar ou identificar cliente.
+- Criar função para consultar catálogo e preços.
+- Criar função para calcular totais, descontos e condições.
+- Criar função para montar rascunho de orçamento.
+- Impedir que a IA invente preços ou grave alterações sem confirmação.
 
-### Fase W2 — Fila humana no Admin (concluida)
+### Fase 3 — Tela única no Admin
 
-- Exibir conversas aguardando atendente no topo.
-- Criar contador e badge de novas transferencias.
-- Destacar visualmente conversa pendente.
-- Criar assumir, liberar, encerrar e reabrir conversa.
-- Impedir que dois atendentes assumam a mesma conversa.
+- Unir conversa WhatsApp, dados do cliente e orçamento na mesma tela.
+- Exibir resumo da IA e informações identificadas.
+- Exibir perguntas pendentes e sugestões de resposta.
+- Permitir editar todos os dados antes de confirmar.
+- Manter o fluxo manual atual como fallback.
 
-### Fase W3 — Atualizacao em tempo real (concluida)
+### Fase 4 — PDF e envio
 
-- Criar eventos SSE autenticados para o Admin.
-- Atualizar lista e conversa quando chegar mensagem nova.
-- Atualizar fila quando o Bolt transferir ou o atendente assumir.
-- Usar polling de seguranca quando o SSE estiver indisponivel.
-- Adicionar aviso sonoro/notificacao do navegador sem repetir alerta.
+- Gerar o PDF final somente com dados validados pelo backend.
+- Permitir pré-visualização e download do PDF.
+- Exigir confirmação da atendente antes do envio.
+- Enviar o PDF pelo WhatsApp.
+- Registrar orçamento, PDF, canal, data, destinatário e status do envio.
 
-### Fase W4 — Intervencao humana completa (concluida)
+### Fase 5 — APK e expansão
 
-- Permitir resposta no mesmo historico da conversa.
-- Gravar mensagens de entrada e saida com origem correta.
-- Mostrar atendente responsavel, horario e status.
-- Garantir que o Bolt nao responda depois da transferencia.
-- Criar encerramento com motivo: concluido, erro, spam ou sem interesse.
+- Disponibilizar as funções de IA necessárias no APK.
+- Reutilizar as mesmas regras e endpoints do backend.
+- Adicionar leitura de fotos e apoio técnico somente depois do fluxo comercial estável.
 
-### Fase W5 — Lead e cliente (concluida)
+### Critérios de conclusão
 
-- Nao criar cliente automaticamente a partir de qualquer mensagem.
-- Procurar cliente existente pelo telefone.
-- Criar cliente somente por botao e confirmacao do atendente.
-- Abrir formulario de cliente pre-preenchido com dados do Bolt.
-- Permitir descartar/arquivar conversa sem criar cliente.
-- Manter vinculo entre conversa e cliente quando houver cadastro.
-
-### Fase W6 — Criacao de O.S. pela conversa (concluida)
-
-- Adicionar botao `Criar O.S.` no atendimento.
-- Exigir cliente existente ou criacao confirmada antes da O.S.
-- Preencher titulo, detalhes, servico, cidade/bairro e telefone com os dados da conversa.
-- Permitir selecionar equipamento, equipe, tecnico, data e horario.
-- Usar o fluxo real de agenda/O.S. e gravar o vinculo conversa-O.S.
-- Validar uma O.S. real criada a partir do Admin WhatsApp.
-
-### Fase W7 — Perguntas, respostas e qualificacao do Bolt (concluida)
-
-- Implementar os quatro fluxos: manutencao, instalacao, PMOC e locacao.
-- Implementar submenus numericos e validacao local.
-- Implementar menu, cancelar, voltar, recomecar e corrigir.
-- Implementar timeout de 30 minutos e reset apos encerramento.
-- Implementar FAQ de horario, cobertura e documentos.
-- Manter bloqueios de preco final, diagnostico tecnico e horario confirmado.
-- Gerar resumo para cliente e canal interno definido.
-
-### Fase W8 — WhatsApp de producao (parcial)
-
-- Confirmar aprovacao do template `boas_vindas_airmovebr`.
-- Criar templates para O.S. finalizada, agendamento/lembrete e aviso de atendimento.
-- Trocar automacao `os_finalizada` para template aprovado fora da janela de atendimento.
-- Processar e persistir no banco os status `sent`, `delivered`, `read` e `failed` recebidos pelo webhook.
-- Suporte a template aprovado e persistencia de status real de entrega implementados; falta validar credenciais, template aprovado e disparo real em producao.
-- Validar notificacao proativa para tecnico e atendimento real de cliente.
-
-### Depois do WhatsApp
-
-- Validar app tecnico no celular em campo real.
-- Validar app admin mobile completo no aparelho real, somente quando esse escopo for solicitado.
-- Gerar APK tecnico/admin somente depois das validacoes acima e de ordem explicita.
-
-## Proximo foco: Orcamentos no painel web
-
-- Escopo exclusivo: painel web em `apps/admin` e API em `apps/backend`; nao alterar Flutter ou APK.
-- Processo de execucao da Fase O5: seguir o plano `docs/superpowers/plans/2026-07-25-orcamentos-o5.md` por tarefas, validando cada bloco antes de iniciar o proximo e fazendo checkpoint entre tarefas.
-- Ordem atual da Fase O5: Task 1 persistencia Prisma; Task 2 contratos e integracoes; Task 3 API de detalhe/PDF/envios; Task 4 detalhe e acoes no painel; Task 5 validacao final.
-- Ao concluir cada tarefa, registrar resultado e manter o foco somente em `apps/admin` e `apps/backend`; nao tocar em `apps/admin_mobile`, `apps/mobile` ou Flutter.
-- Checkpoint O5 Task 1: campos comerciais de PDF, canais e Assinafy adicionados ao modelo `Orcamento`; migration `20260725170000_orcamento_canais_assinatura` criada; `prisma generate` e `prisma validate` aprovados.
-- Checkpoint O5 Task 2: contratos comerciais e `ComercialAssinafyService` criados; import não utilizado `IsInt` removido do DTO; `npm.cmd run build` e `npm.cmd run lint -- --fix=false` aprovados.
-- Checkpoint O5 Task 3: API autenticada de detalhe, PDF, envio WhatsApp, envio e-mail e início Assinafy adicionada; testes comerciais de sucesso/falha de e-mail aprovados; build e lint backend aprovados.
-- Checkpoint O5 Task 4: detalhe do orçamento, ações de PDF/WhatsApp/e-mail/Assinafy, estados de ação e layout responsivo adicionados ao painel; teste frontend passou.
-- Checkpoint O5 Task 5: build backend, lint backend, testes comerciais (2 aprovados) e frontend (27 aprovados) passaram; a suíte backend completa excedeu 120s por ruído do scheduler/bootstrap já conhecido, sem falha funcional registrada.
-- Scheduler de recorrências isolado: `AdminRecorrenciaSchedulerService` agora respeita `RECORRENCIA_SCHEDULER_ENABLED` e desativa automaticamente quando `NODE_ENV=test`; produção permanece ativa por padrão.
-- Pendência de validação O5: a suíte backend completa ainda trava em um teste HTTP posterior mesmo com scheduler isolado e `--test-force-exit`; build/lint e frontend continuam aprovados.
-- Fase O1: concluida no painel web. Menu operacional reorganizado em WhatsApp, Orcamentos, O.S., Agenda, Recorrencias e Frota; Catalogo separado em Cadastros. Orcamentos recebeu listagem, busca, filtros e totais.
-- Fase O2: concluida no painel web. `Novo orcamento` permite usar cliente existente ou cadastrar cliente novo com nome, telefone, CPF/RG, CEP, endereco, numero, complemento, bairro, cidade e UF; CEP preenche endereco automaticamente.
-- Fase O3: concluida no painel web. Montagem de rascunho com itens do catalogo, quantidade, valores, desconto, validade e observacoes; totais e persistencia continuam calculados pela API.
-- Fase O4: concluida no backend. Status adicionados: `aguardando_aprovacao`, `em_negociacao` e `convertido_os`; atualizacao protegida para negociacao, aprovacao e recusa; aprovacao por telefone exige responsavel. Migration Prisma criada.
-- Fase O5: proxima. Revisao no painel, download de PDF, envio por WhatsApp/e-mail e Assinafy acima de R$ 2.000. PDF e envio WhatsApp iniciais ja existem; e-mail e Assinafy precisam de integracao propria de orcamento, sem reutilizar dados de PMOC.
-- Evolução O5 em 26/07/2026: canais por valor e PDF comercial revisados localmente; próximo passo é validação visual autenticada do PDF e deploy controlado do backend/admin.
-- Fase O6: depois da aprovacao, criar a O.S. copiando cliente, endereco, itens, valores, detalhes e origem; o atendente escolhe apenas equipe, tecnico, data e horario.
-- Fase O7: validar painel web, backend, PDF, canais de envio e conversao em O.S.
-- Status finais: Rascunho, Enviado, Aguardando aprovacao, Em negociacao, Aprovado, Recusado e Convertido em O.S.
-- Nenhuma das fases O1 a O4 foi commitada ou publicada; todas as alteracoes permanecem locais para revisao.
-
-## Checkpoint nova sessao - 26/07/2026
-
-### Git e deploy
-
-- Branch atual: `dev`.
-- `dev`, `main`, `origin/dev` e `origin/main` estao alinhadas no commit `cff2623`.
-- O usuario confirmou o deploy Locaweb do fluxo de atendimento WhatsApp.
-- Commits principais da L2: `8be036e` persistencia; `b8f99b6` regras do laudo; `ff67a58` API e fotos; `64e64b6` autorizacao administrativa; `cff2623` escolha entre levantamento e orcamento.
-- O plano `docs/superpowers/plans/2026-07-26-fase-l2-laudo-tecnico-web.md` permanece local e nao rastreado.
-- `.headroom/` e contexto local do Headroom; nao commitar.
-
-### Fluxo aprovado
-
-- Depois de criar ou selecionar o cliente, o atendente escolhe `Levantamento tecnico` ou `Orcamento direto`.
-- Levantamento nao possui preco, desconto ou O.S. de execucao.
-- O levantamento possui problema, equipe/tecnico, agenda, data e horario da visita.
-- A agenda bloqueia horarios ocupados por O.S. e outros levantamentos.
-- Depois da visita, o tecnico registra diagnostico, causa provavel, servicos recomendados, itens, observacoes e fotos.
-- A decisao do laudo e `precisa_orcamento` ou `resolvido_na_visita`.
-
-### L2 implementada
-
-- Migration `20260726120000_laudo_levantamento` criada e Prisma Client gerado.
-- API `mobile/levantamentos` protegida para listar, obter, iniciar, salvar rascunho, anexar foto e finalizar.
-- Acesso isolado por empresa, tecnico atribuido ou membro ativo da equipe.
-- Fotos limitadas a 8 MB; limpeza recomendada exige foto.
-- Admin pode solicitar, aprovar, recusar e expirar autorizacao de visita em 20 minutos, alem de reabrir laudo com motivo.
-- Build backend aprovado e 7 testes direcionados do servico tecnico aprovados.
-
-### Admin web implementado
-
-- Central WhatsApp oferece escolha explicita entre levantamento e orcamento.
-- Levantamento abre agenda de equipe/tecnico e confirma visita sem criar O.S. ou orcamento.
-- Sintaxe do modulo WhatsApp aprovada e `npm.cmd run frontend:test` aprovado com 29 testes.
-
-### Headroom local
-
-- Headroom `0.32.1` instalado globalmente via `uv` com `[all]`.
-- MCP registrado somente no OpenAI Codex.
-- Tarefas Windows `HeadroomProxy` e `HeadroomHealthCheck` configuradas para iniciar e monitorar automaticamente.
-- Estado confirmado apos reinicio: `healthy`, `ready=True`, `memory=True` e `learn=True`.
-
-### Proximo foco
-
-1. Testar no WhatsApp/Admin: cliente -> levantamento -> tecnico/equipe -> agenda -> confirmacao.
-2. Confirmar aviso ao tecnico e levantamento na aba administrativa.
-3. Implementar troca levantamento -> orcamento apos laudo `precisa_orcamento`.
-4. Implementar troca orcamento -> levantamento somente enquanto o orcamento estiver em rascunho.
-5. Testar o tecnico preenchendo o laudo pelo navegador e o admin aprovando/recusando autorizacao.
-6. Nao alterar Flutter/mobile nesta etapa.
-
-### Validacao
-
-```powershell
-npm.cmd run frontend:test
-npm.cmd run backend:prisma:generate
-npm.cmd run backend:build
-git diff --check
-Invoke-RestMethod http://127.0.0.1:8787/health
-```
-
-## Apos instalar a API Meta
-- Status Meta em 27/07/2026: os quatro templates de levantamento foram criados e enviados para analise: `levantamento_agendado`, `levantamento_alterado`, `levantamento_cancelado` e `levantamento_lembrete`. Nao criar novamente; falta aprovacao da Meta, configuracao das variaveis `WHATSAPP_TEMPLATE_LEVANTAMENTO_*` e validacao do disparo real em producao.
-- Fazer uma limpeza geral do backend:
-  - alinhar a spec PMOC ao texto acentuado do PDF;
-  - limpar os 4 avisos de lint;
-  - isolar o scheduler de recorrencias nos testes para remover o ruido de bootstrap.
-
-## Comando para testar agora
-
-```powershell
-npm.cmd run frontend:test
-```
-
-## Identidade visual e nome Meta - 28/07/2026
-
-- Nome de exibicao anterior `Airmovebr` foi rejeitado pela Meta.
-- Novo nome enviado para analise: `Airmovebr Climatizacao`.
-- Conta do WhatsApp Business verificada e aprovada; telefone conectado e qualidade alta.
-- Os quatro templates de levantamento continuam em analise: `levantamento_agendado`, `levantamento_alterado`, `levantamento_cancelado` e `levantamento_lembrete`.
-- Site principal ajustado para exibir somente `Airmovebr` e `Climatizacao` no cabecalho e rodape, sem simbolo.
-- Seis fotos do site atualizadas com as tres setas azuis e o texto `Airmovebr Climatizacao`: `atendimento-interno.jpeg`, `frota-equipe.jpeg`, `limpeza-split.jpeg`, `instalacao-comercial.jpeg`, `manutencao-vrf.jpeg` e `pmoc-tecnico.jpeg`.
-- Validacao local: 30 testes frontend aprovados e `git diff --check` sem erros.
-- Ajustes visuais e fotos registrados nos commits `09541dc`, `f997578` e `3f4b120`; `dev`, `main`, `origin/dev` e `origin/main` estao alinhadas em `3f4b120`. Deploy em producao ainda nao foi validado.
-
-## Fase clientes existentes no WhatsApp - implementada localmente em 26/07/2026
-
-- Ao abrir uma conversa sem cliente vinculado, a API pesquisa somente clientes da mesma empresa pelo telefone normalizado.
-- O painel mostra os candidatos sem vincular automaticamente: a atendente pode usar um cadastro, atualizar seus dados antes do vínculo ou informar que é outra pessoa.
-- O vínculo explícito mantém a escolha entre orçamento direto e levantamento técnico; clientes novos continuam sendo criados somente por confirmação.
-- Validação aprovada: 16 testes direcionados do WhatsApp, build backend e 30 testes frontend.
- - Correção adicional do catálogo: painel agora exibe Editar/Apagar; edição usa `PATCH /admin/comercial/catalogo/:id` e apagar usa exclusão lógica (`ativo = false`) via `DELETE`, preservando itens de orçamentos históricos. Build, lint e 27 testes frontend aprovados.
- - Correção adicional de clientes: exclusão agora remove também orçamentos e seus itens antes de remover o cliente, evitando falha de chave estrangeira após o módulo comercial. Build, lint e 14 testes do serviço administrativo aprovados.
- - Ajuste do fluxo de novo orçamento: cadastro rápido agora exige e-mail e, após criar o cliente, abre diretamente o montador de orçamento com o cliente selecionado. Node check, build backend e 27 testes frontend aprovados.
-
-## Fase L1 — Levantamentos técnicos web (implementada localmente em 26/07/2026)
-
-- Manutenção iniciada pelo WhatsApp agora cria um levantamento técnico, sem gerar orçamento ou O.S. de execução antes do diagnóstico.
-- O atendimento usa a agenda real de equipes/técnicos, bloqueando horários ocupados por O.S. operacionais ou outros levantamentos.
-- O painel mostra a aba Levantamentos e permite confirmar visita, preparar a mensagem editável ao cliente e consultar o estado do aviso ao técnico.
-- Confirmação, reagendamento e cancelamento acionam templates WhatsApp ao técnico; o lembrete é processado uma hora antes e falhas ficam visíveis para reenvio, sem cancelar a visita.
-- Migration `20260726100000_levantamentos_tecnicos` criada; Prisma generate, build backend, testes de notificações (4), testes WhatsApp (14) e frontend (28) aprovados.
-- Para ativar disparos reais em produção, cadastrar/aprovar na Meta e configurar: `WHATSAPP_TEMPLATE_LEVANTAMENTO_AGENDADO`, `WHATSAPP_TEMPLATE_LEVANTAMENTO_ALTERADO`, `WHATSAPP_TEMPLATE_LEVANTAMENTO_CANCELADO`, `WHATSAPP_TEMPLATE_LEVANTAMENTO_LEMBRETE` e `WHATSAPP_TEMPLATE_LANGUAGE`.
-- Próxima fase: diagnóstico preenchido pelo técnico, decisão “resolvido na visita” versus “precisa de orçamento” e montagem do orçamento pela atendente. Não alterar Flutter/app técnico nesta fase.
+- Nenhum preço ou total pode ser inventado pela IA.
+- Nenhum PDF pode ser enviado sem confirmação humana.
+- O atendente consegue concluir um orçamento do WhatsApp ao PDF em uma única tela.
+- Falhas da OpenAI não impedem o uso manual do sistema.
+- A chave OpenAI permanece exclusiva da IA do produto.
