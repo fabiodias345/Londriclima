@@ -78,15 +78,26 @@ async function loadWhatsappConversations() {
 
 function getWhatsappState(item) {
   if (item.status === "encerrada") return { key: "encerradas", className: "is-closed", label: "Encerrada", ageMinutes: 0 };
-  if (item.status === "humano" && item.atribuidoUsuarioId) return { key: "atendimento", className: "is-attending", label: "Em Atendimento", ageMinutes: 0 };
   const reference = new Date(item.ultimaMensagemEm || item.criadoEm || Date.now());
   const ageMinutes = Number.isNaN(reference.getTime()) ? 0 : Math.max(0, Math.floor((Date.now() - reference.getTime()) / 60000));
-  return ageMinutes >= 15 ? { key: "aguardando", className: "is-overdue", label: "Aguardando há muito tempo", ageMinutes } : { key: "aguardando", className: "is-waiting", label: "Aguardando atendimento", ageMinutes };
+  if (item.status === "bot") {
+    return ageMinutes >= 15
+      ? { key: "atendimento", className: "is-overdue", label: "Bot aguardando há muito tempo", ageMinutes }
+      : { key: "atendimento", className: "is-bot", label: "Atendimento pelo bot", ageMinutes };
+  }
+  if (item.atribuidoUsuarioId) {
+    return ageMinutes >= 15
+      ? { key: "atendimento", className: "is-overdue", label: "Atendente demorando", ageMinutes }
+      : { key: "atendimento", className: "is-attending", label: "Atendimento humano", ageMinutes };
+  }
+  return ageMinutes >= 15
+    ? { key: "atendimento", className: "is-overdue", label: "Aguardando atendente há muito tempo", ageMinutes }
+    : { key: "atendimento", className: "is-waiting", label: "Aguardando atendente", ageMinutes };
 }
 function formatWaiting(ageMinutes) { return ageMinutes < 1 ? "Agora" : ageMinutes < 60 ? \`\${ageMinutes} min\` : \`\${Math.floor(ageMinutes / 60)} h \${ageMinutes % 60} min\`; }
 function renderWhatsappConversations() {
   const list = document.querySelector("#whatsappConversationList"); const query = String(document.querySelector("#whatsappSearchInput")?.value || "").toLowerCase().trim(); const filter = document.querySelector("[data-whatsapp-filter].is-active")?.dataset.whatsappFilter || "atendimento";
-  const prioridade = { atendimento: 0, aguardando: 1, encerradas: 2 }; const items = whatsappConversations.filter((item) => { const state = getWhatsappState(item); const text = \`\${item.nomeContato || ""} \${item.telefone || ""}\`.toLowerCase(); return (!query || text.includes(query)) && (filter === "todas" || filter === state.key); }).sort((a, b) => prioridade[getWhatsappState(a).key] - prioridade[getWhatsappState(b).key] || new Date(b.ultimaMensagemEm || 0).getTime() - new Date(a.ultimaMensagemEm || 0).getTime());
+  const prioridade = { atendimento: 0, encerradas: 1 }; const items = whatsappConversations.filter((item) => { const state = getWhatsappState(item); const text = \`\${item.nomeContato || ""} \${item.telefone || ""}\`.toLowerCase(); return (!query || text.includes(query)) && (filter === "todas" || filter === state.key); }).sort((a, b) => prioridade[getWhatsappState(a).key] - prioridade[getWhatsappState(b).key] || getWhatsappState(b).ageMinutes - getWhatsappState(a).ageMinutes);
   list.innerHTML = items.length ? items.map((item) => { const state = getWhatsappState(item); const last = item.mensagens?.[0]?.texto || "Sem mensagens"; return \`<button class="whatsapp-conversation-card \${state.className} \${selectedWhatsappId === item.id ? "is-selected" : ""}" type="button" data-whatsapp-id="\${esc(item.id)}"><span class="whatsapp-status-dot" aria-hidden="true"></span><span class="whatsapp-avatar">\${esc((item.nomeContato || item.telefone || "?").slice(0, 1).toUpperCase())}</span><span class="whatsapp-conversation-copy"><strong>\${esc(item.nomeContato || item.telefone)}</strong><small>\${esc(last.slice(0, 78))}</small><em>\${state.label}</em></span><span class="whatsapp-conversation-time">\${state.ageMinutes ? formatWaiting(state.ageMinutes) : ""}</span></button>\`; }).join("") : '<div class="whatsapp-list-empty">Nenhuma conversa encontrada.</div>';
   if (!items.some((item) => item.id === selectedWhatsappId)) clearWhatsappSelection(filter === "atendimento" && !items.length ? "Nenhuma conversa em atendimento" : "Selecione uma conversa");
 }

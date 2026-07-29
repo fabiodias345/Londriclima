@@ -239,6 +239,11 @@ export class AdminClientesService {
     });
     const ordemIds = ordens.map((ordem) => ordem.id);
     const checklistIds = ordens.map((ordem) => ordem.checklist?.id).filter((id): id is string => Boolean(id));
+    const levantamentos = await this.prisma.levantamentoTecnico.findMany({
+      where: { clienteId, empresaId: usuario.empresa_id },
+      select: { id: true }
+    });
+    const levantamentoIds = levantamentos.map((levantamento) => levantamento.id);
 
     await this.prisma.$transaction(async (tx) => {
       await tx.planoRecorrencia.deleteMany({
@@ -270,6 +275,21 @@ export class AdminClientesService {
           empresaId: usuario.empresa_id
         }
       });
+
+      if (levantamentoIds.length) {
+        await tx.levantamentoAutorizacao.deleteMany({
+          where: { levantamentoId: { in: levantamentoIds } }
+        });
+        await tx.levantamentoFoto.deleteMany({
+          where: { levantamentoId: { in: levantamentoIds } }
+        });
+        await tx.levantamentoItemTecnico.deleteMany({
+          where: { levantamentoId: { in: levantamentoIds } }
+        });
+        await tx.levantamentoTecnico.deleteMany({
+          where: { id: { in: levantamentoIds }, clienteId, empresaId: usuario.empresa_id }
+        });
+      }
 
       if (ordemIds.length) {
         await tx.automacaoAgendada.deleteMany({
