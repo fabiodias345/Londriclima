@@ -79,7 +79,9 @@ export class BoltRules {
     if (/(^|\s)(cancelar|voltar|recomecar|inicio)(\s|$)/.test(texto)) return this.menu({ ...dadosBoltIniciais(), ultima_interacao: base.ultima_interacao });
 
     const atualizado = this.atualizarMemoria(base, original, texto, mensagem.nomeContato);
-    if (this.ehSaudacao(texto) && !atualizado.detalhes) return this.resposta(atualizado, atualizado.nome ? ASK_SERVICE : `${WELCOME}\n\n${ASK_NAME}`);
+    if (this.ehSaudacao(texto) && !atualizado.detalhes) {
+      return this.resposta({ ...atualizado, nome: null, status: "BOT_QUALIFYING", etapa_atual: "aguardando_nome", memoria: { ...atualizado.memoria, nome_status: "nao_informado" } }, `${WELCOME}\n\n${ASK_NAME}`);
+    }
     if (atualizado.memoria.nome_status === "nao_informado" && !atualizado.nome && !this.identificarServico(texto) && !this.ehRecusa(texto)) {
       return this.resposta({ ...atualizado, nome: original, memoria: { ...atualizado.memoria, nome_status: "informado" }, etapa_atual: "aguardando_servico" }, `Prazer, ${original}. ${ASK_SERVICE}`);
     }
@@ -103,7 +105,7 @@ export class BoltRules {
     const naoPossui: BoltMemory["possui_aparelho"] = /\b(ainda\s+nao|nao\s+tenho|vou\s+comprar)\b/.test(texto) ? "informado" : possui;
     const email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(original) ? original.toLowerCase() : dados.email;
     const emailInformado = Boolean(email && email !== dados.email);
-    const nome = recusouNome ? (nomeContato || null) : dados.nome || nomeContato || null;
+    const nome = recusouNome ? (nomeContato || null) : dados.etapa_atual === "aguardando_nome" ? original : dados.nome || nomeContato || null;
     const detalhes = dados.etapa_atual === "aguardando_problema" ? original : dados.detalhes || (this.ehSaudacao(texto) ? null : original) || null;
     const equipamento = dados.memoria.equipamento || (dados.etapa_atual === "aguardando_equipamento" ? original : this.extrairEquipamento(texto));
     const infraestrutura = dados.memoria.infraestrutura || (dados.etapa_atual === "aguardando_infraestrutura" ? original : null);
@@ -139,6 +141,8 @@ export class BoltRules {
       case "manutencao_corretiva":
         if (!dados.detalhes || dados.detalhes === dados.nome) return { etapa: "aguardando_problema", texto: "O que está acontecendo com o equipamento?" };
         break;
+      case "manutencao":
+        return { etapa: "aguardando_tipo_manutencao", texto: "É uma manutenção preventiva ou o aparelho está com algum problema?" };
       case "aluguel":
         if (!dados.memoria.equipamento) return { etapa: "aguardando_equipamento", texto: "Qual equipamento você precisa alugar e por quanto tempo?" };
         break;
@@ -163,6 +167,7 @@ export class BoltRules {
     if (/\b(limpeza|limpar)\b.*\b(filtro|ar|aparelho)\b/.test(texto)) return "limpeza_filtro";
     if (/\b(preventiva|revisao|revisão)\b/.test(texto)) return "manutencao_preventiva";
     if (/\b(corretiva|defeito|parou|nao gela|não gela|nao liga|não liga|vazando|quebrou)\b/.test(texto)) return "manutencao_corretiva";
+    if (/\b(manutencao|manutenção|manutencoes|manutenções)\b/.test(texto)) return "manutencao";
     if (/\b(comprar|vender|aparelho novo|equipamento novo)\b/.test(texto)) return "venda_equipamento";
     return null;
   }

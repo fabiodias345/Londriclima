@@ -8,6 +8,7 @@ export type BoltStatus =
 export type BoltServiceType =
   | "instalacao"
   | "desinstalacao"
+  | "manutencao"
   | "manutencao_corretiva"
   | "manutencao_preventiva"
   | "limpeza_filtro"
