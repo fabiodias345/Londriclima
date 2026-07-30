@@ -11,13 +11,12 @@ import { MobileModule } from "./modules/mobile/mobile.module";
 import { OrdensServicoModule } from "./modules/ordens-servico/ordens-servico.module";
 import { SiteModule } from "./modules/site/site.module";
 import { WhatsAppModule } from "./modules/whatsapp/whatsapp.module";
-import { IaModule } from "./modules/ia/ia.module";
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ["whats.env", "../../whats.env", ".env", ".env.local"]
+      envFilePath: ["whats.env", "../../whats.env", ".env.production", ".env", ".env.local"]
     }),
     DatabaseModule,
     ComercialModule,
@@ -29,8 +28,7 @@ import { IaModule } from "./modules/ia/ia.module";
     MobileModule,
     OrdensServicoModule,
     SiteModule,
-    WhatsAppModule,
-    IaModule
+    WhatsAppModule
   ]
 })
 export class AppModule {}

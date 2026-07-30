@@ -238,8 +238,6 @@ export class WhatsAppService {
 
 Pedimos que haja um adulto responsável no local para acompanhar o atendimento e autorizar o acesso ao equipamento.
 
-Durante o serviço, poderão ser tiradas fotos do ambiente e do equipamento para registro técnico e relatório.
-
 Se ocorrer qualquer imprevisto ou precisar alterar o horário, por favor nos avise com antecedência para que possamos reorganizar nossa agenda.
 
 Agradecemos pela preferência. Até breve!`;
@@ -259,15 +257,8 @@ Agradecemos pela preferência. Até breve!`;
     const template = this.config.get<string>("WHATSAPP_TEMPLATE_OS_NOVA");
     const ordem = await this.prisma.ordemServico.findFirst({ where: { id: osId, empresaId }, select: { titulo: true, tecnico: { select: { nome: true, telefone: true } } } });
     if (!ordem?.tecnico?.telefone) return;
-    try {
-      if (template && this.sender.enviarTemplate) {
-        await this.sender.enviarTemplate(ordem.tecnico.telefone, { name: template, language: this.config.get<string>("WHATSAPP_TEMPLATE_LANGUAGE", "pt_BR"), parameters: [ordem.tecnico.nome, ordem.titulo] });
-        return;
-      }
-      await this.sender.enviar({ to: ordem.tecnico.telefone, text: `Olá, ${ordem.tecnico.nome}. Chegou um novo serviço para você na AIRMOVEBR: ${ordem.titulo}. Entre no aplicativo para consultar os detalhes.` });
-    } catch {
-      // O aviso não pode desfazer nem impedir a O.S. já criada.
-    }
+    if (!template || !this.sender.enviarTemplate) return;
+    await this.sender.enviarTemplate(ordem.tecnico.telefone, { name: template, language: this.config.get<string>("WHATSAPP_TEMPLATE_LANGUAGE", "pt_BR"), parameters: [ordem.tecnico.nome, ordem.titulo] });
   }
 
   private async processarMensagem(mensagem: IncomingMessage) {
