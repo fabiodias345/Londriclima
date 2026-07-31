@@ -46,6 +46,7 @@ class _ModuleScreenState extends State<ModuleScreen> {
   Future<ModuleData> _load() async {
     return switch (widget.item.kind) {
       AdminModuleKind.orders => _loadOrders(),
+      AdminModuleKind.commercial => _loadCommercial(),
       AdminModuleKind.schedule => _loadSchedule(),
       AdminModuleKind.clients => _loadClients(),
       AdminModuleKind.pmoc => _loadPmoc(),
@@ -191,6 +192,41 @@ class _ModuleScreenState extends State<ModuleScreen> {
             _formatStatus(row['status']),
           ]),
           filter: _orderFilter(_text(row['status'])),
+        );
+      }).toList(),
+    );
+  }
+
+  Future<ModuleData> _loadCommercial() async {
+    final data = await _get('/admin/comercial/orcamentos');
+    final items = _asList(data['items']);
+    final confirmados = items.where((item) => _asMap(item)['confirmado_em'] != null).length;
+    return ModuleData(
+      filters: const [
+        ModuleFilter('Rascunhos', 'rascunho'),
+        ModuleFilter('Aguardando aceite', 'aguardando_aprovacao'),
+        ModuleFilter('Aprovados', 'aprovado'),
+      ],
+      metrics: [
+        ModuleMetric('Orçamentos', items.length.toString()),
+        ModuleMetric('Confirmados', confirmados.toString()),
+        ModuleMetric('Total', _currency(items.fold<num>(0, (sum, item) => sum + _decimal(_asMap(item)['total'])))),
+      ],
+      rows: items.take(30).map((item) {
+        final row = _asMap(item);
+        final cliente = _asMap(row['cliente']);
+        final confirmado = row['confirmado_em'] != null;
+        return ModuleRow(
+          title: _text(row['titulo'], fallback: 'Orçamento'),
+          subtitle: _join([_text(cliente['nome']), _formatStatus(row['status']), confirmado ? 'Confirmado' : 'Aguardando confirmação']),
+          trailing: _currency(row['total']),
+          data: row,
+          actions: [
+            if (!confirmado) ModuleAction.confirmCommercial,
+            if (confirmado) ...const [ModuleAction.calculateCommercial, ModuleAction.openCommercialPdf, ModuleAction.sendCommercialWhatsapp],
+          ],
+          searchText: _join([_text(row['titulo']), _text(cliente['nome']), _formatStatus(row['status'])]),
+          filter: _text(row['status']),
         );
       }).toList(),
     );
@@ -598,6 +634,46 @@ class _ModuleScreenState extends State<ModuleScreen> {
         await _openPdf('/admin/relatorios-avulsos/clientes/${row.id}/pdf');
       case ModuleAction.viewFleet:
         await _showFleetDetails(row);
+      case ModuleAction.confirmCommercial:
+        await _confirmAndRun(
+          title: 'Confirmar orçamento?',
+          message: row.title,
+          success: 'Orçamento confirmado. PDF e envios liberados.',
+          run: () => _post('/admin/comercial/orcamentos/${row.id}/confirmar', {'confirmado': true}),
+        );
+      case ModuleAction.openCommercialPdf:
+        await _openPdf('/admin/comercial/orcamentos/${row.id}/pdf');
+      case ModuleAction.sendCommercialWhatsapp:
+        await _confirmAndRun(
+          title: 'Enviar orçamento pelo WhatsApp?',
+          message: row.title,
+          success: 'Orçamento enviado pelo WhatsApp.',
+          run: () => _post('/admin/comercial/orcamentos/${row.id}/enviar-whatsapp'),
+        );
+      case ModuleAction.calculateCommercial:
+        await _calculateCommercial(row);
+    }
+  }
+
+  Future<void> _calculateCommercial(ModuleRow row) async {
+    try {
+      final quote = await _get('/admin/comercial/orcamentos/${row.id}');
+      final items = _asList(quote['itens']).map((item) {
+        final value = _asMap(item);
+        return <String, dynamic>{
+          'item_catalogo_id': value['itemCatalogoId'],
+          'tipo': value['tipo'],
+          'descricao': value['descricao'],
+          'unidade': value['unidade'],
+          'quantidade': value['quantidade'],
+        };
+      }).toList();
+      final result = await _post('/admin/ia/calcular-totais', {'itens': items, 'desconto': quote['desconto']});
+      if (!mounted) return;
+      final pendencias = _asList(result['pendencias']);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(pendencias.isEmpty ? 'Totais validados: ${_currency(result['total'])}.' : pendencias.join(' '))));
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Não foi possível validar os totais.')));
     }
   }
 
@@ -902,6 +978,10 @@ class ModuleMetric {
 
 enum ModuleAction {
   reschedule,
+  confirmCommercial,
+  calculateCommercial,
+  openCommercialPdf,
+  sendCommercialWhatsapp,
   approve,
   reject,
   resendPmoc,
@@ -1256,6 +1336,8 @@ String _text(Object? value, {String fallback = ''}) {
   return text.isEmpty ? fallback : text;
 }
 
+num _decimal(Object? value) => value is num ? value : num.tryParse(value?.toString() ?? '') ?? 0;
+
 int _int(Object? value) {
   if (value is int) return value;
   if (value is num) return value.round();
@@ -1326,6 +1408,10 @@ String _orderFilter(String status) {
 String _actionLabel(ModuleAction action) {
   return switch (action) {
     ModuleAction.reschedule => 'Reprogramar',
+    ModuleAction.confirmCommercial => 'Confirmar orçamento',
+    ModuleAction.calculateCommercial => 'Validar totais IA',
+    ModuleAction.openCommercialPdf => 'Abrir PDF',
+    ModuleAction.sendCommercialWhatsapp => 'Enviar WhatsApp',
     ModuleAction.approve => 'Aprovar',
     ModuleAction.reject => 'Rejeitar',
     ModuleAction.resendPmoc => 'Reenviar assinatura',

@@ -18,6 +18,7 @@ class DashboardScreen extends StatelessWidget {
 
   static const _items = [
     DashboardItem(AdminModuleKind.orders, 'O.S.', 'Abertas, andamento e concluidas', Icons.assignment_outlined, adminBlue),
+    DashboardItem(AdminModuleKind.commercial, 'Comercial/IA', 'Orçamentos, PDF e copiloto', Icons.auto_awesome_outlined, Color(0xFF7C3AED)),
     DashboardItem(AdminModuleKind.schedule, 'Agenda', 'Hoje, atrasos e proximas visitas', Icons.calendar_month_outlined, adminGreen),
     DashboardItem(AdminModuleKind.clients, 'Clientes', 'Cadastro e maquinas por cliente', Icons.groups_outlined, adminCyan),
     DashboardItem(AdminModuleKind.pmoc, 'PMOC', 'PDF, assinatura e pendencias', Icons.verified_user_outlined, adminPurple),

@@ -49,8 +49,8 @@ Atualizado em: 29/07/2026
 - **Fase 1 — Preparação do backend:** concluída.
 - **Fase 2 — Ferramentas do copiloto:** concluída.
 - **Fase 3 — Tela única no Admin:** concluída.
-- **Fase 4 — PDF e envio:** pendente.
-- **Fase 5 — APK e expansão:** pendente.
+- **Fase 4 — PDF e envio:** concluída.
+- **Fase 5 — APK e expansão:** em andamento — funções comerciais e IA disponíveis no APK; leitura de fotos permanece posterior.
 
 ### Fase 1 — Preparação do backend
 

@@ -118,3 +118,8 @@ export class EnviarOrcamentoEmailDto {
   @IsEmail()
   destinatario?: string;
 }
+
+export class ConfirmarOrcamentoDto {
+  @IsIn([true])
+  confirmado!: true;
+}

@@ -1,12 +1,13 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { OrcamentoStatus, Prisma } from "@prisma/client";
+import { createHash } from "crypto";
 import { PrismaService } from "../../database/prisma.service";
 import { AuthenticatedUser } from "../auth/auth-user";
 import { SmtpEmailService } from "../automacoes/smtp-email.service";
 import { WhatsAppCloudService } from "../automacoes/whatsapp-cloud.service";
 import { ComercialAssinafyService } from "./comercial-assinafy.service";
 import { ComercialOrcamentoPdfRenderer } from "./comercial-orcamento-pdf-renderer";
-import { AtualizarStatusOrcamentoDto, CriarOrcamentoDto, EnviarOrcamentoEmailDto, SalvarItemCatalogoDto } from "./dto/comercial.dto";
+import { AtualizarStatusOrcamentoDto, ConfirmarOrcamentoDto, CriarOrcamentoDto, EnviarOrcamentoEmailDto, SalvarItemCatalogoDto } from "./dto/comercial.dto";
 
 const itemSelect = { id: true, tipo: true, grupo: true, subgrupo: true, codigo: true, nome: true, descricao: true, unidade: true, custo: true, valor: true, ativo: true } as const;
 
@@ -75,11 +76,22 @@ export class ComercialService {
   async obterOrcamento(id: string, empresaId: string) {
     const orcamento = await this.obterOrcamentoOperacional(id, empresaId);
     const assinaturaObrigatoria = this.exigeAssinatura(orcamento.total);
-    return { ...orcamento, acoes: { pdf: true, whatsapp: !assinaturaObrigatoria && Boolean(orcamento.conversa?.telefone || orcamento.cliente.telefone), email: !assinaturaObrigatoria && Boolean(orcamento.cliente.email), assinafy: assinaturaObrigatoria && Boolean(orcamento.cliente.email) && !orcamento.assinafyDocumentId } };
+    return { ...orcamento, acoes: { confirmar: !orcamento.confirmadoEm, pdf: Boolean(orcamento.confirmadoEm), whatsapp: Boolean(orcamento.confirmadoEm) && !assinaturaObrigatoria && Boolean(orcamento.conversa?.telefone || orcamento.cliente.telefone), email: Boolean(orcamento.confirmadoEm) && !assinaturaObrigatoria && Boolean(orcamento.cliente.email), assinafy: Boolean(orcamento.confirmadoEm) && assinaturaObrigatoria && Boolean(orcamento.cliente.email) && !orcamento.assinafyDocumentId } };
+  }
+
+  async confirmarOrcamento(id: string, dto: ConfirmarOrcamentoDto, usuario: AuthenticatedUser) {
+    const orcamento = await this.prisma.orcamento.findFirst({ where: { id, empresaId: usuario.empresa_id }, select: { id: true, confirmadoEm: true } });
+    if (!orcamento) throw new NotFoundException("Orçamento não encontrado.");
+    if (!dto.confirmado) throw new BadRequestException("Confirme o orçamento antes de gerar ou enviar o PDF.");
+    if (orcamento.confirmadoEm) return { confirmado: true, confirmado_em: orcamento.confirmadoEm };
+    const confirmadoEm = new Date();
+    await this.prisma.orcamento.update({ where: { id }, data: { confirmadoEm, confirmadoPorUsuarioId: usuario.id } });
+    return { confirmado: true, confirmado_em: confirmadoEm };
   }
 
   async gerarPdfOrcamento(id: string, empresaId: string) {
     const orcamento = await this.obterOrcamentoOperacional(id, empresaId);
+    this.exigirConfirmacao(orcamento);
     const buffer = this.gerarPdf(orcamento);
     await this.prisma.orcamento.update({ where: { id }, data: { pdfGeradoEm: new Date() } });
     return { buffer, contentType: "application/pdf", filename: `orcamento-${id.slice(0, 8)}.pdf` };
@@ -87,6 +99,7 @@ export class ComercialService {
 
   async enviarWhatsApp(id: string, empresaId: string) {
     const orcamento = await this.obterOrcamentoOperacional(id, empresaId);
+    this.exigirConfirmacao(orcamento);
     this.validarCanalDireto(orcamento);
     const telefone = orcamento.conversa?.telefone || orcamento.cliente.telefone;
     if (!telefone) throw new BadRequestException("Cliente sem telefone para enviar o orçamento.");
@@ -97,12 +110,14 @@ export class ComercialService {
     const confirmacao = await this.sender.enviar({ to: telefone, text: texto, options: [{ id: `orcamento_aprovar:${id}`, title: "Autorizar" }, { id: `orcamento_negociar:${id}`, title: "Negociar" }] });
     const agora = new Date();
     await this.prisma.orcamento.update({ where: { id }, data: { status: OrcamentoStatus.aguardando_aprovacao, enviadoEm: agora, ultimoEnvioCanal: "whatsapp", ultimoEnvioEm: agora, pdfGeradoEm: agora } });
+    await this.registrarEnvio(id, pdf, filename, "whatsapp", telefone, documento.messageId);
     if (orcamento.conversaId) await this.prisma.$transaction([this.prisma.whatsAppMensagem.create({ data: { conversaId: orcamento.conversaId, direcao: "saida", texto: `PDF enviado: Orçamento ${orcamento.titulo}`, mensagemId: documento.messageId, tipo: "document" } }), this.prisma.whatsAppMensagem.create({ data: { conversaId: orcamento.conversaId, direcao: "saida", texto, mensagemId: confirmacao.messageId, tipo: "interactive" } })]);
     return { enviado: true, canal: "whatsapp", status: OrcamentoStatus.aguardando_aprovacao };
   }
 
   async enviarEmail(id: string, dto: EnviarOrcamentoEmailDto, empresaId: string) {
     const orcamento = await this.obterOrcamentoOperacional(id, empresaId);
+    this.exigirConfirmacao(orcamento);
     this.validarCanalDireto(orcamento);
     const destinatario = (dto.destinatario || orcamento.cliente.email || "").trim();
     if (!destinatario) throw new BadRequestException("Cliente sem e-mail para enviar o orçamento.");
@@ -112,15 +127,18 @@ export class ComercialService {
     await this.email.enviar({ from: remetente, to: destinatario, subject: `Orçamento ${orcamento.titulo} — AIRMOVEBR`, text: `Olá, ${orcamento.cliente.nome}.\n\nSegue em anexo o orçamento ${orcamento.titulo}.\nValidade: ${orcamento.validoAte ? this.dataTexto(orcamento.validoAte) : "a combinar"}.`, attachments: [{ filename: `orcamento-${id.slice(0, 8)}.pdf`, contentType: "application/pdf", contentBase64: pdf.toString("base64") }] });
     const agora = new Date();
     await this.prisma.orcamento.update({ where: { id }, data: { status: OrcamentoStatus.aguardando_aprovacao, enviadoEm: agora, ultimoEnvioCanal: "email", ultimoEnvioEm: agora, emailEnvio: destinatario, pdfGeradoEm: agora } });
+    await this.registrarEnvio(id, pdf, `orcamento-${id.slice(0, 8)}.pdf`, "email", destinatario);
     return { enviado: true, canal: "email", status: OrcamentoStatus.aguardando_aprovacao, destinatario };
   }
 
   async enviarAssinafy(id: string, empresaId: string) {
     const orcamento = await this.obterOrcamentoOperacional(id, empresaId);
+    this.exigirConfirmacao(orcamento);
     if (orcamento.assinafyDocumentId) throw new BadRequestException("Este orçamento já foi enviado para assinatura.");
     const pdf = this.gerarPdf(orcamento);
     const resultado = await this.assinafy.enviarOrcamento(orcamento, { filename: `orcamento-${id.slice(0, 8)}.pdf`, content: pdf, contentType: "application/pdf" });
     const salvo = await this.prisma.orcamento.update({ where: { id }, data: { status: OrcamentoStatus.aguardando_aprovacao, assinafyDocumentId: resultado.documentId, assinafyAssignmentId: resultado.assignmentId, assinafyStatus: resultado.status, assinafyUltimoEvento: resultado.evento as Prisma.InputJsonValue, assinafyIniciadoEm: new Date(), pdfGeradoEm: new Date() } });
+    await this.registrarEnvio(id, pdf, `orcamento-${id.slice(0, 8)}.pdf`, "assinatura_email", orcamento.cliente.email || "", resultado.documentId);
     return { enviado: true, canal: "assinatura_email", mensagem: "O cliente receberá um e-mail para assinar digitalmente.", status: salvo.status, assinafy_document_id: resultado.documentId, assinafy_assignment_id: resultado.assignmentId, assinafy_status: resultado.status };
   }
 
@@ -137,7 +155,7 @@ export class ComercialService {
   }
 
   private async obterOrcamentoOperacional(id: string, empresaId: string) {
-    const orcamento = await this.prisma.orcamento.findFirst({ where: { id, empresaId }, include: { empresa: { select: { nome: true, razaoSocial: true, cnpj: true, telefone: true, email: true, logradouro: true, numero: true, bairro: true, cidade: true, uf: true, cep: true } }, cliente: { select: { nome: true, telefone: true, email: true, enderecos: { where: { principal: true }, take: 1, select: { logradouro: true, numero: true, bairro: true, cidade: true, uf: true, cep: true } } } }, conversa: { select: { telefone: true } }, itens: true } });
+    const orcamento = await this.prisma.orcamento.findFirst({ where: { id, empresaId }, include: { empresa: { select: { nome: true, razaoSocial: true, cnpj: true, telefone: true, email: true, logradouro: true, numero: true, bairro: true, cidade: true, uf: true, cep: true } }, cliente: { select: { nome: true, telefone: true, email: true, enderecos: { where: { principal: true }, take: 1, select: { logradouro: true, numero: true, bairro: true, cidade: true, uf: true, cep: true } } } }, conversa: { select: { telefone: true } }, itens: true, envios: { orderBy: { enviadoEm: "desc" } } } });
     if (!orcamento) throw new NotFoundException("Orçamento não encontrado.");
     return orcamento;
   }
@@ -148,6 +166,14 @@ export class ComercialService {
     if (this.exigeAssinatura(orcamento.total)) {
       throw new BadRequestException("Orçamentos acima de R$ 2.000,00 devem ser enviados para assinatura por e-mail.");
     }
+  }
+
+  private exigirConfirmacao(orcamento: { confirmadoEm?: Date | null }) {
+    if (!orcamento.confirmadoEm) throw new BadRequestException("Confirme o orçamento antes de gerar ou enviar o PDF.");
+  }
+
+  private async registrarEnvio(orcamentoId: string, pdf: Buffer, filename: string, canal: string, destinatario: string, mensagemId?: string) {
+    await this.prisma.orcamentoEnvio.create({ data: { orcamentoId, pdfHash: createHash("sha256").update(pdf).digest("hex"), pdfFilename: filename, canal, destinatario, status: "enviado", mensagemId } });
   }
 
   private gerarPdf(orcamento: Awaited<ReturnType<ComercialService["obterOrcamentoOperacional"]>>) {
