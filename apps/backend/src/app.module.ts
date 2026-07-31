@@ -11,6 +11,7 @@ import { MobileModule } from "./modules/mobile/mobile.module";
 import { OrdensServicoModule } from "./modules/ordens-servico/ordens-servico.module";
 import { SiteModule } from "./modules/site/site.module";
 import { WhatsAppModule } from "./modules/whatsapp/whatsapp.module";
+import { IaModule } from "./modules/ia/ia.module";
 
 @Module({
   imports: [
@@ -28,7 +29,8 @@ import { WhatsAppModule } from "./modules/whatsapp/whatsapp.module";
     MobileModule,
     OrdensServicoModule,
     SiteModule,
-    WhatsAppModule
+    WhatsAppModule,
+    IaModule
   ]
 })
 export class AppModule {}
