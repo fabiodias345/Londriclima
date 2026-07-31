@@ -1,13 +1,16 @@
-export type AtendimentoAiInput = {
-  mensagens: Array<{ direcao: "entrada" | "saida"; texto: string; criadoEm?: string }>;
-  cliente?: { nome?: string | null; telefone?: string | null; email?: string | null } | null;
+export type AiDraftItem = {
+  item_catalogo_id?: string | null;
+  tipo: "servico" | "material" | "peca" | "equipamento";
+  descricao: string;
+  unidade: string;
+  quantidade: number;
+  valor_unitario?: number | null;
 };
 
-export type AtendimentoAiResult = {
-  resumo: string;
-  cliente: { nome: string | null; telefone: string | null; email: string | null };
-  servico: { descricao: string | null; equipamento: string | null; urgencia: "baixa" | "normal" | "alta" | null };
-  endereco: { texto: string | null; cep: string | null };
-  perguntasPendentes: string[];
-  sugestaoResposta: string | null;
+export type AiDraft = {
+  cliente: Record<string, unknown>;
+  atendimento: { servico?: string | null; equipamento?: string | null; capacidade_btu?: number | null; urgencia?: string | null; detalhes?: string | null };
+  orcamento: { titulo?: string | null; itens: AiDraftItem[]; desconto: number; subtotal: number; total: number };
+  perguntas_pendentes: string[];
+  confianca: number;
 };
