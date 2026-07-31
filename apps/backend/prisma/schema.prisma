@@ -250,6 +250,7 @@ model Usuario {
   convitesTecnicoCriados   ConviteTecnico[]          @relation("ConviteTecnicoCriador")
   conviteTecnicoConsumido  ConviteTecnico?           @relation("ConviteTecnicoUsuario")
   orcamentosCriados       Orcamento[]               @relation("OrcamentoCriador")
+  orcamentosConfirmados   Orcamento[]               @relation("OrcamentoConfirmador")
   levantamentosComoTecnico LevantamentoTecnico[]     @relation("LevantamentoTecnico")
   levantamentosLaudosFinalizados LevantamentoTecnico[] @relation("LevantamentoLaudoFinalizadoPor")
   levantamentosReabertos         LevantamentoTecnico[] @relation("LevantamentoReabertoPor")
@@ -1021,6 +1022,8 @@ model Orcamento {
   total              Decimal         @default(0) @db.Decimal(12, 2)
   enviadoEm          DateTime?       @map("enviado_em")
   pdfGeradoEm        DateTime?       @map("pdf_gerado_em")
+  confirmadoEm       DateTime?       @map("confirmado_em")
+  confirmadoPorUsuarioId String?      @map("confirmado_por_usuario_id") @db.Uuid
   ultimoEnvioCanal   String?         @map("ultimo_envio_canal")
   ultimoEnvioEm      DateTime?       @map("ultimo_envio_em")
   emailEnvio         String?         @map("email_envio")
@@ -1037,12 +1040,31 @@ model Orcamento {
   conversa  WhatsAppConversa? @relation(fields: [conversaId], references: [id], onDelete: SetNull)
   criadoPor Usuario?          @relation("OrcamentoCriador", fields: [criadoPorUsuarioId], references: [id], onDelete: SetNull)
   itens     OrcamentoItem[]
+  envios    OrcamentoEnvio[]
+  confirmadoPor Usuario?       @relation("OrcamentoConfirmador", fields: [confirmadoPorUsuarioId], references: [id], onDelete: SetNull)
   ordemServico OrdemServico?
 
   @@index([empresaId, status])
   @@index([clienteId])
   @@index([conversaId])
   @@map("orcamentos")
+}
+
+model OrcamentoEnvio {
+  id           String   @id @default(uuid()) @db.Uuid
+  orcamentoId  String   @map("orcamento_id") @db.Uuid
+  pdfHash      String   @map("pdf_hash")
+  pdfFilename  String   @map("pdf_filename")
+  canal        String
+  destinatario String
+  status       String
+  mensagemId   String?  @map("mensagem_id")
+  enviadoEm    DateTime @default(now()) @map("enviado_em")
+
+  orcamento Orcamento @relation(fields: [orcamentoId], references: [id], onDelete: Cascade)
+
+  @@index([orcamentoId, enviadoEm])
+  @@map("orcamento_envios")
 }
 
 model OrcamentoItem {

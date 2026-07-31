@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 enum AdminModuleKind {
   orders,
+  commercial,
   schedule,
   clients,
   pmoc,
