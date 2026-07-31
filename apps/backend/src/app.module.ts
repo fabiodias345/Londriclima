@@ -8,6 +8,7 @@ import { AuthModule } from "./modules/auth/auth.module";
 import { AutomacoesModule } from "./modules/automacoes/automacoes.module";
 import { HealthModule } from "./modules/health/health.module";
 import { MobileModule } from "./modules/mobile/mobile.module";
+import { IaModule } from "./modules/ia/ia.module";
 import { OrdensServicoModule } from "./modules/ordens-servico/ordens-servico.module";
 import { SiteModule } from "./modules/site/site.module";
 import { WhatsAppModule } from "./modules/whatsapp/whatsapp.module";
@@ -26,6 +27,7 @@ import { WhatsAppModule } from "./modules/whatsapp/whatsapp.module";
     AutomacoesModule,
     HealthModule,
     MobileModule,
+    IaModule,
     OrdensServicoModule,
     SiteModule,
     WhatsAppModule
