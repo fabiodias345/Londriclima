@@ -318,11 +318,11 @@ Agradecemos pela preferência. Até breve!`;
   }
   private async responderComCep(resposta: BoltResult, texto: string, dadosEntrada: unknown) {
     const dados = normalizarDadosBolt(dadosEntrada);
-    if (dados.status !== "BOT_QUALIFYING" || dados.etapa_atual !== "aguardando_cep") return resposta;
+    if (resposta.dados.status !== "BOT_QUALIFYING" || resposta.dados.etapa_atual !== "aguardando_cep") return resposta;
     const cep = texto.replace(/\D/g, "");
     if (cep.length !== 8) return resposta;
     const endereco = await this.consultarCep(cep);
-    if (!endereco) return { ...resposta, texto: "Não localizei esse CEP. Confira os oito números e envie novamente." };
+    if (!endereco) return { ...resposta, texto: "Não localizei esse CEP. Confira os oito números e envie novamente.", dados: { ...resposta.dados, tentativas_fallback: resposta.dados.tentativas_fallback + 1 } };
     const cidadeBairro = [endereco.cidade, endereco.bairro].filter(Boolean).join(" - ");
     const dadosComEndereco: BoltData = {
       ...dados,

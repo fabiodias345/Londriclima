@@ -1,6 +1,6 @@
 import { apiModule, apiRoot } from "./modules/api.js?v=20260725-login";
 import { authModule, authRoot } from "./modules/auth.js?v=20260704-access";
-import { sessionModule, sessionRoot } from "./modules/session.js?v=20260725-session";
+import { sessionModule, sessionRoot } from "./modules/session.js?v=20260731-session-refresh";
 import { agendaModule, agendaRoot } from "./modules/agenda.js?v=20260704-access";
 import { recurrenceUiModule } from "./modules/recurrence-ui.js?v=20260704-access";
 import { recurrenceStatusRoot } from "./modules/recurrence-status.js?v=20260704-access";

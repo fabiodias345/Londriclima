@@ -131,6 +131,7 @@ export class BoltRules {
     const equipamento = dados.memoria.equipamento || (dados.etapa_atual === "aguardando_equipamento" ? original : this.extrairEquipamento(texto));
     const infraestrutura = dados.memoria.infraestrutura || (dados.etapa_atual === "aguardando_infraestrutura" ? (this.ehNao(texto) ? "instalacao_nova" : this.ehSim(texto) ? "existente" : original) : null);
     const camposExtra = { ...dados.campos_extra };
+    const logradouro = dados.etapa_atual === "aguardando_logradouro" ? original : dados.logradouro;
     if (dados.etapa_atual === "aguardando_quantidade_aparelhos") camposExtra.quantidade_aparelhos = original;
     if (dados.etapa_atual === "aguardando_tipo_aparelho") camposExtra.tipo_aparelho = original;
     if (dados.etapa_atual === "aguardando_duracao_aluguel") camposExtra.duracao_aluguel = original;
@@ -145,6 +146,7 @@ export class BoltRules {
       nome,
       email,
       servico: servico || null,
+      logradouro,
       detalhes,
       campos_extra: camposExtra,
       etapa_atual: recusouEmail ? "aguardando_email" : dados.etapa_atual,
@@ -246,6 +248,12 @@ export class BoltRules {
     if (!this.etapaIncompreendida(etapa, texto)) return { dados: { ...dados, tentativas_fallback: 0 } };
     if (dados.tentativas_fallback < 1) return { resposta: this.resposta({ ...dados, tentativas_fallback: 1 }, this.perguntaFallback(etapa), this.opcoesFallback(etapa)), dados };
     const avancado = { ...dados, tentativas_fallback: 0 };
+    if (etapa === "aguardando_cep") {
+      return {
+        resposta: this.resposta({ ...avancado, etapa_atual: "aguardando_logradouro", memoria: { ...avancado.memoria, cep_status: "recusado" } }, "Não consegui localizar esse CEP. Qual é o nome da rua?"),
+        dados
+      };
+    }
     if (etapa === "aguardando_servico") avancado.servico = "nao_identificado";
     if (etapa === "aguardando_aparelho") avancado.memoria = { ...avancado.memoria, possui_aparelho: "recusado" };
     if (etapa === "aguardando_btus" || etapa === "aguardando_btus_valor") avancado.memoria = { ...avancado.memoria, btus_status: "recusado" };
@@ -262,6 +270,7 @@ export class BoltRules {
     if (etapa === "aguardando_tipo_manutencao") return !["manutencao_preventiva", "manutencao_corretiva", "preventiva", "corretiva", "problema"].includes(texto);
     if (etapa === "aguardando_tipo_aparelho") return !/^(split|piso teto|piso-teto|cassete|outro|tipo_split|tipo_piso_teto|tipo_cassete|tipo_outro)$/.test(texto);
     if (etapa === "aguardando_email") return !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(texto) && !this.ehRecusa(texto);
+    if (etapa === "aguardando_cep") return !/^\d{8}$/.test(texto.replace(/\D/g, ""));
     return false;
   }
   private perguntaFallback(etapa: string | null) {

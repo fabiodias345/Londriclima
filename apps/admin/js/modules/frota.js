@@ -16,6 +16,11 @@ async function handleUnauthorized(response) {
     return false;
   }
 
+  if (await renovarSessaoVisivel()) {
+    window.location.reload();
+    return true;
+  }
+
   clearToken();
   showLogin();
   loginStatus.textContent = "Sessao expirada. Entre novamente.";
