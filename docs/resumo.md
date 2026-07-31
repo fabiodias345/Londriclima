@@ -43,6 +43,15 @@ Atualizado em: 29/07/2026
 
 ## Plano ativo: IA no atendimento e orçamento
 
+### Status das fases
+
+- **Fase 0 — Fundação e diagnóstico:** concluída.
+- **Fase 1 — Preparação do backend:** concluída.
+- **Fase 2 — Ferramentas do copiloto:** concluída.
+- **Fase 3 — Tela única no Admin:** concluída.
+- **Fase 4 — PDF e envio:** pendente.
+- **Fase 5 — APK e expansão:** pendente.
+
 ### Fase 1 — Preparação do backend
 
 - Mapear os endpoints e telas atuais de WhatsApp, clientes e orçamento.
