@@ -17,7 +17,7 @@ import { WhatsAppModule } from "./modules/whatsapp/whatsapp.module";
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ["whats.env", "../../whats.env", ".env.production", "../.env.production", "../../.env.production", ".env", "../.env", ".env.local"]
+      envFilePath: [".env.production", "../.env.production", "../../.env.production", "whats.env", "../../whats.env", ".env", "../.env", ".env.local"]
     }),
     DatabaseModule,
     ComercialModule,
