@@ -63,7 +63,8 @@ export class ComercialService {
     const subtotal = itens.reduce((total, item) => total.plus(item.valorTotal), new Prisma.Decimal(0));
     const desconto = new Prisma.Decimal(dto.desconto || 0);
     if (desconto.greaterThan(subtotal)) throw new BadRequestException("O desconto não pode ser maior que o subtotal.");
-    return this.prisma.orcamento.create({ data: { empresaId: usuario.empresa_id, clienteId: cliente.id, conversaId: dto.conversa_id || null, criadoPorUsuarioId: usuario.id, titulo: this.texto(dto.titulo), detalhes: this.textoOpcional(dto.detalhes), validoAte: dto.valido_ate ? this.data(dto.valido_ate) : null, subtotal, desconto, total: subtotal.minus(desconto), itens: { create: itens } }, include: { itens: true, cliente: { select: { nome: true, telefone: true } } } });
+    const validoAte = dto.valido_ate ? this.data(dto.valido_ate) : this.dataValidadePadrao();
+    return this.prisma.orcamento.create({ data: { empresaId: usuario.empresa_id, clienteId: cliente.id, conversaId: dto.conversa_id || null, criadoPorUsuarioId: usuario.id, titulo: this.texto(dto.titulo), detalhes: this.textoOpcional(dto.detalhes), validoAte, subtotal, desconto, total: subtotal.minus(desconto), itens: { create: itens } }, include: { itens: true, cliente: { select: { nome: true, telefone: true } } } });
   }
 
   async atualizarStatus(id: string, dto: AtualizarStatusOrcamentoDto, empresaId: string) {
@@ -184,5 +185,6 @@ export class ComercialService {
   private texto(valor: string) { const resultado = String(valor || "").trim(); if (!resultado) throw new BadRequestException("Preencha os campos obrigatórios."); return resultado; }
   private textoOpcional(valor?: string) { const resultado = String(valor || "").trim(); return resultado || null; }
   private data(valor: string) { const data = new Date(`${valor}T23:59:59`); if (Number.isNaN(data.getTime())) throw new BadRequestException("Data de validade inválida."); return data; }
+  private dataValidadePadrao() { const data = new Date(); data.setHours(23, 59, 59, 999); data.setDate(data.getDate() + 14); return data; }
   private dataTexto(valor: Date) { return valor.toLocaleDateString("pt-BR"); }
 }
