@@ -260,9 +260,9 @@ async function criarRascunhoIa() {
   const descricao = [draft.atendimento?.servico || "Serviço de climatização", draft.atendimento?.equipamento, "Proposta com valor definido pelo atendente"].filter(Boolean).join(" - ");
   const item = { item_catalogo_id: null, tipo: "servico", descricao, unidade: "serviço", quantidade: 1, valor_unitario: valor };
   if (!window.confirm("Gerar o PDF e enviar esta proposta ao cliente para aceite?")) return;
-  const response = await fetch(apiBaseUrl + "/admin/comercial/orcamentos", { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ cliente_id: conversa.cliente.id, conversa_id: conversa.id, titulo: draft.orcamento?.titulo || draft.atendimento?.servico || "Proposta de serviço", detalhes: [draft.atendimento?.detalhes, condicoes].filter(Boolean).join("\n"), desconto: 0, itens: [item] }) });
-  if (!response.ok) { const erro = await response.json().catch(() => null); window.alert(erro?.message || "Não foi possível criar a proposta."); return; }
-  const proposta = await response.json();
+  const propostaResponse = await fetch(apiBaseUrl + "/admin/comercial/orcamentos", { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ cliente_id: conversa.cliente.id, conversa_id: conversa.id, titulo: draft.orcamento?.titulo || draft.atendimento?.servico || "Proposta de serviço", detalhes: [draft.atendimento?.detalhes, condicoes].filter(Boolean).join("\\n"), desconto: 0, itens: [item] }) });
+  if (!propostaResponse.ok) { const erro = await propostaResponse.json().catch(() => null); window.alert(erro?.message || "Não foi possível criar a proposta."); return; }
+  const proposta = await propostaResponse.json();
   const confirmado = await fetch(apiBaseUrl + "/admin/comercial/orcamentos/" + proposta.id + "/confirmar", { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ confirmado: true }) });
   if (!confirmado.ok) { window.alert("A proposta foi criada, mas não foi confirmada."); await loadWhatsappConversation(selectedWhatsappId); return; }
   const envio = await fetch(apiBaseUrl + "/admin/comercial/orcamentos/" + proposta.id + "/enviar-whatsapp", { method: "POST", headers: authHeaders() });

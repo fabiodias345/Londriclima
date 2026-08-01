@@ -38,7 +38,6 @@ export const adminModules = {
 const adminSources = [
   recurrenceStatusRoot,
   apiRoot,
-  sessionRoot,
   authRoot,
   frotaRoot,
   agendaRoot,
@@ -51,7 +50,8 @@ const adminSources = [
   whatsappRoot,
   comercialRoot,
   eventsRoot,
-  bootstrapRoot
+  bootstrapRoot,
+  sessionRoot
 ];
 
 window.adminModules = adminModules;
