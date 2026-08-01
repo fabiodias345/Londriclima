@@ -1,3 +1,5 @@
+import { readFileSync } from "fs";
+import { resolve } from "path";
 import { Prisma } from "@prisma/client";
 import { criarPdfBuffer, PdfPage } from "../admin/services/admin-pmoc-pdf-writer";
 
