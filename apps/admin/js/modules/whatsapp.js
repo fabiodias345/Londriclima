@@ -76,6 +76,10 @@ async function loadWhatsappConversations() {
   const result = await response.json(); whatsappConversations = result.items || [];
   status.textContent = whatsappConversations.length ? \`\${whatsappConversations.length} conversas\` : "Nenhuma conversa";
   renderWhatsappConversations();
+  const resumoAberto = whatsappConversations.find((item) => item.id === selectedWhatsappId);
+  if (resumoAberto && selectedWhatsappConversation && resumoAberto.ultimaMensagemEm !== selectedWhatsappConversation.ultimaMensagemEm) {
+    void loadWhatsappConversation(selectedWhatsappId);
+  }
 }
 
 function getWhatsappState(item) {
@@ -161,8 +165,8 @@ function aiWorkbench() {
   const loading = whatsappAiLoading ? "Analisando..." : "Analisar conversa";
   if (!draft) return '<section class="whatsapp-ai-panel"><div class="whatsapp-ai-heading"><div><span>Copiloto comercial</span><strong>Resumo e rascunho assistido</strong></div><span class="whatsapp-ai-badge">Revisão humana</span></div><p>Extraia dados da conversa para acelerar o atendimento. A IA não grava cliente, preço ou orçamento.</p><label class="whatsapp-ai-context">Contexto para a IA<textarea id="whatsappAiContext" rows="2" placeholder="Ex.: priorizar instalação residencial e perguntar a capacidade do equipamento."></textarea></label><button type="button" class="whatsapp-ai-button" data-whatsapp-action="analisar-ia" ' + (whatsappAiLoading ? "disabled" : "") + '>' + loading + '</button></section>';
   const atendimento = draft.atendimento || {};
-  const items = (draft.orcamento?.itens || []).map((item, index) => '<div class="whatsapp-ai-item"><label>Item<input name="ia_item_descricao_' + index + '" value="' + esc(item.descricao || "") + '"></label><label>Quantidade<input name="ia_item_quantidade_' + index + '" type="number" min="0.001" step="0.001" value="' + esc(item.quantidade || 1) + '"></label><span>' + (item.valor_unitario == null ? "Preço precisa ser associado ao catálogo" : "Preço validado: " + money(item.valor_unitario)) + '</span></div>').join("");
-  const pendencias = (draft.perguntas_pendentes || []).map((item) => '<li>' + esc(item) + '</li>').join("") || '<li>Nenhuma pendência identificada.</li>';
+  const items = (draft.orcamento?.itens || []).map((item, index) => '<div class="whatsapp-ai-item"><label>Item<input name="ia_item_descricao_' + index + '" value="' + esc(item.descricao || "") + '"></label><label>Quantidade<input name="ia_item_quantidade_' + index + '" type="number" min="0.001" step="0.001" value="' + esc(item.quantidade || 1) + '"></label><span>Preço será informado pelo atendente</span></div>').join("");
+  const pendencias = (draft.perguntas_pendentes || []).map((item) => '<li><button type="button" class="whatsapp-ai-pending-question" data-whatsapp-action="perguntar-pendencia" data-pergunta="' + esc(item) + '">' + esc(item) + '</button></li>').join("") || '<li>Nenhuma pendência identificada.</li>';
   return '<form data-whatsapp-form="ia" class="whatsapp-ai-panel whatsapp-ai-panel-ready"><div class="whatsapp-ai-heading"><div><span>Copiloto comercial</span><strong>Revise antes de aplicar</strong></div><button type="button" class="secondary-button" data-whatsapp-action="analisar-ia">Reanalisar</button></div><div class="whatsapp-ai-grid"><label>Cliente<input name="ia_nome" value="' + esc(draft.cliente?.nome || "") + '"></label><label>Documento<input name="ia_documento" value="' + esc(draft.cliente?.documento || "") + '"></label><label>Serviço<input name="ia_servico" value="' + esc(atendimento.servico || "") + '"></label><label>Equipamento<input name="ia_equipamento" value="' + esc(atendimento.equipamento || "") + '"></label><label class="whatsapp-ai-wide">Título do orçamento<input name="ia_titulo" value="' + esc(draft.orcamento?.titulo || "") + '"></label></div><div class="whatsapp-ai-items"><strong>Itens identificados</strong>' + (items || '<p>Nenhum item identificado.</p>') + '</div><div class="whatsapp-ai-pending"><strong>Perguntas pendentes</strong><ul>' + pendencias + '</ul></div><div class="whatsapp-ai-actions"><button type="submit" class="whatsapp-ai-button">Aplicar rascunho ao orçamento</button><button type="button" class="secondary-button" data-whatsapp-action="descartar-ia">Descartar sugestão</button></div><small class="whatsapp-ai-disclaimer">Valores e totais serão recalculados pelo catálogo e pelo backend.</small></form>';
 }
 function operationalForm(conversa) { if (!conversa.cliente) return whatsappClientResolutionForm(conversa); if (whatsappServiceChoiceRequired) return serviceChoiceForm(); if (conversa.levantamento) return levantamentoForm(conversa); const quote = conversa.orcamentos?.[0]; if (whatsappServiceMode === "levantamento") return levantamentoForm(conversa); if (whatsappServiceMode === "orcamento" || quote) return \`\${quoteForm(conversa)}\${!quote || quote.status === "aprovado" ? scheduleForm(conversa) : ""}\`; return serviceChoiceForm(); }
@@ -205,6 +209,9 @@ async function loadWhatsappConversation(id) {
   const aiPanel = aiWorkbench();
   const schedulePanelHtml = whatsappScheduleOpen && conversa.cliente ? schedulePanel(conversa) : "";
   document.querySelector("#whatsappConversationDetail").innerHTML = \`<header class="whatsapp-detail-header"><div class="whatsapp-detail-person"><span class="whatsapp-avatar whatsapp-avatar-large">\${esc((conversa.nomeContato || conversa.telefone || "?").slice(0, 1).toUpperCase())}</span><div><h3>\${esc(conversa.nomeContato || conversa.telefone)}</h3><p>\${esc(conversa.telefone || "Sem telefone")} · \${conversa.status === "encerrada" ? "Conversa encerrada" : conversa.atribuidoUsuario ? \`Atendimento com \${esc(conversa.atribuidoUsuario.nome)}\` : "Aguardando atendente"}</p></div></div><div class="whatsapp-detail-actions">\${action}<button class="danger-button" data-whatsapp-action="apagar">Apagar conversa</button></div></header><div class="whatsapp-detail-body"><div class="whatsapp-thread-wrap"><div class="whatsapp-thread-heading"><strong>Histórico da conversa</strong><span>\${conversa.mensagens.length} mensagens</span></div><div class="whatsapp-thread">\${conversa.mensagens.map((item) => \`<div class="whatsapp-message whatsapp-message-\${item.direcao}"><small>\${item.direcao === "entrada" ? "Cliente" : "AIRMOVEBR"} · \${esc(formatDate(item.criadoEm))}</small><p>\${esc(item.texto)}</p></div>\`).join("")}</div><form class="whatsapp-reply-form" id="whatsappReplyForm"><textarea name="texto" rows="2" placeholder="Escreva uma resposta..." required></textarea><div><span>A primeira resposta assume a conversa automaticamente.</span><button type="submit">Enviar resposta</button></div></form></div><aside class="whatsapp-ai-column">\${aiPanel}<div class="whatsapp-manual-workbench">\${form}</div>\${schedulePanelHtml}</aside></div>\`;
+  const iaForm = document.querySelector('[data-whatsapp-form="ia"]');
+  if (iaForm && !iaForm.querySelector('[name="ia_valor_atendente"]')) iaForm.querySelector('.whatsapp-ai-grid')?.insertAdjacentHTML("beforeend", '<label>Valor definido pelo atendente (R$)<input name="ia_valor_atendente" type="number" min="0.01" step="0.01" required placeholder="Ex.: 850,00"></label><label class="whatsapp-ai-wide">Condições da proposta<textarea name="ia_condicoes" rows="2" placeholder="Ex.: material incluso, instalação e garantia."></textarea></label>');
+  if (iaForm) { const submit = iaForm.querySelector('button[type="submit"]'); if (submit) submit.textContent = "Gerar PDF e enviar proposta"; }
   renderWhatsappConversations(); requestAnimationFrame(() => { const thread = document.querySelector(".whatsapp-thread"); if (thread) thread.scrollTo({ top: thread.scrollHeight, behavior: "smooth" }); });
 }
 
@@ -246,7 +253,23 @@ async function analisarWhatsappComIa() {
 async function criarRascunhoIa() {
   const conversa = selectedWhatsappConversation;
   const draft = whatsappAiDraft;
-  if (!conversa?.cliente?.id || !draft?.orcamento?.itens?.length) { window.alert("Vincule o cliente e informe pelo menos um item com valor."); return; }
+  if (!conversa?.cliente?.id || !draft) { window.alert("Vincule o cliente antes de gerar a proposta."); return; }
+  const valor = Number(document.querySelector('[name="ia_valor_atendente"]')?.value || 0);
+  if (!Number.isFinite(valor) || valor <= 0) { window.alert("Informe o valor definido pelo atendente."); return; }
+  const condicoes = String(document.querySelector('[name="ia_condicoes"]')?.value || "").trim();
+  const descricao = [draft.atendimento?.servico || "Serviço de climatização", draft.atendimento?.equipamento, "Proposta com valor definido pelo atendente"].filter(Boolean).join(" - ");
+  const item = { item_catalogo_id: null, tipo: "servico", descricao, unidade: "serviço", quantidade: 1, valor_unitario: valor };
+  if (!window.confirm("Gerar o PDF e enviar esta proposta ao cliente para aceite?")) return;
+  const response = await fetch(apiBaseUrl + "/admin/comercial/orcamentos", { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ cliente_id: conversa.cliente.id, conversa_id: conversa.id, titulo: draft.orcamento?.titulo || draft.atendimento?.servico || "Proposta de serviço", detalhes: [draft.atendimento?.detalhes, condicoes].filter(Boolean).join("\n"), desconto: 0, itens: [item] }) });
+  if (!response.ok) { const erro = await response.json().catch(() => null); window.alert(erro?.message || "Não foi possível criar a proposta."); return; }
+  const proposta = await response.json();
+  const confirmado = await fetch(apiBaseUrl + "/admin/comercial/orcamentos/" + proposta.id + "/confirmar", { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ confirmado: true }) });
+  if (!confirmado.ok) { window.alert("A proposta foi criada, mas não foi confirmada."); await loadWhatsappConversation(selectedWhatsappId); return; }
+  const envio = await fetch(apiBaseUrl + "/admin/comercial/orcamentos/" + proposta.id + "/enviar-whatsapp", { method: "POST", headers: authHeaders() });
+  if (!envio.ok) { const erro = await envio.json().catch(() => null); window.alert(erro?.message || "A proposta foi criada, mas não foi enviada ao cliente."); await loadWhatsappConversation(selectedWhatsappId); return; }
+  whatsappAiDraft = null;
+  await loadWhatsappConversation(selectedWhatsappId);
+  return;
   const itens = draft.orcamento.itens.map((item, index) => ({ item_catalogo_id: item.item_catalogo_id || null, tipo: item.tipo, descricao: String(document.querySelector('[name="ia_item_descricao_' + index + '"]')?.value || item.descricao).trim(), unidade: item.unidade || "un", quantidade: Number(document.querySelector('[name="ia_item_quantidade_' + index + '"]')?.value || item.quantidade || 1) }));
   const validacao = await fetch(apiBaseUrl + "/admin/ia/conversas/" + selectedWhatsappId + "/rascunho", { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ titulo: draft.orcamento.titulo, itens, desconto: 0 }) });
   if (!validacao.ok) { const erro = await validacao.json().catch(() => null); window.alert(erro?.message || "O rascunho não passou pela validação do backend."); return; }
@@ -326,6 +349,11 @@ document.querySelector("#whatsappConversationDetail").addEventListener("click", 
   if (!(target instanceof HTMLButtonElement)) return;
   const action = target.dataset.whatsappAction;
   if (action === "analisar-ia") { await analisarWhatsappComIa(); return; }
+  if (action === "perguntar-pendencia") {
+    const textarea = document.querySelector('#whatsappReplyForm textarea[name="texto"]');
+    if (textarea instanceof HTMLTextAreaElement) { textarea.value = target.dataset.pergunta || ""; textarea.focus(); textarea.scrollIntoView({ behavior: "smooth", block: "center" }); }
+    return;
+  }
   if (action === "criar-rascunho-ia") { await criarRascunhoIa(); return; }
   if (action === "escolher-levantamento" || action === "escolher-orcamento") { whatsappServiceMode = action === "escolher-levantamento" ? "levantamento" : "orcamento"; whatsappServiceChoiceRequired = false; await loadWhatsappConversation(selectedWhatsappId); return; }
   if (action === "abrir-agenda") { whatsappScheduleDraft.context = "os"; whatsappScheduleOpen = true; whatsappScheduleMode = "calendar"; whatsappScheduleOptions.agenda = []; await loadWhatsappScheduleOptions(); await loadWhatsappConversation(selectedWhatsappId); return; }
