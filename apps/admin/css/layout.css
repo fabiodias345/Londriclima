@@ -999,14 +999,6 @@ form button,
   background: #f1f5f9;
 }
 
-.app-footer {
-  padding: 18px 24px 22px;
-  color: #718096;
-  background: #f1f5f9;
-  font-size: 12px;
-  text-align: center;
-}
-
 .dashboard {
   gap: 0;
 }
