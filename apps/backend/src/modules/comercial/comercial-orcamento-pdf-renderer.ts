@@ -16,6 +16,8 @@ export type OrcamentoPdfInput = {
 
 const PAGE_TOP = 806;
 const CONTENT_BOTTOM = 68;
+const AIR_MOVE_PHONE = "(43) 3067-3793";
+const AIR_MOVE_EMAIL = "airmove@gmail.com";
 
 export class ComercialOrcamentoPdfRenderer {
   gerar(input: OrcamentoPdfInput) {
@@ -27,7 +29,7 @@ export class ComercialOrcamentoPdfRenderer {
       input.empresa.razaoSocial || input.empresa.nome,
       input.empresa.cnpj ? `CNPJ: ${input.empresa.cnpj}` : "CNPJ: não informado",
       this.endereco(input.empresa),
-      [input.empresa.telefone, input.empresa.email].filter(Boolean).join(" | ") || "Contato não informado"
+      `WhatsApp: ${AIR_MOVE_PHONE} | ${AIR_MOVE_EMAIL}`
     ]);
     y -= 12;
     y = this.box(page, "CLIENTE", y, [input.cliente.nome, this.endereco(input.cliente), input.cliente.telefone || "Telefone não informado"]);
@@ -82,8 +84,12 @@ export class ComercialOrcamentoPdfRenderer {
     const page: PdfPage = [];
     pages.push(page);
     this.rect(page, 36, 770, 540, 48, "0.04 0.22 0.39");
-    this.text(page, input.empresa.nome.toUpperCase(), 50, PAGE_TOP, 18, true, "1 1 1");
-    this.text(page, "PROPOSTA COMERCIAL", 50, 790, 9, true, "0.78 0.9 1");
+    const logo = this.carregarLogo();
+    if (logo) {
+      page.imagens = [{ buffer: logo, x: 45, y: 777, width: 50, height: 34 }];
+    }
+    this.text(page, "AIR MOVE CLIMATIZAÇÃO", 108, PAGE_TOP, 16, true, "1 1 1");
+    this.text(page, "PROPOSTA COMERCIAL", 108, 790, 9, true, "0.78 0.9 1");
     this.text(page, input.numero, 485, PAGE_TOP, 9, true, "1 1 1");
     this.text(page, `Emissão: ${this.data(new Date())}`, 453, 790, 8, false, "0.78 0.9 1");
     return page;
@@ -121,7 +127,7 @@ export class ComercialOrcamentoPdfRenderer {
 
   private rodape(page: PdfPage) {
     this.line(page, 36, 34, 576, 34, "0.65 0.7 0.76");
-    this.text(page, "AIRMOVEBR - Ar-condicionado sob demanda", 36, 20, 8, false, "0.35 0.4 0.46");
+    this.text(page, `AIR MOVE Climatização · WhatsApp ${AIR_MOVE_PHONE} · ${AIR_MOVE_EMAIL}`, 36, 20, 7, false, "0.35 0.4 0.46");
     this.text(page, "Proposta comercial", 490, 20, 8, false, "0.35 0.4 0.46");
   }
 
@@ -140,6 +146,16 @@ export class ComercialOrcamentoPdfRenderer {
   private endereco(value: OrcamentoPdfInput["empresa"] | OrcamentoPdfInput["cliente"]) { return [[value.logradouro, value.numero].filter(Boolean).join(", "), value.bairro, [value.cidade, value.uf].filter(Boolean).join("/"), value.cep].filter(Boolean).join(" - ") || "Endereço não informado"; }
   private moeda(value: Prisma.Decimal) { return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value)); }
   private data(value: Date) { return value.toLocaleDateString("pt-BR"); }
+  private carregarLogo() {
+    const caminhos = [
+      resolve(process.cwd(), "assets", "air-move-logo-header.jpg"),
+      resolve(process.cwd(), "apps", "backend", "assets", "air-move-logo-header.jpg")
+    ];
+    for (const caminho of caminhos) {
+      try { return readFileSync(caminho); } catch { /* tenta o próximo caminho */ }
+    }
+    return null;
+  }
   private text(page: PdfPage, value: string, x: number, y: number, size: number, bold: boolean, color: string) { page.push(`BT ${color} rg /${bold ? "F2" : "F1"} ${size} Tf ${x} ${y} Td (${this.escape(value)}) Tj ET`); }
   private rect(page: PdfPage, x: number, y: number, width: number, height: number, fill?: string) { if (fill) page.push(`q ${fill} rg ${x} ${y} ${width} ${height} re f Q`); page.push(`q 0.78 0.82 0.87 RG ${x} ${y} ${width} ${height} re S Q`); }
   private line(page: PdfPage, x1: number, y1: number, x2: number, y2: number, color: string) { page.push(`q ${color} RG ${x1} ${y1} m ${x2} ${y2} l S Q`); }

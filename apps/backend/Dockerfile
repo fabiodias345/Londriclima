@@ -21,5 +21,6 @@ COPY --from=build /app/apps/backend/dist ./apps/backend/dist
 COPY --from=build /app/apps/backend/prisma ./apps/backend/prisma
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
+COPY apps/backend/assets ./apps/backend/assets
 EXPOSE 3000
 CMD ["npm", "run", "start", "-w", "apps/backend"]
