@@ -6,7 +6,7 @@ whatsappNav.className = "nav-link";
 whatsappNav.type = "button";
 whatsappNav.dataset.view = "whatsapp";
 whatsappNav.textContent = "WhatsApp";
-const whatsappOperationGroup = document.querySelector('[aria-label="Operação"]');
+const whatsappOperationGroup = document.querySelector('[aria-label="Menu principal"]');
 whatsappOperationGroup?.insertBefore(whatsappNav, whatsappOperationGroup.querySelector(".nav-link"));
 
 const whatsappSummary = document.createElement("section");

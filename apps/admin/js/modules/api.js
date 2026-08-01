@@ -61,6 +61,15 @@ const configButton = document.querySelector("#configButton");
 const configTabs = document.querySelector("#configTabs");
 const configTabButtons = document.querySelectorAll("[data-config-view]");
 const navLinks = document.querySelectorAll(".nav-link");
+const menuToggles = document.querySelectorAll("[data-menu-toggle]");
+for (const toggle of menuToggles) {
+  toggle.setAttribute("aria-expanded", "false");
+  toggle.addEventListener("click", () => {
+    const folder = toggle.closest(".nav-folder");
+    const isOpen = folder?.classList.toggle("is-open") ?? false;
+    toggle.setAttribute("aria-expanded", String(isOpen));
+  });
+}
 const viewKicker = document.querySelector("#viewKicker");
 const viewTitle = document.querySelector("#viewTitle");
 const preChamadosSummary = document.querySelector("#preChamadosSummary");

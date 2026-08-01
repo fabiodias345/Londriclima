@@ -23,23 +23,30 @@
 
       </a>
       <nav class="side-nav" aria-label="Menu administrativo">
-        <section class="nav-group" aria-label="Operação">
-          <span class="nav-group-title">Operação</span>
+        <section class="nav-group nav-primary-group" aria-label="Menu principal">
           <button class="nav-link active" type="button" data-view="preChamados">O.S.</button>
           <button class="nav-link" type="button" data-view="agenda">Agenda</button>
           <button class="nav-link" type="button" data-view="recorrencias">Recorrências</button>
-          <button class="nav-link" type="button" data-view="frota">Frota</button>
+          <button class="nav-link" type="button" data-view="frota">🚗 Frota</button>
         </section>
 
-        <section class="nav-group" aria-label="Cadastros">
-          <span class="nav-group-title">Cadastros</span>
-          <button class="nav-link" type="button" data-view="clientes">Clientes</button>
+        <section class="nav-group nav-folder" aria-label="Configurações">
+          <button class="nav-folder-toggle" type="button" data-menu-toggle="configuracoes">⚙ Configurações <span>⌄</span></button>
+          <div class="nav-folder-menu" data-menu="configuracoes">
+            <button class="nav-link" type="button" data-view="empresa">Empresa</button>
+            <button class="nav-link" type="button" data-view="tecnicos">Acessos</button>
+            <button class="nav-link" type="button" data-view="equipes">Equipe</button>
+            <button class="nav-link" type="button" data-view="engenheiros">Engenheiros</button>
+            <button class="nav-link" type="button" data-view="clientes">Clientes</button>
+          </div>
         </section>
 
-        <section class="nav-group" aria-label="Documentos">
-          <span class="nav-group-title">Documentos</span>
-          <button class="nav-link" type="button" data-view="pmoc">PMOC</button>
-          <button class="nav-link" type="button" data-view="relatoriosAvulsos">Relatórios Avulsos</button>
+        <section class="nav-group nav-folder" aria-label="Documentação">
+          <button class="nav-folder-toggle" type="button" data-menu-toggle="documentacao">📖 Documentação <span>⌄</span></button>
+          <div class="nav-folder-menu" data-menu="documentacao">
+            <button class="nav-link" type="button" data-view="pmoc">PMOC</button>
+            <button class="nav-link" type="button" data-view="relatoriosAvulsos">Relatórios Avulsos</button>
+          </div>
         </section>
       </nav>
       <div class="sidebar-footer">

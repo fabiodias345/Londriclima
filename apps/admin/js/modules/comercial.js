@@ -6,8 +6,8 @@ comercialCss.rel = "stylesheet";
 comercialCss.href = "./css/comercial.css?v=20260725-orcamentos";
 document.head.append(comercialCss);
 
-const comercialOperationGroup = document.querySelector('[aria-label="Operação"]');
-const comercialCadastroGroup = document.querySelector('[aria-label="Cadastros"]');
+const comercialOperationGroup = document.querySelector('[aria-label="Menu principal"]');
+const comercialCadastroGroup = document.querySelector('[data-menu="configuracoes"]');
 const comercialNav = document.createElement("button");
 comercialNav.className = "nav-link";
 comercialNav.type = "button";
