@@ -214,7 +214,7 @@ serviceChoiceForm = function (conversa) {
   const endereco = cliente?.endereco || cliente?.enderecos?.[0] || dados;
   const completo = Boolean(cliente?.nome && cliente?.email && cliente?.documento && endereco.cep && endereco.logradouro && endereco.numero && endereco.bairro && endereco.cidade && endereco.uf);
   const servicoNormalizado = String(dados.servico || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  const podeAgendar = servicoNormalizado.startsWith('manutencao');
+  const podeAgendar = servicoNormalizado.startsWith('manutencao') || servicoNormalizado.startsWith('instalacao');
   const agendamento = podeAgendar ? '<button type="button" data-whatsapp-action="escolher-levantamento"><strong>Agendar visita</strong><small>Agendar diagnóstico técnico, sem preço.</small></button>' : '';
   return '<section class="whatsapp-service-choice"><button type="button" class="whatsapp-step-back" data-whatsapp-action="voltar-cliente" aria-label="Voltar para o cadastro do cliente">← Voltar</button><div class="whatsapp-workbench-title"><span>Copiloto comercial</span><strong>Cliente identificado</strong></div><div class="whatsapp-client-compact"><span>Cliente</span><strong>' + esc(cliente?.nome || 'Cliente') + '</strong><small>' + (completo ? 'Cadastro completo' : 'Cadastro parcial — pode completar depois') + '</small></div><label class="whatsapp-field-wide">Título do orçamento<input name="whatsapp_titulo_comercial" value="' + esc(titulo) + '"></label><div class="whatsapp-service-choice-actions"><button type="button" data-whatsapp-action="escolher-orcamento"><strong>Montar orçamento</strong><small>Montar proposta com itens, valores e validade.</small></button>' + agendamento + '</div></section>';
 };

@@ -196,7 +196,7 @@ export class WhatsAppService {
     const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId }, select: { id: true, clienteId: true, dados: true } });
     if (!conversa.clienteId) throw new BadRequestException("Crie ou vincule o cliente antes de agendar o levantamento.");
     const dados = normalizarDadosBolt(conversa.dados);
-    if (!dados.servico?.startsWith("manutencao_")) throw new BadRequestException("Levantamento tecnico e exclusivo para manutencao.");
+    if (!dados.servico?.startsWith("manutencao") && dados.servico !== "instalacao") throw new BadRequestException("Levantamento tecnico disponivel para manutencao ou instalacao.");
     const levantamento = await this.levantamentos.criar(empresaId, conversa.clienteId, conversa.id, { ...dto, cliente_id: conversa.clienteId, conversa_id: conversa.id, problema: dto.problema || dados.detalhes || "Problema informado pelo cliente" });
     this.emitir({ tipo: "levantamento_criado", conversaId: id, empresaId });
     return { levantamento };
