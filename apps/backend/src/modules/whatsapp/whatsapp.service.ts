@@ -333,10 +333,13 @@ Agradecemos pela preferência. Até breve!`;
         const dados = normalizarDadosBolt(conversa.dados);
         return this.buscarCepInformado({ ...dados, cep: cepInformado });
       }
+      const estadoAtual = normalizarDadosBolt(conversa.dados);
+      const pistaBolt = this.bolt.processar({ texto: mensagem.texto, nomeContato: mensagem.nome }, estadoAtual);
+      const dadosContexto = this.enriquecerEstadoComBolt(estadoAtual, pistaBolt.dados);
       const historico = await this.prisma.whatsAppMensagem.findMany({ where: { conversaId: conversa.id }, orderBy: { criadoEm: "asc" }, take: 20, select: { direcao: true, texto: true, tipo: true } });
-      const resultado = await this.ia.analisarAtendimentoWhatsapp({ mensagem: mensagem.texto, nomeContato: mensagem.nome, dados: conversa.dados, historico });
+      const resultado = await this.ia.analisarAtendimentoWhatsapp({ mensagem: mensagem.texto, nomeContato: mensagem.nome, dados: dadosContexto, historico });
       if (!resultado) return null;
-      return this.aplicarResultadoIa(conversa.dados, resultado);
+      return this.aplicarResultadoIa(dadosContexto, resultado);
     } catch (error) {
       this.logger.warn(`Fallback BOLT no atendimento IA: ${error instanceof Error ? error.message : "erro desconhecido"}`);
       return null;
@@ -413,6 +416,25 @@ Agradecemos pela preferência. Até breve!`;
     };
     merged.memoria = { ...base.memoria, nome_status: merged.nome ? "informado" : base.memoria.nome_status, cep_status: merged.cep ? "informado" : base.memoria.cep_status };
     return merged;
+  }
+
+  private enriquecerEstadoComBolt(base: BoltData, pista: BoltData): BoltData {
+    return {
+      ...base,
+      nome: base.nome || pista.nome,
+      servico: base.servico || pista.servico,
+      detalhes: base.detalhes || pista.detalhes,
+      email: base.email || pista.email,
+      cep: base.cep || pista.cep,
+      logradouro: base.logradouro || pista.logradouro,
+      numero: base.numero || pista.numero,
+      cidade: base.cidade || pista.cidade,
+      uf: base.uf || pista.uf,
+      bairro: base.bairro || pista.bairro,
+      cidade_bairro: base.cidade_bairro || pista.cidade_bairro,
+      campos_extra: { ...pista.campos_extra, ...base.campos_extra },
+      memoria: { ...pista.memoria, ...base.memoria }
+    };
   }
 
   private async buscarCepPorEndereco(dados: BoltData, uf: string, cidade: string, logradouro: string): Promise<BoltResult> {
