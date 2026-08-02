@@ -1,6 +1,14 @@
 # Resumo AIRMOVEBR
 
-Atualizado em: 29/07/2026
+Atualizado em: 02/08/2026
+
+## Estado publicado — 02/08/2026
+
+- A IA do atendimento WhatsApp está publicada em produção, com fallback para o BOLT quando necessário.
+- O fluxo do WhatsApp prioriza uma conversa humana, identifica CEP informado com ou sem hífen e busca o endereço automaticamente.
+- O cliente não precisa informar modelo, marca, BTUs ou foto; essas informações ficam para o técnico.
+- O agendamento de visita técnica permanece liberado somente para os fluxos de manutenção.
+- O último commit publicado é `63fa29e`, que reverteu a liberação de visita técnica para instalação.
 
 ## Regras atuais
 
@@ -96,3 +104,20 @@ Atualizado em: 29/07/2026
 - O atendente consegue concluir um orçamento do WhatsApp ao PDF em uma única tela.
 - Falhas da OpenAI não impedem o uso manual do sistema.
 - A chave OpenAI permanece exclusiva da IA do produto.
+
+## Atualização operacional — 02/08/2026
+
+- O painel Admin usa navegação horizontal com os grupos Configurações, Documentação e Frota.
+- O fluxo de orçamento permite validade padrão de 14 dias, com alteração manual para outros prazos.
+- Orçamentos podem guardar data, equipe e técnico; após aceite do cliente, o backend tenta criar a O.S. automaticamente.
+- Após o aceite, o cliente recebe confirmação e o atendente é notificado para formalizar ou acompanhar a O.S.
+- A agenda do WhatsApp foi corrigida para preservar o contexto visual e trocar corretamente o mês.
+- O PDF comercial usa o layout profissional da Air Move Climatização, mantendo os dados cadastrais da M. Lima Manutenções.
+- O endpoint atual do webhook é `/api/v1/webhooks/whatsapp`; o Caddy também mantém compatibilidade com `/webhooks/whatsapp`.
+- O webhook recebe e grava mensagens na caixa de entrada; o envio depende das credenciais carregadas no container.
+- O compose de produção foi ajustado para carregar `.env.production` e `chaves.env`, sem registrar credenciais no Git.
+- A integração da IA no atendimento está implementada localmente para humanizar as respostas do BOLT, mantendo regras, opções, preços, agenda, propostas e O.S. sob controle do sistema.
+- A IA usa fallback para o BOLT quando a chave ou a API estiver indisponível; a integração está publicada na produção.
+- Commit atualmente publicado: `63fa29e` (reversão da liberação de visita técnica para instalação).
+- O carregamento de `chaves.env` ocorre somente no ambiente de produção e não expõe credenciais no Git.
+- Não alterar configurações da Meta; correções de webhook e envio devem ser feitas no projeto, Caddy, container e deploy.
