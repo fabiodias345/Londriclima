@@ -180,7 +180,7 @@ export class WhatsAppService {
       ? await this.adminService.reprogramarOrdemAgenda(conversa.ordemServicoId, dadosOs, usuario)
       : await this.adminService.criarOrdemAgenda(dadosOs, usuario);
     if (!conversa.ordemServicoId) await this.prisma.whatsAppConversa.update({ where: { id }, data: { ordemServicoId: ordem.os_id } });
-    const confirmacaoAgendamentoEnviada = dto.agendada_para ? await this.enviarConfirmacaoAgendamento(conversa, dto.agendada_para, empresaId) : undefined;
+    const confirmacaoAgendamentoEnviada = dto.agendada_para ? await this.enviarConfirmacaoAgendamento(conversa, dto.agendada_para, empresaId, ordem.os_id) : undefined;
     if (dto.agendada_para) await this.notificarTecnicoNovaOs(ordem.os_id, empresaId);
     this.emitir({ tipo: "os_vinculada", conversaId: id, empresaId });
     return { ...(await this.obterConversa(id, empresaId)), confirmacaoAgendamentoEnviada };
@@ -231,10 +231,14 @@ export class WhatsAppService {
   }
 
   private normalizarTelefone(telefone: string | null | undefined) { return String(telefone || "").replace(/\D/g, ""); }
-  private async enviarConfirmacaoAgendamento(conversa: { id: string; telefone: string; nomeContato: string | null; dados: unknown }, agendadaPara: string, empresaId: string) {
+  private async enviarConfirmacaoAgendamento(conversa: { id: string; telefone: string; nomeContato: string | null; dados: unknown }, agendadaPara: string, empresaId: string, osId: string) {
     const [data, horario] = agendadaPara.split("T");
     const dataFormatada = new Date(`${data}T12:00:00Z`).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long", day: "2-digit", month: "long" });
-    const texto = `Olá, ${conversa.nomeContato || "cliente"}! Seu atendimento está agendado para ${dataFormatada}, às ${horario.slice(0, 5)}, com nossa equipe AIRMOVEBR.
+    const ordem = await this.prisma.ordemServico.findUnique({ where: { id: osId }, select: { tecnico: { select: { nome: true } } } });
+    const numeroOs = `OS-${osId.slice(0, 8).toUpperCase()}`;
+    const texto = `Olá, ${conversa.nomeContato || "cliente"}! Sua Ordem de Serviço ${numeroOs} foi formalizada.
+
+O atendimento está agendado para ${dataFormatada}, às ${horario.slice(0, 5)}. Técnico responsável: ${ordem?.tecnico?.nome || "a definir"}.
 
 Pedimos que haja um adulto responsável no local para acompanhar o atendimento e autorizar o acesso ao equipamento.
 
@@ -305,14 +309,34 @@ Agradecemos pela preferência. Até breve!`;
       data: { status: aprovado ? OrcamentoStatus.aprovado : OrcamentoStatus.recusado }
     });
     if (!resultado.count) return false;
+    const atendente = aprovado ? await this.prisma.whatsAppConversa.findUnique({ where: { id: conversa.id }, select: { cliente: { select: { nome: true } }, atribuidoUsuario: { select: { nome: true, telefone: true } } } }) : null;
+    const orcamento = aprovado ? await this.prisma.orcamento.findFirst({ where: { id: resposta[2], empresaId: conversa.empresaId, status: OrcamentoStatus.aprovado }, select: { id: true, titulo: true, detalhes: true, agendadaPara: true, equipeId: true, tecnicoId: true, criadoPorUsuarioId: true } }) : null;
+    let ordemCriada: { ordemServico?: { id?: string } } | null = null;
+    if (orcamento?.agendadaPara && (orcamento.equipeId || orcamento.tecnicoId) && orcamento.criadoPorUsuarioId && this.adminService) {
+      try {
+        ordemCriada = await this.criarOrdemDaConversa(conversa.id, conversa.empresaId, { titulo: orcamento.titulo, detalhes: orcamento.detalhes || undefined, origem: OrdemServicoOrigem.orcamento_aprovado, equipe_id: orcamento.equipeId || undefined, tecnico_id: orcamento.tecnicoId || undefined, agendada_para: orcamento.agendadaPara.toISOString() }, { id: orcamento.criadoPorUsuarioId, empresa_id: conversa.empresaId, email: "", role: "admin" });
+      } catch {
+        // Se a agenda mudou, o atendente assume a conversa e resolve o conflito manualmente.
+      }
+    }
+    const numeroOs = ordemCriada?.ordemServico?.id ? `OS-${ordemCriada.ordemServico.id.slice(0, 8).toUpperCase()}` : null;
     const textoResposta = aprovado
-      ? "Obrigado pela autorização. Vamos programar sua ordem de serviço e entraremos em contato com a confirmação do agendamento."
+      ? numeroOs ? `Obrigado pela confiança, ${conversa.nomeContato || "cliente"}! Sua Ordem de Serviço ${numeroOs} foi formalizada. Enviaremos a confirmação com o técnico responsável e o horário do atendimento.` : `Obrigado pela confiança, ${conversa.nomeContato || "cliente"}! Recebemos sua autorização e já estamos formalizando a sua Ordem de Serviço. Em breve enviaremos o número da O.S. e o nome do técnico responsável pelo atendimento.`
       : "Sem problema. Um atendente entrará em contato para negociar o orçamento com você.";
-    const entrega = await this.sender.enviar({ to: conversa.telefone, text: textoResposta });
-    await this.prisma.$transaction([
-      this.prisma.whatsAppMensagem.create({ data: { conversaId: conversa.id, direcao: "saida", texto: textoResposta, mensagemId: entrega.messageId } }),
-      this.prisma.whatsAppConversa.update({ where: { id: conversa.id }, data: { status: "humano", atribuidoUsuarioId: null, ultimaMensagemEm: new Date() } })
-    ]);
+    if (!ordemCriada) {
+      const entrega = await this.sender.enviar({ to: conversa.telefone, text: textoResposta });
+      await this.prisma.$transaction([
+        this.prisma.whatsAppMensagem.create({ data: { conversaId: conversa.id, direcao: "saida", texto: textoResposta, mensagemId: entrega.messageId } }),
+        this.prisma.whatsAppConversa.update({ where: { id: conversa.id }, data: { status: "humano", atribuidoUsuarioId: null, ultimaMensagemEm: new Date() } })
+      ]);
+    }
+    if (atendente?.atribuidoUsuario?.telefone) {
+      try {
+        await this.sender.enviar({ to: atendente.atribuidoUsuario.telefone, text: ordemCriada ? `O cliente ${atendente.cliente?.nome || "do atendimento"} autorizou o orçamento e a ${numeroOs} foi criada automaticamente.` : `O cliente ${atendente.cliente?.nome || "do atendimento"} autorizou o orçamento. Acesse o painel e formalize a O.S.` });
+      } catch {
+        // A confirmação do cliente não deve falhar por indisponibilidade da notificação interna.
+      }
+    }
     this.emitir({ tipo: aprovado ? "orcamento_aprovado" : "orcamento_em_negociacao", conversaId: conversa.id, empresaId: conversa.empresaId });
     return true;
   }

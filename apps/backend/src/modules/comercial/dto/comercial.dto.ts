@@ -1,4 +1,4 @@
-import { IsArray, IsEmail, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Max, Min, ValidateNested } from "class-validator";
+import { IsArray, IsDateString, IsEmail, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Max, Min, ValidateNested } from "class-validator";
 import { Type } from "class-transformer";
 
 export class SalvarItemCatalogoDto {
@@ -87,6 +87,18 @@ export class CriarOrcamentoDto {
   @IsOptional()
   @IsString()
   valido_ate?: string;
+
+  @IsOptional()
+  @IsDateString()
+  agendada_para?: string;
+
+  @IsOptional()
+  @IsUUID()
+  equipe_id?: string;
+
+  @IsOptional()
+  @IsUUID()
+  tecnico_id?: string;
 
   @Type(() => Number)
   @IsOptional()

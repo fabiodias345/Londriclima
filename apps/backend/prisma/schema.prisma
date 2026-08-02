@@ -1017,6 +1017,9 @@ model Orcamento {
   titulo             String
   detalhes           String?
   validoAte          DateTime?       @map("valido_ate")
+  agendadaPara       DateTime?       @map("agendada_para")
+  equipeId           String?         @map("equipe_id") @db.Uuid
+  tecnicoId          String?         @map("tecnico_id") @db.Uuid
   subtotal           Decimal         @default(0) @db.Decimal(12, 2)
   desconto           Decimal         @default(0) @db.Decimal(12, 2)
   total              Decimal         @default(0) @db.Decimal(12, 2)

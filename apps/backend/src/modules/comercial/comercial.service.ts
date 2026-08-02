@@ -64,7 +64,7 @@ export class ComercialService {
     const desconto = new Prisma.Decimal(dto.desconto || 0);
     if (desconto.greaterThan(subtotal)) throw new BadRequestException("O desconto não pode ser maior que o subtotal.");
     const validoAte = dto.valido_ate ? this.data(dto.valido_ate) : this.dataValidadePadrao();
-    return this.prisma.orcamento.create({ data: { empresaId: usuario.empresa_id, clienteId: cliente.id, conversaId: dto.conversa_id || null, criadoPorUsuarioId: usuario.id, titulo: this.texto(dto.titulo), detalhes: this.textoOpcional(dto.detalhes), validoAte, subtotal, desconto, total: subtotal.minus(desconto), itens: { create: itens } }, include: { itens: true, cliente: { select: { nome: true, telefone: true } } } });
+    return this.prisma.orcamento.create({ data: { empresaId: usuario.empresa_id, clienteId: cliente.id, conversaId: dto.conversa_id || null, criadoPorUsuarioId: usuario.id, titulo: this.texto(dto.titulo), detalhes: this.textoOpcional(dto.detalhes), validoAte, agendadaPara: dto.agendada_para ? new Date(dto.agendada_para) : null, equipeId: dto.equipe_id || null, tecnicoId: dto.tecnico_id || null, subtotal, desconto, total: subtotal.minus(desconto), itens: { create: itens } }, include: { itens: true, cliente: { select: { nome: true, telefone: true } } } });
   }
 
   async atualizarStatus(id: string, dto: AtualizarStatusOrcamentoDto, empresaId: string) {
@@ -107,7 +107,8 @@ export class ComercialService {
     const pdf = this.gerarPdf(orcamento);
     const filename = `orcamento-${id.slice(0, 8)}.pdf`;
     const documento = await this.sender.enviarDocumento(telefone, { filename, content: pdf, caption: `Orçamento ${orcamento.titulo}` });
-    const texto = `Olá, ${orcamento.cliente.nome}.\n\nEnviamos seu orçamento em PDF. Deseja autorizar o serviço?`;
+    const agenda = orcamento.agendadaPara ? `\n\nData e horário previstos: ${this.dataTexto(orcamento.agendadaPara)}.` : "";
+    const texto = `Olá, ${orcamento.cliente.nome}.\n\nEnviamos seu orçamento em PDF${agenda} Deseja autorizar o serviço?`;
     const confirmacao = await this.sender.enviar({ to: telefone, text: texto, options: [{ id: `orcamento_aprovar:${id}`, title: "Autorizar" }, { id: `orcamento_negociar:${id}`, title: "Negociar" }] });
     const agora = new Date();
     await this.prisma.orcamento.update({ where: { id }, data: { status: OrcamentoStatus.aguardando_aprovacao, enviadoEm: agora, ultimoEnvioCanal: "whatsapp", ultimoEnvioEm: agora, pdfGeradoEm: agora } });
