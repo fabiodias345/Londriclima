@@ -14,3 +14,24 @@ export type AiDraft = {
   perguntas_pendentes: string[];
   confianca: number;
 };
+
+export type AiWhatsappAction = "perguntar_cidade" | "perguntar_uf" | "buscar_cep_rua" | "confirmar_endereco" | "continuar" | "transferir";
+
+export type AiWhatsappData = {
+  nome: string | null;
+  cidade: string | null;
+  uf: string | null;
+  logradouro: string | null;
+  numero: string | null;
+  cep: string | null;
+  servico: string | null;
+  detalhes: string | null;
+};
+
+export type AiWhatsappResult = {
+  resposta: string;
+  intencao: "instalacao" | "manutencao" | "orcamento" | "endereco" | "outro";
+  dados: AiWhatsappData;
+  proxima_acao: AiWhatsappAction;
+  perguntas_pendentes: string[];
+};

@@ -1,13 +1,55 @@
 import { BadGatewayException, BadRequestException, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { PrismaService } from "../../database/prisma.service";
-import { AiDraft, AiDraftItem } from "./ia.types";
+import { AiDraft, AiDraftItem, AiWhatsappResult } from "./ia.types";
 
 type CatalogItem = { id: string; tipo: string; nome: string; unidade: string; valor: number; descricao: string | null };
 
 @Injectable()
 export class IaService {
   constructor(private readonly prisma: PrismaService, private readonly config: ConfigService) {}
+
+  async analisarAtendimentoWhatsapp(input: { mensagem: string; nomeContato?: string; dados: unknown; historico: unknown[] }): Promise<AiWhatsappResult | null> {
+    const apiKey = this.config.get<string>("OPENAI_API_KEY")?.trim();
+    if (!apiKey || !input.mensagem.trim()) return null;
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      signal: AbortSignal.timeout(12000),
+      body: JSON.stringify({
+        model: this.config.get<string>("OPENAI_MODEL", "gpt-5.6-luna"),
+        input: [
+          { role: "system", content: [{ type: "input_text", text: "VocÃª Ã© o atendente inteligente da Air Move ClimatizaÃ§Ã£o. Interprete a mensagem atual usando o histÃ³rico e o estado existente. Responda em portuguÃªs do Brasil, de forma natural e objetiva. Extraia somente dados presentes ou claramente informados. Nunca invente preÃ§os, descontos, disponibilidade, CEP, endereÃ§o, tÃ©cnico, agenda ou serviÃ§os. Se houver rua sem cidade, use perguntar_cidade; se houver cidade sem UF e a UF nÃ£o puder ser determinada, use perguntar_uf; com rua, cidade e UF, use buscar_cep_rua. Use transferir quando o cliente pedir atendente. Retorne somente o JSON do schema." }] },
+          { role: "user", content: [{ type: "input_text", text: JSON.stringify({ mensagem_atual: input.mensagem, nome_contato: input.nomeContato || null, estado: input.dados, historico: input.historico.slice(-20) }) }] }
+        ],
+        text: { format: { type: "json_schema", name: "atendimento_whatsapp", strict: true, schema: {
+          type: "object", additionalProperties: false,
+          properties: {
+            resposta: { type: "string" },
+            intencao: { type: "string", enum: ["instalacao", "manutencao", "orcamento", "endereco", "outro"] },
+            dados: { type: "object", additionalProperties: false, properties: {
+              nome: { type: ["string", "null"] }, cidade: { type: ["string", "null"] }, uf: { type: ["string", "null"] },
+              logradouro: { type: ["string", "null"] }, numero: { type: ["string", "null"] }, cep: { type: ["string", "null"] },
+              servico: { type: ["string", "null"] }, detalhes: { type: ["string", "null"] }
+            }, required: ["nome", "cidade", "uf", "logradouro", "numero", "cep", "servico", "detalhes"] },
+            proxima_acao: { type: "string", enum: ["perguntar_cidade", "perguntar_uf", "buscar_cep_rua", "confirmar_endereco", "continuar", "transferir"] },
+            perguntas_pendentes: { type: "array", items: { type: "string" } }
+          }, required: ["resposta", "intencao", "dados", "proxima_acao", "perguntas_pendentes"]
+        } } }
+      })
+    });
+    if (!response.ok) return null;
+    const payload = await response.json() as { output_text?: string; output?: Array<{ content?: Array<{ text?: string }> }> };
+    const output = payload.output_text || payload.output?.flatMap((item) => item.content || []).map((item) => item.text || "").join("");
+    if (!output) return null;
+    try {
+      const result = JSON.parse(output) as AiWhatsappResult;
+      if (!result.resposta?.trim() || !result.dados || !["perguntar_cidade", "perguntar_uf", "buscar_cep_rua", "confirmar_endereco", "continuar", "transferir"].includes(result.proxima_acao)) return null;
+      return { ...result, resposta: result.resposta.trim(), perguntas_pendentes: Array.isArray(result.perguntas_pendentes) ? result.perguntas_pendentes.map(String) : [] };
+    } catch {
+      return null;
+    }
+  }
 
   async humanizarResposta(input: { mensagem: string; resposta: string; nomeContato?: string; opcoes?: string[] }) {
     const apiKey = this.config.get<string>("OPENAI_API_KEY")?.trim();

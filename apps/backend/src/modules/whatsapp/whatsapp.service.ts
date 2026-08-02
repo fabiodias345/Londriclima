@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable } from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { OrdemServicoOrigem, OrdemServicoStatus, OrdemServicoTipoServico, OrcamentoStatus, Prisma } from "@prisma/client";
 import { Optional } from "@nestjs/common";
@@ -14,6 +14,7 @@ import { AgendarLevantamentoDto, CriarLevantamentoDto } from "../levantamentos/d
 import { LevantamentosNotificacaoService } from "../levantamentos/levantamentos-notificacao.service";
 import { LevantamentosService } from "../levantamentos/levantamentos.service";
 import { IaService } from "../ia/ia.service";
+import { AiWhatsappResult } from "../ia/ia.types";
 
 type JsonRecord = Record<string, unknown>;
 type WhatsAppEvent = { tipo: string; conversaId: string; empresaId: string };
@@ -21,6 +22,7 @@ type EventListener = (event: WhatsAppEvent) => void;
 
 @Injectable()
 export class WhatsAppService {
+  private readonly logger = new Logger(WhatsAppService.name);
   private readonly listeners = new Set<EventListener>();
 
   constructor(
@@ -287,9 +289,12 @@ Agradecemos pela preferência. Até breve!`;
     }
     if (await this.processarRespostaOrcamento(conversa, mensagem.texto)) return;
     if (conversa.status === "humano") return;
-    let resposta = this.bolt.processar({ texto: mensagem.texto, nomeContato: mensagem.nome }, conversa.dados);
-    resposta = await this.responderComCep(resposta, mensagem.texto, conversa.dados);
-    resposta = await this.humanizarResposta(mensagem, resposta);
+    const respostaIa = await this.processarComIa(conversa, mensagem);
+    let resposta = respostaIa || this.bolt.processar({ texto: mensagem.texto, nomeContato: mensagem.nome }, conversa.dados);
+    if (!respostaIa) {
+      resposta = await this.responderComCep(resposta, mensagem.texto, conversa.dados);
+      resposta = await this.humanizarResposta(mensagem, resposta);
+    }
     try {
       if (!resposta.texto) return;
       const entrega = await this.sender.enviar({ to: mensagem.telefone, text: resposta.texto, options: resposta.opcoes, optionsLabel: resposta.rotuloOpcoes });
@@ -300,6 +305,77 @@ Agradecemos pela preferência. Até breve!`;
       this.emitir({ tipo: resposta.assumir ? "transferida_humano" : "resposta_bot", conversaId: conversa.id, empresaId: empresa.id });
     } catch {
       // A entrada fica salva para reprocessamento manual quando a API externa falhar.
+    }
+  }
+
+  private async processarComIa(conversa: { id: string; dados: unknown; nomeContato?: string | null }, mensagem: IncomingMessage): Promise<BoltResult | null> {
+    if (!this.ia) return null;
+    try {
+      const historico = await this.prisma.whatsAppMensagem.findMany({ where: { conversaId: conversa.id }, orderBy: { criadoEm: "asc" }, take: 20, select: { direcao: true, texto: true, tipo: true } });
+      const resultado = await this.ia.analisarAtendimentoWhatsapp({ mensagem: mensagem.texto, nomeContato: mensagem.nome, dados: conversa.dados, historico });
+      if (!resultado) return null;
+      return this.aplicarResultadoIa(conversa.dados, resultado);
+    } catch (error) {
+      this.logger.warn(`Fallback BOLT no atendimento IA: ${error instanceof Error ? error.message : "erro desconhecido"}`);
+      return null;
+    }
+  }
+
+  private async aplicarResultadoIa(dadosEntrada: unknown, resultado: AiWhatsappResult): Promise<BoltResult> {
+    const dados = this.mesclarDadosIa(dadosEntrada, resultado);
+    if (resultado.proxima_acao === "buscar_cep_rua") {
+      const cidade = resultado.dados.cidade || dados.cidade;
+      const uf = resultado.dados.uf || dados.uf;
+      const logradouro = resultado.dados.logradouro || dados.logradouro;
+      if (!cidade) return { texto: "Para localizar o CEP, qual é a cidade?", assumir: false, dados: { ...dados, etapa_atual: "aguardando_cidade" } };
+      if (!uf) return { texto: "Qual é o estado (UF) dessa cidade?", assumir: false, dados: { ...dados, etapa_atual: "aguardando_uf" } };
+      if (!logradouro) return { texto: "Qual é o nome da rua?", assumir: false, dados: { ...dados, etapa_atual: "aguardando_logradouro" } };
+      return this.buscarCepPorEndereco(dados, uf, cidade, logradouro);
+    }
+    if (resultado.proxima_acao === "perguntar_cidade") return { texto: resultado.resposta || "Qual é a cidade do endereço?", assumir: false, dados: { ...dados, etapa_atual: "aguardando_cidade" } };
+    if (resultado.proxima_acao === "perguntar_uf") return { texto: resultado.resposta || "Qual é o estado (UF) do endereço?", assumir: false, dados: { ...dados, etapa_atual: "aguardando_uf" } };
+    if (resultado.proxima_acao === "transferir") return { texto: resultado.resposta, assumir: true, dados: { ...dados, status: "HUMAN_QUEUE", etapa_atual: null } };
+    return { texto: resultado.resposta, assumir: false, dados: { ...dados, status: "BOT_QUALIFYING", etapa_atual: resultado.proxima_acao === "confirmar_endereco" ? "aguardando_confirmacao_endereco" : null } };
+  }
+
+  private mesclarDadosIa(dadosEntrada: unknown, resultado: AiWhatsappResult): BoltData {
+    const base = normalizarDadosBolt(dadosEntrada);
+    const dados = resultado.dados;
+    const servicos = ["instalacao", "desinstalacao", "manutencao", "manutencao_corretiva", "manutencao_preventiva", "limpeza_filtro", "aluguel", "pmoc", "venda_equipamento", "nao_identificado"] as const;
+    const servico = dados.servico && servicos.includes(dados.servico as typeof servicos[number]) ? dados.servico as BoltData["servico"] : base.servico;
+    const merged: BoltData = {
+      ...base,
+      nome: dados.nome || base.nome,
+      cidade: dados.cidade || base.cidade,
+      uf: dados.uf?.toUpperCase() || base.uf,
+      logradouro: dados.logradouro || base.logradouro,
+      numero: dados.numero || base.numero,
+      cep: dados.cep?.replace(/\D/g, "") || base.cep,
+      servico,
+      detalhes: dados.detalhes || base.detalhes,
+      cidade_bairro: [dados.cidade || base.cidade, base.bairro].filter(Boolean).join(" - ") || base.cidade_bairro,
+      ultima_interacao: new Date().toISOString()
+    };
+    merged.memoria = { ...base.memoria, nome_status: merged.nome ? "informado" : base.memoria.nome_status, cep_status: merged.cep ? "informado" : base.memoria.cep_status };
+    return merged;
+  }
+
+  private async buscarCepPorEndereco(dados: BoltData, uf: string, cidade: string, logradouro: string): Promise<BoltResult> {
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${encodeURIComponent(uf)}/${encodeURIComponent(cidade)}/${encodeURIComponent(logradouro)}/json/`);
+      const resultados = await response.json() as Array<{ cep?: string; logradouro?: string; bairro?: string; localidade?: string; uf?: string }>;
+      if (!response.ok || !Array.isArray(resultados) || !resultados.length) return { texto: "Não encontrei essa rua nessa cidade. Informe também o bairro ou um ponto de referência.", assumir: false, dados: { ...dados, etapa_atual: "aguardando_logradouro" } };
+      if (resultados.length > 1) {
+        const opcoes = resultados.slice(0, 3).map((item) => ({ id: `cep_${item.cep?.replace(/\D/g, "") || "opcao"}`, title: `${item.logradouro || logradouro} - ${item.bairro || "bairro não informado"}`.slice(0, 20) }));
+        return { texto: "Encontrei mais de um endereço possível. Qual deles é o correto?", assumir: false, dados: { ...dados, etapa_atual: "aguardando_confirmacao_endereco", campos_extra: { ...dados.campos_extra, opcoes_cep: JSON.stringify(resultados.slice(0, 3)) } }, opcoes };
+      }
+      const item = resultados[0];
+      const cep = item.cep?.replace(/\D/g, "") || null;
+      const atualizado: BoltData = { ...dados, cep, logradouro: item.logradouro?.trim() || logradouro, bairro: item.bairro?.trim() || dados.bairro, cidade: item.localidade?.trim() || cidade, uf: item.uf?.trim().toUpperCase() || uf, cidade_bairro: [item.localidade || cidade, item.bairro].filter(Boolean).join(" - "), etapa_atual: "aguardando_confirmacao_endereco", memoria: { ...dados.memoria, cep_status: cep ? "informado" : dados.memoria.cep_status } };
+      return { texto: `Encontrei: ${atualizado.logradouro}, ${atualizado.bairro || ""}, ${atualizado.cidade}/${atualizado.uf}. Está correto?`, assumir: false, dados: atualizado, opcoes: [{ id: "cep_confirmar", title: "Confirmar" }, { id: "cep_corrigir", title: "Corrigir" }] };
+    } catch (error) {
+      this.logger.warn(`Falha na busca de CEP por rua: ${error instanceof Error ? error.message : "erro desconhecido"}`);
+      return { texto: "Não consegui consultar o CEP agora. Informe o CEP se souber ou fale com um atendente.", assumir: false, dados: { ...dados, etapa_atual: "aguardando_cep" } };
     }
   }
 
