@@ -314,6 +314,9 @@ document.querySelector("#whatsappConversationDetail").addEventListener("click", 
   const action = event.target.dataset.whatsappAction;
   if (action === "descartar-ia") { whatsappAiDraft = null; await loadWhatsappConversation(selectedWhatsappId); return; }
   if (action === "baixar-orcamento-pdf") {
+    if (!window.confirm("Confirma este orçamento para gerar o PDF?")) return;
+    const confirmado = await fetch(apiBaseUrl + "/admin/comercial/orcamentos/" + event.target.dataset.orcamentoId + "/confirmar", { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ confirmado: true }) });
+    if (!confirmado.ok) { const erro = await confirmado.json().catch(() => null); window.alert(erro?.message || "Não foi possível confirmar o orçamento."); return; }
     const response = await fetch(apiBaseUrl + "/admin/comercial/orcamentos/" + event.target.dataset.orcamentoId + "/pdf", { headers: authHeaders() });
     if (!response.ok) { window.alert("Não foi possível gerar o PDF."); return; }
     const url = URL.createObjectURL(await response.blob());
