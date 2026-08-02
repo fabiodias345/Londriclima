@@ -44,6 +44,7 @@ export class LevantamentosTecnicoService {
       data: { ...data, laudoRascunhoEm: new Date(), itensTecnicos: dto.itens ? { deleteMany: {}, create: dto.itens.map((item) => ({ descricao: item.descricao.trim(), quantidade: item.quantidade ?? 1, observacoes: item.observacoes })) } : undefined },
       include: this.include()
     });
+    if (item.conversaId) await this.prisma.whatsAppConversa.update({ where: { id: item.conversaId }, data: { status: "humano", atribuidoUsuarioId: null, ultimaLeituraEm: new Date() } });
     return this.mapear(atualizado);
   }
 

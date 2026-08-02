@@ -112,6 +112,7 @@ enum CategoriaAtendimento {
 enum WhatsAppConversaStatus {
   bot
   humano
+  aguardando_equipe
   encerrada
 }
 

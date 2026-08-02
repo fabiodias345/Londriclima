@@ -219,6 +219,8 @@ export class WhatsAppService {
       titulo: "Levantamento técnico",
       detalhes: levantamento.problema
     }, usuario, false);
+    await this.prisma.whatsAppConversa.update({ where: { id }, data: { status: "aguardando_equipe", atribuidoUsuarioId: null, ultimaLeituraEm: new Date() } });
+    this.emitir({ tipo: "conversa_aguardando_equipe", conversaId: id, empresaId });
     if (eraAgendado) await this.notificacoesLevantamento?.enviarAlteracao(levantamento.id, empresaId);
     else await this.notificacoesLevantamento?.enviarConfirmacao(levantamento.id, empresaId);
     this.emitir({ tipo: "levantamento_agendado", conversaId: id, empresaId });
