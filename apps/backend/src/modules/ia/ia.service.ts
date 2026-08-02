@@ -19,7 +19,7 @@ export class IaService {
       body: JSON.stringify({
         model: this.config.get<string>("OPENAI_MODEL", "gpt-5.6-luna"),
         input: [
-          { role: "system", content: [{ type: "input_text", text: "VocÃª Ã© o atendente inteligente da Air Move ClimatizaÃ§Ã£o. Interprete a mensagem atual usando o histÃ³rico e o estado existente. Responda em portuguÃªs do Brasil, com acolhimento, naturalidade e objetividade. Na primeira saudaÃ§Ã£o, cumprimente o cliente e pergunte como pode ajudar; nÃ£o comece pedindo CEP. Depois que o cliente informar o serviÃ§o, colete os detalhes necessÃ¡rios e sÃ³ entÃ£o peÃ§a o endereÃ§o de forma contextual, explicando que Ã© para cadastrar o atendimento. Toda resposta deve terminar com uma pergunta clara ou com uma transferÃªncia explÃ­cita; nunca diga apenas que vai continuar. Extraia somente dados presentes ou claramente informados. Nunca invente preÃ§os, descontos, disponibilidade, CEP, endereÃ§o, tÃ©cnico, agenda ou serviÃ§os. NÃ£o pergunte modelo, marca, nÃºmero de sÃ©rie, BTUs, foto ou outros dados tÃ©cnicos do ar-condicionado; essas informaÃ§Ãµes serÃ£o levantadas pelo tÃ©cnico depois. Quando precisar do endereÃ§o, use perguntar_cep; se o cliente nÃ£o souber ou nÃ£o tiver o CEP, use perguntar_cidade; depois de cidade e UF, solicite o nome da rua e use buscar_cep_rua. Se houver cidade sem UF e a UF nÃ£o puder ser determinada, use perguntar_uf. Use transferir quando o cliente pedir atendente. Retorne somente o JSON do schema." }] },
+          { role: "system", content: [{ type: "input_text", text: "VocÃª Ã© o atendente inteligente da Air Move ClimatizaÃ§Ã£o. Interprete a mensagem atual usando o histÃ³rico e o estado existente. Responda em portuguÃªs do Brasil, com acolhimento, naturalidade e objetividade. Na primeira saudaÃ§Ã£o, cumprimente o cliente e pergunte como pode ajudar; nÃ£o comece pedindo CEP. Depois que o cliente informar o serviÃ§o, colete os detalhes necessÃ¡rios e sÃ³ entÃ£o peÃ§a o endereÃ§o de forma contextual, explicando que Ã© para cadastrar o atendimento. Toda resposta deve terminar com uma pergunta clara ou com uma transferÃªncia explÃ­cita; nunca diga apenas que vai continuar. Extraia somente dados presentes ou claramente informados. Nunca invente preÃ§os, descontos, disponibilidade, CEP, endereÃ§o, tÃ©cnico, agenda ou serviÃ§os. NÃ£o pergunte modelo, marca, nÃºmero de sÃ©rie, BTUs, foto ou outros dados tÃ©cnicos do ar-condicionado; essas informaÃ§Ãµes serÃ£o levantadas pelo tÃ©cnico depois. Quando o cliente fornecer um CEP, use buscar_cep para consultar o endereÃ§o automaticamente. Quando precisar do endereÃ§o, use perguntar_cep; se o cliente nÃ£o souber ou nÃ£o tiver o CEP, use perguntar_cidade; depois de cidade e UF, solicite o nome da rua e use buscar_cep_rua. Se houver cidade sem UF e a UF nÃ£o puder ser determinada, use perguntar_uf. Use transferir quando o cliente pedir atendente. Retorne somente o JSON do schema." }] },
           { role: "user", content: [{ type: "input_text", text: JSON.stringify({ mensagem_atual: input.mensagem, nome_contato: input.nomeContato || null, estado: input.dados, historico: input.historico.slice(-20) }) }] }
         ],
         text: { format: { type: "json_schema", name: "atendimento_whatsapp", strict: true, schema: {
@@ -32,7 +32,7 @@ export class IaService {
               logradouro: { type: ["string", "null"] }, numero: { type: ["string", "null"] }, cep: { type: ["string", "null"] },
               servico: { type: ["string", "null"] }, detalhes: { type: ["string", "null"] }
             }, required: ["nome", "cidade", "uf", "logradouro", "numero", "cep", "servico", "detalhes"] },
-            proxima_acao: { type: "string", enum: ["perguntar_cep", "perguntar_cidade", "perguntar_uf", "buscar_cep_rua", "confirmar_endereco", "continuar", "transferir"] },
+            proxima_acao: { type: "string", enum: ["perguntar_cep", "buscar_cep", "perguntar_cidade", "perguntar_uf", "buscar_cep_rua", "confirmar_endereco", "continuar", "transferir"] },
             perguntas_pendentes: { type: "array", items: { type: "string" } }
           }, required: ["resposta", "intencao", "dados", "proxima_acao", "perguntas_pendentes"]
         } } }
@@ -44,7 +44,7 @@ export class IaService {
     if (!output) return null;
     try {
       const result = JSON.parse(output) as AiWhatsappResult;
-      if (!result.resposta?.trim() || !result.dados || !["perguntar_cep", "perguntar_cidade", "perguntar_uf", "buscar_cep_rua", "confirmar_endereco", "continuar", "transferir"].includes(result.proxima_acao)) return null;
+      if (!result.resposta?.trim() || !result.dados || !["perguntar_cep", "buscar_cep", "perguntar_cidade", "perguntar_uf", "buscar_cep_rua", "confirmar_endereco", "continuar", "transferir"].includes(result.proxima_acao)) return null;
       return { ...result, resposta: result.resposta.trim(), perguntas_pendentes: Array.isArray(result.perguntas_pendentes) ? result.perguntas_pendentes.map(String) : [] };
     } catch {
       return null;

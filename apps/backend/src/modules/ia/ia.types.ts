@@ -15,7 +15,7 @@ export type AiDraft = {
   confianca: number;
 };
 
-export type AiWhatsappAction = "perguntar_cep" | "perguntar_cidade" | "perguntar_uf" | "buscar_cep_rua" | "confirmar_endereco" | "continuar" | "transferir";
+export type AiWhatsappAction = "perguntar_cep" | "buscar_cep" | "perguntar_cidade" | "perguntar_uf" | "buscar_cep_rua" | "confirmar_endereco" | "continuar" | "transferir";
 
 export type AiWhatsappData = {
   nome: string | null;

@@ -342,6 +342,7 @@ Agradecemos pela preferência. Até breve!`;
     const dados = this.mesclarDadosIa(dadosEntrada, resultado);
     if (this.respostaPedeDadoTecnico(resultado.resposta)) return this.protegerFluxoSemDadosTecnicos(dados);
     if (resultado.proxima_acao === "perguntar_cep" && !dados.servico) return { texto: "Olá! 😊 Como posso ajudar você hoje? Posso auxiliar com instalação, manutenção, limpeza ou orçamento de ar-condicionado.", assumir: false, dados: { ...dados, etapa_atual: "aguardando_servico" } };
+    if (resultado.proxima_acao === "buscar_cep" || (dados.cep && !dados.cidade)) return this.buscarCepInformado(dados);
     if (resultado.proxima_acao === "perguntar_cep") return { texto: resultado.resposta || "Você sabe informar o CEP do endereço?", assumir: false, dados: { ...dados, etapa_atual: "aguardando_cep" } };
     if (resultado.proxima_acao === "buscar_cep_rua") {
       const cidade = resultado.dados.cidade || dados.cidade;
@@ -426,6 +427,13 @@ Agradecemos pela preferência. Até breve!`;
       this.logger.warn(`Falha na busca de CEP por rua: ${error instanceof Error ? error.message : "erro desconhecido"}`);
       return { texto: "Não consegui consultar o CEP agora. Informe o CEP se souber ou fale com um atendente.", assumir: false, dados: { ...dados, etapa_atual: "aguardando_cep" } };
     }
+  }
+
+  private async buscarCepInformado(dados: BoltData): Promise<BoltResult> {
+    const endereco = dados.cep ? await this.consultarCep(dados.cep) : null;
+    if (!endereco) return { texto: "Não consegui localizar esse CEP. Pode conferir os oito números ou me informar a cidade e o nome da rua?", assumir: false, dados: { ...dados, etapa_atual: "aguardando_cep" } };
+    const atualizado: BoltData = { ...dados, cep: endereco.cep, logradouro: endereco.logradouro, bairro: endereco.bairro, cidade: endereco.cidade, uf: endereco.uf, cidade_bairro: [endereco.cidade, endereco.bairro].filter(Boolean).join(" - "), etapa_atual: "aguardando_confirmacao_endereco", memoria: { ...dados.memoria, cep_status: "informado" } };
+    return { texto: `Encontrei o endereço: ${atualizado.logradouro || "rua não informada"}, ${atualizado.bairro || ""}, ${atualizado.cidade}/${atualizado.uf}. Está correto?`, assumir: false, dados: atualizado, opcoes: [{ id: "cep_confirmar", title: "Confirmar" }, { id: "cep_corrigir", title: "Corrigir" }] };
   }
 
   private async humanizarResposta(mensagem: IncomingMessage, resposta: BoltResult) {
