@@ -24,6 +24,7 @@ type EventListener = (event: WhatsAppEvent) => void;
 export class WhatsAppService {
   private readonly logger = new Logger(WhatsAppService.name);
   private readonly listeners = new Set<EventListener>();
+  private readonly mensagensEmProcessamento = new Set<string>();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -270,6 +271,17 @@ Agradecemos pela preferência. Até breve!`;
   }
 
   private async processarMensagem(mensagem: IncomingMessage) {
+    if (!mensagem.id) return this.processarMensagemInterna(mensagem);
+    if (this.mensagensEmProcessamento.has(mensagem.id)) return;
+    this.mensagensEmProcessamento.add(mensagem.id);
+    try {
+      return await this.processarMensagemInterna(mensagem);
+    } finally {
+      this.mensagensEmProcessamento.delete(mensagem.id);
+    }
+  }
+
+  private async processarMensagemInterna(mensagem: IncomingMessage) {
     const empresa = await this.obterEmpresa();
     if (!empresa) return;
     let conversa = await this.prisma.whatsAppConversa.upsert({
@@ -278,7 +290,12 @@ Agradecemos pela preferência. Até breve!`;
       update: { nomeContato: mensagem.nome, ultimaMensagemEm: new Date() }
     });
     if (mensagem.id && await this.prisma.whatsAppMensagem.findUnique({ where: { mensagemId: mensagem.id } })) return;
-    await this.prisma.whatsAppMensagem.create({ data: { conversaId: conversa.id, direcao: "entrada", texto: mensagem.texto, mensagemId: mensagem.id, tipo: mensagem.tipo } });
+    try {
+      await this.prisma.whatsAppMensagem.create({ data: { conversaId: conversa.id, direcao: "entrada", texto: mensagem.texto, mensagemId: mensagem.id, tipo: mensagem.tipo } });
+    } catch (error) {
+      if (mensagem.id && await this.prisma.whatsAppMensagem.findUnique({ where: { mensagemId: mensagem.id } })) return;
+      throw error;
+    }
     this.emitir({ tipo: "mensagem_recebida", conversaId: conversa.id, empresaId: empresa.id });
     if (conversa.status === "encerrada") {
       conversa = await this.prisma.whatsAppConversa.update({
@@ -323,6 +340,7 @@ Agradecemos pela preferência. Até breve!`;
 
   private async aplicarResultadoIa(dadosEntrada: unknown, resultado: AiWhatsappResult): Promise<BoltResult> {
     const dados = this.mesclarDadosIa(dadosEntrada, resultado);
+    if (this.respostaPedeDadoTecnico(resultado.resposta)) return this.protegerFluxoSemDadosTecnicos(dados);
     if (resultado.proxima_acao === "perguntar_cep") return { texto: resultado.resposta || "Você sabe informar o CEP do endereço?", assumir: false, dados: { ...dados, etapa_atual: "aguardando_cep" } };
     if (resultado.proxima_acao === "buscar_cep_rua") {
       const cidade = resultado.dados.cidade || dados.cidade;
@@ -337,6 +355,18 @@ Agradecemos pela preferência. Até breve!`;
     if (resultado.proxima_acao === "perguntar_uf") return { texto: resultado.resposta || "Qual é o estado (UF) do endereço?", assumir: false, dados: { ...dados, etapa_atual: "aguardando_uf" } };
     if (resultado.proxima_acao === "transferir") return { texto: resultado.resposta, assumir: true, dados: { ...dados, status: "HUMAN_QUEUE", etapa_atual: null } };
     return { texto: resultado.resposta, assumir: false, dados: { ...dados, status: "BOT_QUALIFYING", etapa_atual: resultado.proxima_acao === "confirmar_endereco" ? "aguardando_confirmacao_endereco" : null } };
+  }
+
+  private respostaPedeDadoTecnico(texto: string) {
+    return /\b(modelo|marca|btus?|foto|etiqueta|n[uú]mero de s[eé]rie)\b/i.test(texto);
+  }
+
+  private protegerFluxoSemDadosTecnicos(dados: BoltData): BoltResult {
+    if (!dados.cep) return { texto: "Para continuar, você sabe informar o CEP do endereço?", assumir: false, dados: { ...dados, etapa_atual: "aguardando_cep" } };
+    if (!dados.cidade) return { texto: "Qual é a cidade do endereço?", assumir: false, dados: { ...dados, etapa_atual: "aguardando_cidade" } };
+    if (!dados.logradouro) return { texto: "Qual é o nome da rua?", assumir: false, dados: { ...dados, etapa_atual: "aguardando_logradouro" } };
+    if (!dados.numero) return { texto: "Qual é o número do imóvel?", assumir: false, dados: { ...dados, etapa_atual: "aguardando_numero" } };
+    return { texto: "Perfeito. Não precisamos de modelo, BTUs ou fotos agora; o técnico fará essa identificação durante a visita. Vou encaminhar o atendimento para nossa equipe.", assumir: true, dados: { ...dados, status: "HUMAN_QUEUE", etapa_atual: null } };
   }
 
   private mesclarDadosIa(dadosEntrada: unknown, resultado: AiWhatsappResult): BoltData {
