@@ -76,7 +76,7 @@ export class WhatsAppAdminController {
 
   @Patch("conversas/:id/levantamento/agendar")
   agendarLevantamento(@Param("id", new ParseUUIDPipe()) id: string, @Body() dto: AgendarLevantamentoDto, @CurrentUser() usuario: AuthenticatedUser) {
-    return this.whatsappService.agendarLevantamentoDaConversa(id, usuario.empresa_id, dto);
+    return this.whatsappService.agendarLevantamentoDaConversa(id, usuario.empresa_id, dto, usuario);
   }
 
   @Sse("eventos")

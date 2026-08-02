@@ -164,7 +164,7 @@ export class WhatsAppService {
     this.emitir({ tipo: "cliente_vinculado", conversaId: id, empresaId });
     return this.obterConversa(id, empresaId);
   }
-  async criarOrdemDaConversa(id: string, empresaId: string, dto: SalvarOsAgendaDto, usuario: AuthenticatedUser) {
+  async criarOrdemDaConversa(id: string, empresaId: string, dto: SalvarOsAgendaDto, usuario: AuthenticatedUser, enviarConfirmacao = true) {
     if (!this.adminService) throw new BadRequestException("Admin de agenda nao configurado.");
     const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId } });
     if (!conversa.clienteId) throw new BadRequestException("Crie ou vincule o cliente antes da O.S.");
@@ -185,7 +185,7 @@ export class WhatsAppService {
       ? await this.adminService.reprogramarOrdemAgenda(conversa.ordemServicoId, dadosOs, usuario)
       : await this.adminService.criarOrdemAgenda(dadosOs, usuario);
     if (!conversa.ordemServicoId) await this.prisma.whatsAppConversa.update({ where: { id }, data: { ordemServicoId: ordem.os_id } });
-    const confirmacaoAgendamentoEnviada = dto.agendada_para ? await this.enviarConfirmacaoAgendamento(conversa, dto.agendada_para, empresaId, ordem.os_id) : undefined;
+    const confirmacaoAgendamentoEnviada = enviarConfirmacao && dto.agendada_para ? await this.enviarConfirmacaoAgendamento(conversa, dto.agendada_para, empresaId, ordem.os_id) : undefined;
     if (dto.agendada_para) await this.notificarTecnicoNovaOs(ordem.os_id, empresaId);
     this.emitir({ tipo: "os_vinculada", conversaId: id, empresaId });
     return { ...(await this.obterConversa(id, empresaId)), confirmacaoAgendamentoEnviada };
@@ -202,12 +202,23 @@ export class WhatsAppService {
     return { levantamento };
   }
 
-  async agendarLevantamentoDaConversa(id: string, empresaId: string, dto: AgendarLevantamentoDto) {
+  async agendarLevantamentoDaConversa(id: string, empresaId: string, dto: AgendarLevantamentoDto, usuario: AuthenticatedUser) {
     if (!this.levantamentos) throw new BadRequestException("Levantamentos tecnicos nao configurados.");
     const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId }, include: { levantamentoTecnico: { select: { id: true, status: true } } } });
     if (!conversa.levantamentoTecnico) throw new BadRequestException("Crie o levantamento antes de agendar.");
     const eraAgendado = conversa.levantamentoTecnico.status === "agendado";
     const levantamento = await this.levantamentos.agendar(conversa.levantamentoTecnico.id, empresaId, dto);
+    const dados = normalizarDadosBolt(conversa.dados);
+    await this.criarOrdemDaConversa(id, empresaId, {
+      cliente_id: conversa.clienteId ?? undefined,
+      equipe_id: dto.equipe_id,
+      tecnico_id: dto.tecnico_id,
+      agendada_para: dto.agendada_para,
+      origem: OrdemServicoOrigem.servico_gratuito,
+      tipo_servico: dados.servico === "instalacao" ? "instalacao" : "corretiva",
+      titulo: "Levantamento técnico",
+      detalhes: levantamento.problema
+    }, usuario, false);
     if (eraAgendado) await this.notificacoesLevantamento?.enviarAlteracao(levantamento.id, empresaId);
     else await this.notificacoesLevantamento?.enviarConfirmacao(levantamento.id, empresaId);
     this.emitir({ tipo: "levantamento_agendado", conversaId: id, empresaId });
