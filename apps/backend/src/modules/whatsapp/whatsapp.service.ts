@@ -328,6 +328,11 @@ Agradecemos pela preferência. Até breve!`;
   private async processarComIa(conversa: { id: string; dados: unknown; nomeContato?: string | null }, mensagem: IncomingMessage): Promise<BoltResult | null> {
     if (!this.ia) return null;
     try {
+      const cepInformado = mensagem.texto.replace(/\D/g, "");
+      if (/^\d{8}$/.test(cepInformado)) {
+        const dados = normalizarDadosBolt(conversa.dados);
+        return this.buscarCepInformado({ ...dados, cep: cepInformado });
+      }
       const historico = await this.prisma.whatsAppMensagem.findMany({ where: { conversaId: conversa.id }, orderBy: { criadoEm: "asc" }, take: 20, select: { direcao: true, texto: true, tipo: true } });
       const resultado = await this.ia.analisarAtendimentoWhatsapp({ mensagem: mensagem.texto, nomeContato: mensagem.nome, dados: conversa.dados, historico });
       if (!resultado) return null;
