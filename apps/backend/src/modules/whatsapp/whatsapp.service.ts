@@ -323,6 +323,7 @@ Agradecemos pela preferência. Até breve!`;
 
   private async aplicarResultadoIa(dadosEntrada: unknown, resultado: AiWhatsappResult): Promise<BoltResult> {
     const dados = this.mesclarDadosIa(dadosEntrada, resultado);
+    if (resultado.proxima_acao === "perguntar_cep") return { texto: resultado.resposta || "Você sabe informar o CEP do endereço?", assumir: false, dados: { ...dados, etapa_atual: "aguardando_cep" } };
     if (resultado.proxima_acao === "buscar_cep_rua") {
       const cidade = resultado.dados.cidade || dados.cidade;
       const uf = resultado.dados.uf || dados.uf;

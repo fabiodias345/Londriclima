@@ -8,7 +8,8 @@ Tornar a IA a decisora principal do atendimento WhatsApp, mantendo o backend com
 
 - Interpretar cada mensagem recebida usando o contexto da conversa e os dados já coletados.
 - Retornar resposta estruturada com intenção, dados identificados, próxima ação e perguntas pendentes.
-- Perguntar a cidade quando o cliente informar uma rua sem cidade.
+- Perguntar primeiro o CEP do endereço.
+- Perguntar a cidade quando o cliente disser que não sabe ou não tem o CEP.
 - Perguntar a UF quando ela não puder ser determinada com segurança.
 - Consultar CEP por UF, cidade e logradouro via ViaCEP.
 - Pedir confirmação quando houver mais de um endereço possível.
@@ -21,7 +22,7 @@ Fica fora do escopo a leitura de fotos e a autonomia para enviar mensagens, alte
 
 O webhook persiste a entrada e chama o serviço de atendimento com o histórico da conversa, estado atual e dados relevantes. O serviço consulta a Responses API com saída JSON estritamente validada. O backend interpreta a ação retornada, executa apenas funções permitidas e envia a resposta pela `WhatsAppCloudService`.
 
-As ações permitidas são `perguntar_cidade`, `perguntar_uf`, `buscar_cep_rua`, `confirmar_endereco`, `continuar` e `transferir`. A IA não acessa Prisma, ViaCEP ou Meta diretamente.
+As ações permitidas são `perguntar_cep`, `perguntar_cidade`, `perguntar_uf`, `buscar_cep_rua`, `confirmar_endereco`, `continuar` e `transferir`. A IA não acessa Prisma, ViaCEP ou Meta diretamente.
 
 Quando a IA estiver indisponível, retornar JSON inválido ou exceder o timeout, o atendimento chama o BOLT atual. O fallback não impede a gravação da mensagem recebida.
 
@@ -50,7 +51,9 @@ O backend rejeita campos desconhecidos, respostas vazias, ações inválidas e d
 
 ## Busca de CEP
 
-- Se houver rua sem cidade, perguntar a cidade.
+- Perguntar primeiro o CEP.
+- Se o cliente não souber o CEP, perguntar a cidade.
+- Depois de cidade e UF, perguntar o nome da rua.
 - Se houver cidade sem UF, perguntar a UF.
 - Com rua, cidade e UF, chamar `/ws/{uf}/{cidade}/{logradouro}/json` com valores codificados.
 - Sem resultado, pedir número, bairro ou referência adicional.
