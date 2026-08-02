@@ -56,21 +56,24 @@ function validateClientIdentity(tipo, telefone, documento) {
 }
 
 function formatPhoneInput(value) {
-  const digits = onlyDigits(String(value || "")).slice(0, 11);
+  const raw = onlyDigits(String(value || ""));
+  const hasCountryCode = raw.startsWith("55") && raw.length >= 12;
+  const country = hasCountryCode ? "55" : "";
+  const digits = (hasCountryCode ? raw.slice(2) : raw).slice(0, 11);
 
   if (digits.length <= 2) {
-    return digits;
+    return country ? "+55 " + digits : digits;
   }
 
   if (digits.length <= 6) {
-    return "(" + digits.slice(0, 2) + ") " + digits.slice(2);
+    return (country ? "+55 " : "") + "(" + digits.slice(0, 2) + ") " + digits.slice(2);
   }
 
   if (digits.length <= 10) {
-    return "(" + digits.slice(0, 2) + ") " + digits.slice(2, 6) + "-" + digits.slice(6);
+    return (country ? "+55 " : "") + "(" + digits.slice(0, 2) + ") " + digits.slice(2, 6) + "-" + digits.slice(6);
   }
 
-  return "(" + digits.slice(0, 2) + ") " + digits.slice(2, 7) + "-" + digits.slice(7);
+  return (country ? "+55 " : "") + "(" + digits.slice(0, 2) + ") " + digits.slice(2, 7) + "-" + digits.slice(7);
 }
 
 function updateClientDocumentCopy() {
