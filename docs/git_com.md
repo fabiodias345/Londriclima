@@ -1,15 +1,19 @@
-Faça o commit das alterações atuais sem incluir arquivos não relacionados.
+Faça commit e deploy completo das alterações atuais.
 
-Depois:
-1. Garanta que dev esteja no commit criado.
-2. Atualize main para o mesmo commit e faça push de dev e main.
-3. Na VM, execute:
+1. Verifique branch, git status e diff.
+2. Inclua somente arquivos relacionados à alteração atual; não inclua .env, tokens ou arquivos não relacionados.
+3. Se encontrar arquivos não relacionados, pare e liste-os.
+4. Faça commit na branch dev com mensagem adequada.
+5. Faça push de dev para origin.
+6. Atualize main para exatamente o mesmo commit e faça push.
+7. No servidor 191.252.226.11, em /opt/airmovebr/repo:
    git fetch origin
    git switch main
    git pull --ff-only origin main
-   docker compose --env-file .env.production -f infra/docker-compose.prod.example.yml up -d --build
-4. Valide API, site público e confirme que a VM está no mesmo commit de origin/main.
-5. Volte para a branch dev.
-6. Não use git reset --hard nem git clean.
-
-Informe commit, branches, deploy e healthcheck.
+8. Execute as migrações pendentes e o deploy completo dos containers.
+9. Valide API, site público, admin e commit em produção.
+10. Confirme que produção = origin/main.
+11. Volte para a branch dev.
+12. Não use git reset --hard nem git clean.
+13. Não exponha segredos.
+14. Informe commit, branches, deploy, migrações e healthchecks.

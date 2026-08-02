@@ -300,7 +300,7 @@ Agradecemos pela preferência. Até breve!`;
     }
   }
 
-  private async processarRespostaOrcamento(conversa: { id: string; empresaId: string; telefone: string }, texto: string) {
+  private async processarRespostaOrcamento(conversa: { id: string; empresaId: string; telefone: string; nomeContato?: string | null }, texto: string) {
     const resposta = texto.match(/^orcamento_(aprovar|negociar):([0-9a-f-]{36})$/i);
     if (!resposta) return false;
     const aprovado = resposta[1].toLowerCase() === "aprovar";
@@ -311,15 +311,18 @@ Agradecemos pela preferência. Até breve!`;
     if (!resultado.count) return false;
     const atendente = aprovado ? await this.prisma.whatsAppConversa.findUnique({ where: { id: conversa.id }, select: { cliente: { select: { nome: true } }, atribuidoUsuario: { select: { nome: true, telefone: true } } } }) : null;
     const orcamento = aprovado ? await this.prisma.orcamento.findFirst({ where: { id: resposta[2], empresaId: conversa.empresaId, status: OrcamentoStatus.aprovado }, select: { id: true, titulo: true, detalhes: true, agendadaPara: true, equipeId: true, tecnicoId: true, criadoPorUsuarioId: true } }) : null;
-    let ordemCriada: { ordemServico?: { id?: string } } | null = null;
+    let ordemCriada = false;
+    let ordemCriadaId: string | null = null;
     if (orcamento?.agendadaPara && (orcamento.equipeId || orcamento.tecnicoId) && orcamento.criadoPorUsuarioId && this.adminService) {
       try {
-        ordemCriada = await this.criarOrdemDaConversa(conversa.id, conversa.empresaId, { titulo: orcamento.titulo, detalhes: orcamento.detalhes || undefined, origem: OrdemServicoOrigem.orcamento_aprovado, equipe_id: orcamento.equipeId || undefined, tecnico_id: orcamento.tecnicoId || undefined, agendada_para: orcamento.agendadaPara.toISOString() }, { id: orcamento.criadoPorUsuarioId, empresa_id: conversa.empresaId, email: "", role: "admin" });
+        const resultadoOrdem = await this.criarOrdemDaConversa(conversa.id, conversa.empresaId, { titulo: orcamento.titulo, detalhes: orcamento.detalhes || undefined, origem: OrdemServicoOrigem.orcamento_aprovado, equipe_id: orcamento.equipeId || undefined, tecnico_id: orcamento.tecnicoId || undefined, agendada_para: orcamento.agendadaPara.toISOString() }, { id: orcamento.criadoPorUsuarioId, empresa_id: conversa.empresaId, email: "", role: "admin" });
+        ordemCriada = true;
+        ordemCriadaId = resultadoOrdem.ordemServico?.id || null;
       } catch {
         // Se a agenda mudou, o atendente assume a conversa e resolve o conflito manualmente.
       }
     }
-    const numeroOs = ordemCriada?.ordemServico?.id ? `OS-${ordemCriada.ordemServico.id.slice(0, 8).toUpperCase()}` : null;
+    const numeroOs = ordemCriadaId ? `OS-${ordemCriadaId.slice(0, 8).toUpperCase()}` : null;
     const textoResposta = aprovado
       ? numeroOs ? `Obrigado pela confiança, ${conversa.nomeContato || "cliente"}! Sua Ordem de Serviço ${numeroOs} foi formalizada. Enviaremos a confirmação com o técnico responsável e o horário do atendimento.` : `Obrigado pela confiança, ${conversa.nomeContato || "cliente"}! Recebemos sua autorização e já estamos formalizando a sua Ordem de Serviço. Em breve enviaremos o número da O.S. e o nome do técnico responsável pelo atendimento.`
       : "Sem problema. Um atendente entrará em contato para negociar o orçamento com você.";
