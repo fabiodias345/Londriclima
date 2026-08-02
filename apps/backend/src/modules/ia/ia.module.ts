@@ -3,5 +3,5 @@ import { AuthModule } from "../auth/auth.module";
 import { IaController } from "./ia.controller";
 import { IaService } from "./ia.service";
 
-@Module({ imports: [AuthModule], controllers: [IaController], providers: [IaService] })
+@Module({ imports: [AuthModule], controllers: [IaController], providers: [IaService], exports: [IaService] })
 export class IaModule {}

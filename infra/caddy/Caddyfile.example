@@ -92,6 +92,12 @@ api.airmovebr.com.br {
 		file_server
 	}
 
+	# Compatibilidade com o callback antigo configurado na Meta.
+	handle /webhooks/* {
+		rewrite * /api/v1{uri}
+		reverse_proxy backend:3000
+	}
+
 	handle {
 		reverse_proxy backend:3000
 	}

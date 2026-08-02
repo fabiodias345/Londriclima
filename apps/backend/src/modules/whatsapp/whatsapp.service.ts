@@ -13,6 +13,7 @@ import { BoltData, BoltResult } from "./bolt/bolt.types";
 import { AgendarLevantamentoDto, CriarLevantamentoDto } from "../levantamentos/dto/levantamentos.dto";
 import { LevantamentosNotificacaoService } from "../levantamentos/levantamentos-notificacao.service";
 import { LevantamentosService } from "../levantamentos/levantamentos.service";
+import { IaService } from "../ia/ia.service";
 
 type JsonRecord = Record<string, unknown>;
 type WhatsAppEvent = { tipo: string; conversaId: string; empresaId: string };
@@ -29,7 +30,8 @@ export class WhatsAppService {
     private readonly bolt: BoltRules,
     @Optional() private readonly adminService?: AdminService,
     private readonly levantamentos?: LevantamentosService,
-    private readonly notificacoesLevantamento?: LevantamentosNotificacaoService
+    private readonly notificacoesLevantamento?: LevantamentosNotificacaoService,
+    @Optional() private readonly ia?: IaService
   ) {}
 
   subscribe(listener: EventListener) {
@@ -287,6 +289,7 @@ Agradecemos pela preferência. Até breve!`;
     if (conversa.status === "humano") return;
     let resposta = this.bolt.processar({ texto: mensagem.texto, nomeContato: mensagem.nome }, conversa.dados);
     resposta = await this.responderComCep(resposta, mensagem.texto, conversa.dados);
+    resposta = await this.humanizarResposta(mensagem, resposta);
     try {
       if (!resposta.texto) return;
       const entrega = await this.sender.enviar({ to: mensagem.telefone, text: resposta.texto, options: resposta.opcoes, optionsLabel: resposta.rotuloOpcoes });
@@ -297,6 +300,16 @@ Agradecemos pela preferência. Até breve!`;
       this.emitir({ tipo: resposta.assumir ? "transferida_humano" : "resposta_bot", conversaId: conversa.id, empresaId: empresa.id });
     } catch {
       // A entrada fica salva para reprocessamento manual quando a API externa falhar.
+    }
+  }
+
+  private async humanizarResposta(mensagem: IncomingMessage, resposta: BoltResult) {
+    if (!this.ia || !resposta.texto) return resposta;
+    try {
+      const texto = await this.ia.humanizarResposta({ mensagem: mensagem.texto, nomeContato: mensagem.nome, resposta: resposta.texto, opcoes: resposta.opcoes?.map((opcao) => opcao.title) || [] });
+      return texto ? { ...resposta, texto } : resposta;
+    } catch {
+      return resposta;
     }
   }
 

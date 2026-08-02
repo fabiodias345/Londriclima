@@ -9,6 +9,33 @@ type CatalogItem = { id: string; tipo: string; nome: string; unidade: string; va
 export class IaService {
   constructor(private readonly prisma: PrismaService, private readonly config: ConfigService) {}
 
+  async humanizarResposta(input: { mensagem: string; resposta: string; nomeContato?: string; opcoes?: string[] }) {
+    const apiKey = this.config.get<string>("OPENAI_API_KEY")?.trim();
+    if (!apiKey || !input.resposta.trim()) return null;
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: this.config.get<string>("OPENAI_MODEL", "gpt-5.6-luna"),
+        input: [
+          { role: "system", content: [{ type: "input_text", text: "Você é a assistente virtual da Air Move Climatização. Reescreva somente a resposta-base em português do Brasil, com tom humano, cordial e objetivo. Preserve exatamente a intenção, perguntas, alternativas e transferência para atendente. Não invente preços, descontos, prazos, disponibilidade, técnicos, agenda, documentos ou serviços. Não faça perguntas além das que já existem. Retorne apenas JSON no formato solicitado." }] },
+          { role: "user", content: [{ type: "input_text", text: JSON.stringify({ mensagem: input.mensagem, nome: input.nomeContato || null, resposta_base: input.resposta, opcoes: input.opcoes || [] }) }] }
+        ],
+        text: { format: { type: "json_schema", name: "resposta_whatsapp", strict: true, schema: { type: "object", additionalProperties: false, properties: { texto: { type: "string" } }, required: ["texto"] } } }
+      })
+    });
+    if (!response.ok) return null;
+    const payload = await response.json() as { output_text?: string; output?: Array<{ content?: Array<{ text?: string }> }> };
+    const output = payload.output_text || payload.output?.flatMap((item) => item.content || []).map((item) => item.text || "").join("");
+    if (!output) return null;
+    try {
+      const texto = String((JSON.parse(output) as { texto?: unknown }).texto || "").trim();
+      return texto || null;
+    } catch {
+      return null;
+    }
+  }
+
   async buscarOuIdentificarCliente(empresaId: string, query: string, conversaId?: string) {
     const termo = query.trim();
     if (!termo && conversaId) {
