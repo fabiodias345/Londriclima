@@ -24,6 +24,7 @@ services:
     restart: unless-stopped
     env_file:
       - ../.env.production
+      - ../chaves.env
     depends_on:
       postgres:
         condition: service_healthy
