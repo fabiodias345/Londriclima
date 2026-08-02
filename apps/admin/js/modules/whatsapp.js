@@ -211,7 +211,7 @@ serviceChoiceForm = function (conversa) {
   const cliente = conversa?.cliente;
   const dados = conversa?.atendimento?.dados || {};
   const titulo = whatsappAiDraft?.orcamento?.titulo || 'Orçamento - ' + (dados.servico || 'atendimento');
-  const endereco = cliente?.endereco || cliente?.enderecos?.[0] || {};
+  const endereco = cliente?.endereco || cliente?.enderecos?.[0] || dados;
   const completo = Boolean(cliente?.nome && cliente?.email && cliente?.documento && endereco.cep && endereco.logradouro && endereco.numero && endereco.bairro && endereco.cidade && endereco.uf);
   const podeAgendar = String(dados.servico || '').toLowerCase().startsWith('manutencao');
   const agendamento = podeAgendar ? '<button type="button" data-whatsapp-action="escolher-levantamento"><strong>Agendar visita</strong><small>Agendar diagnóstico técnico, sem preço.</small></button>' : '';

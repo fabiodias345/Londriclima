@@ -466,7 +466,7 @@ export class AdminClientesService {
       throw new BadRequestException("Telefone deve incluir DDD e ter de 10 a 14 digitos.");
     }
 
-    return digits;
+    return digits.length === 10 || digits.length === 11 ? `55${digits}` : digits;
   }
 
   private normalizarDocumento(dto: SalvarClienteDto) {
