@@ -341,6 +341,7 @@ Agradecemos pela preferência. Até breve!`;
   private async aplicarResultadoIa(dadosEntrada: unknown, resultado: AiWhatsappResult): Promise<BoltResult> {
     const dados = this.mesclarDadosIa(dadosEntrada, resultado);
     if (this.respostaPedeDadoTecnico(resultado.resposta)) return this.protegerFluxoSemDadosTecnicos(dados);
+    if (resultado.proxima_acao === "perguntar_cep" && !dados.servico) return { texto: "Olá! 😊 Como posso ajudar você hoje? Posso auxiliar com instalação, manutenção, limpeza ou orçamento de ar-condicionado.", assumir: false, dados: { ...dados, etapa_atual: "aguardando_servico" } };
     if (resultado.proxima_acao === "perguntar_cep") return { texto: resultado.resposta || "Você sabe informar o CEP do endereço?", assumir: false, dados: { ...dados, etapa_atual: "aguardando_cep" } };
     if (resultado.proxima_acao === "buscar_cep_rua") {
       const cidade = resultado.dados.cidade || dados.cidade;
@@ -354,7 +355,22 @@ Agradecemos pela preferência. Até breve!`;
     if (resultado.proxima_acao === "perguntar_cidade") return { texto: resultado.resposta || "Qual é a cidade do endereço?", assumir: false, dados: { ...dados, etapa_atual: "aguardando_cidade" } };
     if (resultado.proxima_acao === "perguntar_uf") return { texto: resultado.resposta || "Qual é o estado (UF) do endereço?", assumir: false, dados: { ...dados, etapa_atual: "aguardando_uf" } };
     if (resultado.proxima_acao === "transferir") return { texto: resultado.resposta, assumir: true, dados: { ...dados, status: "HUMAN_QUEUE", etapa_atual: null } };
+    if (resultado.proxima_acao === "continuar" && !resultado.resposta.includes("?")) return { texto: this.proximaPerguntaAtendimento(dados), assumir: false, dados: { ...dados, status: "BOT_QUALIFYING", etapa_atual: dados.etapa_atual } };
     return { texto: resultado.resposta, assumir: false, dados: { ...dados, status: "BOT_QUALIFYING", etapa_atual: resultado.proxima_acao === "confirmar_endereco" ? "aguardando_confirmacao_endereco" : null } };
+  }
+
+  private proximaPerguntaAtendimento(dados: BoltData) {
+    if (!dados.servico) return "Como posso ajudar você hoje?";
+    if (!dados.detalhes) {
+      if (dados.servico === "limpeza_filtro") return "Quantos aparelhos precisam de limpeza?";
+      if (dados.servico === "manutencao" || dados.servico === "manutencao_corretiva") return "Pode me contar o que está acontecendo com o aparelho?";
+      return "Pode me contar um pouco mais sobre o que você precisa?";
+    }
+    if (!dados.cep) return "Para cadastrar o atendimento, qual é o CEP do local?";
+    if (!dados.cidade) return "Não sabe o CEP? Sem problema. Em qual cidade será o atendimento?";
+    if (!dados.logradouro) return "Qual é o nome da rua do atendimento?";
+    if (!dados.numero) return "Qual é o número do imóvel?";
+    return "Perfeito, já tenho as informações principais. Vou encaminhar seu atendimento para nossa equipe, tudo bem?";
   }
 
   private respostaPedeDadoTecnico(texto: string) {
@@ -373,7 +389,9 @@ Agradecemos pela preferência. Até breve!`;
     const base = normalizarDadosBolt(dadosEntrada);
     const dados = resultado.dados;
     const servicos = ["instalacao", "desinstalacao", "manutencao", "manutencao_corretiva", "manutencao_preventiva", "limpeza_filtro", "aluguel", "pmoc", "venda_equipamento", "nao_identificado"] as const;
-    const servico = dados.servico && servicos.includes(dados.servico as typeof servicos[number]) ? dados.servico as BoltData["servico"] : base.servico;
+    const aliases: Record<string, BoltData["servico"]> = { limpeza: "limpeza_filtro", limpeza_de_ar: "limpeza_filtro", corretiva: "manutencao_corretiva", preventiva: "manutencao_preventiva" };
+    const servicoNormalizado = dados.servico ? aliases[dados.servico] || dados.servico : null;
+    const servico = servicoNormalizado && servicos.includes(servicoNormalizado as typeof servicos[number]) ? servicoNormalizado as BoltData["servico"] : base.servico;
     const merged: BoltData = {
       ...base,
       nome: dados.nome || base.nome,
