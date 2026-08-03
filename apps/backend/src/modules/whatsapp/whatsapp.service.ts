@@ -499,7 +499,7 @@ Agradecemos pela preferência. Até breve!`;
     const orcamento = aprovado ? await this.prisma.orcamento.findFirst({ where: { id: resposta[2], empresaId: conversa.empresaId, status: OrcamentoStatus.aprovado }, select: { id: true, titulo: true, detalhes: true, agendadaPara: true, equipeId: true, tecnicoId: true, criadoPorUsuarioId: true } }) : null;
     let ordemCriada = false;
     let ordemCriadaId: string | null = null;
-    if (orcamento?.criadoPorUsuarioId && this.adminService) {
+    if (orcamento?.agendadaPara && (orcamento.equipeId || orcamento.tecnicoId) && orcamento.criadoPorUsuarioId && this.adminService) {
       try {
         const resultadoOrdem = await this.criarOrdemDaConversa(conversa.id, conversa.empresaId, { titulo: orcamento.titulo, detalhes: orcamento.detalhes || undefined, origem: OrdemServicoOrigem.orcamento_aprovado, equipe_id: orcamento.equipeId || undefined, tecnico_id: orcamento.tecnicoId || undefined, agendada_para: orcamento.agendadaPara?.toISOString() }, { id: orcamento.criadoPorUsuarioId, empresa_id: conversa.empresaId, email: "", role: "admin" });
         ordemCriada = true;
@@ -513,23 +513,28 @@ Agradecemos pela preferência. Até breve!`;
       !orcamento?.agendadaPara ? "data e horário" : "",
       !(orcamento?.equipeId || orcamento?.tecnicoId) ? "equipe ou técnico responsável" : ""
     ].filter(Boolean);
-    if (ordemCriada && pendencias.length) {
-      await this.prisma.whatsAppConversa.update({ where: { id: conversa.id }, data: { status: "humano", atribuidoUsuarioId: null, ultimaMensagemEm: new Date() } });
-    }
     const textoResposta = aprovado
       ? numeroOs ? `Obrigado pela confiança, ${conversa.nomeContato || "cliente"}! Sua Ordem de Serviço ${numeroOs} foi formalizada. Enviaremos a confirmação com o técnico responsável e o horário do atendimento.` : `Obrigado pela confiança, ${conversa.nomeContato || "cliente"}! Recebemos sua autorização e já estamos formalizando a sua Ordem de Serviço. Em breve enviaremos o número da O.S. e o nome do técnico responsável pelo atendimento.`
       : "Sem problema. Um atendente entrará em contato para negociar o orçamento com você.";
     const textoRespostaFinal = numeroOs && pendencias.length
       ? `Obrigado pela confiança, ${conversa.nomeContato || "cliente"}! Sua Ordem de Serviço ${numeroOs} foi criada. Nossa equipe completará ${pendencias.join(" e ")} e retornará com a confirmação.`
       : textoResposta;
+    const textoSemOrdem = `Recebemos sua autorizacao, ${conversa.nomeContato || "cliente"}. O atendente vai completar os dados pendentes antes de criar a Ordem de Servico.`;
     if (!ordemCriada || !orcamento?.agendadaPara) {
-      const entrega = await this.sender.enviar({ to: conversa.telefone, text: textoRespostaFinal });
+      const entrega = await this.sender.enviar({ to: conversa.telefone, text: ordemCriada ? textoRespostaFinal : textoSemOrdem });
       await this.prisma.$transaction([
-        this.prisma.whatsAppMensagem.create({ data: { conversaId: conversa.id, direcao: "saida", texto: textoRespostaFinal, mensagemId: entrega.messageId } }),
+        this.prisma.whatsAppMensagem.create({ data: { conversaId: conversa.id, direcao: "saida", texto: ordemCriada ? textoRespostaFinal : textoSemOrdem, mensagemId: entrega.messageId } }),
         this.prisma.whatsAppConversa.update({ where: { id: conversa.id }, data: { status: "humano", atribuidoUsuarioId: null, ultimaMensagemEm: new Date() } })
       ]);
     }
     if (atendente?.atribuidoUsuario?.telefone && pendencias.length) {
+      try {
+        await this.sender.enviar({ to: atendente.atribuidoUsuario.telefone, text: `Cliente ${atendente.cliente?.nome || "do atendimento"} autorizou o orcamento, mas a O.S. nao foi criada. Pendencias: ${pendencias.join(", ")}.` });
+      } catch {
+        // A notificacao interna nao deve falhar o aceite do cliente.
+      }
+    }
+    if (false && atendente?.atribuidoUsuario?.telefone && pendencias.length) {
       try {
         await this.sender.enviar({ to: atendente.atribuidoUsuario.telefone, text: `O cliente ${atendente.cliente?.nome || "do atendimento"} autorizou o orçamento e a ${numeroOs || "O.S."} foi criada. Complete: ${pendencias.join(", ")}.` });
       } catch {
