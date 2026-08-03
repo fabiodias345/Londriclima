@@ -509,17 +509,34 @@ Agradecemos pela preferência. Até breve!`;
       }
     }
     const numeroOs = ordemCriadaId ? `OS-${ordemCriadaId.slice(0, 8).toUpperCase()}` : null;
+    const pendencias = [
+      !orcamento?.agendadaPara ? "data e horário" : "",
+      !(orcamento?.equipeId || orcamento?.tecnicoId) ? "equipe ou técnico responsável" : ""
+    ].filter(Boolean);
+    if (ordemCriada && pendencias.length) {
+      await this.prisma.whatsAppConversa.update({ where: { id: conversa.id }, data: { status: "humano", atribuidoUsuarioId: null, ultimaMensagemEm: new Date() } });
+    }
     const textoResposta = aprovado
       ? numeroOs ? `Obrigado pela confiança, ${conversa.nomeContato || "cliente"}! Sua Ordem de Serviço ${numeroOs} foi formalizada. Enviaremos a confirmação com o técnico responsável e o horário do atendimento.` : `Obrigado pela confiança, ${conversa.nomeContato || "cliente"}! Recebemos sua autorização e já estamos formalizando a sua Ordem de Serviço. Em breve enviaremos o número da O.S. e o nome do técnico responsável pelo atendimento.`
       : "Sem problema. Um atendente entrará em contato para negociar o orçamento com você.";
-    if (!ordemCriada) {
-      const entrega = await this.sender.enviar({ to: conversa.telefone, text: textoResposta });
+    const textoRespostaFinal = numeroOs && pendencias.length
+      ? `Obrigado pela confiança, ${conversa.nomeContato || "cliente"}! Sua Ordem de Serviço ${numeroOs} foi criada. Nossa equipe completará ${pendencias.join(" e ")} e retornará com a confirmação.`
+      : textoResposta;
+    if (!ordemCriada || !orcamento?.agendadaPara) {
+      const entrega = await this.sender.enviar({ to: conversa.telefone, text: textoRespostaFinal });
       await this.prisma.$transaction([
-        this.prisma.whatsAppMensagem.create({ data: { conversaId: conversa.id, direcao: "saida", texto: textoResposta, mensagemId: entrega.messageId } }),
+        this.prisma.whatsAppMensagem.create({ data: { conversaId: conversa.id, direcao: "saida", texto: textoRespostaFinal, mensagemId: entrega.messageId } }),
         this.prisma.whatsAppConversa.update({ where: { id: conversa.id }, data: { status: "humano", atribuidoUsuarioId: null, ultimaMensagemEm: new Date() } })
       ]);
     }
-    if (atendente?.atribuidoUsuario?.telefone) {
+    if (atendente?.atribuidoUsuario?.telefone && pendencias.length) {
+      try {
+        await this.sender.enviar({ to: atendente.atribuidoUsuario.telefone, text: `O cliente ${atendente.cliente?.nome || "do atendimento"} autorizou o orçamento e a ${numeroOs || "O.S."} foi criada. Complete: ${pendencias.join(", ")}.` });
+      } catch {
+        // A confirmação do cliente não deve falhar por indisponibilidade da notificação interna.
+      }
+    }
+    if (atendente?.atribuidoUsuario?.telefone && !pendencias.length) {
       try {
         await this.sender.enviar({ to: atendente.atribuidoUsuario.telefone, text: ordemCriada ? `O cliente ${atendente.cliente?.nome || "do atendimento"} autorizou o orçamento e a ${numeroOs} foi criada automaticamente.` : `O cliente ${atendente.cliente?.nome || "do atendimento"} autorizou o orçamento. Acesse o painel e formalize a O.S.` });
       } catch {
