@@ -535,6 +535,7 @@ Agradecemos pela preferência. Até breve!`;
       }
     }
     if (false && atendente?.atribuidoUsuario?.telefone && pendencias.length) {
+      if (!atendente?.atribuidoUsuario?.telefone) return false;
       try {
         await this.sender.enviar({ to: atendente.atribuidoUsuario.telefone, text: `O cliente ${atendente.cliente?.nome || "do atendimento"} autorizou o orçamento e a ${numeroOs || "O.S."} foi criada. Complete: ${pendencias.join(", ")}.` });
       } catch {
