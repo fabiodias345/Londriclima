@@ -534,14 +534,6 @@ Agradecemos pela preferência. Até breve!`;
         // A notificacao interna nao deve falhar o aceite do cliente.
       }
     }
-    if (false && atendente?.atribuidoUsuario?.telefone && pendencias.length) {
-      if (!atendente?.atribuidoUsuario?.telefone) return false;
-      try {
-        await this.sender.enviar({ to: atendente.atribuidoUsuario.telefone, text: `O cliente ${atendente.cliente?.nome || "do atendimento"} autorizou o orçamento e a ${numeroOs || "O.S."} foi criada. Complete: ${pendencias.join(", ")}.` });
-      } catch {
-        // A confirmação do cliente não deve falhar por indisponibilidade da notificação interna.
-      }
-    }
     if (atendente?.atribuidoUsuario?.telefone && !pendencias.length) {
       try {
         await this.sender.enviar({ to: atendente.atribuidoUsuario.telefone, text: ordemCriada ? `O cliente ${atendente.cliente?.nome || "do atendimento"} autorizou o orçamento e a ${numeroOs} foi criada automaticamente.` : `O cliente ${atendente.cliente?.nome || "do atendimento"} autorizou o orçamento. Acesse o painel e formalize a O.S.` });
