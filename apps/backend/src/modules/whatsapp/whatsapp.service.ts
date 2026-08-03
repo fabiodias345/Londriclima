@@ -499,9 +499,9 @@ Agradecemos pela preferência. Até breve!`;
     const orcamento = aprovado ? await this.prisma.orcamento.findFirst({ where: { id: resposta[2], empresaId: conversa.empresaId, status: OrcamentoStatus.aprovado }, select: { id: true, titulo: true, detalhes: true, agendadaPara: true, equipeId: true, tecnicoId: true, criadoPorUsuarioId: true } }) : null;
     let ordemCriada = false;
     let ordemCriadaId: string | null = null;
-    if (orcamento?.agendadaPara && (orcamento.equipeId || orcamento.tecnicoId) && orcamento.criadoPorUsuarioId && this.adminService) {
+    if (orcamento?.criadoPorUsuarioId && this.adminService) {
       try {
-        const resultadoOrdem = await this.criarOrdemDaConversa(conversa.id, conversa.empresaId, { titulo: orcamento.titulo, detalhes: orcamento.detalhes || undefined, origem: OrdemServicoOrigem.orcamento_aprovado, equipe_id: orcamento.equipeId || undefined, tecnico_id: orcamento.tecnicoId || undefined, agendada_para: orcamento.agendadaPara.toISOString() }, { id: orcamento.criadoPorUsuarioId, empresa_id: conversa.empresaId, email: "", role: "admin" });
+        const resultadoOrdem = await this.criarOrdemDaConversa(conversa.id, conversa.empresaId, { titulo: orcamento.titulo, detalhes: orcamento.detalhes || undefined, origem: OrdemServicoOrigem.orcamento_aprovado, equipe_id: orcamento.equipeId || undefined, tecnico_id: orcamento.tecnicoId || undefined, agendada_para: orcamento.agendadaPara?.toISOString() }, { id: orcamento.criadoPorUsuarioId, empresa_id: conversa.empresaId, email: "", role: "admin" });
         ordemCriada = true;
         ordemCriadaId = resultadoOrdem.ordemServico?.id || null;
       } catch {
