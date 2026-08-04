@@ -205,6 +205,7 @@ export class WhatsAppService {
 
   async agendarLevantamentoDaConversa(id: string, empresaId: string, dto: AgendarLevantamentoDto, usuario: AuthenticatedUser) {
     if (!this.levantamentos) throw new BadRequestException("Levantamentos tecnicos nao configurados.");
+    if (!dto.equipe_id && !dto.tecnico_id) throw new BadRequestException("Defina um técnico ou uma equipe antes de confirmar o levantamento.");
     const conversa = await this.prisma.whatsAppConversa.findFirstOrThrow({ where: { id, empresaId }, include: { levantamentoTecnico: { select: { id: true, status: true } } } });
     if (!conversa.levantamentoTecnico) throw new BadRequestException("Crie o levantamento antes de agendar.");
     const eraAgendado = conversa.levantamentoTecnico.status === "agendado";
