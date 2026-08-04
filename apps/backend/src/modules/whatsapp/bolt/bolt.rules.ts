@@ -15,6 +15,7 @@ const MANUTENCAO_OPCOES = [
   { id: "manutencao_preventiva", title: "Preventiva" },
   { id: "manutencao_corretiva", title: "Está com problema" }
 ];
+const ASK_SERVICE_DIRECT = "O que voce deseja? Vou passar voce para um atendente.";
 
 function memoriaInicial(): BoltMemory {
   return {
@@ -123,16 +124,18 @@ export class BoltRules {
     const base = { ...dados, ultima_interacao: new Date().toISOString() };
     if (dados.status === "HUMAN_ATTENDING" || dados.status === "CLOSED") return { texto: "", assumir: false, dados: base };
     if (!dados.nome && dados.etapa_atual !== "aguardando_nome") return this.resposta({ ...base, status: "BOT_QUALIFYING", etapa_atual: "aguardando_nome" }, `${WELCOME}\n\n${ASK_NAME}`);
-    if (!dados.nome) return this.resposta({ ...base, nome: original, status: "BOT_QUALIFYING", etapa_atual: "aguardando_servico", memoria: { ...base.memoria, nome_status: "informado" } }, ASK_SERVICE, SERVICO_OPCOES);
+    if (!dados.nome) {
+      if (!original || this.ehSaudacao(texto)) return this.resposta({ ...base, status: "BOT_QUALIFYING", etapa_atual: "aguardando_nome" }, ASK_NAME);
+      return this.resposta({ ...base, nome: original, status: "BOT_QUALIFYING", etapa_atual: "aguardando_servico", memoria: { ...base.memoria, nome_status: "informado" } }, ASK_SERVICE_DIRECT);
+    }
     const opcao = SERVICO_OPCOES.find((item) => item.id === texto);
-    if (dados.etapa_atual === "aguardando_servico" && !opcao) return this.resposta({ ...base, status: "BOT_QUALIFYING", etapa_atual: "aguardando_servico" }, ASK_SERVICE, SERVICO_OPCOES);
     if (opcao) {
       const necessidade = opcao.id.replace("triagem_", "");
       const servico = necessidade === "instalacao" ? "instalacao" : necessidade === "manutencao" ? "manutencao" : dados.servico;
       return this.handoff({ ...base, servico, detalhes: dados.detalhes || necessidade, campos_extra: { ...base.campos_extra, necessidade }, etapa_atual: null });
     }
     const servico = this.identificarServico(texto);
-    return this.handoff({ ...base, servico: servico || dados.servico, detalhes: dados.detalhes || original, etapa_atual: null });
+    return this.handoff({ ...base, servico: servico || dados.servico || "nao_identificado", detalhes: dados.detalhes || original, etapa_atual: null });
   }
 
   private atualizarMemoria(dados: BoltData, original: string, texto: string, nomeContato?: string): BoltData {
@@ -262,7 +265,7 @@ export class BoltRules {
   private ehProblema(texto: string) { return /\b(parou|problema|defeito|nao gela|nao liga|quebrou|vazando|ruido)\b/.test(texto); }
   private extrairEquipamento(texto: string) { return /\b(split|cassete|piso teto|janela|portatil|evaporadora|condensadora)\b/.exec(texto)?.[1] || null; }
   private normalizar(texto: string) { return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim(); }
-  private ehSaudacao(texto: string) { return /^(oi|ola|bom dia|boa tarde|boa noite)$/.test(texto); }
+  private ehSaudacao(texto: string) { return /^(?:(?:oi|ola)(?:[\s,!.]+(?:bom dia|boa tarde|boa noite))?|bom dia|boa tarde|boa noite)[\s,!.]*$/.test(texto); }
   private ehSim(texto: string) { return /^(sim|s|yes|aparelho_sim|btus_sim|tubulacao_sim|cep_confirmar|pmoc_empresa)$/.test(texto); }
   private ehNao(texto: string) { return /^(nao|n|no|aparelho_nao|btus_nao|tubulacao_nao|cep_corrigir|pmoc_residencia)$/.test(texto); }
   private prepararFallback(dados: BoltData, texto: string): { resposta?: BoltResult; dados: BoltData } {
