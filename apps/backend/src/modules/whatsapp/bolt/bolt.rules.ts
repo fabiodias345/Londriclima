@@ -1,16 +1,15 @@
 import { BoltData, BoltMemory, BoltResult, BoltServiceType } from "./bolt.types";
 
-const WELCOME = "Olá! Eu sou o Move, da AIRMOVEBR. Como posso te ajudar?";
-const ASK_NAME = "Como posso te chamar?";
-const ASK_SERVICE = "Posso te ajudar com qual serviço?";
+const WELCOME = "Olá! Eu sou o Move, da AIRMOVEBR. Seja bem-vindo(a) ao nosso atendimento.";
+const ASK_NAME = "Informe seu nome completo.";
+const ASK_SERVICE = "Agora escolha uma opção para encaminharmos seu atendimento para uma pessoa.";
 const ASK_CEP = "Para calcular o atendimento na sua região, qual é o seu CEP?";
 const SERVICO_OPCOES = [
-  { id: "servico_instalacao", title: "Instalação" },
-  { id: "servico_manutencao", title: "Manutenção" },
-  { id: "servico_limpeza", title: "Limpeza" },
-  { id: "servico_aluguel", title: "Aluguel" },
-  { id: "servico_pmoc", title: "PMOC" },
-  { id: "servico_outros", title: "Outros" }
+  { id: "triagem_orcamento", title: "Orçamento" },
+  { id: "triagem_instalacao", title: "Instalação" },
+  { id: "triagem_manutencao", title: "Manutenção" },
+  { id: "triagem_visita", title: "Agendar visita" },
+  { id: "triagem_atendente", title: "Falar com atendente" }
 ];
 const MANUTENCAO_OPCOES = [
   { id: "manutencao_preventiva", title: "Preventiva" },
@@ -82,6 +81,9 @@ export function estaNoHorarioComercial(data = new Date()) {
 
 export class BoltRules {
   processar(mensagem: { texto: string; nomeContato?: string }, dadosEntrada: unknown): BoltResult {
+    return this.processarTriagemSimples(mensagem, dadosEntrada);
+  }
+  /* Fluxo legado mantido abaixo para preservar regras históricas.
     const dados = normalizarDadosBolt(dadosEntrada);
     const original = mensagem.texto.trim();
     const texto = this.normalizar(original);
@@ -111,6 +113,25 @@ export class BoltRules {
     if (atualizado.memoria.email_status === "invalido") return this.resposta({ ...atualizado, status: "BOT_QUALIFYING", etapa_atual: "aguardando_email" }, "Esse e-mail parece inválido. Se preferir, podemos continuar pelo WhatsApp.");
     if (atualizado.memoria.email_status === "nao_informado") return this.resposta({ ...atualizado, status: "BOT_QUALIFYING", etapa_atual: "aguardando_email" }, "Se quiser receber o orçamento por e-mail, qual endereço devo usar? Se preferir, seguimos pelo WhatsApp.");
     return this.handoff(atualizado);
+  }
+
+  */
+  private processarTriagemSimples(mensagem: { texto: string; nomeContato?: string }, dadosEntrada: unknown): BoltResult {
+    const dados = normalizarDadosBolt(dadosEntrada);
+    const original = mensagem.texto.trim();
+    const texto = this.normalizar(original);
+    const base = { ...dados, ultima_interacao: new Date().toISOString() };
+    if (dados.status === "HUMAN_ATTENDING" || dados.status === "CLOSED") return { texto: "", assumir: false, dados: base };
+    if (this.ehSaudacao(texto) && !dados.nome) return this.resposta({ ...base, status: "BOT_QUALIFYING", etapa_atual: "aguardando_nome" }, `${WELCOME}\n\n${ASK_NAME}`);
+    if (!dados.nome) return this.resposta({ ...base, nome: original, status: "BOT_QUALIFYING", etapa_atual: "aguardando_servico", memoria: { ...base.memoria, nome_status: "informado" } }, ASK_SERVICE, SERVICO_OPCOES);
+    const opcao = SERVICO_OPCOES.find((item) => item.id === texto);
+    if (opcao) {
+      const necessidade = opcao.id.replace("triagem_", "");
+      const servico = necessidade === "instalacao" ? "instalacao" : necessidade === "manutencao" ? "manutencao" : dados.servico;
+      return this.handoff({ ...base, servico, detalhes: dados.detalhes || necessidade, campos_extra: { ...base.campos_extra, necessidade }, etapa_atual: null });
+    }
+    const servico = this.identificarServico(texto);
+    return this.handoff({ ...base, servico: servico || dados.servico, detalhes: dados.detalhes || original, etapa_atual: null });
   }
 
   private atualizarMemoria(dados: BoltData, original: string, texto: string, nomeContato?: string): BoltData {

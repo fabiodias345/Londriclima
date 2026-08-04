@@ -319,12 +319,7 @@ Agradecemos pela preferência. Até breve!`;
     }
     if (await this.processarRespostaOrcamento(conversa, mensagem.texto)) return;
     if (conversa.status === "humano") return;
-    const respostaIa = await this.processarComIa(conversa, mensagem);
-    let resposta = respostaIa || this.bolt.processar({ texto: mensagem.texto, nomeContato: mensagem.nome }, conversa.dados);
-    if (!respostaIa) {
-      resposta = await this.responderComCep(resposta, mensagem.texto, conversa.dados);
-      resposta = await this.humanizarResposta(mensagem, resposta);
-    }
+    const resposta = this.bolt.processar({ texto: mensagem.texto, nomeContato: mensagem.nome }, conversa.dados);
     try {
       if (!resposta.texto) return;
       const entrega = await this.sender.enviar({ to: mensagem.telefone, text: resposta.texto, options: resposta.opcoes, optionsLabel: resposta.rotuloOpcoes });
