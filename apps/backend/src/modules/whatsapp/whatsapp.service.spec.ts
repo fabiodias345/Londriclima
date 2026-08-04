@@ -32,7 +32,7 @@ test("webhook WhatsApp salva mensagem e responde a saudacao do bot", async () =>
 
   assert.equal(chamadas[0].direcao, "entrada");
   assert.equal(chamadas[1].direcao, "saida");
-  assert.match(chamadas[1].texto, /Londri Clima/);
+  assert.match(chamadas[1].texto, /AirMove/);
   assert.match(chamadas[1].texto, /Por favor, me passe seu nome completo/i);
 });
 
@@ -46,7 +46,7 @@ test("Bolt inicia conversa natural sem menus", () => {
   assert.equal(segundo.opcoes?.length, 5);
   assert.equal(primeiro.dados.nome, null);
   assert.equal(segundo.dados.nome, "Fábio Dias");
-  assert.match(primeiro.texto, /Londri Clima/);
+  assert.match(primeiro.texto, /AirMove/);
   assert.match(primeiro.texto, /nome completo/i);
 });
 
