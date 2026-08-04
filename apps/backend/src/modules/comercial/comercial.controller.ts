@@ -42,6 +42,12 @@ export class ComercialController {
   criarOrcamento(@Body() dto: CriarOrcamentoDto, @CurrentUser() usuario: AuthenticatedUser) {
     return this.comercialService.criarOrcamento(dto, usuario);
   }
+
+  @Delete("orcamentos/:id")
+  apagarOrcamento(@Param("id", new ParseUUIDPipe()) id: string, @CurrentUser() usuario: AuthenticatedUser) {
+    return this.comercialService.apagarOrcamento(id, usuario.empresa_id);
+  }
+
   @Get("orcamentos/:id")
   obterOrcamento(@Param("id", new ParseUUIDPipe()) id: string, @CurrentUser() usuario: AuthenticatedUser) {
     return this.comercialService.obterOrcamento(id, usuario.empresa_id);

@@ -67,6 +67,14 @@ export class ComercialService {
     return this.prisma.orcamento.create({ data: { empresaId: usuario.empresa_id, clienteId: cliente.id, conversaId: dto.conversa_id || null, criadoPorUsuarioId: usuario.id, titulo: this.texto(dto.titulo), detalhes: this.textoOpcional(dto.detalhes), validoAte, agendadaPara: dto.agendada_para ? new Date(dto.agendada_para) : null, equipeId: dto.equipe_id || null, tecnicoId: dto.tecnico_id || null, subtotal, desconto, total: subtotal.minus(desconto), itens: { create: itens } }, include: { itens: true, cliente: { select: { nome: true, telefone: true } } } });
   }
 
+  async apagarOrcamento(id: string, empresaId: string) {
+    const orcamento = await this.prisma.orcamento.findFirst({ where: { id, empresaId }, select: { id: true, status: true } });
+    if (!orcamento) throw new NotFoundException("Orçamento não encontrado.");
+    if (orcamento.status !== OrcamentoStatus.rascunho) throw new BadRequestException("Somente orçamentos em rascunho podem ser excluídos.");
+    await this.prisma.orcamento.delete({ where: { id } });
+    return { apagado: true };
+  }
+
   async atualizarStatus(id: string, dto: AtualizarStatusOrcamentoDto, empresaId: string) {
     if (dto.canal === "telefone" && !this.textoOpcional(dto.responsavel)) throw new BadRequestException("Informe o responsável pela aprovação telefônica.");
     const result = await this.prisma.orcamento.updateMany({ where: { id, empresaId, status: { in: [OrcamentoStatus.enviado, OrcamentoStatus.aguardando_aprovacao, OrcamentoStatus.em_negociacao] } }, data: { status: dto.status as OrcamentoStatus } });
