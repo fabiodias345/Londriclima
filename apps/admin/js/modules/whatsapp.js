@@ -483,4 +483,5 @@ document.querySelector("#whatsappConversationDetail").addEventListener("click", 
   whatsappServiceChoiceRequired = false;
   void loadWhatsappConversation(selectedWhatsappId);
 }, true);
+levantamentoCustomerMessage = () => "";
 `;
