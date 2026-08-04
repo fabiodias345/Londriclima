@@ -190,7 +190,7 @@ function schedulePanel(conversa) {
   const time = scheduleTimeValue(os);
   const equipeId = whatsappScheduleDraft.equipeId || os?.equipeId || "";
   const tecnicoId = whatsappScheduleDraft.tecnicoId || os?.tecnicoId || "";
-  const ready = Boolean(equipeId || tecnicoId);
+  const ready = Boolean(equipeId || tecnicoId) || whatsappScheduleMode === "calendar";
   const [visibleYear, visibleMonth] = whatsappScheduleVisibleMonth.split("-").map(Number);
   const label = new Date(visibleYear, visibleMonth - 1, 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
   const header = '<aside class="whatsapp-schedule-panel" aria-label="Disponibilidade da agenda"><header><div><span>Disponibilidade</span><strong>' + (whatsappScheduleMode === "calendar" ? "Escolha uma data" : "Escolha um horário") + '</strong></div><button type="button" class="secondary-button" data-whatsapp-action="fechar-agenda">×</button></header>';
@@ -208,16 +208,29 @@ whatsappClientForm = function (conversa) {
   const dados = conversa.atendimento?.dados || {};
   return '<form data-whatsapp-form="cliente" class="whatsapp-workbench-form"><div class="whatsapp-workbench-title"><span>Cadastro do cliente</span><strong>Revise os dados encontrados. O cadastro pode ser salvo mesmo incompleto.</strong></div><p class="whatsapp-client-note">Somente o nome é necessário para salvar. Os demais dados podem ser solicitados depois.</p><label>Nome<input name="nome" value="' + esc(dados.nome || conversa.nomeContato || '') + '" required></label><label>Telefone<input name="telefone" value="' + esc(conversa.telefone || '') + '"></label><label>E-mail<input name="email" type="email" value="' + esc(dados.email || '') + '" autocomplete="email"></label><label>Cidade<input name="cidade" value="' + esc(dados.cidade || dados.cidade_bairro || '') + '"></label><label>UF<input name="uf" value="' + esc(dados.uf || '') + '" maxlength="2"></label><label class="whatsapp-field-wide">Endereço<input name="logradouro" value="' + esc(dados.logradouro || '') + '"></label><label>Número<input name="numero" value="' + esc(dados.numero || '') + '"></label><label>Bairro<input name="bairro" value="' + esc(dados.bairro || '') + '"></label><label>Documento<input name="documento" value="' + esc(dados.documento || '') + '"></label><label>CEP<input name="cep" value="' + esc(dados.cep || '') + '"></label><button type="submit">Salvar cliente e continuar</button></form>';
 };
+function clientMissingFields(cliente, dados) {
+  const endereco = cliente?.endereco || cliente?.enderecos?.[0] || dados || {};
+  return [
+    ["e-mail", cliente?.email],
+    ["documento", cliente?.documento],
+    ["CEP", endereco.cep],
+    ["rua", endereco.logradouro],
+    ["número", endereco.numero],
+    ["bairro", endereco.bairro],
+    ["cidade", endereco.cidade],
+    ["UF", endereco.uf]
+  ].filter(([, value]) => !String(value || "").trim()).map(([label]) => label);
+}
 serviceChoiceForm = function (conversa) {
   const cliente = conversa?.cliente;
   const dados = conversa?.atendimento?.dados || {};
   const titulo = whatsappAiDraft?.orcamento?.titulo || 'Orçamento - ' + (dados.servico || 'atendimento');
   const endereco = cliente?.endereco || cliente?.enderecos?.[0] || dados;
-  const completo = Boolean(cliente?.nome && cliente?.email && cliente?.documento && endereco.cep && endereco.logradouro && endereco.numero && endereco.bairro && endereco.cidade && endereco.uf);
+  const faltantes = clientMissingFields(cliente, dados);
+  const completo = faltantes.length === 0;
   const servicoNormalizado = String(dados.servico || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  const podeAgendar = servicoNormalizado.startsWith('manutencao') || servicoNormalizado.startsWith('instalacao');
-  const agendamento = podeAgendar ? '<button type="button" data-whatsapp-action="escolher-levantamento"><strong>Agendar visita</strong><small>Agendar diagnóstico técnico, sem preço.</small></button>' : '';
-  return '<section class="whatsapp-service-choice"><button type="button" class="whatsapp-step-back" data-whatsapp-action="voltar-cliente" aria-label="Voltar para o cadastro do cliente">← Voltar</button><div class="whatsapp-workbench-title"><span>Copiloto comercial</span><strong>Cliente identificado</strong></div><div class="whatsapp-client-compact"><span>Cliente</span><strong>' + esc(cliente?.nome || 'Cliente') + '</strong><small>' + (completo ? 'Cadastro completo' : 'Cadastro parcial — pode completar depois') + '</small></div><label class="whatsapp-field-wide">Título do orçamento<input name="whatsapp_titulo_comercial" value="' + esc(titulo) + '"></label><div class="whatsapp-service-choice-actions"><button type="button" data-whatsapp-action="escolher-orcamento"><strong>Montar orçamento</strong><small>Montar proposta com itens, valores e validade.</small></button>' + agendamento + '</div></section>';
+  const agendamento = '<button type="button" data-whatsapp-action="escolher-levantamento"><strong>Agendar visita</strong><small>Agendar diagnóstico técnico, sem preço.</small></button>';
+  return '<section class="whatsapp-service-choice"><button type="button" class="whatsapp-step-back" data-whatsapp-action="voltar-cliente" aria-label="Voltar para o cadastro do cliente">← Voltar</button><div class="whatsapp-workbench-title"><span>Copiloto comercial</span><strong>Cliente identificado</strong></div><div class="whatsapp-client-compact"><span>Cliente</span><strong>' + esc(cliente?.nome || 'Cliente') + '</strong><small>' + (completo ? 'Cadastro completo' : 'Cadastro parcial') + '</small>' + (completo ? '' : '<small>Falta preencher: ' + esc(faltantes.join(', ')) + '</small><button type="button" class="secondary-button" data-whatsapp-action="completar-cadastro">Completar cadastro</button>') + '</div><label class="whatsapp-field-wide">Título do orçamento<input name="whatsapp_titulo_comercial" value="' + esc(titulo) + '"></label><div class="whatsapp-service-choice-actions"><button type="button" data-whatsapp-action="escolher-orcamento"><strong>Montar orçamento</strong><small>Montar proposta com itens, valores e validade.</small></button>' + agendamento + '</div></section>';
 };
   operationalForm = function (conversa) { if (!conversa.cliente) return whatsappClientResolutionForm(conversa); if (whatsappClientResolution.startsWith("editar:")) return whatsappExistingClientForm(conversa, conversa.cliente); if (whatsappServiceChoiceRequired) return serviceChoiceForm(conversa); const voltar = '<button type="button" class="whatsapp-step-back" data-whatsapp-action="voltar-etapa">← Voltar</button>'; if (conversa.levantamento) return voltar + levantamentoForm(conversa); const quote = conversa.orcamentos?.[0]; if (whatsappServiceMode === "levantamento") return voltar + levantamentoForm(conversa); if (whatsappServiceMode === "orcamento" || quote) return voltar + quoteForm(conversa) + (!quote || quote.status === "aprovado" ? scheduleForm(conversa) : ""); return serviceChoiceForm(conversa); };
 async function loadWhatsappConversation(id) {
@@ -449,5 +462,25 @@ document.querySelector("#whatsappConversationDetail").addEventListener("input", 
 });document.querySelector("#whatsappConversationDetail").addEventListener("submit", async (event) => { event.preventDefault(); const form = event.target; const data = new FormData(form); let response; if (form.id === "whatsappReplyForm") { const texto = String(data.get("texto") || "").trim(); if (!texto) return; response = await fetch(\`\${apiBaseUrl}/admin/whatsapp/conversas/\${selectedWhatsappId}/mensagens\`, { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ texto }) }); } else if (form.dataset.whatsappForm === "cliente") { response = await fetch(\`\${apiBaseUrl}/admin/whatsapp/conversas/\${selectedWhatsappId}/cliente\`, { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ tipo: "pf", nome: data.get("nome"), documento: data.get("documento"), telefone: data.get("telefone"), cep: data.get("cep"), logradouro: data.get("logradouro"), numero: data.get("numero"), bairro: data.get("bairro"), cidade: data.get("cidade"), uf: String(data.get("uf") || "").toUpperCase() }) }); } else if (form.dataset.whatsappForm === "orcamento") { const itens = Array.from(form.querySelectorAll("[data-quote-line]")).map((line) => { const item = whatsappCatalogItems.find((entry) => entry.id === line.querySelector('[name="catalogo_item"]').value); return item && { item_catalogo_id: item.id, tipo: item.tipo, descricao: item.nome, unidade: item.unidade, quantidade: Number(line.querySelector('[name="quantidade"]').value), valor_unitario: Number(item.valor) }; }).filter(Boolean); response = await fetch(\`\${apiBaseUrl}/admin/comercial/orcamentos\`, { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ cliente_id: selectedWhatsappConversation?.cliente?.id || "", conversa_id: selectedWhatsappId, titulo: data.get("titulo"), valido_ate: data.get("valido_ate") || undefined, itens }) }); } else if (form.dataset.whatsappForm === "os") { const equipeId = String(data.get("equipe_id") || ""); const tecnicoId = String(data.get("tecnico_id") || ""); if (!equipeId && !tecnicoId) { window.alert("Selecione uma equipe ou um técnico antes de agendar."); return; } response = await fetch(\`\${apiBaseUrl}/admin/whatsapp/conversas/\${selectedWhatsappId}/os\`, { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ titulo: data.get("titulo"), detalhes: data.get("detalhes"), origem: data.get("origem"), equipe_id: equipeId || undefined, tecnico_id: tecnicoId || undefined, agendada_para: \`\${data.get("data")}T\${data.get("horario")}:00\` }) }); }
   if (!response?.ok) { const erro = await response?.json().catch(() => null); window.alert(erro?.message || "Não foi possível salvar o atendimento."); return; } if (form.id === "whatsappReplyForm" && String(data.get("texto") || "").trim() === whatsappScheduleDraft.proposalText) whatsappScheduleDraft.proposalSent = true; whatsappScheduleOptions.agenda = []; await loadWhatsappScheduleOptions(); await loadWhatsappConversation(selectedWhatsappId); await loadWhatsappConversations(); });
 async function confirmWhatsappSchedule() { window.alert("A O.S. será criada automaticamente após o aceite do cliente. Não confirme manualmente nesta etapa."); }
-document.querySelector("#whatsappConversationDetail").addEventListener("click", (event) => { const target = event.target.closest("[data-whatsapp-action]"); if (!(target instanceof HTMLButtonElement)) return; const action = target.dataset.whatsappAction; if (action === "voltar-cliente") { whatsappClientResolution = "editar:" + (selectedWhatsappConversation?.cliente?.id || ""); whatsappServiceMode = ""; whatsappServiceChoiceRequired = false; void loadWhatsappConversation(selectedWhatsappId); return; } if (action === "voltar-etapa") { whatsappServiceMode = ""; whatsappServiceChoiceRequired = true; whatsappScheduleOpen = false; void loadWhatsappConversation(selectedWhatsappId); return; } if (!["escolher-orcamento", "escolher-levantamento"].includes(action)) return; const titulo = document.querySelector('[name="whatsapp_titulo_comercial"]')?.value?.trim(); if (titulo) whatsappAiDraft = { ...(whatsappAiDraft || {}), orcamento: { ...(whatsappAiDraft?.orcamento || {}), titulo } }; });
+document.querySelector("#whatsappConversationDetail").addEventListener("click", (event) => {
+  const target = event.target.closest("[data-whatsapp-action]");
+  if (!(target instanceof HTMLButtonElement)) return;
+  if (target.dataset.whatsappAction === "voltar-cliente") {
+    event.stopImmediatePropagation();
+    whatsappClientResolution = "";
+    whatsappServiceMode = "";
+    whatsappServiceChoiceRequired = true;
+    void loadWhatsappConversation(selectedWhatsappId);
+    return;
+  }
+  if (target.dataset.whatsappAction === "abrir-agenda-levantamento" && !whatsappScheduleDraft.equipeId && !whatsappScheduleDraft.tecnicoId) whatsappScheduleDraft.equipeId = "__agenda__";
+}, true);
+document.querySelector("#whatsappConversationDetail").addEventListener("click", (event) => {
+  const target = event.target.closest("[data-whatsapp-action]");
+  if (target?.dataset.whatsappAction !== "completar-cadastro") return;
+  event.stopImmediatePropagation();
+  whatsappClientResolution = "editar:" + (selectedWhatsappConversation?.cliente?.id || "");
+  whatsappServiceChoiceRequired = false;
+  void loadWhatsappConversation(selectedWhatsappId);
+}, true);
 `;
