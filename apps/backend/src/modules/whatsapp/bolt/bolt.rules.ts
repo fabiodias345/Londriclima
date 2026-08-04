@@ -1,7 +1,7 @@
 import { BoltData, BoltMemory, BoltResult, BoltServiceType } from "./bolt.types";
 
-const WELCOME = "Olá! Eu sou o Move, da AIRMOVEBR. Seja bem-vindo(a) ao nosso atendimento.";
-const ASK_NAME = "Informe seu nome completo.";
+const WELCOME = "Olá! Eu sou a atendente virtual da Londri Clima. Seja bem-vindo(a) ao nosso atendimento.";
+const ASK_NAME = "Por favor, me passe seu nome completo.";
 const ASK_SERVICE = "Agora escolha uma opção para encaminharmos seu atendimento para uma pessoa.";
 const ASK_CEP = "Para calcular o atendimento na sua região, qual é o seu CEP?";
 const SERVICO_OPCOES = [
@@ -122,9 +122,10 @@ export class BoltRules {
     const texto = this.normalizar(original);
     const base = { ...dados, ultima_interacao: new Date().toISOString() };
     if (dados.status === "HUMAN_ATTENDING" || dados.status === "CLOSED") return { texto: "", assumir: false, dados: base };
-    if (this.ehSaudacao(texto) && !dados.nome) return this.resposta({ ...base, status: "BOT_QUALIFYING", etapa_atual: "aguardando_nome" }, `${WELCOME}\n\n${ASK_NAME}`);
+    if (!dados.nome && dados.etapa_atual !== "aguardando_nome") return this.resposta({ ...base, status: "BOT_QUALIFYING", etapa_atual: "aguardando_nome" }, `${WELCOME}\n\n${ASK_NAME}`);
     if (!dados.nome) return this.resposta({ ...base, nome: original, status: "BOT_QUALIFYING", etapa_atual: "aguardando_servico", memoria: { ...base.memoria, nome_status: "informado" } }, ASK_SERVICE, SERVICO_OPCOES);
     const opcao = SERVICO_OPCOES.find((item) => item.id === texto);
+    if (dados.etapa_atual === "aguardando_servico" && !opcao) return this.resposta({ ...base, status: "BOT_QUALIFYING", etapa_atual: "aguardando_servico" }, ASK_SERVICE, SERVICO_OPCOES);
     if (opcao) {
       const necessidade = opcao.id.replace("triagem_", "");
       const servico = necessidade === "instalacao" ? "instalacao" : necessidade === "manutencao" ? "manutencao" : dados.servico;

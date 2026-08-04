@@ -32,19 +32,39 @@ test("webhook WhatsApp salva mensagem e responde a saudacao do bot", async () =>
 
   assert.equal(chamadas[0].direcao, "entrada");
   assert.equal(chamadas[1].direcao, "saida");
-  assert.match(chamadas[1].texto, /Move/);
-  assert.match(chamadas[1].texto, /como posso te chamar/i);
+  assert.match(chamadas[1].texto, /Londri Clima/);
+  assert.match(chamadas[1].texto, /Por favor, me passe seu nome completo/i);
 });
 
 test("Bolt inicia conversa natural sem menus", () => {
   const bolt = new BoltRules();
-  const primeiro = bolt.processar({ texto: "xyz" }, null);
-  const segundo = bolt.processar({ texto: "abc" }, primeiro.dados);
+  const primeiro = bolt.processar({ texto: "oi, eu sou o Fábio" }, null);
+  const segundo = bolt.processar({ texto: "Fábio Dias" }, primeiro.dados);
   assert.equal(primeiro.assumir, false);
   assert.equal(segundo.assumir, false);
   assert.equal(primeiro.opcoes, undefined);
-  assert.equal(segundo.opcoes, undefined);
-  assert.match(primeiro.texto, /Move/);
+  assert.equal(segundo.opcoes?.length, 5);
+  assert.equal(primeiro.dados.nome, null);
+  assert.equal(segundo.dados.nome, "Fábio Dias");
+  assert.match(primeiro.texto, /Londri Clima/);
+  assert.match(primeiro.texto, /nome completo/i);
+});
+
+test("Bolt pede nome antes de qualquer triagem em conversa nova", () => {
+  const bolt = new BoltRules();
+  for (const texto of ["olá, boa tarde", "Quero instalar um ar", "Fábio Dias"]) {
+    const resposta = bolt.processar({ texto }, null);
+    assert.equal(resposta.dados.nome, null);
+    assert.equal(resposta.dados.etapa_atual, "aguardando_nome");
+    assert.equal(resposta.opcoes, undefined);
+    assert.match(resposta.texto, /nome completo/i);
+  }
+  const nome = bolt.processar({ texto: "Fábio Dias" }, bolt.processar({ texto: "Oi" }, null).dados);
+  const textoLivre = bolt.processar({ texto: "Quero orçamento" }, nome.dados);
+  assert.equal(textoLivre.assumir, false);
+  assert.equal(textoLivre.opcoes?.length, 5);
+  const confirmado = bolt.processar({ texto: "triagem_instalacao" }, nome.dados);
+  assert.equal(confirmado.assumir, true);
 });
 
 test("webhook aceita somente o token configurado", () => {
