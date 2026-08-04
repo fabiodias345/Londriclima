@@ -70,6 +70,17 @@ for (const toggle of menuToggles) {
     toggle.setAttribute("aria-expanded", String(isOpen));
   });
 }
+function fecharMenusNavegacao() {
+  document.querySelectorAll(".nav-folder.is-open").forEach((folder) => {
+    folder.classList.remove("is-open");
+    folder.querySelector("[data-menu-toggle]")?.setAttribute("aria-expanded", "false");
+  });
+}
+document.addEventListener("click", (event) => {
+  if (!(event.target instanceof Element) || !event.target.closest(".nav-folder")) fecharMenusNavegacao();
+});
+document.addEventListener("keydown", (event) => { if (event.key === "Escape") fecharMenusNavegacao(); });
+document.querySelectorAll(".nav-folder-menu .nav-link").forEach((link) => link.addEventListener("click", fecharMenusNavegacao));
 const viewKicker = document.querySelector("#viewKicker");
 const viewTitle = document.querySelector("#viewTitle");
 const preChamadosSummary = document.querySelector("#preChamadosSummary");
