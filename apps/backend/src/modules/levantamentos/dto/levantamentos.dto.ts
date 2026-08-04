@@ -1,4 +1,4 @@
-import { IsDateString, IsNumber, IsOptional, IsString, IsUUID, MinLength } from "class-validator";
+import { IsDateString, IsIn, IsNumber, IsOptional, IsString, IsUUID, MinLength } from "class-validator";
 
 export class CriarLevantamentoDto {
   @IsUUID()
@@ -12,6 +12,10 @@ export class CriarLevantamentoDto {
   @IsString()
   @MinLength(3)
   problema!: string;
+
+  @IsOptional()
+  @IsIn(["manutencao_preventiva", "manutencao_corretiva", "instalacao", "pmoc", "outros"])
+  tipo_servico?: string;
 }
 
 export class AgendarLevantamentoDto {

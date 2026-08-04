@@ -317,6 +317,7 @@ class _LoginScreenState extends State<LoginScreen> {
           locationService: widget.locationService,
           photoPicker: widget.photoPicker,
           barcodeScanner: widget.barcodeScanner,
+          levantamentoRepository: session.levantamentoRepository,
           technicianName: session.technicianName,
         ),
       ),

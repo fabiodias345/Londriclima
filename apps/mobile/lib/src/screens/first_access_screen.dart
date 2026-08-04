@@ -204,6 +204,7 @@ class _FirstAccessScreenState extends State<FirstAccessScreen> {
           locationService: widget.locationService,
           photoPicker: widget.photoPicker,
           barcodeScanner: widget.barcodeScanner,
+          levantamentoRepository: activeSession.levantamentoRepository,
           technicianName: activeSession.technicianName.isEmpty
               ? widget.technicianName
               : activeSession.technicianName,

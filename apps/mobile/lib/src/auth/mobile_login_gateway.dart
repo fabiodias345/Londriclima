@@ -1,6 +1,7 @@
 import '../repositories/work_order_repository.dart';
 import '../repositories/fleet_repository.dart';
 import '../models/work_order.dart';
+import '../repositories/levantamento_repository.dart';
 
 class FirstAccessRegistration {
   const FirstAccessRegistration({
@@ -54,12 +55,14 @@ class LoginSession {
   const LoginSession({
     required this.repository,
     required this.fleetRepository,
+    this.levantamentoRepository,
     this.technicianName = '',
     this.refreshToken,
   });
 
   final WorkOrderRepository repository;
   final FleetRepository fleetRepository;
+  final LevantamentoRepository? levantamentoRepository;
   final String technicianName;
   final String? refreshToken;
 }

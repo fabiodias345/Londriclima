@@ -1,5 +1,6 @@
 import '../data/fake_work_order_repository.dart';
 import '../repositories/fleet_repository.dart';
+import '../data/fake_levantamento_repository.dart';
 import 'mobile_login_gateway.dart';
 
 class FakeLoginGateway implements MobileLoginGateway {
@@ -14,6 +15,7 @@ class FakeLoginGateway implements MobileLoginGateway {
       return LoginSession(
         repository: FakeWorkOrderRepository(),
         fleetRepository: FakeFleetRepository(),
+        levantamentoRepository: FakeLevantamentoRepository(),
         technicianName: 'Tecnico AIRMOVEBR',
       );
     }
@@ -31,6 +33,7 @@ class FakeLoginGateway implements MobileLoginGateway {
     return LoginSession(
       repository: FakeWorkOrderRepository(),
       fleetRepository: FakeFleetRepository(),
+      levantamentoRepository: FakeLevantamentoRepository(),
       technicianName: registration.name,
     );
   }
@@ -46,6 +49,7 @@ class FakeLoginGateway implements MobileLoginGateway {
     return LoginSession(
       repository: FakeWorkOrderRepository(),
       fleetRepository: FakeFleetRepository(),
+      levantamentoRepository: FakeLevantamentoRepository(),
       technicianName: registration.name,
     );
   }

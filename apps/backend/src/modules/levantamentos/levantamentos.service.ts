@@ -21,12 +21,12 @@ export class LevantamentosService {
       if (existente) {
         const reaberto = await this.prisma.levantamentoTecnico.update({
           where: { id: existente.id },
-          data: { clienteId, problema, agendadaPara: null, equipeId: null, tecnicoId: null, status: LevantamentoStatus.pendente_agendamento, tecnicoAvisadoEm: null, lembreteTecnicoEm: null, notificacaoErro: null }
+          data: { clienteId, problema, tipoServico: dto.tipo_servico || "manutencao_corretiva", agendadaPara: null, equipeId: null, tecnicoId: null, status: LevantamentoStatus.pendente_agendamento, tecnicoAvisadoEm: null, lembreteTecnicoEm: null, notificacaoErro: null }
         });
         return this.mapear(reaberto);
       }
     }
-    const levantamento = await this.prisma.levantamentoTecnico.create({ data: { empresaId, clienteId, conversaId, problema } });
+    const levantamento = await this.prisma.levantamentoTecnico.create({ data: { empresaId, clienteId, conversaId, problema, tipoServico: dto.tipo_servico || "manutencao_corretiva" } });
     return this.mapear(levantamento);
   }
 
@@ -131,7 +131,7 @@ export class LevantamentosService {
 
   private mapear(item: any) {
     return {
-      id: item.id, empresa_id: item.empresaId, cliente_id: item.clienteId, conversa_id: item.conversaId, problema: item.problema, status: item.status,
+      id: item.id, empresa_id: item.empresaId, cliente_id: item.clienteId, conversa_id: item.conversaId, problema: item.problema, tipo_servico: item.tipoServico || "manutencao_corretiva", status: item.status,
       equipe_id: item.equipeId, tecnico_id: item.tecnicoId, agendada_para: item.agendadaPara?.toISOString() ?? null,
       tecnico_avisado_em: item.tecnicoAvisadoEm?.toISOString() ?? null, lembrete_tecnico_em: item.lembreteTecnicoEm?.toISOString() ?? null, notificacao_erro: item.notificacaoErro ?? null,
       criado_em: item.criadoEm.toISOString(), atualizado_em: item.atualizadoEm.toISOString(), cliente: item.cliente, equipe: item.equipe, tecnico: item.tecnico,

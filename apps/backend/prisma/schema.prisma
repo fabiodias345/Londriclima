@@ -589,6 +589,7 @@ model LevantamentoTecnico {
   equipeId          String?            @map("equipe_id") @db.Uuid
   tecnicoId         String?            @map("tecnico_id") @db.Uuid
   problema          String
+  tipoServico       String              @default("manutencao_corretiva") @map("tipo_servico")
   agendadaPara      DateTime?          @map("agendada_para")
   status            LevantamentoStatus @default(pendente_agendamento)
   criadoEm          DateTime           @default(now()) @map("criado_em")

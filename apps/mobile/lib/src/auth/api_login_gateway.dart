@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import '../repositories/api_work_order_repository.dart';
 import '../repositories/api_fleet_repository.dart';
+import '../repositories/api_levantamento_repository.dart';
 import '../repositories/offline_work_order_repository.dart';
 import 'onboarding_required_exception.dart';
 import 'mobile_login_gateway.dart';
@@ -64,6 +65,7 @@ class ApiLoginGateway implements MobileLoginGateway {
           remote: ApiWorkOrderRepository(baseUrl: baseUrl, token: token),
         ),
         fleetRepository: ApiFleetRepository(baseUrl: baseUrl, token: token),
+        levantamentoRepository: ApiLevantamentoRepository(baseUrl: baseUrl, token: token),
         technicianName:
             (decoded['usuario'] as Map<String, dynamic>?)?['nome']
                 ?.toString() ??
@@ -107,6 +109,7 @@ class ApiLoginGateway implements MobileLoginGateway {
           remote: ApiWorkOrderRepository(baseUrl: baseUrl, token: token),
         ),
         fleetRepository: ApiFleetRepository(baseUrl: baseUrl, token: token),
+        levantamentoRepository: ApiLevantamentoRepository(baseUrl: baseUrl, token: token),
         technicianName:
             (decoded['usuario'] as Map<String, dynamic>?)?['nome']
                 ?.toString() ??
@@ -152,6 +155,7 @@ class ApiLoginGateway implements MobileLoginGateway {
       return LoginSession(
         repository: OfflineWorkOrderRepository(remote: ApiWorkOrderRepository(baseUrl: baseUrl, token: token)),
         fleetRepository: ApiFleetRepository(baseUrl: baseUrl, token: token),
+        levantamentoRepository: ApiLevantamentoRepository(baseUrl: baseUrl, token: token),
         technicianName: (decoded['usuario'] as Map<String, dynamic>?)?['nome']?.toString() ?? '',
         refreshToken: decoded['refresh_token']?.toString(),
       );
@@ -188,6 +192,7 @@ class ApiLoginGateway implements MobileLoginGateway {
           remote: ApiWorkOrderRepository(baseUrl: baseUrl, token: token),
         ),
         fleetRepository: ApiFleetRepository(baseUrl: baseUrl, token: token),
+        levantamentoRepository: ApiLevantamentoRepository(baseUrl: baseUrl, token: token),
         technicianName:
             (decoded['usuario'] as Map<String, dynamic>?)?['nome']
                 ?.toString() ??

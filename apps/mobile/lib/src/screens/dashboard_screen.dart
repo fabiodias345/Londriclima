@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/work_order.dart';
+import '../repositories/levantamento_repository.dart';
 import '../repositories/fleet_repository.dart';
 import '../repositories/work_order_repository.dart';
 import '../services/barcode_scanner_service.dart';
@@ -10,6 +11,7 @@ import '../widgets/work_order_card.dart';
 import '../widgets/work_order_filter_bar.dart';
 import 'fueling_screen.dart';
 import 'work_order_detail_screen.dart';
+import 'levantamentos_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({
@@ -19,6 +21,7 @@ class DashboardScreen extends StatefulWidget {
     required this.locationService,
     required this.photoPicker,
     required this.barcodeScanner,
+    this.levantamentoRepository,
     this.technicianName = '',
   });
 
@@ -28,6 +31,7 @@ class DashboardScreen extends StatefulWidget {
   final ChecklistPhotoPicker photoPicker;
   final BarcodeScannerService barcodeScanner;
   final String technicianName;
+  final LevantamentoRepository? levantamentoRepository;
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -66,6 +70,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     _showMaintenance = true;
                   }),
                   onFuelingTap: _openFueling,
+                  onLevantamentoTap: widget.levantamentoRepository == null ? null : _openLevantamentos,
                 ),
                 if (_showMaintenance) ...[
                   const SizedBox(height: 24),
@@ -142,6 +147,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Future<void> _openLevantamentos() async { final repository = widget.levantamentoRepository; if (repository == null) return; await Navigator.of(context).push(MaterialPageRoute(builder: (_) => LevantamentosScreen(repository: repository, photoPicker: widget.photoPicker))); }
+
   Widget _syncButton() {
     return IconButton(
       key: const Key('syncNowButton'),
@@ -182,10 +189,12 @@ class _DashboardActions extends StatelessWidget {
   const _DashboardActions({
     required this.onMaintenanceTap,
     required this.onFuelingTap,
+    this.onLevantamentoTap,
   });
 
   final VoidCallback onMaintenanceTap;
   final VoidCallback onFuelingTap;
+  final VoidCallback? onLevantamentoTap;
 
   @override
   Widget build(BuildContext context) {
@@ -229,6 +238,10 @@ class _DashboardActions extends StatelessWidget {
             ),
           ),
         ),
+        if (onLevantamentoTap != null) ...[
+          const SizedBox(height: 16),
+          OutlinedButton.icon(onPressed: onLevantamentoTap, icon: const Icon(Icons.fact_check_outlined, size: 24), label: const Text('Levantamentos técnicos'), style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(64), foregroundColor: airmovebrPrimary, side: const BorderSide(color: airmovebrAccent, width: 2), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900))),
+        ],
       ],
     );
   }
