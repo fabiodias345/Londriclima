@@ -57,6 +57,7 @@ export type BoltData = {
   etapa_atual: string | null;
   tentativas_fallback: number;
   ultima_interacao?: string;
+  primeiro_contato_em?: string;
 };
 
 export type BoltOption = {

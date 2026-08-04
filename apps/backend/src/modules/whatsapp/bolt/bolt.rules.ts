@@ -16,6 +16,10 @@ const MANUTENCAO_OPCOES = [
   { id: "manutencao_corretiva", title: "Está com problema" }
 ];
 const ASK_SERVICE_DIRECT = "O que voce deseja? Vou passar voce para um atendente.";
+const MENU = "Prazer, {nome}! 👋\nMe diz o que você precisa hoje:\n\n1️⃣ Limpeza\n2️⃣ Manutenção\n3️⃣ PMOC\n4️⃣ Outros";
+const OUTROS = "Sem problema! Pode me contar rapidinho o que está acontecendo? 🙂";
+const HANDOFF_HORARIO = "Show, {nome}! ✅\nJá vou te passar para um de nossos atendentes, que continua daqui. Só um instante! 😉";
+const HANDOFF_FORA_HORARIO = "Oi! No momento estamos fora do horário de atendimento — funcionamos de segunda a sexta, das 8h às 18h. 🕒\nJá recebemos sua mensagem e vamos te responder o mais rápido possível dentro do nosso horário de funcionamento. 😊";
 
 function memoriaInicial(): BoltMemory {
   return {
@@ -121,21 +125,29 @@ export class BoltRules {
     const dados = normalizarDadosBolt(dadosEntrada);
     const original = mensagem.texto.trim();
     const texto = this.normalizar(original);
-    const base = { ...dados, ultima_interacao: new Date().toISOString() };
+    const agora = new Date().toISOString();
+    const primeiroContato = dados.primeiro_contato_em || dados.ultima_interacao || agora;
+    const base = { ...dados, primeiro_contato_em: primeiroContato, ultima_interacao: agora };
     if (dados.status === "HUMAN_ATTENDING" || dados.status === "CLOSED") return { texto: "", assumir: false, dados: base };
-    if (!dados.nome && dados.etapa_atual !== "aguardando_nome") return this.resposta({ ...base, status: "BOT_QUALIFYING", etapa_atual: "aguardando_nome" }, `${WELCOME}\n\n${ASK_NAME}`);
+    if (!dados.nome && !dados.primeiro_contato_em && !dados.ultima_interacao) return this.resposta({ ...base, status: "BOT_QUALIFYING", etapa_atual: "aguardando_nome" }, `${WELCOME}\n\n${ASK_NAME}`);
     if (!dados.nome) {
-      if (!original || this.ehSaudacao(texto)) return this.resposta({ ...base, status: "BOT_QUALIFYING", etapa_atual: "aguardando_nome" }, ASK_NAME);
-      return this.resposta({ ...base, nome: original, status: "BOT_QUALIFYING", etapa_atual: "aguardando_servico", memoria: { ...base.memoria, nome_status: "informado" } }, ASK_SERVICE_DIRECT);
+      if (!original) return this.resposta({ ...base, status: "BOT_QUALIFYING", etapa_atual: "aguardando_nome" }, ASK_NAME);
+      return this.resposta({ ...base, nome: original, status: "BOT_QUALIFYING", etapa_atual: "aguardando_servico", memoria: { ...base.memoria, nome_status: "informado" } }, this.menuMensagem(original));
     }
-    const opcao = SERVICO_OPCOES.find((item) => item.id === texto);
-    if (opcao) {
-      const necessidade = opcao.id.replace("triagem_", "");
-      const servico = necessidade === "instalacao" ? "instalacao" : necessidade === "manutencao" ? "manutencao" : dados.servico;
-      return this.handoff({ ...base, servico, detalhes: dados.detalhes || necessidade, campos_extra: { ...base.campos_extra, necessidade }, etapa_atual: null });
-    }
-    const servico = this.identificarServico(texto);
-    return this.handoff({ ...base, servico: servico || dados.servico || "nao_identificado", detalhes: dados.detalhes || original, etapa_atual: null });
+    if (dados.etapa_atual === "aguardando_outros") return this.handoff({ ...base, servico: "nao_identificado", detalhes: original, etapa_atual: null });
+    const servico = this.menuServico(texto);
+    if (servico === "outros") return this.resposta({ ...base, status: "BOT_QUALIFYING", etapa_atual: "aguardando_outros" }, OUTROS);
+    if (!servico) return this.resposta({ ...base, status: "BOT_QUALIFYING", etapa_atual: "aguardando_servico" }, this.menuMensagem(dados.nome));
+    return this.handoff({ ...base, servico, detalhes: servico, etapa_atual: null });
+  }
+
+  private menuMensagem(nome: string) { return MENU.replace("{nome}", nome); }
+  private menuServico(texto: string): BoltServiceType | "outros" | null {
+    if (/^(1|limpeza)$/.test(texto)) return "limpeza_filtro";
+    if (/^(2|manutencao)$/.test(texto)) return "manutencao";
+    if (/^(3|pmoc)$/.test(texto)) return "pmoc";
+    if (/^(4|outros)$/.test(texto)) return "outros";
+    return null;
   }
 
   private atualizarMemoria(dados: BoltData, original: string, texto: string, nomeContato?: string): BoltData {
@@ -255,7 +267,13 @@ export class BoltRules {
     const texto = this.emHorarioComercial()
       ? "Perfeito, já registrei as informações. Vou transferir você para nosso especialista continuar o atendimento."
       : "Já registrei as informações. Nosso horário é de segunda a sexta, das 08:00 às 18:00, e nossa equipe entrará em contato.";
-    return { texto, assumir: true, dados: { ...dados, status: "HUMAN_QUEUE", etapa_atual: null, tentativas_fallback: 0 } };
+    return { texto: this.textoHandoff(dados), assumir: true, dados: { ...dados, status: "HUMAN_QUEUE", etapa_atual: null, tentativas_fallback: 0 } };
+  }
+
+  private textoHandoff(dados: BoltData) {
+    return this.emHorarioComercial()
+      ? HANDOFF_HORARIO.replace("{nome}", dados.nome || "cliente")
+      : HANDOFF_FORA_HORARIO;
   }
 
   private humano(dados: BoltData): BoltResult { return { texto: "Vou transferir você para nossa equipe agora.", assumir: true, dados: { ...dados, status: "HUMAN_QUEUE", etapa_atual: null, tentativas_fallback: 0 } }; }
