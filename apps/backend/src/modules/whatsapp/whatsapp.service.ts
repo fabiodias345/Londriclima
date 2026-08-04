@@ -210,6 +210,18 @@ export class WhatsAppService {
     if (!conversa.levantamentoTecnico) throw new BadRequestException("Crie o levantamento antes de agendar.");
     const eraAgendado = conversa.levantamentoTecnico.status === "agendado";
     const levantamento = await this.levantamentos.agendar(conversa.levantamentoTecnico.id, empresaId, dto);
+    if (!eraAgendado) {
+      const quando = new Date(dto.agendada_para).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+      const texto = `Olá, ${conversa.nomeContato || "cliente"}! Temos disponibilidade para o levantamento técnico ${quando}. Podemos confirmar esse horário? Responda SIM para confirmar ou NÃO para escolher outro horário.`;
+      const entrega = await this.sender.enviar({ to: conversa.telefone, text: texto });
+      const dados = normalizarDadosBolt(conversa.dados);
+      await this.prisma.$transaction([
+        this.prisma.whatsAppMensagem.create({ data: { conversaId: id, direcao: "saida", texto, mensagemId: entrega.messageId } }),
+        this.prisma.whatsAppConversa.update({ where: { id }, data: { status: "humano", dados: { ...dados, campos_extra: { ...dados.campos_extra, levantamento_aguardando_confirmacao: "sim", levantamento_agendado_por_usuario_id: usuario.id } } as Prisma.InputJsonValue, ultimaMensagemEm: new Date() } })
+      ]);
+      this.emitir({ tipo: "levantamento_aguardando_confirmacao", conversaId: id, empresaId });
+      return { levantamento, aguardando_confirmacao_cliente: true };
+    }
     const dados = normalizarDadosBolt(conversa.dados);
     await this.criarOrdemDaConversa(id, empresaId, {
       cliente_id: conversa.clienteId ?? undefined,
@@ -320,6 +332,7 @@ Agradecemos pela preferência. Até breve!`;
       this.emitir({ tipo: "conversa_reaberta", conversaId: conversa.id, empresaId: empresa.id });
     }
     if (await this.processarRespostaOrcamento(conversa, mensagem.texto)) return;
+    if (await this.processarRespostaLevantamento(conversa, mensagem.texto, empresa.id)) return;
     if (conversa.status === "humano") return;
     const resposta = this.bolt.processar({ texto: mensagem.texto, nomeContato: mensagem.nome }, conversa.dados);
     try {
@@ -333,6 +346,38 @@ Agradecemos pela preferência. Até breve!`;
     } catch {
       // A entrada fica salva para reprocessamento manual quando a API externa falhar.
     }
+  }
+
+  private async processarRespostaLevantamento(conversa: { id: string; empresaId: string; telefone: string; nomeContato?: string | null }, texto: string, empresaId: string) {
+    const estado = await this.prisma.whatsAppConversa.findFirst({ where: { id: conversa.id, empresaId }, include: { levantamentoTecnico: true } });
+    const dados = normalizarDadosBolt(estado?.dados);
+    if (!estado?.levantamentoTecnico || dados.campos_extra.levantamento_aguardando_confirmacao !== "sim") return false;
+    const resposta = texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+    if (/^(sim|s|confirmo|confirmar|pode|pode ser|ok|aceito|fechado)$/.test(resposta)) {
+      const usuarioId = String(dados.campos_extra.levantamento_agendado_por_usuario_id || "");
+      if (!usuarioId) return false;
+      await this.criarOrdemDaConversa(conversa.id, empresaId, {
+        cliente_id: estado.clienteId ?? undefined,
+        equipe_id: estado.levantamentoTecnico.equipeId ?? undefined,
+        tecnico_id: estado.levantamentoTecnico.tecnicoId ?? undefined,
+        agendada_para: estado.levantamentoTecnico.agendadaPara?.toISOString(),
+        origem: OrdemServicoOrigem.servico_gratuito,
+        tipo_servico: "corretiva",
+        titulo: "Levantamento técnico",
+        detalhes: estado.levantamentoTecnico.problema
+      }, { id: usuarioId, empresa_id: empresaId, email: "", role: "admin" });
+      return true;
+    }
+    if (/^(nao|n|cancelar|outro horario|outro horÃ¡rio)$/.test(resposta)) {
+      const retorno = `Tudo bem, ${conversa.nomeContato || "cliente"}. Vou deixar o horário pendente para o atendente ajustar com você.`;
+      const entrega = await this.sender.enviar({ to: conversa.telefone, text: retorno });
+      await this.prisma.$transaction([
+        this.prisma.whatsAppMensagem.create({ data: { conversaId: conversa.id, direcao: "saida", texto: retorno, mensagemId: entrega.messageId } }),
+        this.prisma.whatsAppConversa.update({ where: { id: conversa.id }, data: { dados: { ...dados, campos_extra: { ...dados.campos_extra, levantamento_aguardando_confirmacao: null } } as Prisma.InputJsonValue, ultimaMensagemEm: new Date() } })
+      ]);
+      return true;
+    }
+    return false;
   }
 
   private async processarComIa(conversa: { id: string; dados: unknown; nomeContato?: string | null }, mensagem: IncomingMessage): Promise<BoltResult | null> {
