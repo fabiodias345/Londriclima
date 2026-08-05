@@ -17,7 +17,7 @@ class AirmovebrApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'AIRMOVEBR',
+      title: 'AIR MOVE',
       theme: buildAirmovebrTheme(),
       home: LoginScreen(
         loginGateway: HybridLoginGateway(

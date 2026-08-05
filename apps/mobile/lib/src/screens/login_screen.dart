@@ -328,7 +328,13 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        color: neuroBase,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF0F3B5C), Color(0xFF092940)],
+          ),
+        ),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -340,16 +346,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     Image.asset(
                       'assets/airmovebr-logo.png',
-                      height: 128,
+                      height: 178,
                     ),
                     const SizedBox(height: 32),
                     Text(
-                      'Acesso AIRMOVEBR',
+                      'Acesso AIR MOVE',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(
                             fontWeight: FontWeight.w900,
-                            color: neuroText,
+                            color: Colors.white,
                             fontSize: 26,
                           ),
                     ),
@@ -358,7 +364,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       'Entre para acessar a operação.',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: neuroMuted,
+                        color: Colors.white70,
                         fontSize: 16,
                       ),
                     ),

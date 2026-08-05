@@ -52,7 +52,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('AIRMOVEBR'), actions: [_syncButton()]),
+      appBar: AppBar(
+        title: const Text('AIR MOVE'),
+        foregroundColor: Colors.white,
+        actions: [_syncButton()],
+      ),
       body: SafeArea(
         child: FutureBuilder<List<WorkOrder>>(
           future: _ordersFuture,
@@ -75,7 +79,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 if (_showMaintenance) ...[
                   const SizedBox(height: 24),
                   Text(
-                    'Ordens de servico',
+                    'Ordens de serviço',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w900,
                     ),

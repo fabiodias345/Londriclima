@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 
-// @version:1.1.0
-// Neumorphism Bold Palette
-const neuroBase = Color(0xFFF0F2F5);
-const neroSurface = Color(0xFFE8EAED);
+// @version:2.0.0
+// AIR MOVE Cool Blue palette. Legacy names below remain for API compatibility.
+const neuroBase = Color(0xFFF4F7FA);
+const neroSurface = Color(0xFFE2E8F0);
 const neuroElevated = Color(0xFFFFFFFF);
-const neuroText = Color(0xFF1A1A1A);
-const neuroMuted = Color(0xFF8E8E93);
-const neuroPrimary = Color(0xFF3A3A3C);
-const neuroAccent = Color(0xFF5AC8FA);
-const neuroSuccess = Color(0xFF34C759);
-const neuroWarning = Color(0xFFFF9500);
-const neuroDanger = Color(0xFFFF3B30);
-const neuroShadowDark = Color(0x1A000000);
-const neuroShadowLight = Color(0x0DFFFFFF);
+const neuroText = Color(0xFF1E293B);
+const neuroMuted = Color(0xFF64748B);
+const neuroPrimary = Color(0xFF0F3B5C);
+const neuroAccent = Color(0xFF00B4D8);
+const neuroSuccess = Color(0xFF10B981);
+const neuroWarning = Color(0xFFF59E0B);
+const neuroDanger = Color(0xFFEF4444);
+const neuroShadowDark = Color(0x140F3B5C);
+const neuroShadowLight = Color(0x00FFFFFF);
 
 // Legacy colors (for backward compatibility)
 const airmovebrPrimary = neuroPrimary;
@@ -39,13 +39,13 @@ ThemeData buildAirmovebrTheme() {
       brightness: Brightness.light,
     ),
     appBarTheme: const AppBarTheme(
-      backgroundColor: neuroBase,
+      backgroundColor: neuroPrimary,
       foregroundColor: neuroText,
       centerTitle: false,
       elevation: 0,
       shadowColor: neuroShadowDark,
       titleTextStyle: TextStyle(
-        color: neuroText,
+        color: Colors.white,
         fontSize: 22,
         fontWeight: FontWeight.w900,
       ),
@@ -54,7 +54,7 @@ ThemeData buildAirmovebrTheme() {
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: neuroElevated,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: _neuromophicInputBorder(),
       enabledBorder: _neuromophicInputBorder(),
       focusedBorder: _neuromophicInputBorder(focused: true),
