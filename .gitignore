@@ -35,4 +35,3 @@ node_modules
 /analysis_options.yaml
 /pubspec.yaml
 /pubspec.lock
-apps/mobile/ios/
