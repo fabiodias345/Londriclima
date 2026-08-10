@@ -1,6 +1,6 @@
 # Memoria AIRMOVEBR
 
-Atualizado em: 26/07/2026
+Atualizado em: 09/08/2026
 
 ## Contexto
 
@@ -43,6 +43,7 @@ site -> pre-chamado -> admin -> O.S. -> app tecnico -> checklist/fotos/GPS/assin
 ## Decisoes ativas
 
 - Marca visivel: AIRMOVEBR.
+- Toda mudanca de produto ou codigo deve ser organizada em uma Issue antes do desenvolvimento. A branch deve trazer o numero da Issue (por exemplo, `feat/42-nome-da-mudanca`), e o Pull Request deve referenciá-la com `Closes #42`, `Fixes #42` ou `Resolves #42`. A Issue so e fechada automaticamente quando o PR entra na `main`; usar `Refs #42` quando o PR nao concluir a tarefa.
 - O app tecnico nao escolhe periodicidade; a O.S. traz `checklist_tipo`.
 - O backend monta o checklist flat e o app apenas renderiza/salva.
 - Uma O.S. pode atender varias maquinas do mesmo cliente/local.

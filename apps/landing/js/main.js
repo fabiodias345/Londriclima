@@ -14,6 +14,38 @@ const apiBaseUrls = localHosts.includes(window.location.hostname)
   ? ["http://localhost:3000/api/v1"]
   : ["https://api.airmovebr.com.br/api/v1"];
 const whatsappNumber = "554330673793";
+const mediaContainers = document.querySelectorAll("[data-media]");
+const revealElements = document.querySelectorAll("[data-reveal]");
+
+document.documentElement.classList.add("js");
+
+function markMediaLoaded(container) {
+  container.classList.add("is-loaded");
+}
+
+mediaContainers.forEach((container) => {
+  const image = container.querySelector("img");
+  if (!(image instanceof HTMLImageElement)) return;
+  if (image.complete) {
+    markMediaLoaded(container);
+    return;
+  }
+  image.addEventListener("load", () => markMediaLoaded(container), { once: true });
+  image.addEventListener("error", () => markMediaLoaded(container), { once: true });
+});
+
+if ("IntersectionObserver" in window) {
+  const revealObserver = new IntersectionObserver((entries, observer) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add("is-revealed");
+      observer.unobserve(entry.target);
+    });
+  }, { rootMargin: "0px 0px -8%", threshold: 0.08 });
+  revealElements.forEach((element) => revealObserver.observe(element));
+} else {
+  revealElements.forEach((element) => element.classList.add("is-revealed"));
+}
 
 function buildWhatsAppUrl(payload) {
   const lines = [
