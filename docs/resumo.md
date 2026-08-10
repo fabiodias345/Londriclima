@@ -14,6 +14,7 @@ Atualizado em: 09/08/2026
 
 - Evoluir o sistema existente; não recomeçar do zero.
 - Toda mudanca deve ser registrada em uma Issue antes do desenvolvimento. A branch deve incluir o numero da Issue e o Pull Request deve usar `Closes #numero`, `Fixes #numero` ou `Resolves #numero` para fechar a tarefa somente depois do merge na `main`; `Refs #numero` mantem a Issue aberta.
+- Antes de chegar a `main` ou ao ambiente principal, toda mudanca precisa passar por PIOMI, STRIKE, revisao de arquitetura, teste de validacao e CI/CD. O PR deve mostrar essas validacoes; sem aprovacao completa, nao fazer merge nem deploy.
 - A IA será implantada gradualmente no software atual.
 - A chave `OPENAI_API_KEY` é exclusiva da IA do produto, no Admin e no APK.
 - Não usar os créditos da chave para Codex, VSCode, respostas nesta conversa ou codificação.
