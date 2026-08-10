@@ -1,7 +1,7 @@
 # PRD - AIRMOVEBR Digital
 
-Versao: 1.7.2
-Atualizado em: 14/07/2026
+Versao: 1.7.3
+Atualizado em: 09/08/2026
 Cliente piloto: AIRMOVEBR - Londrina/PR
 
 ## Visao
@@ -253,6 +253,8 @@ flutter build apk --debug
 ## Decisoes operacionais
 
 - Commit, push e deploy so podem ser executados quando solicitados explicitamente.
+- Cada mudanca deve comecar por uma Issue. Criar uma branch com o numero da Issue, abrir um Pull Request para a branch de destino e colocar `Closes #numero`, `Fixes #numero` ou `Resolves #numero` na descricao quando o PR concluir a tarefa. Ao integrar o PR na `main`, o GitHub fecha a Issue; usar apenas `Refs #numero` quando a Issue continuar aberta.
+- Nenhum codigo pode ser integrado na `main` ou promovido ao ambiente principal sem passar por PIOMI, STRIKE, revisao de arquitetura, teste de validacao e verificacao do CI/CD. O PR deve conter evidencias ou status dessas etapas; falha em qualquer gate bloqueia o merge ate a correcao e nova validacao.
 - Segredos nao devem ir para Git.
 - Arquivos proprios devem ficar preferencialmente abaixo de 500 linhas.
 - A maquina local e o ambiente principal para testar o APK nesta etapa.

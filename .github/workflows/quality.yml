@@ -1,0 +1,36 @@
+name: Quality gates
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, dev]
+
+permissions:
+  contents: read
+
+jobs:
+  validation:
+    name: PIOMI / STRIKE / validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate frontend contracts
+        run: npm run frontend:test
+
+      - name: Validate landing JavaScript syntax
+        run: node --check apps/landing/js/main.js
+
+      - name: Validate repository diff formatting
+        run: git diff --check
