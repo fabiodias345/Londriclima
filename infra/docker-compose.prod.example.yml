@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       TZ: America/Sao_Paulo
     volumes:
-      - londriclima_postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
@@ -65,7 +65,7 @@ services:
       - londriclima_internal
 
 volumes:
-  londriclima_postgres_data:
+  postgres_data:
   storage_data:
   caddy_data:
   caddy_config:
