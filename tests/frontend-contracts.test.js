@@ -96,9 +96,9 @@ test("landing possui formulario de atendimento enxuto", () => {
   assert.doesNotMatch(html, /name="logradouro"/);
   assert.doesNotMatch(html, /name="bairro"/);
   assert.match(html, /name="cidade"/);
-  assert.match(html, /\.\/assets\/airmovebr\/atendimento-interno\.jpeg/);
-  assert.match(html, /\.\/assets\/airmovebr\/frota-equipe\.jpeg/);
-  assert.match(html, /\.\/assets\/airmovebr\/pmoc-tecnico\.jpeg/);
+  assert.match(html, /\.\/assets\/air-move\/atendimento-interno\.jpeg/);
+  assert.match(html, /\.\/assets\/air-move\/frota-equipe\.jpeg/);
+  assert.match(html, /\.\/assets\/air-move\/pmoc-tecnico\.jpeg/);
   assert.doesNotMatch(html, /photo-1450101499163-c8848c66ca85/);
   assert.doesNotMatch(html, /photo-1521791136064-7986c2920216/);
   assert.match(html, /name="nome"/);
@@ -114,9 +114,10 @@ test("admin autentica, guarda token e protege chamadas administrativas", () => {
   const html = read("apps/admin/index.html");
   const main = read("apps/admin/js/main.js");
 
-  assert.match(html, /<script type="module" src="\.\/js\/main\.js\?v=\d{8}-[a-z]+"><\/script>/);
-  assert.match(html, /\.\/js\/main\.js\?v=20260704-access/);
-  assert.match(main, /\?v=20260704-access/g);
+  assert.match(html, /<script type="module" src="\.\/js\/main\.js\?v=\d{8}-[a-z0-9]+"><\/script>/);
+  assert.match(html, /\.\/js\/main\.js\?v=20260731-syntax2/);
+  assert.match(main, /api\.js\?v=20260725-login/);
+  assert.match(main, /session\.js\?v=20260731-session-refresh/);
   assert.doesNotMatch(html, /20260629-recorrencia/);
   assert.doesNotMatch(main, /20260630-recorrencia-filtros|20260630-apiadmin|20260630-recshow|20260630-recfix/);
   assert.doesNotMatch(main, /import "\.\.\/script\.js"/);
@@ -201,8 +202,7 @@ test("WhatsApp agenda levantamento de manutenção sem criar O.S. ou orçamento"
   assert.match(whatsapp, /\/admin\/levantamentos\/" \+ id \+ "\/notificacao\/reenviar/);
   assert.match(whatsapp, /Reenviar aviso/);
   assert.match(whatsapp, /sem criar O\.S\. ou orçamento/);
-  assert.match(comercial, /levantamentosNav\.textContent = "Levantamentos"/);
-  assert.match(comercial, /\/admin\/levantamentos/);
+  assert.doesNotMatch(comercial, /levantamentosNav/);
 });
 test("WhatsApp oferece escolha explícita entre levantamento e orçamento", () => {
   const whatsapp = read("apps/admin/js/modules/whatsapp.js");
@@ -330,10 +330,10 @@ test("admin possui views funcionais para agenda clientes e relatorios", () => {
   assert.match(html, /data-view="agenda"/);
   assert.match(html, /data-view="recorrencias"/);
   assert.match(html, /data-view="clientes"/);
-  assert.doesNotMatch(html, /<button class="nav-link" type="button" data-view="empresa">/);
-  assert.doesNotMatch(html, /<button class="nav-link" type="button" data-view="tecnicos">/);
-  assert.doesNotMatch(html, /<button class="nav-link" type="button" data-view="equipes">/);
-  assert.doesNotMatch(html, /<button class="nav-link" type="button" data-view="engenheiros">/);
+  assert.match(html, /data-menu="configuracoes"[\s\S]*data-view="empresa"/);
+  assert.match(html, /data-menu="configuracoes"[\s\S]*data-view="tecnicos"/);
+  assert.match(html, /data-menu="configuracoes"[\s\S]*data-view="equipes"/);
+  assert.match(html, /data-menu="configuracoes"[\s\S]*data-view="engenheiros"/);
   assert.match(html, /id="configButton"/);
   assert.match(html, /id="configTabs"/);
   assert.ok(html.indexOf('id="configTabs"') < html.indexOf('id="preChamadosSummary"'));
