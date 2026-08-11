@@ -1,0 +1,12 @@
+.comercial-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-bottom: 24px;
+}
+
+.comercial-workspace > .comercial-quotes,
+.comercial-workspace > .comercial-grid {
+  flex: 1;
+  min-height: 0;
+}
