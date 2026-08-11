@@ -62,6 +62,7 @@
 .app-shell { margin-left: 0; min-height: calc(100vh - 76px); padding: 0 24px 24px; }
 .dashboard { min-height: calc(100vh - 76px); grid-template-rows: auto minmax(0, 1fr); }
 .dashboard > .worklist:not(.hidden) { min-height: 0; }
+.dashboard > .worklist:not(.hidden) { align-content: start; }
 .admin-top-actions #configButton { display: none; }
 
 /* Let the AI context lead the WhatsApp workspace. */
