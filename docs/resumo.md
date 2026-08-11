@@ -15,6 +15,8 @@
 - Produção antes do deploy: `https://admin.airmovebr.com.br/` e `https://api.airmovebr.com.br/api/v1/health` responderam `200`.
 - Bloqueio do deploy: servidor remoto possui alterações locais em `infra/scripts/deploy-prod.sh` e `.env.production.swp`; não sobrescrever sem revisão.
 - Próxima ação segura: revisar/preservar essas alterações, publicar a imagem atualizada, executar a rotação da senha admin no container e validar login sem chamar integrações externas.
+- Senha admin de produção: rotacionada dentro do container sem reinício; senha antiga retorna `401`, nova senha `201` e health `200`.
+- Deploy do código pendente: workers `AUTOMACOES_WORKER_ENABLED` e `ASSINAFY_SYNC_ENABLED` estão ativos; reinício exige janela controlada para não chamar Meta/WhatsApp/Assinafy.
 
 Atualizado em: 09/08/2026
 
