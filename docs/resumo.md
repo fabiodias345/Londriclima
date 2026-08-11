@@ -11,6 +11,10 @@
 - Rotação local: concluída; `123456` retorna `401`, a nova senha retorna `201`, health retorna `200` e o Admin retorna `200`.
 - O arquivo temporário da senha foi removido após a validação.
 - Próximo passo: configurar uma senha própria no servidor, validar produção sem integrações externas e publicar.
+- GitHub: commits `bdb9140` e `e76c0a4` enviados para `main`.
+- Produção antes do deploy: `https://admin.airmovebr.com.br/` e `https://api.airmovebr.com.br/api/v1/health` responderam `200`.
+- Bloqueio do deploy: servidor remoto possui alterações locais em `infra/scripts/deploy-prod.sh` e `.env.production.swp`; não sobrescrever sem revisão.
+- Próxima ação segura: revisar/preservar essas alterações, publicar a imagem atualizada, executar a rotação da senha admin no container e validar login sem chamar integrações externas.
 
 Atualizado em: 09/08/2026
 
