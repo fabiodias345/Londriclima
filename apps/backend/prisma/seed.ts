@@ -19,8 +19,13 @@ async function hashPassword(password: string) {
 }
 
 async function main() {
-  const senhaTecnico = "123456";
-  const senhaHash = await hashPassword(senhaTecnico);
+  const senhaAdmin = process.env.ADMIN_INITIAL_PASSWORD;
+  if (!senhaAdmin || senhaAdmin.length < 12 || senhaAdmin === "123456") {
+    throw new Error("ADMIN_INITIAL_PASSWORD deve ter pelo menos 12 caracteres e não pode ser a senha padrão.");
+  }
+  const senhaTecnico = process.env.TECHNICIAN_INITIAL_PASSWORD ?? "123456";
+  const senhaHashAdmin = await hashPassword(senhaAdmin);
+  const senhaHashTecnico = await hashPassword(senhaTecnico);
   const empresa = await prisma.empresa.upsert({
     where: {
       cnpj: "00000000000000"
@@ -55,7 +60,7 @@ async function main() {
     nome: "Administrador AIRMOVEBR",
     login: "admin",
     email: "admin@airmovebr.local",
-    senhaHash,
+    senhaHash: senhaHashAdmin,
     role: "admin" as const,
     ativo: true
   };
@@ -67,7 +72,7 @@ async function main() {
         nome: "Administrador AIRMOVEBR",
         login: "admin",
         email: "admin@airmovebr.local",
-        senhaHash,
+        senhaHash: senhaHashAdmin,
         role: "admin",
         ativo: true
       }
@@ -96,7 +101,7 @@ async function main() {
     update: {
       nome: "João Técnico",
       login: "tecnico",
-      senhaHash,
+      senhaHash: senhaHashTecnico,
       role: "tecnico",
       ativo: true
     },
@@ -105,7 +110,7 @@ async function main() {
       nome: "João Técnico",
       login: "tecnico",
       email: "tecnico@airmovebr.local",
-      senhaHash,
+      senhaHash: senhaHashTecnico,
       role: "tecnico",
       ativo: true
     }
@@ -655,7 +660,7 @@ async function main() {
   });
 
   console.log(`Empresa piloto pronta: ${empresa.nome} (${empresa.id})`);
-  console.log(`Admin de teste: admin / senha ${senhaTecnico}`);
+  console.log("Admin de teste configurado via ADMIN_INITIAL_PASSWORD.");
   console.log(`Técnico de teste: ${tecnico.email} / senha ${senhaTecnico} (${tecnico.id})`);
   console.log(`OS de teste aberta: ${ordemServico.id}`);
   console.log(`Frota de teste pronta: ${veiculo1.nome}, ${veiculo2.nome}`);

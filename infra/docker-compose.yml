@@ -1,4 +1,42 @@
 services:
+  admin:
+    image: nginx:alpine
+    container_name: londriclima-admin
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    volumes:
+      - ../apps/admin:/usr/share/nginx/html/admin:ro
+
+  backend:
+    build:
+      context: ..
+      dockerfile: apps/backend/Dockerfile
+    container_name: londriclima-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      API_PREFIX: api/v1
+      APP_PUBLIC_URL: http://localhost:5173
+      DATABASE_URL: postgresql://londriclima:londriclima@postgres:5432/londriclima_dev?schema=public
+      JWT_ACCESS_SECRET: local-test-access
+      JWT_REFRESH_SECRET: local-test-refresh
+      AUTOMACOES_WORKER_ENABLED: "false"
+      ASSINAFY_SYNC_ENABLED: "false"
+      STRIX_TEST_MODE: "true"
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/v1/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
   postgres:
     image: postgres:16-alpine
     container_name: londriclima-postgres

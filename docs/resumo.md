@@ -1,5 +1,15 @@
 # Resumo AIRMOVEBR
 
+## Plano de segurança do Admin — 11/08/2026
+
+- Issue #5: remover `admin/123456` e implementar rotação segura da senha admin.
+- Issue #6: limpar artefatos do Strix, preservando somente os três relatórios PT-BR.
+- Issue #7: validar Docker local e produção sem chamar Meta, WhatsApp ou integrações externas.
+- Issue #8: publicar as correções após validação e configuração segura da nova senha.
+- Limpeza do Strix: concluída; permanecem somente os três relatórios PT-BR em `strix_runs/`.
+- Proteção inicial: concluída; o Admin não preenche mais `123456`, o seed exige `ADMIN_INITIAL_PASSWORD` e foi criado o comando `admin:password`.
+- Próximo passo: preencher `.tmp/admin-password.env` com a nova senha forte, rotacionar o banco local, validar login e preparar produção.
+
 Atualizado em: 09/08/2026
 
 ## Estado publicado — 02/08/2026
