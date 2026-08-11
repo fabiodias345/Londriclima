@@ -8,7 +8,9 @@
 - Issue #8: publicar as correções após validação e configuração segura da nova senha.
 - Limpeza do Strix: concluída; permanecem somente os três relatórios PT-BR em `strix_runs/`.
 - Proteção inicial: concluída; o Admin não preenche mais `123456`, o seed exige `ADMIN_INITIAL_PASSWORD` e foi criado o comando `admin:password`.
-- Próximo passo: preencher `.tmp/admin-password.env` com a nova senha forte, rotacionar o banco local, validar login e preparar produção.
+- Rotação local: concluída; `123456` retorna `401`, a nova senha retorna `201`, health retorna `200` e o Admin retorna `200`.
+- O arquivo temporário da senha foi removido após a validação.
+- Próximo passo: configurar uma senha própria no servidor, validar produção sem integrações externas e publicar.
 
 Atualizado em: 09/08/2026
 
