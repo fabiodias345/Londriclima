@@ -59,7 +59,7 @@
 .sidebar-footer { display: flex; align-items: center; gap: 8px; margin-left: auto; padding: 0; }
 .sidebar-footer small { padding: 6px 9px; font-size: 11px; }
 .sidebar-footer button { border: 1px solid rgba(255, 255, 255, 0.18); }
-.app-shell { margin-left: 0; min-height: calc(100vh - 76px); padding: 0 24px 24px; }
+.app-shell { margin-left: 0; min-height: calc(100vh - 76px); padding: 0 0 24px; }
 .dashboard { min-height: calc(100vh - 76px); grid-template-rows: auto minmax(0, 1fr); }
 .dashboard > .worklist:not(.hidden) { min-height: 0; }
 .dashboard > .worklist:not(.hidden) { align-content: start; }
