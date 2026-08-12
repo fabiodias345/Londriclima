@@ -95,6 +95,10 @@ class OfflineWorkOrderRepository implements WorkOrderRepository {
   }
 
   @override
+  @override
+  Future<WorkOrder> openService(OpenServiceInput input) =>
+      remote.openService(input);
+
   Future<WorkOrder> startService(
     WorkOrder order,
     GeoPoint location,

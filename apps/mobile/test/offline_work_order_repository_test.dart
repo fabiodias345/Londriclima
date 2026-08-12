@@ -370,6 +370,19 @@ class _RemoteRepository implements WorkOrderRepository {
   }
 
   @override
+  Future<WorkOrder> openService(OpenServiceInput input) async => WorkOrder(
+    id: 'OS-TEST',
+    clientName: '',
+    address: '',
+    equipment: '',
+    maintenanceType: input.title,
+    serviceType: input.serviceType,
+    scheduledAt: DateTime.now(),
+    status: WorkOrderStatus.pending,
+    backendStatus: 'aberta',
+  );
+
+  @override
   Future<WorkOrder> startService(
     WorkOrder order,
     GeoPoint location,

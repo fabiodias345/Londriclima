@@ -23,6 +23,7 @@ class DashboardScreen extends StatefulWidget {
     required this.barcodeScanner,
     this.levantamentoRepository,
     this.technicianName = '',
+    this.isTechnicianChief = false,
   });
 
   final WorkOrderRepository repository;
@@ -31,6 +32,7 @@ class DashboardScreen extends StatefulWidget {
   final ChecklistPhotoPicker photoPicker;
   final BarcodeScannerService barcodeScanner;
   final String technicianName;
+  final bool isTechnicianChief;
   final LevantamentoRepository? levantamentoRepository;
 
   @override
@@ -74,7 +76,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     _showMaintenance = true;
                   }),
                   onFuelingTap: _openFueling,
-                  onLevantamentoTap: widget.levantamentoRepository == null ? null : _openLevantamentos,
+                  onLevantamentoTap: widget.levantamentoRepository == null
+                      ? null
+                      : _openLevantamentos,
+                  onOpenServiceTap: widget.isTechnicianChief
+                      ? _openService
+                      : null,
                 ),
                 if (_showMaintenance) ...[
                   const SizedBox(height: 24),
@@ -143,6 +150,84 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  Future<void> _openService() async {
+    final clientController = TextEditingController();
+    final titleController = TextEditingController();
+    final problemController = TextEditingController();
+    try {
+      final input = await showDialog<OpenServiceInput>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Abrir serviço'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: clientController,
+                  decoration: const InputDecoration(labelText: 'ID do cliente'),
+                ),
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(labelText: 'Título'),
+                ),
+                TextField(
+                  controller: problemController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Problema relatado',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (clientController.text.trim().isEmpty ||
+                    titleController.text.trim().isEmpty)
+                  return;
+                Navigator.pop(
+                  dialogContext,
+                  OpenServiceInput(
+                    clientId: clientController.text.trim(),
+                    title: titleController.text.trim(),
+                    serviceType: 'corretiva',
+                    problem: problemController.text.trim(),
+                  ),
+                );
+              },
+              child: const Text('Abrir serviço'),
+            ),
+          ],
+        ),
+      );
+      if (input == null || !mounted) return;
+      final order = await widget.repository.openService(input);
+      if (!mounted) return;
+      setState(() {
+        _showMaintenance = true;
+        _ordersFuture = widget.repository.listMine();
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Serviço ${order.id} aberto.')));
+    } on Object catch (error) {
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.toString())));
+    } finally {
+      clientController.dispose();
+      titleController.dispose();
+      problemController.dispose();
+    }
+  }
+
   Future<void> _openFueling() async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -151,7 +236,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Future<void> _openLevantamentos() async { final repository = widget.levantamentoRepository; if (repository == null) return; await Navigator.of(context).push(MaterialPageRoute(builder: (_) => LevantamentosScreen(repository: repository, photoPicker: widget.photoPicker))); }
+  Future<void> _openLevantamentos() async {
+    final repository = widget.levantamentoRepository;
+    if (repository == null) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => LevantamentosScreen(
+          repository: repository,
+          photoPicker: widget.photoPicker,
+        ),
+      ),
+    );
+  }
 
   Widget _syncButton() {
     return IconButton(
@@ -194,11 +290,13 @@ class _DashboardActions extends StatelessWidget {
     required this.onMaintenanceTap,
     required this.onFuelingTap,
     this.onLevantamentoTap,
+    this.onOpenServiceTap,
   });
 
   final VoidCallback onMaintenanceTap;
   final VoidCallback onFuelingTap;
   final VoidCallback? onLevantamentoTap;
+  final VoidCallback? onOpenServiceTap;
 
   @override
   Widget build(BuildContext context) {
@@ -242,9 +340,36 @@ class _DashboardActions extends StatelessWidget {
             ),
           ),
         ),
+        if (onOpenServiceTap != null) ...[
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: onOpenServiceTap,
+            icon: const Icon(Icons.add_business_outlined),
+            label: const Text('Abrir serviço'),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(64),
+            ),
+          ),
+        ],
         if (onLevantamentoTap != null) ...[
           const SizedBox(height: 16),
-          OutlinedButton.icon(onPressed: onLevantamentoTap, icon: const Icon(Icons.fact_check_outlined, size: 24), label: const Text('Levantamentos técnicos'), style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(64), foregroundColor: airmovebrPrimary, side: const BorderSide(color: airmovebrAccent, width: 2), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900))),
+          OutlinedButton.icon(
+            onPressed: onLevantamentoTap,
+            icon: const Icon(Icons.fact_check_outlined, size: 24),
+            label: const Text('Levantamentos técnicos'),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(64),
+              foregroundColor: airmovebrPrimary,
+              side: const BorderSide(color: airmovebrAccent, width: 2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              textStyle: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
         ],
       ],
     );

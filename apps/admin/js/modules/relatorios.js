@@ -203,7 +203,8 @@ async function submitTecnico(event) {
     email: String(data.get("email") || ""),
     telefone: onlyDigits(String(data.get("telefone") || "")),
     role: String(data.get("role") || "tecnico"),
-    senha: String(data.get("senha") || "")
+    senha: String(data.get("senha") || ""),
+    tecnico_chefe: data.get("tecnico_chefe") === "on"
   });
 
   button.disabled = true;

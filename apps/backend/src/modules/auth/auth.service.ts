@@ -171,6 +171,7 @@ export class AuthService {
         email: true,
         senhaHash: true,
         role: true,
+        tecnicoChefe: true,
         primeiroAcessoPendente: true
       }
     });
@@ -191,7 +192,8 @@ export class AuthService {
           sub: usuario.id,
           empresa_id: usuario.empresaId,
           email: usuario.email,
-          role: usuario.role
+          role: usuario.role,
+          ...(usuario.tecnicoChefe !== undefined ? { tecnico_chefe: usuario.tecnicoChefe } : {}),
         },
         "onboarding"
       );
@@ -205,7 +207,8 @@ export class AuthService {
           empresa_id: usuario.empresaId,
           nome: usuario.nome,
           email: usuario.email,
-          role: usuario.role
+          role: usuario.role,
+          ...(usuario.tecnicoChefe !== undefined ? { tecnico_chefe: usuario.tecnicoChefe } : {}),
         }
       };
     }
@@ -224,14 +227,16 @@ export class AuthService {
         sub: usuario.id,
         empresa_id: usuario.empresaId,
         email: usuario.email,
-        role: usuario.role
+        role: usuario.role,
+        ...(usuario.tecnicoChefe !== undefined ? { tecnico_chefe: usuario.tecnicoChefe } : {}),
       },
       {
         id: usuario.id,
         empresa_id: usuario.empresaId,
         nome: usuario.nome,
         email: usuario.email,
-        role: usuario.role
+        role: usuario.role,
+        ...(usuario.tecnicoChefe !== undefined ? { tecnico_chefe: usuario.tecnicoChefe } : {}),
       }
     );
   }
@@ -255,7 +260,8 @@ export class AuthService {
         empresaId: true,
         nome: true,
         email: true,
-        role: true
+        role: true,
+        tecnicoChefe: true
       }
     });
 
@@ -326,14 +332,16 @@ export class AuthService {
         sub: usuario.id,
         empresa_id: usuario.empresaId,
         email: usuario.email,
-        role: usuario.role
+        role: usuario.role,
+        ...(usuario.tecnicoChefe !== undefined ? { tecnico_chefe: usuario.tecnicoChefe } : {}),
       },
       {
         id: usuario.id,
         empresa_id: usuario.empresaId,
         nome: dto.nome.trim(),
         email: usuario.email,
-        role: usuario.role
+        role: usuario.role,
+        ...(usuario.tecnicoChefe !== undefined ? { tecnico_chefe: usuario.tecnicoChefe } : {}),
       }
     );
   }
@@ -353,7 +361,8 @@ export class AuthService {
         empresaId: true,
         nome: true,
         email: true,
-        role: true
+        role: true,
+        tecnicoChefe: true
       }
     });
 
@@ -366,14 +375,16 @@ export class AuthService {
         sub: usuario.id,
         empresa_id: usuario.empresaId,
         email: usuario.email,
-        role: usuario.role
+        role: usuario.role,
+        ...(usuario.tecnicoChefe !== undefined ? { tecnico_chefe: usuario.tecnicoChefe } : {}),
       },
       {
         id: usuario.id,
         empresa_id: usuario.empresaId,
         nome: usuario.nome,
         email: usuario.email,
-        role: usuario.role
+        role: usuario.role,
+        ...(usuario.tecnicoChefe !== undefined ? { tecnico_chefe: usuario.tecnicoChefe } : {}),
       }
     );
   }
@@ -386,6 +397,7 @@ export class AuthService {
       nome: string;
       email: string;
       role: string;
+      tecnico_chefe?: boolean;
     }
   ) {
     const accessToken = this.tokenService.sign(payload, "access");

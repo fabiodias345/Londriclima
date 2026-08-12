@@ -319,6 +319,7 @@ class _LoginScreenState extends State<LoginScreen> {
           barcodeScanner: widget.barcodeScanner,
           levantamentoRepository: session.levantamentoRepository,
           technicianName: session.technicianName,
+          isTechnicianChief: session.isTechnicianChief,
         ),
       ),
     );
@@ -344,10 +345,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Image.asset(
-                      'assets/airmovebr-logo.png',
-                      height: 178,
-                    ),
+                    Image.asset('assets/airmovebr-logo.png', height: 178),
                     const SizedBox(height: 32),
                     Text(
                       'Acesso AIR MOVE',

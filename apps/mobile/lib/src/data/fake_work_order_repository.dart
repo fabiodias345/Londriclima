@@ -127,6 +127,19 @@ class FakeWorkOrderRepository implements WorkOrderRepository {
   }
 
   @override
+  @override
+  Future<WorkOrder> openService(OpenServiceInput input) async => WorkOrder(
+    id: 'OS-LOCAL',
+    clientName: '',
+    address: '',
+    equipment: '',
+    maintenanceType: input.title,
+    serviceType: input.serviceType,
+    scheduledAt: DateTime.now(),
+    status: WorkOrderStatus.pending,
+    backendStatus: 'aberta',
+  );
+
   Future<WorkOrder> startService(
     WorkOrder order,
     GeoPoint location,

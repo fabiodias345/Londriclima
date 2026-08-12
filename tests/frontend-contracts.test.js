@@ -116,7 +116,7 @@ test("admin autentica, guarda token e protege chamadas administrativas", () => {
 
   assert.match(html, /<script type="module" src="\.\/js\/main\.js\?v=\d{8}-[a-z0-9]+"><\/script>/);
   assert.match(html, /\.\/js\/main\.js\?v=20260731-syntax2/);
-  assert.match(main, /api\.js\?v=20260725-login/);
+  assert.match(main, /api\.js\?v=20260812-login-errors/);
   assert.match(main, /session\.js\?v=20260731-session-refresh/);
   assert.doesNotMatch(html, /20260629-recorrencia/);
   assert.doesNotMatch(main, /20260630-recorrencia-filtros|20260630-apiadmin|20260630-recshow|20260630-recfix/);
@@ -154,6 +154,8 @@ test("admin autentica, guarda token e protege chamadas administrativas", () => {
   assert.match(script, /`\$\{window\.location\.origin\}\/api\/v1`/);
   assert.match(script, /https:\/\/api\.airmovebr\.com\.br\/api\/v1/);
   assert.match(script, /\/auth\/login/);
+  assert.match(script, /Login ou senha invalidos\./);
+  assert.match(script, /API indisponivel\./);
   assert.match(script, /localStorage\.setItem\("airmovebr_access_token"/);
   assert.match(script, /Authorization:\s*`Bearer \$\{getToken\(\)\}`/);
   assert.match(script, /\/admin\/pre-chamados/);

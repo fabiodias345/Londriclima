@@ -251,6 +251,7 @@ function fillTecnicoForm(tecnicoId) {
   tecnicoForm.elements.email.value = tecnico.email || "";
   tecnicoForm.elements.telefone.value = tecnico.telefone || "";
   tecnicoForm.elements.role.value = tecnico.role || "tecnico";
+  tecnicoForm.elements.tecnico_chefe.checked = tecnico.tecnico_chefe === true;
   tecnicoForm.elements.senha.value = "";
   tecnicoFormStatus.textContent = "Editando acesso selecionado.";
   openAccessPanel("form");
@@ -260,6 +261,7 @@ function resetTecnicoForm() {
   tecnicoForm.reset();
   tecnicoForm.elements.id.value = "";
   tecnicoForm.elements.role.value = "tecnico";
+  tecnicoForm.elements.tecnico_chefe.checked = false;
   tecnicoFormStatus.textContent = "";
 }
 

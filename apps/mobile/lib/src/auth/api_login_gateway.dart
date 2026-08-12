@@ -71,6 +71,7 @@ class ApiLoginGateway implements MobileLoginGateway {
                 ?.toString() ??
             '',
         refreshToken: decoded['refresh_token']?.toString(),
+        isTechnicianChief: (decoded['usuario'] as Map<String, dynamic>?)?['tecnico_chefe'] == true,
       );
     } finally {
       client.close(force: true);
@@ -115,6 +116,7 @@ class ApiLoginGateway implements MobileLoginGateway {
                 ?.toString() ??
             '',
         refreshToken: decoded['refresh_token']?.toString(),
+        isTechnicianChief: (decoded['usuario'] as Map<String, dynamic>?)?['tecnico_chefe'] == true,
       );
     } finally {
       client.close(force: true);
@@ -158,6 +160,7 @@ class ApiLoginGateway implements MobileLoginGateway {
         levantamentoRepository: ApiLevantamentoRepository(baseUrl: baseUrl, token: token),
         technicianName: (decoded['usuario'] as Map<String, dynamic>?)?['nome']?.toString() ?? '',
         refreshToken: decoded['refresh_token']?.toString(),
+        isTechnicianChief: (decoded['usuario'] as Map<String, dynamic>?)?['tecnico_chefe'] == true,
       );
     } finally {
       client.close(force: true);
@@ -198,6 +201,7 @@ class ApiLoginGateway implements MobileLoginGateway {
                 ?.toString() ??
             '',
         refreshToken: decoded['refresh_token']?.toString(),
+        isTechnicianChief: (decoded['usuario'] as Map<String, dynamic>?)?['tecnico_chefe'] == true,
       );
     } finally {
       client.close(force: true);

@@ -332,6 +332,23 @@ class WorkOrderEquipment {
   }
 }
 
+class OpenServiceInput {
+  const OpenServiceInput({
+    required this.clientId,
+    required this.title,
+    required this.serviceType,
+    this.problem,
+    this.equipmentId,
+    this.addressId,
+  });
+  final String clientId;
+  final String title;
+  final String serviceType;
+  final String? problem;
+  final String? equipmentId;
+  final String? addressId;
+}
+
 class MachineDataInput {
   const MachineDataInput({
     this.equipmentId,

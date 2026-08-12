@@ -14,6 +14,7 @@ export type TokenPayload = {
   empresa_id: string;
   email: string;
   role: string;
+  tecnico_chefe?: boolean;
 };
 
 type InternalTokenPayload = TokenPayload & {
@@ -91,7 +92,7 @@ export class TokenService {
       sub: payload.sub,
       empresa_id: payload.empresa_id,
       email: payload.email,
-      role: payload.role
+      role: payload.role,
     };
   }
 

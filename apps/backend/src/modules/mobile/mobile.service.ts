@@ -1,7 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { ChecklistTipo, OrdemServicoStatus, OrdemServicoTipoServico, Prisma, UsuarioRole } from "@prisma/client";
 import { PrismaService } from "../../database/prisma.service";
 import type { CriarAbastecimentoDto } from "../admin/dto/criar-abastecimento.dto";
+import type { AbrirOsTecnicoDto } from "./dto/abrir-os-tecnico.dto";
 import type { AuthenticatedUser } from "../auth/auth-user";
 import {
   codigosObrigatoriosChecklistPorServico,
@@ -19,6 +20,22 @@ const statusesCampo = [
 @Injectable()
 export class MobileService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async abrirOrdem(user: AuthenticatedUser, dto: AbrirOsTecnicoDto) {
+    const tecnico = await this.prisma.usuario.findFirst({ where: { id: user.id, empresaId: user.empresa_id, ativo: true, role: UsuarioRole.tecnico, tecnicoChefe: true }, select: { id: true } });
+    if (!tecnico) throw new ForbiddenException("Acesso restrito ao tecnico chefe.");
+    const cliente = await this.prisma.cliente.findFirst({ where: { id: dto.cliente_id, empresaId: user.empresa_id }, include: { enderecos: { orderBy: { principal: "desc" }, take: 1 } } });
+    if (!cliente) throw new NotFoundException("Cliente nao encontrado.");
+    const equipamento = dto.equipamento_id ? await this.prisma.equipamento.findFirst({ where: { id: dto.equipamento_id, clienteId: cliente.id, empresaId: user.empresa_id }, select: { id: true } }) : null;
+    if (dto.equipamento_id && !equipamento) throw new NotFoundException("Equipamento nao encontrado.");
+    const enderecoId = dto.endereco_id || cliente.enderecos[0]?.id;
+    const ordem = await this.prisma.$transaction(async (tx) => {
+      const criada = await tx.ordemServico.create({ data: { empresaId: user.empresa_id, clienteId: cliente.id, enderecoId, equipamentoId: equipamento?.id, origem: "tecnico_app", status: OrdemServicoStatus.aberta, tipoServico: dto.tipo_servico, titulo: dto.titulo.trim(), problemaRelatado: dto.problema_relatado?.trim() || undefined } });
+      await tx.ordemServicoEvento.create({ data: { empresaId: user.empresa_id, ordemServicoId: criada.id, usuarioId: user.id, acao: "abrir_pelo_tecnico", statusNovo: OrdemServicoStatus.aberta, registradoEm: new Date() } });
+      return criada;
+    });
+    return { id: ordem.id, status: ordem.status, origem: ordem.origem };
+  }
 
   async listarOrdens(user: AuthenticatedUser) {
     const ordens = await this.prisma.ordemServico.findMany({

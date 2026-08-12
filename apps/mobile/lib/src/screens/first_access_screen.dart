@@ -208,6 +208,7 @@ class _FirstAccessScreenState extends State<FirstAccessScreen> {
           technicianName: activeSession.technicianName.isEmpty
               ? widget.technicianName
               : activeSession.technicianName,
+          isTechnicianChief: activeSession.isTechnicianChief,
         ),
       ),
     );
@@ -247,10 +248,7 @@ class _FirstAccessScreenState extends State<FirstAccessScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Image.asset(
-                      'assets/airmovebr-logo.png',
-                      height: 128,
-                    ),
+                    Image.asset('assets/airmovebr-logo.png', height: 128),
                     const SizedBox(height: 32),
                     Text(
                       widget.inviteCode == null

@@ -3,4 +3,5 @@ export type AuthenticatedUser = {
   empresa_id: string;
   email: string;
   role: string;
+  tecnico_chefe?: boolean;
 };
