@@ -1,0 +1,65 @@
+.access-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, .72fr) minmax(560px, 1.28fr);
+  gap: 20px;
+  padding: 20px;
+  align-items: start;
+}
+
+.access-list-panel,
+.access-editor-panel {
+  min-width: 0;
+}
+
+.access-editor-panel {
+  position: sticky;
+  top: 20px;
+}
+
+.access-editor-panel .access-panel {
+  margin: 0;
+}
+
+.access-chief-legacy-field {
+  display: none !important;
+}
+
+.access-list-panel .data-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 12px 0;
+}
+
+.access-list-panel .data-row > div:nth-child(2) {
+  display: none;
+}
+
+.access-list-panel .data-row-actions {
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+@media (max-width: 900px) {
+  .access-layout {
+    grid-template-columns: 1fr;
+    padding: 12px;
+  }
+
+  .access-editor-panel {
+    position: static;
+  }
+}
+
+.access-list-panel .data-row-actions button {
+  padding: 7px 12px;
+  min-height: 36px;
+  font-size: 14px;
+}
+
+.access-editor-panel .access-panel-heading {
+  padding: 22px 26px;
+}
+
+.access-editor-panel .access-form {
+  padding: 22px 26px 26px;
+}

@@ -186,7 +186,7 @@ export class AuthService {
       throw new UnauthorizedException("Credenciais invalidas.");
     }
 
-    if (usuario.primeiroAcessoPendente) {
+    if (usuario.primeiroAcessoPendente && usuario.role !== "admin") {
       const onboardingToken = this.tokenService.sign(
         {
           sub: usuario.id,

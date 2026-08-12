@@ -4,7 +4,7 @@ import { AdminRoleGuard } from "../auth/admin-role.guard";
 import { CurrentUser } from "../auth/current-user.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { ComercialService } from "./comercial.service";
-import { AtualizarStatusOrcamentoDto, ConfirmarOrcamentoDto, CriarOrcamentoDto, EnviarOrcamentoEmailDto, SalvarItemCatalogoDto } from "./dto/comercial.dto";
+import { AgendarVisitaOrcamentoDto, AtualizarStatusOrcamentoDto, ConfirmarOrcamentoDto, CriarOrcamentoDto, EnviarOrcamentoEmailDto, SalvarItemCatalogoDto } from "./dto/comercial.dto";
 
 type HeaderResponse = { setHeader(name: string, value: string): void };
 
@@ -66,6 +66,15 @@ export class ComercialController {
     return this.comercialService.confirmarOrcamento(id, dto, usuario);
   }
 
+  @Post("orcamentos/:id/visita")
+  agendarVisita(@Param("id", new ParseUUIDPipe()) id: string, @Body() dto: AgendarVisitaOrcamentoDto, @CurrentUser() usuario: AuthenticatedUser) {
+    return this.comercialService.agendarVisita(id, dto, usuario);
+  }
+
+  @Post("orcamentos/:id/gerar-os")
+  converterEmOrdem(@Param("id", new ParseUUIDPipe()) id: string, @CurrentUser() usuario: AuthenticatedUser) {
+    return this.comercialService.converterEmOrdem(id, usuario);
+  }
   @Post("orcamentos/:id/enviar-whatsapp")
   enviarWhatsApp(@Param("id", new ParseUUIDPipe()) id: string, @CurrentUser() usuario: AuthenticatedUser) {
     return this.comercialService.enviarWhatsApp(id, usuario.empresa_id);

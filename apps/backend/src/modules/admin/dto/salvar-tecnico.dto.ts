@@ -1,4 +1,4 @@
-import { IsIn, IsNotEmpty, IsOptional, IsString, Matches, MaxLength, MinLength } from "class-validator";
+import { IsBoolean, IsIn, IsNotEmpty, IsOptional, IsString, Matches, MaxLength, MinLength } from "class-validator";
 
 export class SalvarTecnicoDto {
   @IsString()
@@ -22,6 +22,10 @@ export class SalvarTecnicoDto {
   @IsOptional()
   @IsIn(["admin", "tecnico", "auxiliar"])
   role?: "admin" | "tecnico" | "auxiliar";
+
+  @IsOptional()
+  @IsBoolean()
+  tecnico_chefe?: boolean;
 
   @IsOptional()
   @IsString()

@@ -10,6 +10,13 @@ const STATUS_OS_OCUPADA = [OrdemServicoStatus.aberta, OrdemServicoStatus.em_desl
 export class LevantamentosService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async criarParaOrcamento(empresaId: string, orcamentoId: string, dto: CriarLevantamentoDto) {
+    const orcamento = await this.prisma.orcamento.findFirst({ where: { id: orcamentoId, empresaId }, select: { clienteId: true, conversaId: true, levantamento: { select: { id: true } } } });
+    if (!orcamento) throw new NotFoundException("Orcamento nao encontrado.");
+    if (orcamento.levantamento) throw new ConflictException("Este orcamento ja possui uma visita vinculada.");
+    return this.prisma.levantamentoTecnico.create({ data: { empresaId, clienteId: orcamento.clienteId, conversaId: orcamento.conversaId, orcamentoId, problema: dto.problema.trim(), tipoServico: dto.tipo_servico || "manutencao_corretiva" } });
+  }
+
   async criar(empresaId: string, clienteId: string, conversaId: string | undefined, dto: CriarLevantamentoDto) {
     const problema = dto.problema.trim();
     if (!problema) throw new BadRequestException("Descreva o problema informado pelo cliente.");

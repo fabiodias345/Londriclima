@@ -53,8 +53,9 @@ export class AdminTecnicosService {
         telefone: this.digitosOuNulo(dto.telefone),
         senhaHash: await this.passwordHash.hash(dto.senha),
         role: this.normalizarRoleTecnico(dto.role),
+        tecnicoChefe: dto.tecnico_chefe ?? false,
         ativo: true,
-        primeiroAcessoPendente: true
+        primeiroAcessoPendente: this.normalizarRoleTecnico(dto.role) !== UsuarioRole.admin
       },
       select: this.tecnicoSelect()
     });
@@ -74,7 +75,8 @@ export class AdminTecnicosService {
       login,
       email,
       telefone: this.digitosOuNulo(dto.telefone),
-      role: this.normalizarRoleTecnico(dto.role)
+      role: this.normalizarRoleTecnico(dto.role),
+      tecnicoChefe: dto.tecnico_chefe ?? false
     };
 
     if (dto.senha?.trim()) {
@@ -188,6 +190,7 @@ export class AdminTecnicosService {
       telefone: true,
       cpf: true,
       role: true,
+      tecnicoChefe: true,
       ativo: true,
       primeiroAcessoPendente: true,
       primeiroAcessoEm: true,
@@ -216,6 +219,7 @@ export class AdminTecnicosService {
     telefone: string | null;
     cpf: string | null;
     role: UsuarioRole;
+    tecnicoChefe: boolean;
     ativo: boolean;
     primeiroAcessoPendente: boolean;
     primeiroAcessoEm: Date | null;
@@ -233,6 +237,7 @@ export class AdminTecnicosService {
       telefone: tecnico.telefone,
       cpf: tecnico.cpf,
       role: tecnico.role,
+      tecnico_chefe: tecnico.tecnicoChefe,
       ativo: tecnico.ativo,
       primeiro_acesso_pendente: tecnico.primeiroAcessoPendente,
       primeiro_acesso_em: tecnico.primeiroAcessoEm?.toISOString() ?? null,

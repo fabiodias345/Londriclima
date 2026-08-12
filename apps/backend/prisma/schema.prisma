@@ -589,6 +589,7 @@ model LevantamentoTecnico {
   empresaId         String             @map("empresa_id") @db.Uuid
   clienteId         String             @map("cliente_id") @db.Uuid
   conversaId        String?            @unique @map("conversa_id") @db.Uuid
+  orcamentoId       String?            @unique @map("orcamento_id") @db.Uuid
   equipeId          String?            @map("equipe_id") @db.Uuid
   tecnicoId         String?            @map("tecnico_id") @db.Uuid
   problema          String
@@ -616,6 +617,7 @@ model LevantamentoTecnico {
   empresa  Empresa           @relation(fields: [empresaId], references: [id])
   cliente  Cliente           @relation(fields: [clienteId], references: [id])
   conversa WhatsAppConversa? @relation(fields: [conversaId], references: [id], onDelete: SetNull)
+  orcamento Orcamento?       @relation(fields: [orcamentoId], references: [id], onDelete: SetNull)
   equipe   Equipe?           @relation(fields: [equipeId], references: [id], onDelete: SetNull)
   tecnico  Usuario?          @relation("LevantamentoTecnico", fields: [tecnicoId], references: [id], onDelete: SetNull)
   laudoFinalizadoPor Usuario? @relation("LevantamentoLaudoFinalizadoPor", fields: [laudoFinalizadoPorId], references: [id], onDelete: SetNull)
@@ -1051,6 +1053,7 @@ model Orcamento {
   envios    OrcamentoEnvio[]
   confirmadoPor Usuario?       @relation("OrcamentoConfirmador", fields: [confirmadoPorUsuarioId], references: [id], onDelete: SetNull)
   ordemServico OrdemServico?
+  levantamento LevantamentoTecnico?
 
   @@index([empresaId, status])
   @@index([clienteId])

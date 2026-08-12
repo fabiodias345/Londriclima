@@ -135,3 +135,24 @@ export class ConfirmarOrcamentoDto {
   @IsIn([true])
   confirmado!: true;
 }
+
+export class AgendarVisitaOrcamentoDto {
+  @IsString()
+  @IsNotEmpty()
+  problema!: string;
+
+  @IsOptional()
+  @IsIn(["manutencao_preventiva", "manutencao_corretiva", "instalacao", "pmoc", "outros"])
+  tipo_servico?: string;
+
+  @IsDateString()
+  agendada_para!: string;
+
+  @IsOptional()
+  @IsUUID()
+  equipe_id?: string;
+
+  @IsOptional()
+  @IsUUID()
+  tecnico_id?: string;
+}

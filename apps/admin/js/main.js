@@ -15,6 +15,7 @@ import { bootstrapModule, bootstrapRoot } from "./modules/bootstrap.js?v=2026070
 import { tecnicoFotoModule, tecnicoFotoRoot } from "./modules/tecnico-foto.js?v=20260706-tecnico-foto";
 import { whatsappModule, whatsappRoot } from "./modules/whatsapp.js?v=20260731-whatsapp-sync";
 import { comercialModule, comercialRoot } from "./modules/comercial.js?v=20260723-comercial";
+import { accessLayoutModule, accessLayoutRoot } from "./modules/access-layout.js?v=20260812-access-layout";
 
 export const adminModules = {
   api: apiModule,
@@ -32,7 +33,8 @@ export const adminModules = {
   bootstrap: bootstrapModule,
   tecnicoFoto: tecnicoFotoModule,
   whatsapp: whatsappModule,
-  comercial: comercialModule
+  comercial: comercialModule,
+  accessLayout: accessLayoutModule
 };
 
 const adminSources = [
@@ -49,6 +51,7 @@ const adminSources = [
   tecnicoFotoRoot,
   whatsappRoot,
   comercialRoot,
+  accessLayoutRoot,
   eventsRoot,
   bootstrapRoot,
   sessionRoot

@@ -3,11 +3,16 @@ import { OrcamentoStatus, Prisma } from "@prisma/client";
 import { createHash } from "crypto";
 import { PrismaService } from "../../database/prisma.service";
 import { AuthenticatedUser } from "../auth/auth-user";
+import { AdminService } from "../admin/admin.service";
+import { OrdemServicoOrigem, OrdemServicoTipoServico } from "@prisma/client";
+import { AgendarLevantamentoDto } from "../levantamentos/dto/levantamentos.dto";
 import { SmtpEmailService } from "../automacoes/smtp-email.service";
 import { WhatsAppCloudService } from "../automacoes/whatsapp-cloud.service";
+import { LevantamentosNotificacaoService } from "../levantamentos/levantamentos-notificacao.service";
+import { LevantamentosService } from "../levantamentos/levantamentos.service";
 import { ComercialAssinafyService } from "./comercial-assinafy.service";
 import { ComercialOrcamentoPdfRenderer } from "./comercial-orcamento-pdf-renderer";
-import { AtualizarStatusOrcamentoDto, ConfirmarOrcamentoDto, CriarOrcamentoDto, EnviarOrcamentoEmailDto, SalvarItemCatalogoDto } from "./dto/comercial.dto";
+import { AgendarVisitaOrcamentoDto, AtualizarStatusOrcamentoDto, ConfirmarOrcamentoDto, CriarOrcamentoDto, EnviarOrcamentoEmailDto, SalvarItemCatalogoDto } from "./dto/comercial.dto";
 
 const itemSelect = { id: true, tipo: true, grupo: true, subgrupo: true, codigo: true, nome: true, descricao: true, unidade: true, custo: true, valor: true, ativo: true } as const;
 
@@ -18,9 +23,32 @@ export class ComercialService {
     private readonly sender: WhatsAppCloudService,
     private readonly email: SmtpEmailService,
     private readonly pdf: ComercialOrcamentoPdfRenderer,
-    private readonly assinafy: ComercialAssinafyService
+    private readonly assinafy: ComercialAssinafyService,
+    private readonly levantamentos: LevantamentosService,
+    private readonly levantamentoNotificacoes: LevantamentosNotificacaoService,
+    private readonly adminService: AdminService
   ) {}
 
+  async agendarVisita(id: string, dto: AgendarVisitaOrcamentoDto, usuario: AuthenticatedUser) {
+    if (!dto.equipe_id && !dto.tecnico_id) throw new BadRequestException("Informe a equipe ou o técnico da visita.");
+    const orcamento = await this.prisma.orcamento.findFirst({ where: { id, empresaId: usuario.empresa_id }, select: { id: true, clienteId: true, conversaId: true } });
+    if (!orcamento) throw new NotFoundException("Orçamento não encontrado.");
+    const levantamento = await this.levantamentos.criarParaOrcamento(usuario.empresa_id, id, { cliente_id: orcamento.clienteId, conversa_id: orcamento.conversaId || undefined, problema: dto.problema, tipo_servico: dto.tipo_servico });
+    const agendado = await this.levantamentos.agendar(levantamento.id, usuario.empresa_id, { agendada_para: dto.agendada_para, equipe_id: dto.equipe_id, tecnico_id: dto.tecnico_id } as AgendarLevantamentoDto);
+    await this.prisma.orcamento.update({ where: { id }, data: { agendadaPara: new Date(dto.agendada_para), equipeId: dto.equipe_id || null, tecnicoId: dto.tecnico_id || null } });
+    const enviado = await this.levantamentoNotificacoes.enviarConfirmacao(levantamento.id, usuario.empresa_id);
+    return { orcamento_id: id, levantamento: agendado, notificacao: { enviado } };
+  }
+
+  async converterEmOrdem(id: string, usuario: AuthenticatedUser) {
+    const orcamento = await this.prisma.orcamento.findFirst({ where: { id, empresaId: usuario.empresa_id }, select: { id: true, status: true, clienteId: true, titulo: true, detalhes: true, total: true, agendadaPara: true, equipeId: true, tecnicoId: true } });
+    if (!orcamento) throw new NotFoundException("Orçamento não encontrado.");
+    if (orcamento.status !== OrcamentoStatus.aprovado) throw new BadRequestException("O orçamento precisa estar aprovado antes de gerar a O.S.");
+    if (!orcamento.agendadaPara || (!orcamento.equipeId && !orcamento.tecnicoId)) throw new BadRequestException("Agende a visita e informe a equipe ou o técnico antes de gerar a O.S.");
+    const ordem = await this.adminService.criarOrdemAgenda({ cliente_id: orcamento.clienteId, titulo: orcamento.titulo, detalhes: orcamento.detalhes || undefined, valor_cobrado: Number(orcamento.total), equipe_id: orcamento.equipeId || undefined, tecnico_id: orcamento.tecnicoId || undefined, agendada_para: orcamento.agendadaPara.toISOString(), origem: OrdemServicoOrigem.orcamento_aprovado, tipo_servico: OrdemServicoTipoServico.corretiva, orcamento_id: orcamento.id }, usuario);
+    await this.prisma.orcamento.update({ where: { id }, data: { status: OrcamentoStatus.convertido_os } });
+    return { orcamento_id: id, ordem };
+  }
   async listarCatalogo(empresaId: string) {
     const items = await this.prisma.catalogoItem.findMany({ where: { empresaId, ativo: true }, select: itemSelect, orderBy: [{ tipo: "asc" }, { grupo: "asc" }, { nome: "asc" }] });
     return { items };
