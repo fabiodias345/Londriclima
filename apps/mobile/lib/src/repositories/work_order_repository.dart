@@ -11,6 +11,8 @@ class OfflineSyncResult {
 abstract class WorkOrderRepository {
   Future<List<WorkOrder>> listMine();
 
+  Future<WorkOrder> openService(OpenServiceInput input);
+
   Future<WorkOrder> startService(
     WorkOrder order,
     GeoPoint location,

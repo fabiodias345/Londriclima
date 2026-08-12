@@ -57,6 +57,7 @@ class LoginSession {
     required this.fleetRepository,
     this.levantamentoRepository,
     this.technicianName = '',
+    this.isTechnicianChief = false,
     this.refreshToken,
   });
 
@@ -64,6 +65,7 @@ class LoginSession {
   final FleetRepository fleetRepository;
   final LevantamentoRepository? levantamentoRepository;
   final String technicianName;
+  final bool isTechnicianChief;
   final String? refreshToken;
 }
 

@@ -39,6 +39,53 @@ class ApiWorkOrderRepository implements WorkOrderRepository {
   }
 
   @override
+  Future<WorkOrder> openService(OpenServiceInput input) async {
+    final client = HttpClient();
+    try {
+      final request = await client.postUrl(
+        baseUrl.resolve('/api/v1/mobile/os'),
+      );
+      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      request.headers.contentType = ContentType.json;
+      request.write(
+        jsonEncode({
+          'cliente_id': input.clientId,
+          'titulo': input.title,
+          'tipo_servico': input.serviceType,
+          if (input.problem?.isNotEmpty == true)
+            'problema_relatado': input.problem,
+          if (input.equipmentId?.isNotEmpty == true)
+            'equipamento_id': input.equipmentId,
+          if (input.addressId?.isNotEmpty == true)
+            'endereco_id': input.addressId,
+        }),
+      );
+      final response = await request.close();
+      final body = await response.transform(utf8.decoder).join();
+      if (response.statusCode < 200 || response.statusCode >= 300)
+        throw HttpException(
+          _errorMessage(
+            body,
+            fallback: 'Falha ao abrir servico: ${response.statusCode}',
+          ),
+        );
+      final item = jsonDecode(body) as Map<String, dynamic>;
+      return WorkOrder(
+        id: item['id'].toString(),
+        clientName: '',
+        address: '',
+        equipment: '',
+        maintenanceType: input.title,
+        serviceType: input.serviceType,
+        scheduledAt: DateTime.now(),
+        status: WorkOrderStatus.pending,
+        backendStatus: item['status']?.toString(),
+      );
+    } finally {
+      client.close(force: true);
+    }
+  }
+
   Future<WorkOrder> startService(
     WorkOrder order,
     GeoPoint location,

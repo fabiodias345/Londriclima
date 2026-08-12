@@ -360,7 +360,13 @@ async function login(event) {
     });
 
     if (!response.ok) {
-      loginStatus.textContent = "Login invalido ou API indisponivel.";
+      if (response.status === 401 || response.status === 403) {
+        loginStatus.textContent = "Login ou senha invalidos.";
+      } else if (response.status === 400) {
+        loginStatus.textContent = "Login invalido.";
+      } else {
+        loginStatus.textContent = "API indisponivel.";
+      }
       return;
     }
 

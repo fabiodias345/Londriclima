@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Param, Post, UseGuards } from "@nestjs/common";
+import { AbrirOsTecnicoDto } from "./dto/abrir-os-tecnico.dto";
 import { CriarAbastecimentoDto } from "../admin/dto/criar-abastecimento.dto";
 import { CurrentUser } from "../auth/current-user.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
@@ -10,6 +11,11 @@ import { MobileService } from "./mobile.service";
 @UseGuards(JwtAuthGuard, MobileRoleGuard)
 export class MobileController {
   constructor(private readonly mobileService: MobileService) {}
+
+  @Post("os")
+  abrirOrdem(@CurrentUser() user: AuthenticatedUser, @Body() dto: AbrirOsTecnicoDto) {
+    return this.mobileService.abrirOrdem(user, dto);
+  }
 
   @Get("os")
   listarOrdens(@CurrentUser() user: AuthenticatedUser) {

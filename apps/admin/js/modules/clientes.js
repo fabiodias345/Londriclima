@@ -1,4 +1,4 @@
-﻿export const clientesModule = {
+export const clientesModule = {
   view: "clientes",
   summaryId: "clientesSummary",
   viewId: "clientesView"
@@ -64,7 +64,7 @@ function renderTecnicos(items) {
     row.innerHTML = \`
       <div>
         <strong>\${escapeHtml(item.nome)}</strong>
-        <span>\${escapeHtml(formatAccessRole(item.role))}</span>
+        <span>\${escapeHtml(formatAccessRole(item.role))}\${item.tecnico_chefe ? " · Técnico chefe" : ""}</span>
       </div>
       <div>
         <span>Login: \${escapeHtml(item.login || "pendente")}</span>

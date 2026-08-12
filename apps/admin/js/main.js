@@ -1,4 +1,4 @@
-import { apiModule, apiRoot } from "./modules/api.js?v=20260725-login";
+import { apiModule, apiRoot } from "./modules/api.js?v=20260812-login-errors";
 import { authModule, authRoot } from "./modules/auth.js?v=20260704-access";
 import { sessionModule, sessionRoot } from "./modules/session.js?v=20260731-session-refresh";
 import { agendaModule, agendaRoot } from "./modules/agenda.js?v=20260704-access";

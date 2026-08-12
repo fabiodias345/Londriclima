@@ -42,6 +42,7 @@ enum OrdemServicoStatus {
 
 enum OrdemServicoEventoAcao {
   criar_pre_chamado
+  abrir_pelo_tecnico
   aprovar
   rejeitar
   iniciar_rota
@@ -102,6 +103,7 @@ enum OrdemServicoOrigem {
   orcamento_aprovado
   contrato_recorrencia
   servico_gratuito
+tecnico_app
 }
 
 enum CategoriaAtendimento {
@@ -226,6 +228,7 @@ model Usuario {
   cpf                    String?
   senhaHash              String      @map("senha_hash")
   role                   UsuarioRole
+  tecnicoChefe           Boolean     @default(false) @map("tecnico_chefe")
   ativo                  Boolean     @default(true)
   fotoPerfilStorageUrl   String?     @map("foto_perfil_storage_url")
   assinaturaStorageUrl   String?     @map("assinatura_storage_url")
