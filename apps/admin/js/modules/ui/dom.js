@@ -250,11 +250,7 @@ function fillTecnicoForm(tecnicoId) {
   tecnicoForm.elements.login.value = tecnico.login || "";
   tecnicoForm.elements.email.value = tecnico.email || "";
   tecnicoForm.elements.telefone.value = tecnico.telefone || "";
-<<<<<<< HEAD
   tecnicoForm.elements.role.value = tecnico.tecnico_chefe ? "tecnico_chefe" : (tecnico.role || "tecnico");
-=======
-  tecnicoForm.elements.role.value = tecnico.role || "tecnico";
->>>>>>> origin/main
   tecnicoForm.elements.tecnico_chefe.checked = tecnico.tecnico_chefe === true;
   tecnicoForm.elements.senha.value = "";
   tecnicoFormStatus.textContent = "Editando acesso selecionado.";

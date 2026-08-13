@@ -5,24 +5,6 @@ export const authModule = {
 };
 
 export const authRoot = `
-    fleetStatus.textContent = "Nao foi possivel carregar a frota.";
-    renderFrota([]);
-    return;
-  }
-
-  const result = await response.json();
-
-  latestFleetItems = result.items;
-  updateFleetSummary(result.items);
-  fleetStatus.textContent = result.total === 1 ? "1 veiculo" : \`\${result.total} veiculos\`;
-  renderFrota(result.items);
-  await Promise.all([
-    loadFleetVehicles(),
-    loadRelatorioFrota(),
-    loadFuelHistory()
-  ]);
-}
-
 async function loadDispatchOptions() {
   const result = await fetchAdminJson("/admin/opcoes-despacho", listStatus);
 
