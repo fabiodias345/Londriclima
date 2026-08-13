@@ -56,10 +56,15 @@ export class LevantamentosTecnicoService {
       if (!foto) throw new ConflictException("Foto obrigatoria para limpeza recomendada.");
     }
     const status = dto.decisao === LevantamentoDecisao.precisa_orcamento ? LevantamentoStatus.diagnostico_concluido : LevantamentoStatus.em_levantamento;
-    const atualizado = await this.prisma.levantamentoTecnico.update({
-      where: { id },
-      data: { ...this.dados(dto), decisao: dto.decisao, status, laudoFinalizadoEm: new Date(), laudoFinalizadoPorId: usuario.id },
-      include: this.include()
+    const atualizado = await this.prisma.$transaction(async (tx) => {
+      await tx.levantamentoTecnico.update({
+        where: { id },
+        data: { ...this.dados(dto), decisao: dto.decisao, status, laudoFinalizadoEm: new Date(), laudoFinalizadoPorId: usuario.id }
+      });
+      if (item.ordemServico && status === LevantamentoStatus.diagnostico_concluido) {
+        await tx.ordemServico.update({ where: { id: item.ordemServico.id }, data: { status: "concluida", concluidaEm: new Date() } });
+      }
+      return tx.levantamentoTecnico.findUniqueOrThrow({ where: { id }, include: this.include() });
     });
     if (item.conversaId) await this.prisma.whatsAppConversa.update({ where: { id: item.conversaId }, data: { status: "humano", atribuidoUsuarioId: null, ultimaLeituraEm: new Date() } });
     return this.mapear(atualizado);
@@ -106,7 +111,7 @@ export class LevantamentosTecnicoService {
   }
 
   private include() {
-    return { cliente: { select: { id: true, nome: true } }, equipe: { select: { id: true, nome: true } }, tecnico: { select: { id: true, nome: true } }, itensTecnicos: true, fotos: true, autorizacao: true };
+    return { cliente: { select: { id: true, nome: true } }, equipe: { select: { id: true, nome: true } }, tecnico: { select: { id: true, nome: true } }, itensTecnicos: true, fotos: true, autorizacao: true, ordemServico: { select: { id: true, status: true } } };
   }
 
   private mapear(item: any) {

@@ -70,6 +70,9 @@ export class ItemOrcamentoDto {
 
 export class CriarOrcamentoDto {
   @IsUUID()
+  ordem_servico_id: string;
+
+  @IsUUID()
   cliente_id: string;
 
   @IsOptional()

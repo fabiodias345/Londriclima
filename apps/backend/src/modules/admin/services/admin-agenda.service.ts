@@ -494,6 +494,16 @@ export class AdminAgendaService {
 
       await this.validarDestinoAgenda(tx, dto, usuario);
 
+      if (dto.levantamento_id) {
+        const levantamento = await tx.levantamentoTecnico.findFirst({
+          where: { id: dto.levantamento_id, empresaId: usuario.empresa_id },
+          select: { id: true, clienteId: true, ordemServico: { select: { id: true } } }
+        });
+        if (!levantamento) throw new NotFoundException("Levantamento tecnico nao encontrado.");
+        if (levantamento.clienteId !== cliente.id) throw new BadRequestException("A visita tecnica nao pertence ao cliente da O.S.");
+        if (levantamento.ordemServico) throw new ConflictException("Esta visita tecnica ja esta vinculada a uma O.S.");
+      }
+
       const ordem = await tx.ordemServico.create({
         data: {
           empresaId: usuario.empresa_id,
@@ -503,6 +513,7 @@ export class AdminAgendaService {
           equipeId: dto.equipe_id || undefined,
           tecnicoId: dto.tecnico_id || undefined,
           orcamentoId: dto.orcamento_id || undefined,
+          levantamentoId: dto.levantamento_id || undefined,
           origem: dto.origem ?? OrdemServicoOrigem.contrato_recorrencia,
           status: OrdemServicoStatus.aberta,
           categoriaServico: dto.categoria_servico ?? CategoriaAtendimento.ar_condicionado,

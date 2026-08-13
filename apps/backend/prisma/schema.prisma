@@ -545,6 +545,7 @@ model OrdemServico {
   equipeId         String?                 @map("equipe_id") @db.Uuid
   tecnicoId        String?                 @map("tecnico_id") @db.Uuid
   orcamentoId      String?                 @unique @map("orcamento_id") @db.Uuid
+  levantamentoId   String?                 @unique @map("levantamento_id") @db.Uuid
   origem           OrdemServicoOrigem      @default(contrato_recorrencia)
   status           OrdemServicoStatus      @default(pre_chamado)
   categoriaServico CategoriaAtendimento    @default(ar_condicionado) @map("categoria_servico")
@@ -565,6 +566,7 @@ model OrdemServico {
   equipe                   Equipe?                         @relation(fields: [equipeId], references: [id])
   tecnico                  Usuario?                        @relation("OrdemTecnico", fields: [tecnicoId], references: [id], onDelete: SetNull)
   orcamento                Orcamento?                      @relation(fields: [orcamentoId], references: [id], onDelete: SetNull)
+  levantamento             LevantamentoTecnico?            @relation(fields: [levantamentoId], references: [id], onDelete: SetNull)
   responsaveis             OrdemServicoResponsavel[]
   eventos                  OrdemServicoEvento[]
   evidencias               OrdemServicoEvidencia[]
@@ -618,6 +620,7 @@ model LevantamentoTecnico {
   cliente  Cliente           @relation(fields: [clienteId], references: [id])
   conversa WhatsAppConversa? @relation(fields: [conversaId], references: [id], onDelete: SetNull)
   orcamento Orcamento?       @relation(fields: [orcamentoId], references: [id], onDelete: SetNull)
+  ordemServico OrdemServico? @relation
   equipe   Equipe?           @relation(fields: [equipeId], references: [id], onDelete: SetNull)
   tecnico  Usuario?          @relation("LevantamentoTecnico", fields: [tecnicoId], references: [id], onDelete: SetNull)
   laudoFinalizadoPor Usuario? @relation("LevantamentoLaudoFinalizadoPor", fields: [laudoFinalizadoPorId], references: [id], onDelete: SetNull)

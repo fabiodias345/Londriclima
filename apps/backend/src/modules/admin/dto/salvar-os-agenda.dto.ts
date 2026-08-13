@@ -55,4 +55,8 @@ export class SalvarOsAgendaDto {
   @IsOptional()
   @IsUUID()
   orcamento_id?: string;
+
+  @IsOptional()
+  @IsUUID()
+  levantamento_id?: string;
 }
